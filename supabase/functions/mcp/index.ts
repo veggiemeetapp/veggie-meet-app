@@ -278,7 +278,7 @@ var get_my_profile_default = defineTool6({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "zllamljlygjkknsguuki";
+var projectRef = "bmlchfrhdcafyfysnfok";
 var mcp_default = defineMcp({
   name: "veggiemeet-mcp",
   title: "VeggieMeet",
