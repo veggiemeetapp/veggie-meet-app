@@ -1,0 +1,899 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Ban,
+  CalendarPlus,
+  Flag,
+  Leaf,
+  Loader2,
+  MoreVertical,
+  Send,
+  User as UserIcon,
+} from "lucide-react";
+import { AppHeader, Card, UserAvatar } from "@/components/app";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  fetchConversationWithOther,
+  fetchMessages,
+  getOrCreateConversation,
+  isBlockedByMe,
+  markConversationRead,
+  MESSAGE_MAX,
+  sendDirectMessage,
+  type DMMessage,
+  type DMOther,
+} from "@/lib/directMessages";
+import { blockProfile, submitMessageReport } from "@/lib/safety";
+import {
+  fetchInvitationsBundle,
+  joinFromInvitation,
+  markInvitationViewed,
+  type HydratedInvitation,
+} from "@/lib/invitations";
+import { MeetupInvitationSheet } from "@/components/invitations/MeetupInvitationSheet";
+import { InvitationCard } from "@/components/invitations/InvitationCard";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+
+const STARTER_PROMPTS = [
+  "Hey! Nice to connect.",
+  "Are you joining any Meetups soon?",
+  "What are your favorite veggie places nearby?",
+];
+
+const REPORT_REASONS = [
+  { id: "harassment", label: "Harassment" },
+  { id: "spam", label: "Spam" },
+  { id: "inappropriate", label: "Inappropriate content" },
+  { id: "safety", label: "Safety concern" },
+  { id: "other", label: "Other" },
+];
+
+function formatDateSeparator(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return "Today";
+  const y = new Date(now);
+  y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return "Yesterday";
+  return d.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/** Wrapper: resolves a stable conversationId. */
+export default function DirectMessage() {
+  const { conversationId, otherProfileId } = useParams();
+  const navigate = useNavigate();
+  const { profile, loading } = useAuth();
+  const [resolvedId, setResolvedId] = useState<string | null>(
+    conversationId ?? null,
+  );
+  const [resolveError, setResolveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (conversationId) {
+      setResolvedId(conversationId);
+      return;
+    }
+    if (loading || !profile?.id || !otherProfileId) return;
+    (async () => {
+      try {
+        const id = await getOrCreateConversation(otherProfileId);
+        // Replace URL with the canonical conversation id.
+        navigate(`/dm/${id}`, { replace: true });
+        setResolvedId(id);
+      } catch (e) {
+        const msg =
+          e instanceof Error ? e.message : "Couldn't open this conversation.";
+        setResolveError(msg);
+      }
+    })();
+  }, [conversationId, otherProfileId, profile?.id, loading, navigate]);
+
+  if (resolveError) {
+    return (
+      <>
+        <BackHeader title="Chat" />
+        <div className="px-5 py-10 text-center text-sm text-charcoal-muted">
+          {resolveError}
+        </div>
+      </>
+    );
+  }
+
+  if (!resolvedId || !profile) {
+    return (
+      <>
+        <BackHeader title="Chat" />
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-5 h-5 animate-spin text-charcoal-muted" />
+        </div>
+      </>
+    );
+  }
+
+  return <DMScreen conversationId={resolvedId} meProfileId={profile.id} />;
+}
+
+function BackHeader({
+  title,
+  right,
+}: {
+  title: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  const navigate = useNavigate();
+  return (
+    <AppHeader
+      title={title}
+      left={
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+      }
+      right={right}
+    />
+  );
+}
+
+function DMScreen({
+  conversationId,
+  meProfileId,
+}: {
+  conversationId: string;
+  meProfileId: string;
+}) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState<DMMessage[]>([]);
+  const [loadingMsgs, setLoadingMsgs] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [blockedByMe, setBlockedByMe] = useState(false);
+  const [blockDialog, setBlockDialog] = useState(false);
+  const [reportMessage, setReportMessage] = useState<DMMessage | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [invitations, setInvitations] = useState<Map<string, HydratedInvitation>>(
+    new Map(),
+  );
+  const [joiningId, setJoiningId] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const otherQuery = useQuery({
+    queryKey: ["dm-conv", conversationId, meProfileId],
+    queryFn: () => fetchConversationWithOther(conversationId, meProfileId),
+  });
+  const other: DMOther | null = otherQuery.data?.other ?? null;
+
+  // Load messages
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingMsgs(true);
+    setLoadError(null);
+    fetchMessages(conversationId)
+      .then((rows) => {
+        if (cancelled) return;
+        setMessages(rows);
+      })
+      .catch(() => setLoadError("Couldn't load this conversation."))
+      .finally(() => !cancelled && setLoadingMsgs(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId]);
+
+  // Check block state
+  useEffect(() => {
+    if (!other) return;
+    isBlockedByMe(meProfileId, other.profileId).then(setBlockedByMe);
+  }, [other, meProfileId]);
+
+  // Mark read on open & when new incoming arrive
+  useEffect(() => {
+    if (!conversationId) return;
+    markConversationRead(conversationId)
+      .then(() => qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] }))
+      .catch(() => {});
+  }, [conversationId, meProfileId, qc, messages.length]);
+
+  // Realtime — incoming messages + read receipts
+  useEffect(() => {
+    const channel = supabase
+      .channel(`dm-${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "dm_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const m = payload.new as DMMessage;
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "dm_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const m = payload.new as DMMessage;
+          setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, read_at: m.read_at } : x)));
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId]);
+
+  // Hydrate invitations referenced by messages, refetch whenever messages change.
+  const invitationIdsKey = useMemo(
+    () =>
+      messages
+        .map((m) => m.invitation_id)
+        .filter((x): x is string => !!x)
+        .sort()
+        .join(","),
+    [messages],
+  );
+  useEffect(() => {
+    if (!invitationIdsKey) {
+      setInvitations(new Map());
+      return;
+    }
+    const ids = invitationIdsKey.split(",");
+    let cancelled = false;
+    fetchInvitationsBundle(ids, meProfileId).then((map) => {
+      if (!cancelled) setInvitations(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [invitationIdsKey, meProfileId]);
+
+  // Mark received invitations viewed as soon as we see them.
+  useEffect(() => {
+    for (const b of invitations.values()) {
+      if (
+        b.invitation.recipient_id === meProfileId &&
+        b.invitation.status === "invited"
+      ) {
+        markInvitationViewed(b.invitation.id);
+      }
+    }
+  }, [invitations, meProfileId]);
+
+  // Realtime — invitation status changes for anything we already show,
+  // plus meetup-level changes (cancellation, edits, attendance) so the
+  // invitation card reflects reality without a manual refresh.
+  useEffect(() => {
+    if (!invitationIdsKey) return;
+    const refresh = () => {
+      fetchInvitationsBundle(
+        invitationIdsKey.split(","),
+        meProfileId,
+      ).then(setInvitations);
+    };
+    const meetupIds = Array.from(
+      new Set(
+        Array.from(invitations.values()).map((b) => b.meetup.id),
+      ),
+    );
+    const channel = supabase
+      .channel(`dm-inv-${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "meetup_invitations",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        refresh,
+      );
+    for (const mid of meetupIds) {
+      channel.on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "meetups", filter: `id=eq.${mid}` },
+        refresh,
+      );
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance", filter: `meetup_id=eq.${mid}` },
+        refresh,
+      );
+    }
+    channel.subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, invitationIdsKey, meProfileId, invitations]);
+
+
+  // Autoscroll
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [messages.length]);
+
+  async function handleJoinInvitation(invitationId: string) {
+    setJoiningId(invitationId);
+    try {
+      await joinFromInvitation(invitationId);
+      const refreshed = await fetchInvitationsBundle(
+        Array.from(invitations.keys()),
+        meProfileId,
+      );
+      setInvitations(refreshed);
+      toast.success("You're going.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Couldn't join right now.";
+      toast.error(msg);
+    } finally {
+      setJoiningId(null);
+    }
+  }
+
+  const grouped = useMemo(() => groupByDate(messages), [messages]);
+  const overLimit = draft.length > MESSAGE_MAX;
+  const canSend =
+    draft.trim().length > 0 && !sending && !blockedByMe && !overLimit;
+
+  async function handleSend() {
+    if (!other || !canSend) return;
+    setSending(true);
+    const body = draft;
+    setDraft("");
+    try {
+      const msg = await sendDirectMessage(conversationId, meProfileId, body);
+      setMessages((prev) => (prev.some((x) => x.id === msg.id) ? prev : [...prev, msg]));
+      qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
+    } catch (e) {
+      setDraft(body);
+      const msg = e instanceof Error ? e.message : "Message failed to send.";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleBlockConfirmed() {
+    if (!other) return;
+    try {
+      await blockProfile(other.profileId);
+      setBlockedByMe(true);
+      setBlockDialog(false);
+      toast.success(`You blocked ${other.firstName}.`);
+    } catch {
+      toast.error("Couldn't block right now. Try again.");
+    }
+  }
+
+  return (
+    <>
+      <BackHeader
+        title={
+          other ? (
+            <Link
+              to={`/veggie/${other.profileId}`}
+              className="flex items-center gap-2 min-w-0"
+            >
+              <UserAvatar
+                name={other.displayName}
+                src={other.avatarUrl ?? undefined}
+                size="sm"
+              />
+              <div className="min-w-0 text-left">
+                <div className="flex items-center gap-1 min-w-0">
+                  <span className="truncate font-semibold text-charcoal text-[15px]">
+                    {other.firstName}
+                  </span>
+                  {other.isVerifiedConnection && (
+                    <Leaf className="w-3.5 h-3.5 text-primary shrink-0" />
+                  )}
+                </div>
+                {other.city && (
+                  <div className="text-[11px] text-charcoal-muted truncate">
+                    {other.city}
+                  </div>
+                )}
+              </div>
+            </Link>
+          ) : (
+            "Chat"
+          )
+        }
+        right={
+          other && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
+                  aria-label="More options"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => navigate(`/veggie/${other.profileId}`)}
+                >
+                  <UserIcon className="w-4 h-4" />
+                  View Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setInviteOpen(true)}>
+                  <CalendarPlus className="w-4 h-4" />
+                  Invite to Meetup
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setBlockDialog(true)}>
+                  <Ban className="w-4 h-4" />
+                  Block
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    const lastIncoming = [...messages].reverse().find(
+                      (m) => m.sender_id !== meProfileId && !m.invitation_id,
+                    );
+                    if (lastIncoming) setReportMessage(lastIncoming);
+                    else toast.info("Tap the ⋯ on a specific message to report it.");
+                  }}
+                >
+                  <Flag className="w-4 h-4" />
+                  Report a message
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        }
+      />
+
+      <div className="flex-1 flex flex-col min-h-0">
+        <div
+          className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
+          role="log"
+          aria-live="polite"
+        >
+          <div className="min-h-full flex flex-col justify-end space-y-4">
+            {loadingMsgs ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-5 h-5 animate-spin text-charcoal-muted" />
+              </div>
+            ) : loadError ? (
+              <p className="text-center text-sm text-destructive py-10">
+                {loadError}
+              </p>
+            ) : messages.length === 0 ? (
+              other && (
+                <EmptyConversation
+                  other={other}
+                  onPrompt={(t) => setDraft(t)}
+                />
+              )
+            ) : (
+              grouped.map((g) => (
+                <div key={g.date} className="space-y-2">
+                  <div className="text-center text-[11px] text-charcoal-muted my-2">
+                    {g.date}
+                  </div>
+                  {g.groups.map((group, gi) => (
+                    <MessageGroup
+                      key={gi}
+                      group={group}
+                      isMe={group.senderId === meProfileId}
+                      isLastInConv={
+                        g === grouped[grouped.length - 1] &&
+                        gi === g.groups.length - 1
+                      }
+                      invitations={invitations}
+                      meProfileId={meProfileId}
+                      onJoinInvitation={handleJoinInvitation}
+                      joiningId={joiningId}
+                      onReportMessage={setReportMessage}
+                    />
+                  ))}
+                </div>
+              ))
+            )}
+            <div ref={bottomRef} />
+          </div>
+        </div>
+
+
+        {/* Composer */}
+        {blockedByMe ? (
+          <div className="border-t border-border/60 px-5 py-4 text-center text-sm text-charcoal-muted safe-bottom">
+            You can't message this person.
+          </div>
+        ) : (
+          <div className="border-t border-border/60 bg-background safe-bottom px-3 pt-2 pb-3">
+            <div className="flex items-end gap-2">
+              <Textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="Write a message…"
+                rows={1}
+                aria-label="Message"
+                className="min-h-[42px] max-h-32 resize-none bg-muted/60 border-transparent focus-visible:bg-background"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="icon"
+                aria-label="Send"
+                disabled={!canSend}
+                onClick={handleSend}
+                className="h-10 w-10 shrink-0 rounded-full"
+              >
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+            {overLimit && (
+              <p className="mt-1 text-[11px] text-destructive">
+                Messages must be under {MESSAGE_MAX} characters.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Block confirmation */}
+      <Dialog open={blockDialog} onOpenChange={setBlockDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Block {other?.firstName}?</DialogTitle>
+            <DialogDescription>
+              You will no longer be able to message each other.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBlockDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleBlockConfirmed}>
+              Block
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {other && reportMessage && (
+        <ReportDialog
+          open={!!reportMessage}
+          onOpenChange={(o) => { if (!o) setReportMessage(null); }}
+          otherName={other.firstName}
+          messagePreview={reportMessage.body}
+          messageTimestamp={reportMessage.created_at}
+          onSubmit={async (reason, details) => {
+            try {
+              await submitMessageReport({
+                messageId: reportMessage.id,
+                reason,
+                details,
+              });
+              toast.success("Report submitted. Thank you.");
+              setReportMessage(null);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Couldn't submit report. Try again.");
+            }
+          }}
+        />
+      )}
+
+      {other && (
+        <MeetupInvitationSheet
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
+          senderProfileId={meProfileId}
+          recipient={{
+            profileId: other.profileId,
+            firstName: other.firstName,
+            displayName: other.displayName,
+          }}
+          onSent={async () => {
+            const rows = await fetchMessages(conversationId);
+            setMessages(rows);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function EmptyConversation({
+  other,
+  onPrompt,
+}: {
+  other: DMOther;
+  onPrompt: (text: string) => void;
+}) {
+  return (
+    <div className="flex flex-col items-center text-center pt-10 pb-4 px-4">
+      <UserAvatar
+        name={other.displayName}
+        src={other.avatarUrl ?? undefined}
+        size="xl"
+      />
+      <h2 className="mt-3 text-lg font-semibold text-charcoal">
+        Start a conversation with {other.firstName}.
+      </h2>
+      <p className="mt-1 text-sm text-charcoal-muted max-w-xs">
+        Say hello or ask about an upcoming Meetup.
+      </p>
+      <div className="mt-5 w-full flex flex-col gap-2">
+        {STARTER_PROMPTS.map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onPrompt(p)}
+            className="w-full text-left rounded-2xl border border-border/70 bg-card px-4 py-2.5 text-sm text-charcoal hover:bg-muted/60 transition-colors"
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface Group {
+  senderId: string;
+  messages: DMMessage[];
+}
+interface DayBucket {
+  date: string;
+  groups: Group[];
+}
+
+function groupByDate(msgs: DMMessage[]): DayBucket[] {
+  const buckets = new Map<string, DMMessage[]>();
+  for (const m of msgs) {
+    const key = formatDateSeparator(m.created_at);
+    const arr = buckets.get(key) ?? [];
+    arr.push(m);
+    buckets.set(key, arr);
+  }
+  return Array.from(buckets.entries()).map(([date, list]) => {
+    const groups: Group[] = [];
+    for (const m of list) {
+      const last = groups[groups.length - 1];
+      if (
+        last &&
+        last.senderId === m.sender_id &&
+        new Date(m.created_at).getTime() -
+          new Date(last.messages[last.messages.length - 1].created_at).getTime() <
+          5 * 60 * 1000
+      ) {
+        last.messages.push(m);
+      } else {
+        groups.push({ senderId: m.sender_id, messages: [m] });
+      }
+    }
+    return { date, groups };
+  });
+}
+
+function MessageGroup({
+  group,
+  isMe,
+  isLastInConv,
+  invitations,
+  meProfileId,
+  onJoinInvitation,
+  joiningId,
+  onReportMessage,
+}: {
+  group: Group;
+  isMe: boolean;
+  isLastInConv: boolean;
+  invitations: Map<string, HydratedInvitation>;
+  meProfileId: string;
+  onJoinInvitation: (invitationId: string) => void;
+  joiningId: string | null;
+  onReportMessage?: (m: DMMessage) => void;
+}) {
+  const last = group.messages[group.messages.length - 1];
+  const showRead = isMe && isLastInConv;
+  return (
+    <div className={cn("flex", isMe ? "justify-end" : "justify-start")}>
+      <div className="max-w-[86%] flex flex-col gap-1.5 items-stretch">
+        {group.messages.map((m) => {
+          const bundle = m.invitation_id ? invitations.get(m.invitation_id) : null;
+          if (bundle) {
+            return (
+              <InvitationCard
+                key={m.id}
+                bundle={bundle}
+                isRecipient={bundle.invitation.recipient_id === meProfileId}
+                isSender={bundle.invitation.sender_id === meProfileId}
+                onJoin={() => onJoinInvitation(bundle.invitation.id)}
+                joining={joiningId === bundle.invitation.id}
+              />
+            );
+          }
+          return (
+            <div key={m.id} className="group/msg relative flex items-start gap-1.5">
+              <div
+                className={cn(
+                  "px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap",
+                  isMe
+                    ? "bg-soft-green text-charcoal rounded-br-md self-end"
+                    : "bg-muted text-charcoal rounded-bl-md self-start",
+                )}
+              >
+                {m.body}
+              </div>
+              {!isMe && onReportMessage && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Message options"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted opacity-60 hover:opacity-100"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => onReportMessage(m)}>
+                      <Flag className="w-4 h-4" />
+                      Report this message
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          );
+        })}
+        <div
+          className={cn(
+            "text-[10px] text-charcoal-muted mt-0.5",
+            isMe ? "text-right" : "text-left",
+          )}
+        >
+          {formatTime(last.created_at)}
+          {showRead && (
+            <span className="ml-1.5">· {last.read_at ? "Read" : "Sent"}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReportDialog({
+  open,
+  onOpenChange,
+  otherName,
+  messagePreview,
+  messageTimestamp,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  otherName: string;
+  messagePreview?: string;
+  messageTimestamp?: string;
+  onSubmit: (reason: string, details?: string) => Promise<void>;
+}) {
+  const [reason, setReason] = useState(REPORT_REASONS[0].label);
+  const [details, setDetails] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setReason(REPORT_REASONS[0].label);
+      setDetails("");
+    }
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Report message from {otherName}</DialogTitle>
+          <DialogDescription>
+            Your report is private. {otherName} isn't notified.
+          </DialogDescription>
+        </DialogHeader>
+        {messagePreview && (
+          <div className="rounded-2xl bg-muted p-3 text-sm text-charcoal">
+            <p className="text-[11px] text-charcoal-muted mb-1">
+              Reporting this message
+              {messageTimestamp ? ` · ${formatTime(messageTimestamp)}` : ""}
+            </p>
+            <p className="line-clamp-4 whitespace-pre-wrap break-words">
+              {messagePreview}
+            </p>
+          </div>
+        )}
+        <RadioGroup value={reason} onValueChange={setReason} className="gap-2">
+          {REPORT_REASONS.map((r) => (
+            <Label
+              key={r.id}
+              htmlFor={`report-${r.id}`}
+              className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
+            >
+              <RadioGroupItem id={`report-${r.id}`} value={r.label} />
+              <span className="text-sm">{r.label}</span>
+            </Label>
+          ))}
+        </RadioGroup>
+        <Textarea
+          value={details}
+          onChange={(e) => setDetails(e.target.value)}
+          placeholder="Add details (optional)"
+          rows={3}
+          className="resize-none"
+        />
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onSubmit(reason, details.trim() || undefined);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Submit report
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

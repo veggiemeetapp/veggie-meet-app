@@ -1,0 +1,5525 @@
+{
+    "enums": [
+        {
+            "name": "attendance_status",
+            "values": [
+                "joined",
+                "checked_in",
+                "attended",
+                "cancelled",
+                "removed"
+            ]
+        },
+        {
+            "name": "friendship_status",
+            "values": [
+                "connected",
+                "pending",
+                "blocked",
+                "verified",
+                "removed"
+            ]
+        },
+        {
+            "name": "invitation_status",
+            "values": [
+                "invited",
+                "viewed",
+                "joined",
+                "declined"
+            ]
+        },
+        {
+            "name": "location_source",
+            "values": [
+                "community_place",
+                "host_selected_city",
+                "custom_location",
+                "migrated_place",
+                "migrated_address",
+                "migrated_host_city",
+                "unknown"
+            ]
+        },
+        {
+            "name": "meetup_category",
+            "values": [
+                "dinner",
+                "brunch",
+                "coffee",
+                "picnic",
+                "cooking",
+                "walk",
+                "workshop",
+                "other"
+            ]
+        },
+        {
+            "name": "meetup_feedback_rating",
+            "values": [
+                "great",
+                "okay",
+                "not_for_me"
+            ]
+        },
+        {
+            "name": "meetup_status",
+            "values": [
+                "upcoming",
+                "full",
+                "in_progress",
+                "past",
+                "cancelled"
+            ]
+        },
+        {
+            "name": "message_type",
+            "values": [
+                "user",
+                "system"
+            ]
+        },
+        {
+            "name": "notification_type",
+            "values": [
+                "connection_request_received",
+                "connection_request_accepted",
+                "meetup_invitation_received",
+                "meetup_invitation_joined",
+                "meetup_updated",
+                "meetup_cancelled",
+                "meetup_attendee_removed"
+            ]
+        },
+        {
+            "name": "place_category",
+            "values": [
+                "restaurant",
+                "cafe",
+                "park",
+                "market",
+                "studio",
+                "venue"
+            ]
+        }
+    ],
+    "views": null,
+    "tables": [
+        {
+            "name": "account_deletion_requests",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "status",
+                    "type": "text",
+                    "default": "'pending'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "blockers",
+                    "type": "jsonb",
+                    "default": "'{}'::jsonb",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "requested_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "effective_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "analytics_events",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "event_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "properties",
+                    "type": "jsonb",
+                    "default": "'{}'::jsonb",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "attendance",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "status",
+                    "type": "USER-DEFINED",
+                    "default": "'joined'::attendance_status",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "joined_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "checked_in_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "removal_reason",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "removed_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "removed_by",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "chat_participants",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "chat_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "joined_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "chats",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "check_in_requests",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "requester_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "target_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "status",
+                    "type": "text",
+                    "default": "'pending'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "cities",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "normalized_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "country_code",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "country_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "timezone",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "latitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "longitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "is_active",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "community_places",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "category",
+                    "type": "USER-DEFINED",
+                    "default": "'venue'::place_category",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "address",
+                    "type": "text",
+                    "default": "''::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "cover_image_url",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "upcoming_meetups_count",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetups_this_month",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "veggies_visited_count",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "city_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "neighborhood",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "timezone",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "latitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "longitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "is_active",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "dm_conversations",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "user_a_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "user_b_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "last_message_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "dm_messages",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "conversation_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "sender_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "body",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "read_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "invitation_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "friendships",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_a_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_b_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "first_meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "friends_since",
+                    "type": "date",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "meetups_together_count",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "status",
+                    "type": "USER-DEFINED",
+                    "default": "'pending'::friendship_status",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "requester_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "interest_catalogue",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "label",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "category",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "active",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "sort_order",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "meetup_feedback",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "experience_rating",
+                    "type": "USER-DEFINED",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "private_note",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "meetup_follow_up_state",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "prompted_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "dismissed_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "viewed_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "meetup_invitations",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "sender_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "recipient_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "conversation_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "personal_message",
+                    "type": "text",
+                    "default": "''::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "status",
+                    "type": "USER-DEFINED",
+                    "default": "'invited'::invitation_status",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "viewed_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "joined_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "meetup_location_changes",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "changed_by_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "old_city_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "new_city_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "old_location_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "new_location_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "old_address",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "new_address",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "old_latitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "old_longitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "new_latitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "new_longitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "old_timezone",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "new_timezone",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "meaningful_change",
+                    "type": "boolean",
+                    "default": "false",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "changed_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "meetup_qr_tokens",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "issuer_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "token_hash",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "expires_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "revoked_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "meetup_reports",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "reporter_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "host_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "reason",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "details",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "status",
+                    "type": "text",
+                    "default": "'open'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "public_status",
+                    "type": "text",
+                    "default": "'submitted'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "resolved_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "meetup_update_seen",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "seen_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "meetups",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "title",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "description",
+                    "type": "text",
+                    "default": "''::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "category",
+                    "type": "USER-DEFINED",
+                    "default": "'other'::meetup_category",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "host_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "community_place_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "custom_location_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "custom_location_address",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "cover_image_url",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "date",
+                    "type": "date",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "start_time",
+                    "type": "time without time zone",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "end_time",
+                    "type": "time without time zone",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "capacity",
+                    "type": "integer",
+                    "default": "10",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "status",
+                    "type": "USER-DEFINED",
+                    "default": "'upcoming'::meetup_status",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "cancellation_reason",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "cancelled_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "city_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "city_name_snapshot",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "country_code_snapshot",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "timezone",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "neighborhood",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "location_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "address",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "latitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "longitude",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "location_source",
+                    "type": "USER-DEFINED",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "location_is_inferred",
+                    "type": "boolean",
+                    "default": "false",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "location_updated_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "migrated_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "messages",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "chat_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "sender_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "body",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "type",
+                    "type": "USER-DEFINED",
+                    "default": "'user'::message_type",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "notification_preferences",
+            "columns": [
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_invitations",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_updates",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_reminders",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "messages",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "connection_requests",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "connection_accepted",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "follow_up",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "community",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "notifications",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "recipient_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "actor_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "type",
+                    "type": "USER-DEFINED",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "entity_type",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "entity_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "destination_type",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "destination_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "title",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "body",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "metadata",
+                    "type": "jsonb",
+                    "default": "'{}'::jsonb",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "dedup_key",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "read_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "place_check_ins",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "community_place_id",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "checked_in_on",
+                    "type": "date",
+                    "default": "((now() AT TIME ZONE 'utc'::text))::date",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "profile_onboarding_state",
+            "columns": [
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "current_step",
+                    "type": "text",
+                    "default": "'welcome'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "completed_steps",
+                    "type": "ARRAY",
+                    "default": "'{}'::text[]",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "skipped_steps",
+                    "type": "ARRAY",
+                    "default": "'{}'::text[]",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "started_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "completed_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "first_meaningful_action_type",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "first_meaningful_action_entity_id",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "first_meaningful_action_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "onboarding_version",
+                    "type": "integer",
+                    "default": "1",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "profile_preferences",
+            "columns": [
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "selected_city_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "distance_unit",
+                    "type": "text",
+                    "default": "'km'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "notification_permission_result",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "notification_permission_asked_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "location_permission_result",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "location_permission_asked_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "profiles",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "auth_user_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "display_name",
+                    "type": "text",
+                    "default": "''::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "bio",
+                    "type": "text",
+                    "default": "''::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "avatar_url",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "current_city",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "interests",
+                    "type": "ARRAY",
+                    "default": "'{}'::text[]",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "is_active_host",
+                    "type": "boolean",
+                    "default": "false",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetups_hosted_count",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetups_attended_count",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "veggies_met_count",
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "onboarding_completed",
+                    "type": "boolean",
+                    "default": "false",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "home_city_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "dietary_identity",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "pronouns",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "community_guidelines_accepted_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "discovery_visible",
+                    "type": "boolean",
+                    "default": "true",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "recommendation_feedback",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "surface",
+                    "type": "text",
+                    "default": "'today'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "entity_type",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "entity_id",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "reason_code",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "feedback_type",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "expires_at",
+                    "type": "timestamp with time zone",
+                    "default": "(now() + '30 days'::interval)",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "safety_reports",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "reporter_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "reason",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "details",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "context_meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "status",
+                    "type": "text",
+                    "default": "'submitted'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "public_status",
+                    "type": "text",
+                    "default": "'submitted'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "resolved_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "user_blocks",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "blocker_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "blocked_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        },
+        {
+            "name": "user_reports",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "reporter_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "reported_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "conversation_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "reason",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "details",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "status",
+                    "type": "text",
+                    "default": "'submitted'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "public_status",
+                    "type": "text",
+                    "default": "'submitted'::text",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "resolved_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "reported_message_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "reported_message_created_at",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "reported_message_snapshot",
+                    "type": "text",
+                    "default": null,
+                    "nullable": "YES"
+                },
+                {
+                    "name": "reported_sender_profile_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "YES"
+                }
+            ]
+        },
+        {
+            "name": "verified_meetup_connections",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "meetup_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_a_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "profile_b_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "scanned_by",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "token_issuer_id",
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": "NO"
+                },
+                {
+                    "name": "verified_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": "NO"
+                }
+            ]
+        }
+    ],
+    "indexes": [
+        {
+            "def": "CREATE UNIQUE INDEX account_deletion_requests_pkey ON public.account_deletion_requests USING btree (id)",
+            "name": "account_deletion_requests_pkey",
+            "table": "account_deletion_requests"
+        },
+        {
+            "def": "CREATE INDEX idx_adr_profile ON public.account_deletion_requests USING btree (profile_id)",
+            "name": "idx_adr_profile",
+            "table": "account_deletion_requests"
+        },
+        {
+            "def": "CREATE INDEX analytics_events_event_idx ON public.analytics_events USING btree (event_name, created_at DESC)",
+            "name": "analytics_events_event_idx",
+            "table": "analytics_events"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX analytics_events_pkey ON public.analytics_events USING btree (id)",
+            "name": "analytics_events_pkey",
+            "table": "analytics_events"
+        },
+        {
+            "def": "CREATE INDEX analytics_events_profile_idx ON public.analytics_events USING btree (profile_id, created_at DESC)",
+            "name": "analytics_events_profile_idx",
+            "table": "analytics_events"
+        },
+        {
+            "def": "CREATE INDEX attendance_meetup_status_idx ON public.attendance USING btree (meetup_id, status)",
+            "name": "attendance_meetup_status_idx",
+            "table": "attendance"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX attendance_pkey ON public.attendance USING btree (id)",
+            "name": "attendance_pkey",
+            "table": "attendance"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX attendance_profile_id_meetup_id_key ON public.attendance USING btree (profile_id, meetup_id)",
+            "name": "attendance_profile_id_meetup_id_key",
+            "table": "attendance"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX chat_participants_chat_id_profile_id_key ON public.chat_participants USING btree (chat_id, profile_id)",
+            "name": "chat_participants_chat_id_profile_id_key",
+            "table": "chat_participants"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX chat_participants_pkey ON public.chat_participants USING btree (id)",
+            "name": "chat_participants_pkey",
+            "table": "chat_participants"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX chats_meetup_id_key ON public.chats USING btree (meetup_id)",
+            "name": "chats_meetup_id_key",
+            "table": "chats"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX chats_pkey ON public.chats USING btree (id)",
+            "name": "chats_pkey",
+            "table": "chats"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX check_in_requests_pkey ON public.check_in_requests USING btree (id)",
+            "name": "check_in_requests_pkey",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "CREATE INDEX check_in_requests_target_idx ON public.check_in_requests USING btree (target_profile_id, status)",
+            "name": "check_in_requests_target_idx",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX check_in_requests_unique_pending ON public.check_in_requests USING btree (meetup_id, requester_profile_id, target_profile_id) WHERE (status = 'pending'::text)",
+            "name": "check_in_requests_unique_pending",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX cities_name_country_unique ON public.cities USING btree (normalized_name, country_code)",
+            "name": "cities_name_country_unique",
+            "table": "cities"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX cities_pkey ON public.cities USING btree (id)",
+            "name": "cities_pkey",
+            "table": "cities"
+        },
+        {
+            "def": "CREATE INDEX community_places_city_id_idx ON public.community_places USING btree (city_id) WHERE is_active",
+            "name": "community_places_city_id_idx",
+            "table": "community_places"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX community_places_pkey ON public.community_places USING btree (id)",
+            "name": "community_places_pkey",
+            "table": "community_places"
+        },
+        {
+            "def": "CREATE INDEX dm_conversations_a_idx ON public.dm_conversations USING btree (user_a_id)",
+            "name": "dm_conversations_a_idx",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "CREATE INDEX dm_conversations_b_idx ON public.dm_conversations USING btree (user_b_id)",
+            "name": "dm_conversations_b_idx",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "CREATE INDEX dm_conversations_last_msg_idx ON public.dm_conversations USING btree (last_message_at DESC)",
+            "name": "dm_conversations_last_msg_idx",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX dm_conversations_pkey ON public.dm_conversations USING btree (id)",
+            "name": "dm_conversations_pkey",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX dm_pair_unique ON public.dm_conversations USING btree (user_a_id, user_b_id)",
+            "name": "dm_pair_unique",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "CREATE INDEX dm_messages_conv_time_idx ON public.dm_messages USING btree (conversation_id, created_at)",
+            "name": "dm_messages_conv_time_idx",
+            "table": "dm_messages"
+        },
+        {
+            "def": "CREATE INDEX dm_messages_conv_unread_idx ON public.dm_messages USING btree (conversation_id) WHERE (read_at IS NULL)",
+            "name": "dm_messages_conv_unread_idx",
+            "table": "dm_messages"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX dm_messages_pkey ON public.dm_messages USING btree (id)",
+            "name": "dm_messages_pkey",
+            "table": "dm_messages"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX friendships_pkey ON public.friendships USING btree (id)",
+            "name": "friendships_pkey",
+            "table": "friendships"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX friendships_profile_a_id_profile_b_id_key ON public.friendships USING btree (profile_a_id, profile_b_id)",
+            "name": "friendships_profile_a_id_profile_b_id_key",
+            "table": "friendships"
+        },
+        {
+            "def": "CREATE INDEX friendships_profile_a_status_idx ON public.friendships USING btree (profile_a_id, status)",
+            "name": "friendships_profile_a_status_idx",
+            "table": "friendships"
+        },
+        {
+            "def": "CREATE INDEX friendships_profile_b_status_idx ON public.friendships USING btree (profile_b_id, status)",
+            "name": "friendships_profile_b_status_idx",
+            "table": "friendships"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX interest_catalogue_pkey ON public.interest_catalogue USING btree (id)",
+            "name": "interest_catalogue_pkey",
+            "table": "interest_catalogue"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_feedback_pkey ON public.meetup_feedback USING btree (id)",
+            "name": "meetup_feedback_pkey",
+            "table": "meetup_feedback"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_feedback_unique ON public.meetup_feedback USING btree (meetup_id, profile_id)",
+            "name": "meetup_feedback_unique",
+            "table": "meetup_feedback"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_follow_up_state_pkey ON public.meetup_follow_up_state USING btree (id)",
+            "name": "meetup_follow_up_state_pkey",
+            "table": "meetup_follow_up_state"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_follow_up_state_unique ON public.meetup_follow_up_state USING btree (meetup_id, profile_id)",
+            "name": "meetup_follow_up_state_unique",
+            "table": "meetup_follow_up_state"
+        },
+        {
+            "def": "CREATE INDEX meetup_invitations_conversation_idx ON public.meetup_invitations USING btree (conversation_id, created_at DESC)",
+            "name": "meetup_invitations_conversation_idx",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_invitations_pkey ON public.meetup_invitations USING btree (id)",
+            "name": "meetup_invitations_pkey",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "CREATE INDEX meetup_invitations_recipient_idx ON public.meetup_invitations USING btree (recipient_id, status)",
+            "name": "meetup_invitations_recipient_idx",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_invitations_triple_uniq ON public.meetup_invitations USING btree (meetup_id, sender_id, recipient_id)",
+            "name": "meetup_invitations_triple_uniq",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "CREATE INDEX meetup_location_changes_meetup_idx ON public.meetup_location_changes USING btree (meetup_id, changed_at DESC)",
+            "name": "meetup_location_changes_meetup_idx",
+            "table": "meetup_location_changes"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_location_changes_pkey ON public.meetup_location_changes USING btree (id)",
+            "name": "meetup_location_changes_pkey",
+            "table": "meetup_location_changes"
+        },
+        {
+            "def": "CREATE INDEX meetup_qr_tokens_expires_at_idx ON public.meetup_qr_tokens USING btree (expires_at)",
+            "name": "meetup_qr_tokens_expires_at_idx",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "CREATE INDEX meetup_qr_tokens_issuer_profile_id_meetup_id_idx ON public.meetup_qr_tokens USING btree (issuer_profile_id, meetup_id)",
+            "name": "meetup_qr_tokens_issuer_profile_id_meetup_id_idx",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_qr_tokens_pkey ON public.meetup_qr_tokens USING btree (id)",
+            "name": "meetup_qr_tokens_pkey",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_qr_tokens_token_hash_key ON public.meetup_qr_tokens USING btree (token_hash)",
+            "name": "meetup_qr_tokens_token_hash_key",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_reports_pkey ON public.meetup_reports USING btree (id)",
+            "name": "meetup_reports_pkey",
+            "table": "meetup_reports"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_update_seen_pkey ON public.meetup_update_seen USING btree (id)",
+            "name": "meetup_update_seen_pkey",
+            "table": "meetup_update_seen"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetup_update_seen_profile_id_meetup_id_key ON public.meetup_update_seen USING btree (profile_id, meetup_id)",
+            "name": "meetup_update_seen_profile_id_meetup_id_key",
+            "table": "meetup_update_seen"
+        },
+        {
+            "def": "CREATE INDEX meetups_city_date_status_idx ON public.meetups USING btree (city_id, date, status)",
+            "name": "meetups_city_date_status_idx",
+            "table": "meetups"
+        },
+        {
+            "def": "CREATE INDEX meetups_city_id_idx ON public.meetups USING btree (city_id)",
+            "name": "meetups_city_id_idx",
+            "table": "meetups"
+        },
+        {
+            "def": "CREATE INDEX meetups_host_date_idx ON public.meetups USING btree (host_id, date)",
+            "name": "meetups_host_date_idx",
+            "table": "meetups"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX meetups_pkey ON public.meetups USING btree (id)",
+            "name": "meetups_pkey",
+            "table": "meetups"
+        },
+        {
+            "def": "CREATE INDEX messages_chat_time_idx ON public.messages USING btree (chat_id, created_at DESC)",
+            "name": "messages_chat_time_idx",
+            "table": "messages"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)",
+            "name": "messages_pkey",
+            "table": "messages"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX notification_preferences_pkey ON public.notification_preferences USING btree (profile_id)",
+            "name": "notification_preferences_pkey",
+            "table": "notification_preferences"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)",
+            "name": "notifications_pkey",
+            "table": "notifications"
+        },
+        {
+            "def": "CREATE INDEX notifications_recipient_created_idx ON public.notifications USING btree (recipient_id, created_at DESC)",
+            "name": "notifications_recipient_created_idx",
+            "table": "notifications"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX notifications_recipient_id_dedup_key_key ON public.notifications USING btree (recipient_id, dedup_key)",
+            "name": "notifications_recipient_id_dedup_key_key",
+            "table": "notifications"
+        },
+        {
+            "def": "CREATE INDEX notifications_recipient_unread_idx ON public.notifications USING btree (recipient_id) WHERE (read_at IS NULL)",
+            "name": "notifications_recipient_unread_idx",
+            "table": "notifications"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX place_check_ins_pkey ON public.place_check_ins USING btree (id)",
+            "name": "place_check_ins_pkey",
+            "table": "place_check_ins"
+        },
+        {
+            "def": "CREATE INDEX place_check_ins_place_idx ON public.place_check_ins USING btree (community_place_id)",
+            "name": "place_check_ins_place_idx",
+            "table": "place_check_ins"
+        },
+        {
+            "def": "CREATE INDEX place_check_ins_profile_idx ON public.place_check_ins USING btree (profile_id)",
+            "name": "place_check_ins_profile_idx",
+            "table": "place_check_ins"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX place_check_ins_unique_daily ON public.place_check_ins USING btree (profile_id, community_place_id, checked_in_on)",
+            "name": "place_check_ins_unique_daily",
+            "table": "place_check_ins"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX profile_onboarding_state_pkey ON public.profile_onboarding_state USING btree (profile_id)",
+            "name": "profile_onboarding_state_pkey",
+            "table": "profile_onboarding_state"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX profile_preferences_pkey ON public.profile_preferences USING btree (profile_id)",
+            "name": "profile_preferences_pkey",
+            "table": "profile_preferences"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX profiles_auth_user_id_key ON public.profiles USING btree (auth_user_id)",
+            "name": "profiles_auth_user_id_key",
+            "table": "profiles"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)",
+            "name": "profiles_pkey",
+            "table": "profiles"
+        },
+        {
+            "def": "CREATE INDEX recommendation_feedback_lookup_idx ON public.recommendation_feedback USING btree (profile_id, surface, entity_type, expires_at)",
+            "name": "recommendation_feedback_lookup_idx",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX recommendation_feedback_pkey ON public.recommendation_feedback USING btree (id)",
+            "name": "recommendation_feedback_pkey",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX recommendation_feedback_unique ON public.recommendation_feedback USING btree (profile_id, surface, entity_type, entity_id, feedback_type)",
+            "name": "recommendation_feedback_unique",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX safety_reports_pkey ON public.safety_reports USING btree (id)",
+            "name": "safety_reports_pkey",
+            "table": "safety_reports"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX user_blocks_pkey ON public.user_blocks USING btree (id)",
+            "name": "user_blocks_pkey",
+            "table": "user_blocks"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX user_blocks_unique ON public.user_blocks USING btree (blocker_profile_id, blocked_profile_id)",
+            "name": "user_blocks_unique",
+            "table": "user_blocks"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX user_reports_pkey ON public.user_reports USING btree (id)",
+            "name": "user_reports_pkey",
+            "table": "user_reports"
+        },
+        {
+            "def": "CREATE INDEX verified_meetup_connections_meetup_id_idx ON public.verified_meetup_connections USING btree (meetup_id)",
+            "name": "verified_meetup_connections_meetup_id_idx",
+            "table": "verified_meetup_connections"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX verified_meetup_connections_pkey ON public.verified_meetup_connections USING btree (id)",
+            "name": "verified_meetup_connections_pkey",
+            "table": "verified_meetup_connections"
+        },
+        {
+            "def": "CREATE UNIQUE INDEX verified_pair_unique ON public.verified_meetup_connections USING btree (profile_a_id, profile_b_id)",
+            "name": "verified_pair_unique",
+            "table": "verified_meetup_connections"
+        }
+    ],
+    "policies": [
+        {
+            "name": "adr_owner_select",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "account_deletion_requests",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "own analytics insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "analytics_events",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Attendance is viewable by everyone",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "table": "attendance",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users can create their own attendance",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "attendance",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users can update their own attendance",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "attendance",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Participants can read chat rosters",
+            "qual": "is_chat_participant(chat_id)",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "chat_participants",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users can join chats as themselves",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "chat_participants",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Participants can read their chats",
+            "qual": "is_chat_participant(id)",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "chats",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Attendees can create check-in requests",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "check_in_requests",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "((requester_profile_id = current_profile_id()) AND (EXISTS ( SELECT 1\n   FROM attendance a1\n  WHERE ((a1.meetup_id = check_in_requests.meetup_id) AND (a1.profile_id = check_in_requests.requester_profile_id) AND (a1.status <> 'cancelled'::attendance_status)))) AND (EXISTS ( SELECT 1\n   FROM attendance a2\n  WHERE ((a2.meetup_id = check_in_requests.meetup_id) AND (a2.profile_id = check_in_requests.target_profile_id) AND (a2.status <> 'cancelled'::attendance_status)))))"
+        },
+        {
+            "name": "Participants can view their check-in requests",
+            "qual": "((requester_profile_id = current_profile_id()) OR (target_profile_id = current_profile_id()))",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "check_in_requests",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Target can respond to their check-in requests",
+            "qual": "(target_profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "check_in_requests",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(target_profile_id = current_profile_id())"
+        },
+        {
+            "name": "Cities are viewable by everyone",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "table": "cities",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Authenticated users can add places",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "community_places",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "true"
+        },
+        {
+            "name": "Places are viewable by everyone",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "table": "community_places",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "dm_conversations_participant_insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "dm_conversations",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(((user_a_id = current_profile_id()) OR (user_b_id = current_profile_id())) AND (user_a_id < user_b_id))"
+        },
+        {
+            "name": "dm_conversations_participant_select",
+            "qual": "((user_a_id = current_profile_id()) OR (user_b_id = current_profile_id()))",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "dm_conversations",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "dm_messages_participant_insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "dm_messages",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "((sender_id = current_profile_id()) AND is_dm_participant(conversation_id))"
+        },
+        {
+            "name": "dm_messages_participant_select",
+            "qual": "is_dm_participant(conversation_id)",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "dm_messages",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "dm_messages_recipient_read_update",
+            "qual": "(is_dm_participant(conversation_id) AND (sender_id <> current_profile_id()))",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "dm_messages",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(is_dm_participant(conversation_id) AND (sender_id <> current_profile_id()))"
+        },
+        {
+            "name": "Friends can view their own friendships",
+            "qual": "((profile_a_id = current_profile_id()) OR (profile_b_id = current_profile_id()))",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "friendships",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Participants can delete friendships",
+            "qual": "((profile_a_id = current_profile_id()) OR (profile_b_id = current_profile_id()))",
+            "roles": [
+                "public"
+            ],
+            "table": "friendships",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Participants can update friendships",
+            "qual": "((profile_a_id = current_profile_id()) OR (profile_b_id = current_profile_id()))",
+            "roles": [
+                "public"
+            ],
+            "table": "friendships",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "((profile_a_id = current_profile_id()) OR (profile_b_id = current_profile_id()))"
+        },
+        {
+            "name": "Signed-in users can view established friendships",
+            "qual": "(status = ANY (ARRAY['connected'::friendship_status, 'verified'::friendship_status]))",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "friendships",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users can create friendships they're part of",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "friendships",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "((profile_a_id = current_profile_id()) OR (profile_b_id = current_profile_id()))"
+        },
+        {
+            "name": "interest_catalogue readable",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "table": "interest_catalogue",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users delete own feedback",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_feedback",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users insert own feedback",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_feedback",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users read own feedback",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_feedback",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users update own feedback",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_feedback",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users read own follow up",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_follow_up_state",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users update own follow up",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_follow_up_state",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users write own follow up",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_follow_up_state",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "meetup_invitations_participant_select",
+            "qual": "((sender_id = current_profile_id()) OR (recipient_id = current_profile_id()))",
+            "roles": [
+                "public"
+            ],
+            "table": "meetup_invitations",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "meetup_invitations_recipient_update",
+            "qual": "(recipient_id = current_profile_id())",
+            "roles": [
+                "public"
+            ],
+            "table": "meetup_invitations",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(recipient_id = current_profile_id())"
+        },
+        {
+            "name": "meetup_invitations_sender_insert",
+            "qual": null,
+            "roles": [
+                "public"
+            ],
+            "table": "meetup_invitations",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(sender_id = current_profile_id())"
+        },
+        {
+            "name": "Host reads their meetup location history",
+            "qual": "(EXISTS ( SELECT 1\n   FROM meetups m\n  WHERE ((m.id = meetup_location_changes.meetup_id) AND (m.host_id = current_profile_id()))))",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_location_changes",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Issuer can view own tokens",
+            "qual": "(issuer_profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_qr_tokens",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users insert own meetup reports",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_reports",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(reporter_profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users read own meetup reports",
+            "qual": "(reporter_profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_reports",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "own_meetup_update_seen",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetup_update_seen",
+            "command": "ALL",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Authenticated users can host meetups",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetups",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(host_id = current_profile_id())"
+        },
+        {
+            "name": "Hosts can delete their meetups",
+            "qual": "(host_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetups",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Hosts can update their meetups",
+            "qual": "(host_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "meetups",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(host_id = current_profile_id())"
+        },
+        {
+            "name": "Meetups are viewable by everyone",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "table": "meetups",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Participants can read messages",
+            "qual": "is_chat_participant(chat_id)",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "messages",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Participants can send user messages",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "messages",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(is_chat_participant(chat_id) AND (type = 'user'::message_type) AND (sender_id = current_profile_id()))"
+        },
+        {
+            "name": "np_owner_insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "notification_preferences",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "np_owner_select",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "notification_preferences",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "np_owner_update",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "notification_preferences",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users can read own notifications",
+            "qual": "(recipient_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "notifications",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users can update read state on own notifications",
+            "qual": "(recipient_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "notifications",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(recipient_id = current_profile_id())"
+        },
+        {
+            "name": "Signed-in users can view place check-ins",
+            "qual": "true",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "place_check_ins",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "own place check-ins insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "place_check_ins",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "own place check-ins select",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "place_check_ins",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "own onboarding state insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profile_onboarding_state",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "own onboarding state select",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profile_onboarding_state",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "own onboarding state update",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profile_onboarding_state",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users insert their own preferences",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profile_preferences",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Users read their own preferences",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profile_preferences",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users update their own preferences",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profile_preferences",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "Profiles readable by authenticated",
+            "qual": "true",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profiles",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Users can insert their own profile",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profiles",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(auth.uid() = auth_user_id)"
+        },
+        {
+            "name": "Users can update their own profile",
+            "qual": "(auth.uid() = auth_user_id)",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "profiles",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(auth.uid() = auth_user_id)"
+        },
+        {
+            "name": "rec_feedback_own_delete",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "recommendation_feedback",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "rec_feedback_own_insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "recommendation_feedback",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(profile_id = current_profile_id())"
+        },
+        {
+            "name": "rec_feedback_own_select",
+            "qual": "(profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "recommendation_feedback",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "safety_reports_reporter_insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "safety_reports",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(reporter_profile_id = current_profile_id())"
+        },
+        {
+            "name": "safety_reports_reporter_read",
+            "qual": "(reporter_profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "safety_reports",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "user_blocks_owner_delete",
+            "qual": "(blocker_profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "user_blocks",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "user_blocks_owner_insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "user_blocks",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(blocker_profile_id = current_profile_id())"
+        },
+        {
+            "name": "user_blocks_owner_select",
+            "qual": "(blocker_profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "user_blocks",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "user_reports_reporter_insert",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "table": "user_reports",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(reporter_profile_id = current_profile_id())"
+        },
+        {
+            "name": "user_reports_reporter_select",
+            "qual": "(reporter_profile_id = current_profile_id())",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "user_reports",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        },
+        {
+            "name": "Participants can view their verifications",
+            "qual": "((profile_a_id = current_profile_id()) OR (profile_b_id = current_profile_id()))",
+            "roles": [
+                "authenticated"
+            ],
+            "table": "verified_meetup_connections",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+        }
+    ],
+    "triggers": [
+        {
+            "name": "trg_adr_updated_at",
+            "event": "UPDATE",
+            "table": "account_deletion_requests",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_validate_analytics_event",
+            "event": "INSERT",
+            "table": "analytics_events",
+            "action": "EXECUTE FUNCTION validate_analytics_event()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "attendance_updated_at",
+            "event": "UPDATE",
+            "table": "attendance",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "enforce_attendance_iu",
+            "event": "UPDATE",
+            "table": "attendance",
+            "action": "EXECUTE FUNCTION enforce_meetup_attendance()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "enforce_attendance_iu",
+            "event": "INSERT",
+            "table": "attendance",
+            "action": "EXECUTE FUNCTION enforce_meetup_attendance()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "on_attendance_created",
+            "event": "INSERT",
+            "table": "attendance",
+            "action": "EXECUTE FUNCTION handle_new_attendance()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "trg_activation_attendance",
+            "event": "INSERT",
+            "table": "attendance",
+            "action": "EXECUTE FUNCTION trg_activation_attendance()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "chats_updated_at",
+            "event": "UPDATE",
+            "table": "chats",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "set_check_in_requests_updated_at",
+            "event": "UPDATE",
+            "table": "check_in_requests",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_check_in_confirmed",
+            "event": "UPDATE",
+            "table": "check_in_requests",
+            "action": "EXECUTE FUNCTION handle_check_in_confirmed()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "cities_updated_at",
+            "event": "UPDATE",
+            "table": "cities",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "community_places_updated_at",
+            "event": "UPDATE",
+            "table": "community_places",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_bump_dm_conversation",
+            "event": "INSERT",
+            "table": "dm_messages",
+            "action": "EXECUTE FUNCTION bump_dm_conversation()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "trg_enforce_dm_message",
+            "event": "INSERT",
+            "table": "dm_messages",
+            "action": "EXECUTE FUNCTION enforce_dm_message()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "canonicalize_friendship_trg",
+            "event": "INSERT",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION canonicalize_friendship()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "canonicalize_friendship_trg",
+            "event": "UPDATE",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION canonicalize_friendship()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "enforce_friendship_block_trg",
+            "event": "INSERT",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION enforce_friendship_block()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "enforce_friendship_block_trg",
+            "event": "UPDATE",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION enforce_friendship_block()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "friendship_notify",
+            "event": "INSERT",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION handle_friendship_notification()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "friendship_notify",
+            "event": "UPDATE",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION handle_friendship_notification()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "friendships_updated_at",
+            "event": "UPDATE",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_activation_friendship",
+            "event": "INSERT",
+            "table": "friendships",
+            "action": "EXECUTE FUNCTION trg_activation_friendship()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "meetup_feedback_updated_at",
+            "event": "UPDATE",
+            "table": "meetup_feedback",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "meetup_follow_up_state_updated_at",
+            "event": "UPDATE",
+            "table": "meetup_follow_up_state",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "meetup_invitation_notify",
+            "event": "UPDATE",
+            "table": "meetup_invitations",
+            "action": "EXECUTE FUNCTION handle_invitation_notification()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "meetup_invitation_notify",
+            "event": "INSERT",
+            "table": "meetup_invitations",
+            "action": "EXECUTE FUNCTION handle_invitation_notification()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "meetup_invitations_updated_at",
+            "event": "UPDATE",
+            "table": "meetup_invitations",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_activation_invitation_accepted",
+            "event": "UPDATE",
+            "table": "meetup_invitations",
+            "action": "EXECUTE FUNCTION trg_activation_invitation_accepted()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "trg_enforce_meetup_invitation",
+            "event": "INSERT",
+            "table": "meetup_invitations",
+            "action": "EXECUTE FUNCTION enforce_meetup_invitation()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_meetup_reports_public_status",
+            "event": "INSERT",
+            "table": "meetup_reports",
+            "action": "EXECUTE FUNCTION map_report_public_status()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_meetup_reports_public_status",
+            "event": "UPDATE",
+            "table": "meetup_reports",
+            "action": "EXECUTE FUNCTION map_report_public_status()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "meetup_update_seen_updated_at",
+            "event": "UPDATE",
+            "table": "meetup_update_seen",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "meetup_notify",
+            "event": "UPDATE",
+            "table": "meetups",
+            "action": "EXECUTE FUNCTION handle_meetup_notification()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "meetups_updated_at",
+            "event": "UPDATE",
+            "table": "meetups",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "on_meetup_created",
+            "event": "INSERT",
+            "table": "meetups",
+            "action": "EXECUTE FUNCTION handle_new_meetup()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "snapshot_meetup_location_trg",
+            "event": "INSERT",
+            "table": "meetups",
+            "action": "EXECUTE FUNCTION snapshot_meetup_location_on_insert()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_activation_meetup_created",
+            "event": "INSERT",
+            "table": "meetups",
+            "action": "EXECUTE FUNCTION trg_activation_meetup_created()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "trg_np_updated_at",
+            "event": "UPDATE",
+            "table": "notification_preferences",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "notifications_set_updated_at",
+            "event": "UPDATE",
+            "table": "notifications",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_activation_place_checkin",
+            "event": "INSERT",
+            "table": "place_check_ins",
+            "action": "EXECUTE FUNCTION trg_activation_place_checkin()",
+            "timing": "AFTER"
+        },
+        {
+            "name": "trg_touch_onboarding_state",
+            "event": "UPDATE",
+            "table": "profile_onboarding_state",
+            "action": "EXECUTE FUNCTION touch_onboarding_state()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "profile_preferences_updated_at",
+            "event": "UPDATE",
+            "table": "profile_preferences",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "profiles_updated_at",
+            "event": "UPDATE",
+            "table": "profiles",
+            "action": "EXECUTE FUNCTION set_updated_at()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_profiles_dietary_identity",
+            "event": "INSERT",
+            "table": "profiles",
+            "action": "EXECUTE FUNCTION validate_profile_dietary_identity()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_profiles_dietary_identity",
+            "event": "UPDATE",
+            "table": "profiles",
+            "action": "EXECUTE FUNCTION validate_profile_dietary_identity()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_safety_reports_public_status",
+            "event": "INSERT",
+            "table": "safety_reports",
+            "action": "EXECUTE FUNCTION map_report_public_status()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_safety_reports_public_status",
+            "event": "UPDATE",
+            "table": "safety_reports",
+            "action": "EXECUTE FUNCTION map_report_public_status()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_user_reports_public_status",
+            "event": "UPDATE",
+            "table": "user_reports",
+            "action": "EXECUTE FUNCTION map_report_public_status()",
+            "timing": "BEFORE"
+        },
+        {
+            "name": "trg_user_reports_public_status",
+            "event": "INSERT",
+            "table": "user_reports",
+            "action": "EXECUTE FUNCTION map_report_public_status()",
+            "timing": "BEFORE"
+        }
+    ],
+    "functions": [
+        {
+            "args": "_recipient uuid, _actor uuid, _type notification_type, _entity_type text, _entity_id uuid, _destination_type text, _destination_id uuid, _title text, _body text, _metadata jsonb, _dedup_key text",
+            "name": "_insert_notification",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_profile_id uuid",
+            "name": "_legit_hosted_meetup_ids",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "TABLE(meetup_id uuid, occurred_at timestamp with time zone)",
+            "security_definer": true
+        },
+        {
+            "args": "_profile_id uuid",
+            "name": "_legit_place_supports",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "TABLE(community_place_id uuid, first_supported_at timestamp with time zone, first_meetup_id uuid, last_supported_at timestamp with time zone, visits integer)",
+            "security_definer": true
+        },
+        {
+            "args": "_profile_id uuid",
+            "name": "_legit_verified_pairs",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "TABLE(peer_profile_id uuid, first_verified_at timestamp with time zone, source_meetup_id uuid)",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "acknowledge_meetup_update",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_a uuid, _b uuid",
+            "name": "are_connected",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "boolean",
+            "security_definer": true
+        },
+        {
+            "args": "_blocked_profile_id uuid",
+            "name": "block_profile",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "bump_dm_conversation",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid, _reason text",
+            "name": "cancel_meetup",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "canonicalize_friendship",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": false
+        },
+        {
+            "args": "",
+            "name": "complete_onboarding",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "profile_onboarding_state",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid, _recipient_id uuid, _personal_message text",
+            "name": "create_meetup_invitation",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "current_profile_id",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_invitation_id uuid",
+            "name": "decline_meetup_invitation",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "dismiss_meetup_follow_up",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "enforce_dm_message",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "enforce_friendship_block",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "enforce_meetup_attendance",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "enforce_meetup_invitation",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_active_cities",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "TABLE(id uuid, name text, country_code text, country_name text, timezone text, latitude double precision, longitude double precision)",
+            "security_definer": false
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "get_host_meetup_summary",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_blocked_profiles",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "TABLE(block_id uuid, profile_id uuid, display_name text, avatar_url text, blocked_at timestamp with time zone)",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_community_impact",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_cursor timestamp with time zone, _cursor_id text, _limit integer, _type text",
+            "name": "get_my_impact_history",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_location_context",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "get_my_meetup_summary",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_onboarding_state",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "profile_onboarding_state",
+            "security_definer": true
+        },
+        {
+            "args": "_past_cursor timestamp with time zone, _past_limit integer",
+            "name": "get_my_plans",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_profile",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "profiles",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "get_my_removal_details",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "TABLE(removal_reason text, removed_at timestamp with time zone, removed_by uuid)",
+            "security_definer": true
+        },
+        {
+            "args": "_subject_type text, _report_id uuid",
+            "name": "get_my_report_detail",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_reports",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "TABLE(report_id uuid, subject_type text, subject_id uuid, subject_label text, reason text, details text, public_status text, created_at timestamp with time zone)",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_settings",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_my_today_experience",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "get_onboarding_starting_options",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_other_profile_id uuid",
+            "name": "get_or_create_dm",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_profile_id uuid",
+            "name": "get_public_community_impact",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_target_profile_id uuid",
+            "name": "get_veggie_profile_availability",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "handle_check_in_confirmed",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "handle_friendship_notification",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "handle_invitation_notification",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "handle_meetup_notification",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "handle_new_attendance",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "handle_new_meetup",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "handle_new_user",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "_entity_type text, _entity_id text, _reason_code text",
+            "name": "hide_today_recommendation",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_a uuid, _b uuid",
+            "name": "is_blocked_between",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "boolean",
+            "security_definer": true
+        },
+        {
+            "args": "_chat_id uuid",
+            "name": "is_chat_participant",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "boolean",
+            "security_definer": true
+        },
+        {
+            "args": "_conversation_id uuid",
+            "name": "is_dm_participant",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "boolean",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "issue_meetup_qr_token",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "TABLE(token text, expires_at timestamp with time zone)",
+            "security_definer": true
+        },
+        {
+            "args": "_invitation_id uuid",
+            "name": "join_from_invitation",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "join_meetup",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "leave_meetup",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_event_name text, _properties jsonb",
+            "name": "log_analytics_event",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "map_report_public_status",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": false
+        },
+        {
+            "args": "",
+            "name": "mark_all_notifications_read",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "integer",
+            "security_definer": true
+        },
+        {
+            "args": "_conversation_id uuid",
+            "name": "mark_dm_read",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "integer",
+            "security_definer": true
+        },
+        {
+            "args": "_invitation_id uuid",
+            "name": "mark_invitation_viewed",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "mark_meetup_follow_up_viewed",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "meetup_has_ended",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "boolean",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid",
+            "name": "meetup_in_check_in_window",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "text",
+            "security_definer": true
+        },
+        {
+            "args": "_action_type text, _entity_id text",
+            "name": "record_first_meaningful_action",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "profile_onboarding_state",
+            "security_definer": true
+        },
+        {
+            "args": "_kind text, _result text",
+            "name": "record_permission_result",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid, _attendee_id uuid, _reason text",
+            "name": "remove_meetup_attendee",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid, _reason text, _details text",
+            "name": "report_meetup",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "request_account_deletion",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_profile_id uuid",
+            "name": "resolve_viewer_city_id",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_step text, _completed boolean, _skipped boolean, _next_step text",
+            "name": "save_onboarding_step",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "profile_onboarding_state",
+            "security_definer": true
+        },
+        {
+            "args": "_query text, _city_id uuid, _include_all_cities boolean, _limit_per_type integer",
+            "name": "search_all",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_query text, _city_id uuid, _include_all_cities boolean, _categories text[], _neighborhood text, _limit integer, _cursor text",
+            "name": "search_community_places",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_query text, _city_id uuid, _include_all_cities boolean, _categories text[], _date_from date, _date_to date, _availability text, _attendance text, _include_past boolean, _limit integer, _cursor text",
+            "name": "search_meetups",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_t text",
+            "name": "search_norm",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "text",
+            "security_definer": false
+        },
+        {
+            "args": "_query text, _city_id uuid, _include_all_cities boolean, _interests text[], _relationship text[], _limit integer, _cursor text",
+            "name": "search_veggies",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_entity_type text, _entity_id text, _reason_code text",
+            "name": "see_fewer_today_recommendations",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_city_id uuid",
+            "name": "set_home_city",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_city_id uuid",
+            "name": "set_selected_city",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "set_updated_at",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": false
+        },
+        {
+            "args": "",
+            "name": "snapshot_meetup_location_on_insert",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "_message_id uuid, _reason text, _details text",
+            "name": "submit_dm_message_report",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid, _rating meetup_feedback_rating, _note text",
+            "name": "submit_meetup_feedback",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_conversation_id uuid, _reported_profile_id uuid, _reason text, _details text",
+            "name": "submit_message_report",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_reported_profile_id uuid, _reason text, _details text, _conversation_id uuid",
+            "name": "submit_profile_report",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "_reason text, _details text, _context_meetup_id uuid",
+            "name": "submit_safety_report",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "uuid",
+            "security_definer": true
+        },
+        {
+            "args": "r anyelement",
+            "name": "to_plan",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": false
+        },
+        {
+            "args": "",
+            "name": "touch_onboarding_state",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": false
+        },
+        {
+            "args": "",
+            "name": "trg_activation_attendance",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "trg_activation_friendship",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "trg_activation_invitation_accepted",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "trg_activation_meetup_created",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "trg_activation_place_checkin",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": true
+        },
+        {
+            "args": "regdictionary, text",
+            "name": "unaccent",
+            "config": null,
+            "returns": "text",
+            "security_definer": false
+        },
+        {
+            "args": "text",
+            "name": "unaccent",
+            "config": null,
+            "returns": "text",
+            "security_definer": false
+        },
+        {
+            "args": "internal",
+            "name": "unaccent_init",
+            "config": null,
+            "returns": "internal",
+            "security_definer": false
+        },
+        {
+            "args": "internal, internal, internal, internal",
+            "name": "unaccent_lexize",
+            "config": null,
+            "returns": "internal",
+            "security_definer": false
+        },
+        {
+            "args": "_blocked_profile_id uuid",
+            "name": "unblock_profile",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_home_city_id uuid, _selected_city_id uuid, _interests text[]",
+            "name": "update_discovery_settings",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid, _title text, _description text, _date date, _start_time time without time zone, _end_time time without time zone, _capacity integer, _community_place_id uuid, _custom_location_name text, _custom_location_address text, _cover_image_url text",
+            "name": "update_hosted_meetup",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_meetup_id uuid, _city_id uuid, _community_place_id uuid, _location_name text, _address text, _neighborhood text, _latitude double precision, _longitude double precision, _timezone text, _location_source location_source",
+            "name": "update_meetup_location",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_prefs jsonb",
+            "name": "update_notification_preferences",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        },
+        {
+            "args": "_discovery_visible boolean",
+            "name": "update_privacy_settings",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "_display_name text, _dietary_identity text, _pronouns text, _bio text, _avatar_url text",
+            "name": "update_profile_settings",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "void",
+            "security_definer": true
+        },
+        {
+            "args": "",
+            "name": "validate_analytics_event",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": false
+        },
+        {
+            "args": "",
+            "name": "validate_profile_dietary_identity",
+            "config": [
+                "search_path=public"
+            ],
+            "returns": "trigger",
+            "security_definer": false
+        },
+        {
+            "args": "_token text",
+            "name": "verify_meetup_connection",
+            "config": [
+                "search_path=public, extensions"
+            ],
+            "returns": "jsonb",
+            "security_definer": true
+        }
+    ],
+    "rls_enabled": [
+        {
+            "table": "account_deletion_requests",
+            "enabled": true
+        },
+        {
+            "table": "analytics_events",
+            "enabled": true
+        },
+        {
+            "table": "attendance",
+            "enabled": true
+        },
+        {
+            "table": "chat_participants",
+            "enabled": true
+        },
+        {
+            "table": "chats",
+            "enabled": true
+        },
+        {
+            "table": "check_in_requests",
+            "enabled": true
+        },
+        {
+            "table": "cities",
+            "enabled": true
+        },
+        {
+            "table": "community_places",
+            "enabled": true
+        },
+        {
+            "table": "dm_conversations",
+            "enabled": true
+        },
+        {
+            "table": "dm_messages",
+            "enabled": true
+        },
+        {
+            "table": "friendships",
+            "enabled": true
+        },
+        {
+            "table": "interest_catalogue",
+            "enabled": true
+        },
+        {
+            "table": "meetup_feedback",
+            "enabled": true
+        },
+        {
+            "table": "meetup_follow_up_state",
+            "enabled": true
+        },
+        {
+            "table": "meetup_invitations",
+            "enabled": true
+        },
+        {
+            "table": "meetup_location_changes",
+            "enabled": true
+        },
+        {
+            "table": "meetup_qr_tokens",
+            "enabled": true
+        },
+        {
+            "table": "meetup_reports",
+            "enabled": true
+        },
+        {
+            "table": "meetup_update_seen",
+            "enabled": true
+        },
+        {
+            "table": "meetups",
+            "enabled": true
+        },
+        {
+            "table": "messages",
+            "enabled": true
+        },
+        {
+            "table": "notification_preferences",
+            "enabled": true
+        },
+        {
+            "table": "notifications",
+            "enabled": true
+        },
+        {
+            "table": "place_check_ins",
+            "enabled": true
+        },
+        {
+            "table": "profile_onboarding_state",
+            "enabled": true
+        },
+        {
+            "table": "profile_preferences",
+            "enabled": true
+        },
+        {
+            "table": "profiles",
+            "enabled": true
+        },
+        {
+            "table": "recommendation_feedback",
+            "enabled": true
+        },
+        {
+            "table": "safety_reports",
+            "enabled": true
+        },
+        {
+            "table": "user_blocks",
+            "enabled": true
+        },
+        {
+            "table": "user_reports",
+            "enabled": true
+        },
+        {
+            "table": "verified_meetup_connections",
+            "enabled": true
+        }
+    ],
+    "foreign_keys": [
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "account_deletion_requests_profile_id_fkey",
+            "table": "account_deletion_requests"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "analytics_events_profile_id_fkey",
+            "table": "analytics_events"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "attendance_meetup_id_fkey",
+            "table": "attendance"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "attendance_profile_id_fkey",
+            "table": "attendance"
+        },
+        {
+            "def": "FOREIGN KEY (removed_by) REFERENCES profiles(id)",
+            "name": "attendance_removed_by_fkey",
+            "table": "attendance"
+        },
+        {
+            "def": "FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE",
+            "name": "chat_participants_chat_id_fkey",
+            "table": "chat_participants"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "chat_participants_profile_id_fkey",
+            "table": "chat_participants"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "chats_meetup_id_fkey",
+            "table": "chats"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "check_in_requests_meetup_id_fkey",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "FOREIGN KEY (requester_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "check_in_requests_requester_profile_id_fkey",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "FOREIGN KEY (target_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "check_in_requests_target_profile_id_fkey",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE SET NULL",
+            "name": "community_places_city_id_fkey",
+            "table": "community_places"
+        },
+        {
+            "def": "FOREIGN KEY (user_a_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "dm_conversations_user_a_id_fkey",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "FOREIGN KEY (user_b_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "dm_conversations_user_b_id_fkey",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "FOREIGN KEY (conversation_id) REFERENCES dm_conversations(id) ON DELETE CASCADE",
+            "name": "dm_messages_conversation_id_fkey",
+            "table": "dm_messages"
+        },
+        {
+            "def": "FOREIGN KEY (invitation_id) REFERENCES meetup_invitations(id) ON DELETE SET NULL",
+            "name": "dm_messages_invitation_id_fkey",
+            "table": "dm_messages"
+        },
+        {
+            "def": "FOREIGN KEY (sender_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "dm_messages_sender_id_fkey",
+            "table": "dm_messages"
+        },
+        {
+            "def": "FOREIGN KEY (first_meetup_id) REFERENCES meetups(id) ON DELETE SET NULL",
+            "name": "friendships_first_meetup_id_fkey",
+            "table": "friendships"
+        },
+        {
+            "def": "FOREIGN KEY (profile_a_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "friendships_profile_a_id_fkey",
+            "table": "friendships"
+        },
+        {
+            "def": "FOREIGN KEY (profile_b_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "friendships_profile_b_id_fkey",
+            "table": "friendships"
+        },
+        {
+            "def": "FOREIGN KEY (requester_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "friendships_requester_id_fkey",
+            "table": "friendships"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "meetup_feedback_meetup_id_fkey",
+            "table": "meetup_feedback"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetup_feedback_profile_id_fkey",
+            "table": "meetup_feedback"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "meetup_follow_up_state_meetup_id_fkey",
+            "table": "meetup_follow_up_state"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetup_follow_up_state_profile_id_fkey",
+            "table": "meetup_follow_up_state"
+        },
+        {
+            "def": "FOREIGN KEY (conversation_id) REFERENCES dm_conversations(id) ON DELETE CASCADE",
+            "name": "meetup_invitations_conversation_id_fkey",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "meetup_invitations_meetup_id_fkey",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "FOREIGN KEY (recipient_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetup_invitations_recipient_id_fkey",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "FOREIGN KEY (sender_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetup_invitations_sender_id_fkey",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "FOREIGN KEY (changed_by_profile_id) REFERENCES profiles(id) ON DELETE SET NULL",
+            "name": "meetup_location_changes_changed_by_profile_id_fkey",
+            "table": "meetup_location_changes"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "meetup_location_changes_meetup_id_fkey",
+            "table": "meetup_location_changes"
+        },
+        {
+            "def": "FOREIGN KEY (new_city_id) REFERENCES cities(id)",
+            "name": "meetup_location_changes_new_city_id_fkey",
+            "table": "meetup_location_changes"
+        },
+        {
+            "def": "FOREIGN KEY (old_city_id) REFERENCES cities(id)",
+            "name": "meetup_location_changes_old_city_id_fkey",
+            "table": "meetup_location_changes"
+        },
+        {
+            "def": "FOREIGN KEY (issuer_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetup_qr_tokens_issuer_profile_id_fkey",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "meetup_qr_tokens_meetup_id_fkey",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "FOREIGN KEY (host_profile_id) REFERENCES profiles(id) ON DELETE SET NULL",
+            "name": "meetup_reports_host_profile_id_fkey",
+            "table": "meetup_reports"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "meetup_reports_meetup_id_fkey",
+            "table": "meetup_reports"
+        },
+        {
+            "def": "FOREIGN KEY (reporter_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetup_reports_reporter_profile_id_fkey",
+            "table": "meetup_reports"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "meetup_update_seen_meetup_id_fkey",
+            "table": "meetup_update_seen"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetup_update_seen_profile_id_fkey",
+            "table": "meetup_update_seen"
+        },
+        {
+            "def": "FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE SET NULL",
+            "name": "meetups_city_id_fkey",
+            "table": "meetups"
+        },
+        {
+            "def": "FOREIGN KEY (community_place_id) REFERENCES community_places(id) ON DELETE SET NULL",
+            "name": "meetups_community_place_id_fkey",
+            "table": "meetups"
+        },
+        {
+            "def": "FOREIGN KEY (host_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "meetups_host_id_fkey",
+            "table": "meetups"
+        },
+        {
+            "def": "FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE",
+            "name": "messages_chat_id_fkey",
+            "table": "messages"
+        },
+        {
+            "def": "FOREIGN KEY (sender_id) REFERENCES profiles(id) ON DELETE SET NULL",
+            "name": "messages_sender_id_fkey",
+            "table": "messages"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "notification_preferences_profile_id_fkey",
+            "table": "notification_preferences"
+        },
+        {
+            "def": "FOREIGN KEY (actor_id) REFERENCES profiles(id) ON DELETE SET NULL",
+            "name": "notifications_actor_id_fkey",
+            "table": "notifications"
+        },
+        {
+            "def": "FOREIGN KEY (recipient_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "notifications_recipient_id_fkey",
+            "table": "notifications"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "place_check_ins_profile_id_fkey",
+            "table": "place_check_ins"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "profile_onboarding_state_profile_id_fkey",
+            "table": "profile_onboarding_state"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "profile_preferences_profile_id_fkey",
+            "table": "profile_preferences"
+        },
+        {
+            "def": "FOREIGN KEY (selected_city_id) REFERENCES cities(id) ON DELETE SET NULL",
+            "name": "profile_preferences_selected_city_id_fkey",
+            "table": "profile_preferences"
+        },
+        {
+            "def": "FOREIGN KEY (auth_user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+            "name": "profiles_auth_user_id_fkey",
+            "table": "profiles"
+        },
+        {
+            "def": "FOREIGN KEY (home_city_id) REFERENCES cities(id) ON DELETE SET NULL",
+            "name": "profiles_home_city_id_fkey",
+            "table": "profiles"
+        },
+        {
+            "def": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "recommendation_feedback_profile_id_fkey",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "FOREIGN KEY (context_meetup_id) REFERENCES meetups(id) ON DELETE SET NULL",
+            "name": "safety_reports_context_meetup_id_fkey",
+            "table": "safety_reports"
+        },
+        {
+            "def": "FOREIGN KEY (reporter_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "safety_reports_reporter_profile_id_fkey",
+            "table": "safety_reports"
+        },
+        {
+            "def": "FOREIGN KEY (blocked_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "user_blocks_blocked_profile_id_fkey",
+            "table": "user_blocks"
+        },
+        {
+            "def": "FOREIGN KEY (blocker_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "user_blocks_blocker_profile_id_fkey",
+            "table": "user_blocks"
+        },
+        {
+            "def": "FOREIGN KEY (conversation_id) REFERENCES dm_conversations(id) ON DELETE SET NULL",
+            "name": "user_reports_conversation_id_fkey",
+            "table": "user_reports"
+        },
+        {
+            "def": "FOREIGN KEY (reported_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "user_reports_reported_profile_id_fkey",
+            "table": "user_reports"
+        },
+        {
+            "def": "FOREIGN KEY (reporter_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "user_reports_reporter_profile_id_fkey",
+            "table": "user_reports"
+        },
+        {
+            "def": "FOREIGN KEY (meetup_id) REFERENCES meetups(id) ON DELETE CASCADE",
+            "name": "verified_meetup_connections_meetup_id_fkey",
+            "table": "verified_meetup_connections"
+        },
+        {
+            "def": "FOREIGN KEY (profile_a_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "verified_meetup_connections_profile_a_id_fkey",
+            "table": "verified_meetup_connections"
+        },
+        {
+            "def": "FOREIGN KEY (profile_b_id) REFERENCES profiles(id) ON DELETE CASCADE",
+            "name": "verified_meetup_connections_profile_b_id_fkey",
+            "table": "verified_meetup_connections"
+        },
+        {
+            "def": "FOREIGN KEY (scanned_by) REFERENCES profiles(id)",
+            "name": "verified_meetup_connections_scanned_by_fkey",
+            "table": "verified_meetup_connections"
+        },
+        {
+            "def": "FOREIGN KEY (token_issuer_id) REFERENCES profiles(id)",
+            "name": "verified_meetup_connections_token_issuer_id_fkey",
+            "table": "verified_meetup_connections"
+        }
+    ],
+    "generated_at": "2026-07-28T13:27:03.219715+00:00",
+    "primary_keys": [
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "account_deletion_requests"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "analytics_events"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "attendance"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "chat_participants"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "chats"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "cities"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "community_places"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "dm_messages"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "friendships"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "interest_catalogue"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetup_feedback"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetup_follow_up_state"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetup_location_changes"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetup_reports"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetup_update_seen"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "meetups"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "messages"
+        },
+        {
+            "def": "PRIMARY KEY (profile_id)",
+            "table": "notification_preferences"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "notifications"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "place_check_ins"
+        },
+        {
+            "def": "PRIMARY KEY (profile_id)",
+            "table": "profile_onboarding_state"
+        },
+        {
+            "def": "PRIMARY KEY (profile_id)",
+            "table": "profile_preferences"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "profiles"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "safety_reports"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "user_blocks"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "user_reports"
+        },
+        {
+            "def": "PRIMARY KEY (id)",
+            "table": "verified_meetup_connections"
+        }
+    ],
+    "table_grants": null,
+    "storage_buckets": [
+        {
+            "id": "avatars",
+            "name": "avatars",
+            "public": false,
+            "file_size_limit": null,
+            "allowed_mime_types": null
+        },
+        {
+            "id": "meetup-covers",
+            "name": "meetup-covers",
+            "public": false,
+            "file_size_limit": null,
+            "allowed_mime_types": null
+        }
+    ],
+    "storage_policies": [
+        {
+            "name": "Authenticated can view avatars",
+            "qual": "(bucket_id = 'avatars'::text)",
+            "roles": [
+                "authenticated"
+            ],
+            "command": "SELECT",
+            "with_check": null
+        },
+        {
+            "name": "Authenticated can view meetup covers",
+            "qual": "(bucket_id = 'meetup-covers'::text)",
+            "roles": [
+                "authenticated"
+            ],
+            "command": "SELECT",
+            "with_check": null
+        },
+        {
+            "name": "Authenticated upload meetup covers",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "command": "INSERT",
+            "with_check": "(bucket_id = 'meetup-covers'::text)"
+        },
+        {
+            "name": "Users delete own avatar",
+            "qual": "((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+            "roles": [
+                "authenticated"
+            ],
+            "command": "DELETE",
+            "with_check": null
+        },
+        {
+            "name": "Users delete own meetup cover",
+            "qual": "((bucket_id = 'meetup-covers'::text) AND (owner = auth.uid()))",
+            "roles": [
+                "authenticated"
+            ],
+            "command": "DELETE",
+            "with_check": null
+        },
+        {
+            "name": "Users update own avatar",
+            "qual": "((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+            "roles": [
+                "authenticated"
+            ],
+            "command": "UPDATE",
+            "with_check": null
+        },
+        {
+            "name": "Users update own meetup cover",
+            "qual": "((bucket_id = 'meetup-covers'::text) AND (owner = auth.uid()))",
+            "roles": [
+                "authenticated"
+            ],
+            "command": "UPDATE",
+            "with_check": null
+        },
+        {
+            "name": "Users upload own avatar",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "command": "INSERT",
+            "with_check": "((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+        }
+    ],
+    "check_constraints": [
+        {
+            "def": "CHECK ((status = ANY (ARRAY['pending'::text, 'blocked'::text, 'completed'::text, 'cancelled'::text])))",
+            "name": "account_deletion_requests_status_check",
+            "table": "account_deletion_requests"
+        },
+        {
+            "def": "CHECK ((requester_profile_id <> target_profile_id))",
+            "name": "check_in_requests_check",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "CHECK ((status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'declined'::text])))",
+            "name": "check_in_requests_status_check",
+            "table": "check_in_requests"
+        },
+        {
+            "def": "CHECK ((user_a_id < user_b_id))",
+            "name": "dm_pair_ordered",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "CHECK ((length(body) <= 2000))",
+            "name": "dm_body_maxlen",
+            "table": "dm_messages"
+        },
+        {
+            "def": "CHECK ((length(btrim(body)) > 0))",
+            "name": "dm_body_nonempty",
+            "table": "dm_messages"
+        },
+        {
+            "def": "CHECK (((invitation_id IS NOT NULL) OR (char_length(btrim(body)) > 0)))",
+            "name": "dm_messages_body_or_invitation",
+            "table": "dm_messages"
+        },
+        {
+            "def": "CHECK (((private_note IS NULL) OR (char_length(private_note) <= 500)))",
+            "name": "meetup_feedback_note_len",
+            "table": "meetup_feedback"
+        },
+        {
+            "def": "CHECK ((char_length(personal_message) <= 300))",
+            "name": "invitation_personal_message_len",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "CHECK ((sender_id <> recipient_id))",
+            "name": "invitation_sender_not_recipient",
+            "table": "meetup_invitations"
+        },
+        {
+            "def": "CHECK (((details IS NULL) OR (char_length(details) <= 1000)))",
+            "name": "meetup_reports_details_len",
+            "table": "meetup_reports"
+        },
+        {
+            "def": "CHECK (((char_length(reason) >= 1) AND (char_length(reason) <= 80)))",
+            "name": "meetup_reports_reason_len",
+            "table": "meetup_reports"
+        },
+        {
+            "def": "CHECK ((((latitude IS NULL) AND (longitude IS NULL)) OR (((latitude >= ('-90'::integer)::double precision) AND (latitude <= (90)::double precision)) AND ((longitude >= ('-180'::integer)::double precision) AND (longitude <= (180)::double precision)))))",
+            "name": "meetups_coords_both_or_neither",
+            "table": "meetups"
+        },
+        {
+            "def": "CHECK ((distance_unit = ANY (ARRAY['km'::text, 'mi'::text])))",
+            "name": "profile_preferences_distance_unit_check",
+            "table": "profile_preferences"
+        },
+        {
+            "def": "CHECK (((location_permission_result IS NULL) OR (location_permission_result = ANY (ARRAY['granted'::text, 'denied'::text, 'dismissed'::text, 'unsupported'::text]))))",
+            "name": "profile_preferences_location_permission_result_check",
+            "table": "profile_preferences"
+        },
+        {
+            "def": "CHECK (((notification_permission_result IS NULL) OR (notification_permission_result = ANY (ARRAY['granted'::text, 'denied'::text, 'dismissed'::text, 'unsupported'::text]))))",
+            "name": "profile_preferences_notification_permission_result_check",
+            "table": "profile_preferences"
+        },
+        {
+            "def": "CHECK ((entity_type = ANY (ARRAY['profile'::text, 'meetup'::text, 'place'::text])))",
+            "name": "recommendation_feedback_entity_type_check",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "CHECK ((feedback_type = ANY (ARRAY['hide'::text, 'see_fewer'::text])))",
+            "name": "recommendation_feedback_feedback_type_check",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "CHECK ((surface = 'today'::text))",
+            "name": "recommendation_feedback_surface_check",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "CHECK (((details IS NULL) OR (char_length(details) <= 1000)))",
+            "name": "safety_reports_details_check",
+            "table": "safety_reports"
+        },
+        {
+            "def": "CHECK (((char_length(reason) >= 1) AND (char_length(reason) <= 80)))",
+            "name": "safety_reports_reason_check",
+            "table": "safety_reports"
+        },
+        {
+            "def": "CHECK ((blocker_profile_id <> blocked_profile_id))",
+            "name": "user_blocks_no_self",
+            "table": "user_blocks"
+        },
+        {
+            "def": "CHECK ((profile_a_id < profile_b_id))",
+            "name": "verified_pair_order",
+            "table": "verified_meetup_connections"
+        }
+    ],
+    "unique_constraints": [
+        {
+            "def": "UNIQUE (profile_id, meetup_id)",
+            "name": "attendance_profile_id_meetup_id_key",
+            "table": "attendance"
+        },
+        {
+            "def": "UNIQUE (chat_id, profile_id)",
+            "name": "chat_participants_chat_id_profile_id_key",
+            "table": "chat_participants"
+        },
+        {
+            "def": "UNIQUE (meetup_id)",
+            "name": "chats_meetup_id_key",
+            "table": "chats"
+        },
+        {
+            "def": "UNIQUE (normalized_name, country_code)",
+            "name": "cities_name_country_unique",
+            "table": "cities"
+        },
+        {
+            "def": "UNIQUE (user_a_id, user_b_id)",
+            "name": "dm_pair_unique",
+            "table": "dm_conversations"
+        },
+        {
+            "def": "UNIQUE (profile_a_id, profile_b_id)",
+            "name": "friendships_profile_a_id_profile_b_id_key",
+            "table": "friendships"
+        },
+        {
+            "def": "UNIQUE (meetup_id, profile_id)",
+            "name": "meetup_feedback_unique",
+            "table": "meetup_feedback"
+        },
+        {
+            "def": "UNIQUE (meetup_id, profile_id)",
+            "name": "meetup_follow_up_state_unique",
+            "table": "meetup_follow_up_state"
+        },
+        {
+            "def": "UNIQUE (token_hash)",
+            "name": "meetup_qr_tokens_token_hash_key",
+            "table": "meetup_qr_tokens"
+        },
+        {
+            "def": "UNIQUE (profile_id, meetup_id)",
+            "name": "meetup_update_seen_profile_id_meetup_id_key",
+            "table": "meetup_update_seen"
+        },
+        {
+            "def": "UNIQUE (recipient_id, dedup_key)",
+            "name": "notifications_recipient_id_dedup_key_key",
+            "table": "notifications"
+        },
+        {
+            "def": "UNIQUE (auth_user_id)",
+            "name": "profiles_auth_user_id_key",
+            "table": "profiles"
+        },
+        {
+            "def": "UNIQUE (profile_id, surface, entity_type, entity_id, feedback_type)",
+            "name": "recommendation_feedback_unique",
+            "table": "recommendation_feedback"
+        },
+        {
+            "def": "UNIQUE (blocker_profile_id, blocked_profile_id)",
+            "name": "user_blocks_unique",
+            "table": "user_blocks"
+        },
+        {
+            "def": "UNIQUE (profile_a_id, profile_b_id)",
+            "name": "verified_pair_unique",
+            "table": "verified_meetup_connections"
+        }
+    ]
+}

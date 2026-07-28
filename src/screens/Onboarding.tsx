@@ -1,0 +1,1531 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  Camera,
+  Check,
+  Heart,
+  ImagePlus,
+  Mail,
+  MapPin,
+  Shield,
+  Shuffle,
+  Sparkles,
+  Trash2,
+  Users,
+  Utensils,
+} from "lucide-react";
+import { PrimaryButton } from "@/components/app";
+import { UserAvatar } from "@/components/app/UserAvatar";
+import { CitySelector } from "@/components/location/CitySelector";
+import { cn } from "@/lib/utils";
+import { currentUser } from "@/lib/mock-data";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useSetHomeCity, useSetSelectedCity } from "@/hooks/useLocation";
+import { toast } from "sonner";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  DIETARY_OPTIONS,
+  ONBOARDING_PROGRESS_STEPS,
+  ONBOARDING_STEP_ORDER,
+  type DietaryIdentity,
+  type InterestOption,
+  type OnboardingStep,
+  type StartingOptions,
+  type StartingPointOption,
+  completeOnboarding,
+  fetchInterestCatalogue,
+  fetchOnboardingState,
+  fetchStartingOptions,
+  logOnboardingEvent,
+  saveOnboardingStep,
+} from "@/lib/onboarding";
+
+// (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
+import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
+
+function makeAvatarUrl(seed: string) {
+  return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=c8e6c9`;
+}
+
+// Public-facing action route for each starting-point option.
+function actionRoute(opt: StartingPointOption): string {
+  switch (opt.entity_type) {
+    case "veggie":
+      return `/veggie/${opt.entity_id}`;
+    case "meetup":
+      return `/meetup/${opt.entity_id}`;
+    case "place":
+      return `/place/${opt.entity_id}`;
+  }
+}
+
+function actionLabel(opt: StartingPointOption): string {
+  switch (opt.action_type) {
+    case "connect":
+      return "Say hi";
+    case "join":
+      return "Join";
+    case "view":
+      return "Support";
+  }
+}
+
+export default function Onboarding() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = useMemo(() => {
+    const raw = searchParams.get("next");
+    if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
+    return raw;
+  }, [searchParams]);
+  const resumeStep = useMemo(() => {
+    const raw = searchParams.get("resume") as OnboardingStep | null;
+    return raw && ONBOARDING_STEP_ORDER.includes(raw) ? raw : null;
+  }, [searchParams]);
+
+  const { session, profile, refreshProfile } = useAuth();
+  const setHomeCityMut = useSetHomeCity();
+  const setSelectedMut = useSetSelectedCity();
+
+  const [step, setStep] = useState<OnboardingStep>("welcome");
+  const [authIntent, setAuthIntent] = useState<"signup" | "signin">("signup");
+  const [hydrated, setHydrated] = useState(false);
+
+  // Form state
+  const [displayName, setDisplayName] = useState("");
+  const [pronouns, setPronouns] = useState("");
+  const [bio, setBio] = useState("");
+  const [dietary, setDietary] = useState<DietaryIdentity | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [homeCityId, setHomeCityId] = useState<string | null>(null);
+  const [homeCityName, setHomeCityName] = useState<string | null>(null);
+  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
+  const [selectedCityName, setSelectedCityName] = useState<string | null>(null);
+  const [guidelinesAccepted, setGuidelinesAccepted] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Hydrate from profile + onboarding state
+  useEffect(() => {
+    if (!profile) return;
+    if (nextPath) {
+      navigate(nextPath, { replace: true });
+      return;
+    }
+    if (profile.onboarding_completed && !resumeStep) {
+      navigate("/", { replace: true });
+      return;
+    }
+    setDisplayName((n) => n || profile.display_name || "");
+    setBio((b) => b || profile.bio || "");
+    setAvatarUrl((a) => a || profile.avatar_url || null);
+    setInterests((i) => (i.length ? i : (profile.interests || []).slice(0, MAX_INTERESTS)));
+    setHomeCityId((c) => c ?? profile.home_city_id ?? null);
+    // Explicit resume-to-single-step (existing-user migration).
+    if (resumeStep) {
+      setStep(resumeStep);
+      setHydrated(true);
+      return;
+    }
+    // Fetch server state to resume where user left off.
+    if (!hydrated) {
+      fetchOnboardingState()
+        .then((s) => {
+          if (s?.current_step) {
+            const candidate = s.current_step as OnboardingStep;
+            if (ONBOARDING_STEP_ORDER.includes(candidate) && candidate !== "done") {
+              setStep(candidate);
+            } else if (candidate === "welcome" || candidate === "auth") {
+              setStep("identity");
+            }
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => setHydrated(true));
+    }
+  }, [profile, navigate, nextPath, resumeStep, hydrated]);
+
+  const stepIndex = ONBOARDING_STEP_ORDER.indexOf(step);
+  const progressIndex = ONBOARDING_PROGRESS_STEPS.indexOf(step);
+  const showProgress = progressIndex >= 0;
+  const showBack = step !== "welcome" && step !== "done";
+
+  // Track step views (fire-and-forget)
+  const lastLogged = useRef<OnboardingStep | null>(null);
+  useEffect(() => {
+    if (lastLogged.current === step) return;
+    lastLogged.current = step;
+    logOnboardingEvent("onboarding_step_viewed", { step });
+  }, [step]);
+
+  const advance = useCallback(
+    async (from: OnboardingStep, to: OnboardingStep, opts?: { skipped?: boolean }) => {
+      try {
+        if (session) {
+          await saveOnboardingStep(from, {
+            completed: !opts?.skipped,
+            skipped: !!opts?.skipped,
+            next: to,
+          });
+        }
+      } catch {
+        // Non-blocking: local flow proceeds even if persistence hiccups.
+      }
+      logOnboardingEvent("onboarding_step_completed", { step: from, skipped: !!opts?.skipped });
+      setStep(to);
+    },
+    [session],
+  );
+
+  function goBack() {
+    if (stepIndex <= 0) return;
+    const prev = ONBOARDING_STEP_ORDER[stepIndex - 1];
+    if (prev === "auth" && session) {
+      setStep("welcome");
+      return;
+    }
+    setStep(prev);
+  }
+
+  // Persist a partial profile field on step completion — keeps DB and UI in sync.
+  async function persistProfilePartial(patch: Record<string, unknown>) {
+    if (!session?.user) return;
+    // Ensure we have the caller's profile id (RPC-scoped to auth.uid()) so we
+    // can filter by primary key. Direct WHERE on auth_user_id is no longer
+    // permitted for authenticated callers.
+    let pid = profile?.id;
+    if (!pid) {
+      const { data } = await supabase.rpc("get_my_profile");
+      const row = (Array.isArray(data) ? data[0] : data) as { id?: string } | null;
+      pid = row?.id;
+    }
+    if (!pid) throw new Error("Profile not ready");
+    const { error } = await supabase
+      .from("profiles")
+      .update(patch as never)
+      .eq("id", pid);
+    if (error) throw new Error(error.message);
+    await refreshProfile();
+  }
+
+  async function handleIdentityContinue() {
+    if (!displayName.trim()) return;
+    try {
+      await persistProfilePartial({
+        display_name: displayName.trim(),
+        pronouns: pronouns.trim() || null,
+      });
+      await advance("identity", "dietary");
+    } catch (e) {
+      toast.error("Couldn't save your name", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function handleDietaryContinue() {
+    if (!dietary) return;
+    try {
+      await persistProfilePartial({ dietary_identity: dietary });
+      await advance("dietary", "home_city");
+    } catch (e) {
+      toast.error("Couldn't save that yet", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function handleHomeCityContinue() {
+    if (!homeCityId) return;
+    try {
+      await setHomeCityMut.mutateAsync(homeCityId);
+      // Prefill Selected City to Home City as a friendly default; user
+      // can change it on the next step. Home City and Selected City are
+      // independent thereafter — neither silently overwrites the other.
+      if (!selectedCityId) {
+        setSelectedCityId(homeCityId);
+        setSelectedCityName(homeCityName);
+        await setSelectedMut.mutateAsync(homeCityId).catch(() => undefined);
+      }
+      await advance("home_city", "selected_city");
+    } catch (e) {
+      toast.error("Couldn't save your city", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function handleSelectedCityContinue() {
+    if (!selectedCityId) return;
+    try {
+      await setSelectedMut.mutateAsync(selectedCityId);
+      await advance("selected_city", "interests");
+    } catch (e) {
+      toast.error("Couldn't save your city", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function handleInterestsContinue() {
+    if (interests.length < MIN_INTERESTS || interests.length > MAX_INTERESTS) return;
+    try {
+      await persistProfilePartial({ interests });
+      await advance("interests", "photo");
+    } catch (e) {
+      toast.error("Couldn't save your interests", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function handlePhotoContinue(skipped: boolean) {
+    try {
+      await persistProfilePartial({ avatar_url: avatarUrl });
+      await advance("photo", "guidelines", { skipped });
+    } catch (e) {
+      toast.error("Couldn't save your photo", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function handleGuidelinesContinue() {
+    if (!guidelinesAccepted) return;
+    try {
+      await persistProfilePartial({
+        community_guidelines_accepted_at: new Date().toISOString(),
+      });
+      await advance("guidelines", "safety");
+    } catch (e) {
+      toast.error("Couldn't save that yet", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function handleSafetyContinue() {
+    await advance("safety", "starting_point");
+  }
+
+  async function finish(action?: { route: string; label: string; entity_type: string; entity_id: string }) {
+    if (saving) return;
+    setSaving(true);
+    // Mirror to mock-user so legacy screens keep working.
+    currentUser.displayName = displayName.trim() || currentUser.displayName;
+    currentUser.bio = bio.trim() || currentUser.bio;
+    if (avatarUrl) currentUser.avatarUrl = avatarUrl;
+    if (interests.length) currentUser.interests = interests;
+    if (homeCityName) currentUser.currentCity = homeCityName;
+
+    try {
+      if (session?.user) {
+        await completeOnboarding();
+        await refreshProfile();
+      }
+      // (legacy `veggiemeet_onboarded` localStorage flag removed — route
+      // gating derives onboarding state from the server profile only.)
+      logOnboardingEvent("onboarding_completed", {
+        chose_starting_action: !!action,
+        starting_action_type: action?.entity_type ?? null,
+      });
+      setSaving(false);
+      navigate(action?.route ?? "/", { replace: true });
+    } catch (e) {
+      setSaving(false);
+      toast.error("Almost there — we couldn't finalize your profile.", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  return (
+    <div className="flex flex-col min-h-dvh bg-background">
+      {showBack && (
+        <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-md">
+          <div className="flex items-center justify-between px-5 pt-3 pb-2 min-h-[3.5rem]">
+            <button
+              onClick={goBack}
+              aria-label="Back"
+              className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            {showProgress ? (
+              <span className="text-xs font-medium text-charcoal-muted tabular-nums">
+                Step {progressIndex + 1} of {ONBOARDING_PROGRESS_STEPS.length}
+              </span>
+            ) : (
+              <span />
+            )}
+            <div className="w-9" />
+          </div>
+          {showProgress && (
+            <div className="px-5 pb-3">
+              <ProgressBar
+                total={ONBOARDING_PROGRESS_STEPS.length}
+                current={progressIndex + 1}
+              />
+            </div>
+          )}
+        </header>
+      )}
+
+      <div className="flex-1 flex flex-col">
+        {step === "welcome" && (
+          <Welcome
+            onGetStarted={() => {
+              setAuthIntent("signup");
+              setStep("auth");
+            }}
+            onSignIn={() => {
+              setAuthIntent("signin");
+              setStep("auth");
+            }}
+          />
+        )}
+        {step === "auth" && (
+          <Auth
+            intent={authIntent}
+            onContinue={() => setStep("identity")}
+          />
+        )}
+        {step === "identity" && (
+          <Identity
+            displayName={displayName}
+            setDisplayName={setDisplayName}
+            pronouns={pronouns}
+            setPronouns={setPronouns}
+            onContinue={handleIdentityContinue}
+          />
+        )}
+        {step === "dietary" && (
+          <Dietary value={dietary} setValue={setDietary} onContinue={handleDietaryContinue} />
+        )}
+        {step === "home_city" && (
+          <HomeCity
+            cityId={homeCityId}
+            cityName={homeCityName}
+            onSelect={(id, name) => {
+              setHomeCityId(id);
+              setHomeCityName(name);
+            }}
+            onContinue={handleHomeCityContinue}
+          />
+        )}
+        {step === "selected_city" && (
+          <SelectedCity
+            cityId={selectedCityId}
+            cityName={selectedCityName}
+            homeCityId={homeCityId}
+            homeCityName={homeCityName}
+            onSelect={(id, name) => {
+              setSelectedCityId(id);
+              setSelectedCityName(name);
+            }}
+            onContinue={handleSelectedCityContinue}
+          />
+        )}
+        {step === "interests" && (
+          <Interests
+            selected={interests}
+            toggle={(label) =>
+              setInterests((s) => {
+                if (s.includes(label)) return s.filter((x) => x !== label);
+                if (s.length >= MAX_INTERESTS) return s;
+                return [...s, label];
+              })
+            }
+            onContinue={handleInterestsContinue}
+          />
+        )}
+        {step === "photo" && (
+          <Photo
+            avatarUrl={avatarUrl}
+            setAvatarUrl={setAvatarUrl}
+            displayName={displayName}
+            bio={bio}
+            setBio={setBio}
+            onContinue={() => handlePhotoContinue(false)}
+            onSkip={() => {
+              setAvatarUrl(null);
+              handlePhotoContinue(true);
+            }}
+          />
+        )}
+        {step === "guidelines" && (
+          <Guidelines
+            accepted={guidelinesAccepted}
+            setAccepted={setGuidelinesAccepted}
+            onContinue={handleGuidelinesContinue}
+          />
+        )}
+        {step === "safety" && <Safety onContinue={handleSafetyContinue} />}
+        {step === "starting_point" && (
+          <StartingPoint
+            name={displayName}
+            onSkip={() => finish()}
+            onChoose={(opt) => {
+              logOnboardingEvent("onboarding_starting_action_chosen", {
+                entity_type: opt.entity_type,
+                action_type: opt.action_type,
+                reason_code: opt.reason_code,
+              });
+              finish({
+                route: actionRoute(opt),
+                label: actionLabel(opt),
+                entity_type: opt.entity_type,
+                entity_id: opt.entity_id,
+              });
+            }}
+            saving={saving}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Sub-screens ---------- */
+
+function ProgressBar({ total, current }: { total: number; current: number }) {
+  const pct = Math.max(0, Math.min(100, (current / total) * 100));
+  return (
+    <div className="h-1 w-full rounded-full bg-border overflow-hidden">
+      <div
+        className="h-full bg-primary transition-all duration-300 ease-out rounded-full"
+        style={{ width: `${pct}%` }}
+        role="progressbar"
+        aria-valuenow={current}
+        aria-valuemin={0}
+        aria-valuemax={total}
+      />
+    </div>
+  );
+}
+
+function Welcome({
+  onGetStarted,
+  onSignIn,
+}: {
+  onGetStarted: () => void;
+  onSignIn: () => void;
+}) {
+  return (
+    <div className="flex-1 flex flex-col px-6 pb-10 pt-16 animate-fade-in">
+      <div className="flex-1 flex flex-col items-center justify-center text-center">
+        <div className="w-28 h-28 rounded-full bg-soft-green flex items-center justify-center mb-8">
+          <span className="text-6xl" aria-hidden>
+            🥗
+          </span>
+        </div>
+        <h1 className="text-3xl font-semibold text-charcoal tracking-tight leading-tight">
+          Meet Veggies near you.
+        </h1>
+        <p className="mt-4 text-base text-charcoal-muted max-w-[20rem]">
+          A calm place to find people, meetups, and veggie-friendly spots — one
+          real connection at a time.
+        </p>
+      </div>
+      <div className="space-y-3">
+        <PrimaryButton fullWidth onClick={onGetStarted}>
+          Get Started
+        </PrimaryButton>
+        <button
+          onClick={onSignIn}
+          className="w-full text-center py-3 text-sm font-medium text-charcoal-muted hover:text-charcoal transition"
+        >
+          I already have an account
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Auth({
+  intent,
+  onContinue,
+}: {
+  intent: "signup" | "signin";
+  onContinue: () => void;
+}) {
+  const { session } = useAuth();
+  const [mode, setMode] = useState<"choose" | "email">("choose");
+  const [isSignUp, setIsSignUp] = useState(intent === "signup");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (session) onContinue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  function providerPlaceholder(name: string) {
+    toast(`${name} sign-in is coming soon`, {
+      description: "Please continue with email for now.",
+    });
+  }
+
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || password.length < 6) {
+      toast.error("Please enter a valid email and a password (6+ characters).");
+      return;
+    }
+    setBusy(true);
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/` },
+      });
+      setBusy(false);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      logOnboardingEvent("auth_signup_success");
+      toast.success("Welcome to VeggieMeet 🌱");
+      onContinue();
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      setBusy(false);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      logOnboardingEvent("auth_signin_success");
+      toast.success("Welcome back 🌱");
+      onContinue();
+    }
+  }
+
+  if (mode === "email") {
+    return (
+      <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+            {isSignUp ? "Create your account" : "Welcome back"}
+          </h1>
+          <p className="mt-2 text-base text-charcoal-muted">
+            {isSignUp
+              ? "Just an email and password — no extra hoops."
+              : "Sign in to pick up where you left off."}
+          </p>
+        </div>
+        <form onSubmit={handleEmailSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-charcoal mb-2">Email</label>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-charcoal mb-2">Password</label>
+            <input
+              type="password"
+              autoComplete={isSignUp ? "new-password" : "current-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <PrimaryButton fullWidth disabled={busy}>
+            {busy ? "Just a moment…" : isSignUp ? "Create account" : "Sign in"}
+          </PrimaryButton>
+        </form>
+        <div className="mt-6 flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={() => setMode("choose")}
+            className="text-charcoal-muted hover:text-charcoal"
+          >
+            ← Other options
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsSignUp((v) => !v)}
+            className="font-semibold text-primary"
+          >
+            {isSignUp ? "I already have an account" : "Create an account"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+      <div className="mb-10">
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          Join VeggieMeet
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          One quick step, then you're in.
+        </p>
+      </div>
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => providerPlaceholder("Google")}
+          aria-disabled
+          className="w-full h-14 rounded-full border border-border bg-muted/40 flex items-center justify-between px-5 text-charcoal-muted font-semibold cursor-not-allowed"
+        >
+          <span className="flex items-center gap-3">
+            <GoogleIcon />
+            Continue with Google
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
+            Coming soon
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => providerPlaceholder("Apple")}
+          aria-disabled
+          className="w-full h-14 rounded-full border border-border bg-muted/40 flex items-center justify-between px-5 text-charcoal-muted font-semibold cursor-not-allowed"
+        >
+          <span className="flex items-center gap-3">
+            <AppleIcon />
+            Continue with Apple
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
+            Coming soon
+          </span>
+        </button>
+        <button
+          onClick={() => setMode("email")}
+          className="w-full h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center gap-3 font-semibold hover:bg-primary/90 active:scale-[0.99] transition shadow-green"
+        >
+          <Mail className="w-5 h-5" aria-hidden />
+          Continue with Email
+        </button>
+      </div>
+      <p className="mt-auto pt-8 text-center text-xs text-charcoal-muted">
+        By continuing you agree to VeggieMeet's community guidelines.
+      </p>
+    </div>
+  );
+}
+
+function Identity({
+  displayName,
+  setDisplayName,
+  pronouns,
+  setPronouns,
+  onContinue,
+}: {
+  displayName: string;
+  setDisplayName: (s: string) => void;
+  pronouns: string;
+  setPronouns: (s: string) => void;
+  onContinue: () => void;
+}) {
+  const canContinue = displayName.trim().length > 0;
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          What should Veggies call you?
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          A first name is enough — this is how you'll show up around the community.
+        </p>
+      </div>
+      <div className="space-y-5 flex-1">
+        <div>
+          <label className="block text-sm font-semibold text-charcoal mb-2">
+            Display name
+          </label>
+          <input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="e.g. Ben"
+            maxLength={40}
+            className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-charcoal mb-2">
+            Pronouns <span className="text-charcoal-muted font-normal">(optional)</span>
+          </label>
+          <input
+            value={pronouns}
+            onChange={(e) => setPronouns(e.target.value)}
+            placeholder="e.g. she/her"
+            maxLength={24}
+            className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+      </div>
+      <PrimaryButton
+        fullWidth
+        onClick={onContinue}
+        disabled={!canContinue}
+        className={cn("mt-6", !canContinue && "opacity-50 cursor-not-allowed")}
+      >
+        Continue
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function Dietary({
+  value,
+  setValue,
+  onContinue,
+}: {
+  value: DietaryIdentity | null;
+  setValue: (v: DietaryIdentity) => void;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          How would you describe yourself?
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          Pick whatever feels closest today. You can change this any time.
+        </p>
+      </div>
+      <div className="space-y-2 flex-1">
+        {DIETARY_OPTIONS.map((o) => {
+          const active = value === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => setValue(o.id)}
+              aria-pressed={active}
+              className={cn(
+                "w-full flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left",
+                active
+                  ? "border-primary bg-accent/40 shadow-sm"
+                  : "border-border bg-card hover:bg-accent/30",
+              )}
+            >
+              <div
+                className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg",
+                  active ? "bg-primary/15" : "bg-muted",
+                )}
+                aria-hidden
+              >
+                {o.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-charcoal">{o.label}</div>
+                <div className="text-xs text-charcoal-muted truncate">{o.description}</div>
+              </div>
+              {active && <Check className="w-5 h-5 text-primary" aria-hidden />}
+            </button>
+          );
+        })}
+      </div>
+      <PrimaryButton
+        fullWidth
+        onClick={onContinue}
+        disabled={!value}
+        className={cn("mt-4", !value && "opacity-50 cursor-not-allowed")}
+      >
+        Continue
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function HomeCity({
+  cityId,
+  cityName,
+  onSelect,
+  onContinue,
+}: {
+  cityId: string | null;
+  cityName: string | null;
+  onSelect: (id: string, name: string) => void;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          Where do you call home?
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          Your home city grounds the meetups and Veggies we surface first.
+        </p>
+      </div>
+      <div className="flex-1">
+        <CitySelector
+          variant="block"
+          value={cityId}
+          triggerLabel={cityName ?? "Choose a city"}
+          title="Set your home city"
+          onSelect={async (id, name) => onSelect(id, name)}
+        />
+        <p className="mt-3 text-xs text-charcoal-muted">
+          You can explore other cities any time from the top bar.
+        </p>
+      </div>
+      <PrimaryButton
+        fullWidth
+        onClick={onContinue}
+        disabled={!cityId}
+        className={cn("mt-4", !cityId && "opacity-50 cursor-not-allowed")}
+      >
+        Continue
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function SelectedCity({
+  cityId,
+  cityName,
+  homeCityId,
+  homeCityName,
+  onSelect,
+  onContinue,
+}: {
+  cityId: string | null;
+  cityName: string | null;
+  homeCityId: string | null;
+  homeCityName: string | null;
+  onSelect: (id: string, name: string) => void;
+  onContinue: () => void;
+}) {
+  const differs = cityId && homeCityId && cityId !== homeCityId;
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          Where are you exploring today?
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          Your selected city shapes the Meetups, Veggies, and Places you see
+          right now. You can switch cities any time — your home stays the same.
+        </p>
+      </div>
+      <div className="flex-1">
+        <CitySelector
+          variant="block"
+          value={cityId}
+          triggerLabel={cityName ?? homeCityName ?? "Choose a city"}
+          title="Set your selected city"
+          onSelect={async (id, name) => onSelect(id, name)}
+        />
+        <p className="mt-3 text-xs text-charcoal-muted">
+          {differs
+            ? `Exploring ${cityName}. Home stays ${homeCityName}.`
+            : `Defaults to your home city (${homeCityName ?? "—"}).`}
+        </p>
+      </div>
+      <PrimaryButton
+        fullWidth
+        onClick={onContinue}
+        disabled={!cityId}
+        className={cn("mt-4", !cityId && "opacity-50 cursor-not-allowed")}
+      >
+        Continue
+      </PrimaryButton>
+    </div>
+  );
+}
+
+
+function Interests({
+  selected,
+  toggle,
+  onContinue,
+}: {
+  selected: string[];
+  toggle: (label: string) => void;
+  onContinue: () => void;
+}) {
+  const [options, setOptions] = useState<InterestOption[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetchInterestCatalogue()
+      .then((rows) => setOptions(rows))
+      .catch(() => setOptions([]))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  const canContinue = selected.length >= MIN_INTERESTS && selected.length <= MAX_INTERESTS;
+  const remaining = Math.max(0, MIN_INTERESTS - selected.length);
+  const atMax = selected.length >= MAX_INTERESTS;
+
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          What are you into?
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          Pick {MIN_INTERESTS}–{MAX_INTERESTS} — we'll use these to suggest people and meetups.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2 flex-1 content-start">
+        {(!loaded ? Array.from({ length: 10 }).map((_, i) => ({ id: `s-${i}`, label: "", category: null, active: true, sort_order: 0 })) : options).map((o) => {
+          const active = selected.includes(o.label);
+          if (!loaded) {
+            return (
+              <span
+                key={o.id}
+                className="px-4 py-2.5 rounded-full text-sm bg-muted/60 animate-pulse w-24 h-9"
+                aria-hidden
+              />
+            );
+          }
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => toggle(o.label)}
+              aria-pressed={active}
+              className={cn(
+                "px-4 py-2.5 rounded-full text-sm font-medium border transition-all active:scale-[0.97]",
+                active
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-charcoal border-border hover:bg-accent/60",
+              )}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 text-center text-xs text-charcoal-muted min-h-[1rem]">
+        {atMax
+          ? `That's the max — ${MAX_INTERESTS} selected.`
+          : canContinue
+            ? `Nice — ${selected.length} selected. Pick up to ${MAX_INTERESTS}.`
+            : remaining === 1
+              ? "One more to go."
+              : `Pick ${remaining} more.`}
+      </div>
+      <PrimaryButton
+        fullWidth
+        onClick={onContinue}
+        disabled={!canContinue}
+        className={cn("mt-3", !canContinue && "opacity-50 cursor-not-allowed")}
+      >
+        Continue
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function Photo({
+  avatarUrl,
+  setAvatarUrl,
+  displayName,
+  bio,
+  setBio,
+  onContinue,
+  onSkip,
+}: {
+  avatarUrl: string | null;
+  setAvatarUrl: (u: string | null) => void;
+  displayName: string;
+  bio: string;
+  setBio: (s: string) => void;
+  onContinue: () => void;
+  onSkip: () => void;
+}) {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function pickSampleAvatar() {
+    const seed = `veggie-${Math.random().toString(36).slice(2, 8)}`;
+    setAvatarUrl(makeAvatarUrl(seed));
+    setSheetOpen(false);
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { uploadAvatar } = await import("@/lib/imageUpload");
+      const url = await uploadAvatar(file);
+      setAvatarUrl(url);
+      setSheetOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't upload that image.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          Put a friendly face to your name
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          A photo and a line about you help people say hi. Totally optional.
+        </p>
+      </div>
+
+      <div className="flex flex-col items-center mb-6">
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          aria-label="Change profile photo"
+          className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] transition"
+        >
+          <UserAvatar
+            name={displayName || "You"}
+            src={avatarUrl ?? undefined}
+            size="xl"
+          />
+          <span className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-green">
+            <Camera className="w-4 h-4" aria-hidden />
+          </span>
+        </button>
+      </div>
+
+      <div className="space-y-2 flex-1">
+        <label className="block text-sm font-semibold text-charcoal">
+          Short bio <span className="text-charcoal-muted font-normal">(optional)</span>
+        </label>
+        <textarea
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="One friendly line about you."
+          rows={3}
+          maxLength={160}
+          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        />
+        <p className="text-xs text-charcoal-muted text-right">{bio.length}/160</p>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <PrimaryButton fullWidth onClick={onContinue}>
+          Continue
+        </PrimaryButton>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="w-full text-center py-3 text-sm font-medium text-charcoal-muted hover:text-charcoal transition"
+        >
+          Skip for now
+        </button>
+      </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl border-t border-border p-0"
+        >
+          <SheetHeader className="px-6 pt-6 pb-2 text-left">
+            <SheetTitle className="text-lg font-semibold text-charcoal">
+              Profile photo
+            </SheetTitle>
+            <SheetDescription className="text-sm text-charcoal-muted">
+              You can always change this later.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-6 pt-3 space-y-1">
+            <SheetAction
+              icon={<Shuffle className="w-5 h-5" />}
+              label="Choose sample avatar"
+              onClick={pickSampleAvatar}
+            />
+            <SheetAction
+              icon={<ImagePlus className="w-5 h-5" />}
+              label={uploading ? "Uploading…" : "Upload photo"}
+              hint="JPG, PNG or WebP, up to 5 MB"
+              onClick={() => fileRef.current?.click()}
+            />
+            {avatarUrl && (
+              <SheetAction
+                icon={<Trash2 className="w-5 h-5" />}
+                label="Remove photo"
+                destructive
+                onClick={() => {
+                  setAvatarUrl(null);
+                  setSheetOpen(false);
+                }}
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => setSheetOpen(false)}
+              className="w-full mt-2 h-12 rounded-2xl bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+
+function SheetAction({
+  icon,
+  label,
+  hint,
+  onClick,
+  destructive,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  onClick: () => void;
+  destructive?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent/40 active:scale-[0.99] transition text-left",
+        destructive ? "text-destructive" : "text-charcoal",
+      )}
+    >
+      <span
+        className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+          destructive ? "bg-destructive/10" : "bg-muted",
+        )}
+      >
+        {icon}
+      </span>
+      <span className="flex-1 font-semibold">{label}</span>
+      {hint && <span className="text-xs text-charcoal-muted">{hint}</span>}
+    </button>
+  );
+}
+
+function Guidelines({
+  accepted,
+  setAccepted,
+  onContinue,
+}: {
+  accepted: boolean;
+  setAccepted: (v: boolean) => void;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <Heart className="w-6 h-6 text-primary" aria-hidden />
+        </div>
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          Our community promise
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          VeggieMeet works because everyone shows up with care.
+        </p>
+      </div>
+
+      <ul className="space-y-3 flex-1">
+        <GuidelineItem title="Be kind" body="Treat every Veggie the way you'd like to be met — with warmth and respect." />
+        <GuidelineItem title="Show up" body="If plans change, cancel early so hosts and other guests know." />
+        <GuidelineItem title="Support the community" body="Check in at meetups and places that welcome us. Small actions add up." />
+        <GuidelineItem title="Speak up safely" body="If something feels off, use Report or Block. We take every signal seriously." />
+      </ul>
+
+      <label className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-card p-3.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={accepted}
+          onChange={(e) => setAccepted(e.target.checked)}
+          className="mt-0.5 w-5 h-5 rounded border-border accent-primary"
+        />
+        <span className="text-sm text-charcoal">
+          I'll keep VeggieMeet a warm and respectful space.
+        </span>
+      </label>
+
+      <PrimaryButton
+        fullWidth
+        onClick={onContinue}
+        disabled={!accepted}
+        className={cn("mt-4", !accepted && "opacity-50 cursor-not-allowed")}
+      >
+        I agree
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function GuidelineItem({ title, body }: { title: string; body: string }) {
+  return (
+    <li className="flex gap-3">
+      <span className="mt-0.5 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <Check className="w-4 h-4" aria-hidden />
+      </span>
+      <div>
+        <div className="font-semibold text-charcoal">{title}</div>
+        <div className="text-sm text-charcoal-muted">{body}</div>
+      </div>
+    </li>
+  );
+}
+
+function Safety({ onContinue }: { onContinue: () => void }) {
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <Shield className="w-6 h-6 text-primary" aria-hidden />
+        </div>
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          You're in control
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          A quick tour of the tools that keep meetups feeling safe.
+        </p>
+      </div>
+
+      <ul className="space-y-3 flex-1">
+        <SafetyItem
+          icon={<Users className="w-5 h-5" aria-hidden />}
+          title="Meet in public"
+          body="Every meetup happens at a known place. Coordinates only unlock once you've joined."
+        />
+        <SafetyItem
+          icon={<Utensils className="w-5 h-5" aria-hidden />}
+          title="Verified connections"
+          body="Real-life check-ins turn casual meetups into verified friendships — slowly, on your terms."
+        />
+        <SafetyItem
+          icon={<Shield className="w-5 h-5" aria-hidden />}
+          title="Block and report, any time"
+          body="One tap from any profile or meetup. Blocked people never see you again."
+        />
+      </ul>
+
+      <PrimaryButton fullWidth onClick={onContinue} className="mt-4">
+        Got it
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function SafetyItem({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <li className="flex gap-3 rounded-2xl border border-border bg-card p-3.5">
+      <span className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        {icon}
+      </span>
+      <div>
+        <div className="font-semibold text-charcoal">{title}</div>
+        <div className="text-sm text-charcoal-muted">{body}</div>
+      </div>
+    </li>
+  );
+}
+
+function StartingPoint({
+  name,
+  onSkip,
+  onChoose,
+  saving,
+}: {
+  name: string;
+  onSkip: () => void;
+  onChoose: (opt: StartingPointOption) => void;
+  saving: boolean;
+}) {
+  const [options, setOptions] = useState<StartingOptions | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStartingOptions()
+      .then((data) => {
+        if (!cancelled) setOptions(data);
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const list: StartingPointOption[] = useMemo(() => {
+    if (!options) return [];
+    return [options.veggie, options.meetup, options.place].filter(
+      (x): x is StartingPointOption => !!x,
+    );
+  }, [options]);
+
+  const firstName = name.trim().split(/\s+/)[0] || "";
+
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+      <div className="mb-6">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <Sparkles className="w-6 h-6 text-primary" aria-hidden />
+        </div>
+        <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+          {firstName ? `You're set, ${firstName}.` : "You're all set."}
+        </h1>
+        <p className="mt-2 text-base text-charcoal-muted">
+          One small action makes VeggieMeet feel real. Pick something that catches your eye.
+        </p>
+      </div>
+
+      <div className="flex-1 space-y-3">
+        {loading && (
+          <>
+            <StartingSkeleton />
+            <StartingSkeleton />
+            <StartingSkeleton />
+          </>
+        )}
+        {!loading && error && (
+          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-charcoal-muted">
+            We couldn't load suggestions right now — you can explore from the home screen instead.
+          </div>
+        )}
+        {!loading && !error && list.length === 0 && (
+          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-charcoal-muted">
+            No suggestions yet in your city. Jump into the community to explore what's nearby.
+          </div>
+        )}
+        {!loading &&
+          list.map((opt) => (
+            <StartingCard key={`${opt.entity_type}-${opt.entity_id}`} option={opt} onChoose={onChoose} disabled={saving} />
+          ))}
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <PrimaryButton fullWidth onClick={onSkip} disabled={saving}>
+          {saving ? "Just a moment…" : "Take me home"}
+        </PrimaryButton>
+      </div>
+    </div>
+  );
+}
+
+function StartingSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3.5 flex items-center gap-3 animate-pulse">
+      <div className="w-14 h-14 rounded-xl bg-muted" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-2/3 bg-muted rounded" />
+        <div className="h-3 w-1/2 bg-muted rounded" />
+      </div>
+    </div>
+  );
+}
+
+function StartingCard({
+  option,
+  onChoose,
+  disabled,
+}: {
+  option: StartingPointOption;
+  onChoose: (o: StartingPointOption) => void;
+  disabled: boolean;
+}) {
+  const typeLabel =
+    option.entity_type === "veggie"
+      ? "Veggie"
+      : option.entity_type === "meetup"
+        ? "Meetup"
+        : "Place";
+  const Icon =
+    option.entity_type === "veggie" ? Users : option.entity_type === "meetup" ? Sparkles : MapPin;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onChoose(option)}
+      disabled={disabled}
+      className="w-full text-left rounded-2xl border border-border bg-card p-3.5 flex items-center gap-3 hover:bg-accent/30 active:scale-[0.99] transition disabled:opacity-60"
+    >
+      <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+        {option.image ? (
+          <img src={option.image} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <Icon className="w-5 h-5 text-charcoal-muted" aria-hidden />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[11px] uppercase tracking-wider text-charcoal-muted font-semibold">
+          {typeLabel} · {option.reason_label}
+        </div>
+        <div className="font-semibold text-charcoal truncate">{option.title}</div>
+        {option.city && (
+          <div className="text-xs text-charcoal-muted truncate">{option.city}</div>
+        )}
+      </div>
+      <span className="text-sm font-semibold text-primary shrink-0">
+        {actionLabel(option)}
+      </span>
+    </button>
+  );
+}
+
+/* ---------- Icons ---------- */
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.8 6.5 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.3-.3-3.5z" />
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.8 6.5 29.1 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 43.5c5 0 9.6-1.9 13.1-5l-6.1-5c-2 1.5-4.5 2.5-7 2.5-5.3 0-9.7-3.1-11.3-7.5l-6.5 5C9.6 39 16.2 43.5 24 43.5z" />
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.1 5c3.5-3.2 6.1-8 6.1-14.5 0-1.2-.1-2.3-.3-3.5z" />
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M16.365 1.43c0 1.14-.42 2.22-1.24 3.02-.83.8-2.16 1.42-3.19 1.33-.13-1.1.41-2.24 1.19-3.02.87-.87 2.3-1.5 3.24-1.33zM20.5 17.2c-.56 1.3-.83 1.88-1.55 3.02-1 1.6-2.42 3.6-4.18 3.62-1.56.01-1.96-1.02-4.08-1.01-2.12.01-2.56 1.02-4.12 1.01-1.76-.02-3.1-1.82-4.1-3.42C.15 17.42-.36 12.9 1.6 10.24c1.15-1.57 2.97-2.56 4.7-2.56 1.76 0 2.86 1 4.3 1 1.4 0 2.26-1 4.3-1 1.54 0 3.16.84 4.3 2.3-3.78 2.07-3.16 7.47.9 7.22z" />
+    </svg>
+  );
+}

@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://zllamljlygjkknsguuki.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "veggiemeet-mcp",
+      "version": "0.1.0",
+      "title": "VeggieMeet"
+    },
+    "tools": [
+      {
+        "name": "list_upcoming_meetups",
+        "title": "List upcoming meetups",
+        "description": "List upcoming VeggieMeet meetups the signed-in user can see, ordered by date. Optionally filter by city.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "Optional city name to filter meetups (e.g. 'Berlin')."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max meetups to return. Defaults to 20."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_meetup",
+        "title": "Get meetup details",
+        "description": "Get a single VeggieMeet meetup by id, including host, location, capacity, and current attendee count.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "meetup_id": {
+              "type": "string",
+              "description": "The meetup id (UUID)."
+            }
+          },
+          "required": [
+            "meetup_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_meetups",
+        "title": "List my meetups",
+        "description": "List the meetups the signed-in VeggieMeet user is hosting or attending.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string",
+              "enum": [
+                "hosting",
+                "attending",
+                "all"
+              ],
+              "description": "Filter by role. Defaults to 'all'."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "join_meetup",
+        "title": "Join a meetup",
+        "description": "Join a VeggieMeet meetup as the signed-in user. Idempotent — joining an already-joined meetup succeeds silently.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "meetup_id": {
+              "type": "string",
+              "description": "The meetup id (UUID) to join."
+            }
+          },
+          "required": [
+            "meetup_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_connections",
+        "title": "List my Veggie Network",
+        "description": "List the signed-in user's confirmed VeggieMeet connections (their Veggie Network).",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_my_profile",
+        "title": "Get my profile",
+        "description": "Get the signed-in user's VeggieMeet profile: display name, city, interests, and community stats.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

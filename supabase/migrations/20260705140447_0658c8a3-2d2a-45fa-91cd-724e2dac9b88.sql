@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ALTER COLUMN auth_user_id DROP NOT NULL;
