@@ -204,6 +204,69 @@ export default function MeetupManagement() {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
 
+  // ---- Location editor derivations (must stay above early returns so the
+  // hook order is stable across loading / not-found / not-host renders) ----
+  const homeCity = contextQuery.data?.home_city ?? null;
+  const selectedCity = contextQuery.data?.selected_city ?? null;
+  const isEnded = useMemo(() => {
+    if (!meetup) return false;
+    const end = new Date(`${meetup.date}T${meetup.endTime || meetup.startTime}:00`);
+    return end.getTime() <= Date.now();
+  }, [meetup?.date, meetup?.endTime, meetup?.startTime]);
+  const locIsCustom = locPlaceId === CUSTOM_PLACE_ID;
+  const locSelectedPlace: CommunityPlace | undefined = (placesQuery.data ?? []).find(
+    (p) => p.id === locPlaceId,
+  );
+  const locCoordsValid =
+    (locCustomLat === "" && locCustomLng === "") ||
+    (Number.isFinite(Number(locCustomLat)) &&
+      Number.isFinite(Number(locCustomLng)) &&
+      Number(locCustomLat) >= -90 && Number(locCustomLat) <= 90 &&
+      Number(locCustomLng) >= -180 && Number(locCustomLng) <= 180);
+  const locResolved = useMemo(() => {
+    if (!locCityId || !meetup) return null;
+    if (locIsCustom) {
+      const lat = locCustomLat === "" ? null : Number(locCustomLat);
+      const lng = locCustomLng === "" ? null : Number(locCustomLng);
+      return {
+        cityId: locCityId,
+        cityName: locCityName,
+        communityPlaceId: null as string | null,
+        locationName: locCustomName.trim(),
+        address: locCustomAddress.trim() || null,
+        neighborhood: null as string | null,
+        latitude: lat,
+        longitude: lng,
+        timezone:
+          selectedCity?.id === locCityId ? selectedCity?.timezone ?? null
+          : homeCity?.id === locCityId ? homeCity?.timezone ?? null
+          : meetup.location?.timezone ?? null,
+        locationSource: "custom_location" as const,
+      };
+    }
+    if (!locSelectedPlace) return null;
+    return {
+      cityId: locCityId,
+      cityName: locSelectedPlace.cityName ?? locCityName,
+      communityPlaceId: locSelectedPlace.id,
+      locationName: locSelectedPlace.name,
+      address: locSelectedPlace.address ?? null,
+      neighborhood: locSelectedPlace.neighborhood ?? null,
+      latitude: locSelectedPlace.latitude ?? null,
+      longitude: locSelectedPlace.longitude ?? null,
+      timezone:
+        locSelectedPlace.timezone ??
+        (selectedCity?.id === locCityId ? selectedCity?.timezone : null) ??
+        (homeCity?.id === locCityId ? homeCity?.timezone : null) ??
+        meetup.location?.timezone ?? null,
+      locationSource: "community_place" as const,
+    };
+  }, [
+    locCityId, locCityName, locIsCustom, locCustomName, locCustomAddress,
+    locCustomLat, locCustomLng, locSelectedPlace, selectedCity, homeCity, meetup,
+  ]);
+
+
   if (authLoading || meetupQuery.isPending) {
     return (
       <div className="flex flex-col min-h-dvh items-center justify-center text-sm text-charcoal-muted">
