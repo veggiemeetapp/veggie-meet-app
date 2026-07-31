@@ -24,6 +24,21 @@ export class AppErrorBoundary extends Component<Props, State> {
     }
   }
 
+  componentDidMount() {
+    // Connectivity-loss errors resolve themselves once the device is back
+    // online, so clear the boundary automatically instead of leaving the user
+    // stranded on a dead-end screen after reconnecting.
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", this.handleRetry);
+    }
+  }
+
+  componentWillUnmount() {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("online", this.handleRetry);
+    }
+  }
+
   componentDidUpdate(_: Props, prev: State) {
     if (this.state.hasError && !prev.hasError) {
       // Move focus to the error heading for a11y.
@@ -32,8 +47,9 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false });
+    if (this.state.hasError) this.setState({ hasError: false });
   };
+
 
   handleHome = () => {
     this.setState({ hasError: false });
