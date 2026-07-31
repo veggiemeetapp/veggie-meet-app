@@ -50,6 +50,8 @@ import {
 
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
+import { lovable } from "@/integrations/lovable/index";
+
 
 function makeAvatarUrl(seed: string) {
   return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=c8e6c9`;
@@ -575,6 +577,23 @@ function Auth({
     });
   }
 
+  async function handleGoogle() {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setBusy(false);
+      toast.error(result.error.message ?? "Could not sign in with Google.");
+      return;
+    }
+    if (result.redirected) return;
+    logOnboardingEvent("auth_signin_success");
+    toast.success("Welcome to VeggieMeet 🌱");
+    onContinue();
+  }
+
+
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || password.length < 6) {
@@ -685,18 +704,14 @@ function Auth({
       <div className="space-y-3">
         <button
           type="button"
-          onClick={() => providerPlaceholder("Google")}
-          aria-disabled
-          className="w-full h-14 rounded-full border border-border bg-muted/40 flex items-center justify-between px-5 text-charcoal-muted font-semibold cursor-not-allowed"
+          onClick={handleGoogle}
+          disabled={busy}
+          className="w-full h-14 rounded-full border border-border bg-card flex items-center justify-center gap-3 text-charcoal font-semibold hover:bg-muted/40 active:scale-[0.99] transition disabled:opacity-60"
         >
-          <span className="flex items-center gap-3">
-            <GoogleIcon />
-            Continue with Google
-          </span>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
-            Coming soon
-          </span>
+          <GoogleIcon />
+          Continue with Google
         </button>
+
         <button
           type="button"
           onClick={() => providerPlaceholder("Apple")}
