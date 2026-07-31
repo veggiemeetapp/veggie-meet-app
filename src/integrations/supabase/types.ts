@@ -1958,6 +1958,10 @@ export type Database = {
       get_my_today_experience: { Args: never; Returns: Json }
       get_onboarding_starting_options: { Args: never; Returns: Json }
       get_or_create_dm: { Args: { _other_profile_id: string }; Returns: string }
+      get_profile_connection_summary: {
+        Args: { _target_profile_id: string }
+        Returns: Json
+      }
       get_public_community_impact: {
         Args: { _profile_id: string }
         Returns: Json
