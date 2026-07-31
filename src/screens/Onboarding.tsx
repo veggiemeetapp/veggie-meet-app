@@ -685,18 +685,14 @@ function Auth({
       <div className="space-y-3">
         <button
           type="button"
-          onClick={() => providerPlaceholder("Google")}
-          aria-disabled
-          className="w-full h-14 rounded-full border border-border bg-muted/40 flex items-center justify-between px-5 text-charcoal-muted font-semibold cursor-not-allowed"
+          onClick={handleGoogle}
+          disabled={busy}
+          className="w-full h-14 rounded-full border border-border bg-card flex items-center justify-center gap-3 text-charcoal font-semibold hover:bg-muted/40 active:scale-[0.99] transition disabled:opacity-60"
         >
-          <span className="flex items-center gap-3">
-            <GoogleIcon />
-            Continue with Google
-          </span>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
-            Coming soon
-          </span>
+          <GoogleIcon />
+          Continue with Google
         </button>
+
         <button
           type="button"
           onClick={() => providerPlaceholder("Apple")}
