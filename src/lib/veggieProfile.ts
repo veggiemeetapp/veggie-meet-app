@@ -51,16 +51,6 @@ export const DIETARY_LABEL: Record<Dietary, string> = {
   curious: "Plant Curious",
 };
 
-async function fetchConnectedIds(profileId: string): Promise<string[]> {
-  const { data } = await supabase
-    .from("friendships")
-    .select("profile_a_id, profile_b_id, status")
-    .or(`profile_a_id.eq.${profileId},profile_b_id.eq.${profileId}`)
-    .in("status", ["connected", "verified"]);
-  return (data ?? []).map((r: any) =>
-    r.profile_a_id === profileId ? r.profile_b_id : r.profile_a_id,
-  );
-}
 
 export async function fetchVeggieProfileBundle(
   targetProfileId: string,
@@ -88,24 +78,26 @@ export async function fetchVeggieProfileBundle(
   const displayName: string = prof.display_name ?? "Veggie";
   const firstName = displayName.split(/\s+/)[0] ?? displayName;
 
-  const [hosted, attending, checkinsRes, verifiedRes, targetConnected] =
-    await Promise.all([
-      fetchHostedMeetups(targetProfileId, TODAY_ISO),
-      fetchAttendingMeetups(targetProfileId, TODAY_ISO),
-      supabase
-        .from("place_check_ins")
-        .select("community_place_id, checked_in_on")
-        .eq("profile_id", targetProfileId)
-        .order("checked_in_on", { ascending: false }),
-      supabase
-        .from("friendships")
-        .select("id, status")
-        .or(
-          `profile_a_id.eq.${targetProfileId},profile_b_id.eq.${targetProfileId}`,
-        )
-        .eq("status", "verified"),
-      fetchConnectedIds(targetProfileId),
-    ]);
+  const [hosted, attending, checkinsRes, connSummaryRes] = await Promise.all([
+    fetchHostedMeetups(targetProfileId, TODAY_ISO),
+    fetchAttendingMeetups(targetProfileId, TODAY_ISO),
+    supabase
+      .from("place_check_ins")
+      .select("community_place_id, checked_in_on")
+      .eq("profile_id", targetProfileId)
+      .order("checked_in_on", { ascending: false }),
+    // Bounded server-side projection: verified-connection count + shared
+    // mutuals only. The global social graph is never readable by clients.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.rpc as any)("get_profile_connection_summary", {
+      _target_profile_id: targetProfileId,
+    }),
+  ]);
+  const connSummary = (connSummaryRes?.data ?? null) as {
+    verified_connections?: number;
+    mutual_connections?: { profileId: string; displayName: string; avatarUrl: string | null }[];
+  } | null;
+
 
   // Historical counts (any date)
   const { count: hostedTotal } = await supabase
@@ -132,23 +124,16 @@ export async function fetchVeggieProfileBundle(
 
   const uniquePlaces = new Set((checkinsRes.data ?? []).map((c: any) => c.community_place_id));
 
-  // Mutual connections
+  // Mutual connections (server-computed, bounded to 8)
   let mutualConnections: VeggieProfileBundle["mutualConnections"] = [];
   if (currentProfileId && currentProfileId !== targetProfileId) {
-    const myConnected = await fetchConnectedIds(currentProfileId);
-    const mutualIds = myConnected.filter((id) => targetConnected.includes(id));
-    if (mutualIds.length > 0) {
-      const { data: mprofs } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url")
-        .in("id", mutualIds.slice(0, 8));
-      mutualConnections = (mprofs ?? []).map((p: any) => ({
-        profileId: p.id,
-        displayName: p.display_name,
-        avatarUrl: p.avatar_url,
-      }));
-    }
+    mutualConnections = (connSummary?.mutual_connections ?? []).map((m) => ({
+      profileId: m.profileId,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl ?? null,
+    }));
   }
+
 
   // Combine upcoming: hosted + attending, sorted
   const upcoming = [...hosted, ...attending]
@@ -181,7 +166,7 @@ export async function fetchVeggieProfileBundle(
       hosted: hostedTotal ?? 0,
       joined: joinedTotal ?? 0,
       placesSupported: uniquePlaces.size,
-      verifiedConnections: (verifiedRes.data ?? []).length,
+      verifiedConnections: connSummary?.verified_connections ?? 0,
     },
     mutualConnections,
   };
