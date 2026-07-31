@@ -575,6 +575,23 @@ function Auth({
     });
   }
 
+  async function handleGoogle() {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setBusy(false);
+      toast.error(result.error.message ?? "Could not sign in with Google.");
+      return;
+    }
+    if (result.redirected) return;
+    logOnboardingEvent("auth_signin_success");
+    toast.success("Welcome to VeggieMeet 🌱");
+    onContinue();
+  }
+
+
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || password.length < 6) {
