@@ -1984,6 +1984,7 @@ export type Database = {
         Args: { _conversation_id: string }
         Returns: boolean
       }
+      is_meetup_member: { Args: { _meetup_id: string }; Returns: boolean }
       issue_meetup_qr_token: {
         Args: { _meetup_id: string }
         Returns: {
@@ -2139,6 +2140,7 @@ export type Database = {
       }
       set_home_city: { Args: { _city_id: string }; Returns: Json }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }
+      shares_context_with: { Args: { _profile_id: string }; Returns: boolean }
       submit_dm_message_report: {
         Args: { _details: string; _message_id: string; _reason: string }
         Returns: string
