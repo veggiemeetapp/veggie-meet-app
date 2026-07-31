@@ -50,6 +50,8 @@ import {
 
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
+import { lovable } from "@/integrations/lovable/index";
+
 
 function makeAvatarUrl(seed: string) {
   return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=c8e6c9`;
