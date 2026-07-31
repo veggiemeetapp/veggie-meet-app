@@ -14,9 +14,12 @@ export function MeetupInfo({ meetup, place, distanceKm }: Props) {
       <span className="inline-block text-[11px] font-semibold text-primary uppercase tracking-wider bg-soft-green px-2.5 py-1 rounded-full">
         {meetup.category}
       </span>
-      <h1 className="mt-3 text-[26px] leading-tight font-semibold text-charcoal">
+      {/* break-words keeps very long unbroken titles from widening the phone
+          shell and pushing the sticky action bar off-screen on small viewports */}
+      <h1 className="mt-3 text-[26px] leading-tight font-semibold text-charcoal break-words">
         {meetup.title}
       </h1>
+
 
       <div className="mt-5 space-y-3 text-[15px] text-charcoal">
         <Row icon={<Calendar className="w-4 h-4" />} label={formatMeetupDate(meetup.date)} />

@@ -112,12 +112,33 @@ export interface DeletionResult {
   blockers?: Record<string, unknown>;
 }
 
+/**
+ * Removes the signed-in user's own avatar objects through the Storage API.
+ * The platform rejects direct DELETEs against storage tables from SQL, so this
+ * must happen client-side before the deletion RPC runs. Best-effort: a storage
+ * failure must never block the account deletion itself.
+ */
+async function purgeOwnAvatarObjects(): Promise<void> {
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth?.user?.id;
+    if (!uid) return;
+    const { data: files } = await supabase.storage.from("avatars").list(uid, { limit: 100 });
+    const paths = (files ?? []).map((f) => `${uid}/${f.name}`);
+    if (paths.length) await supabase.storage.from("avatars").remove(paths);
+  } catch {
+    /* non-fatal */
+  }
+}
+
 export async function requestAccountDeletion(): Promise<DeletionResult> {
+  await purgeOwnAvatarObjects();
   const { data, error } = await rpc<DeletionResult>("request_account_deletion");
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Couldn't process deletion");
   return data;
 }
+
 
 export const NOTIFICATION_CATEGORIES: { key: keyof NotificationPrefs; title: string; description: string }[] = [
   { key: "meetup_invitations", title: "Meetup invitations", description: "Personal invites from other Veggies." },

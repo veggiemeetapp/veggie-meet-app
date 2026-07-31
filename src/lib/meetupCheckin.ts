@@ -57,6 +57,20 @@ function classify(message: string): VerifyErrorCode {
   return "unknown";
 }
 
+/** Maps the `kind` values returned in the RPC's JSON payload to UI error codes. */
+const KIND_TO_CODE: Record<string, VerifyErrorCode> = {
+  invalid: "invalid",
+  expired: "expired",
+  self: "self",
+  blocked: "blocked",
+  cancelled: "cancelled",
+  too_early: "too_early",
+  closed: "closed",
+  not_attending: "not_attendee",
+  not_attendee: "not_attendee",
+  not_connected: "not_connected",
+};
+
 export async function verifyMeetupConnection(rawScan: string): Promise<VerifyResult> {
   const token = decodeVerifyPayload(rawScan);
   if (!token) return { kind: "error", code: "invalid", message: "That isn't a valid VeggieMeet check-in code." };
@@ -66,7 +80,15 @@ export async function verifyMeetupConnection(rawScan: string): Promise<VerifyRes
   }
   const d = data as any;
   if (d?.kind === "verified" || d?.kind === "already_verified") {
-    return { kind: d.kind, peerId: d.peer_id as string, meetupId: d.meetup_id as string };
+    // The RPC nests peer identity under `peer` — read it from there so the
+    // success screen can name the Veggie and link to their profile.
+    return {
+      kind: d.kind,
+      peerId: (d.peer?.id ?? d.peer_id) as string,
+      meetupId: (d.meetup_id ?? "") as string,
+    };
   }
-  return { kind: "error", code: "unknown", message: "Verification failed" };
+  const code = KIND_TO_CODE[d?.kind as string] ?? "unknown";
+  return { kind: "error", code, message: "Verification failed" };
 }
+
