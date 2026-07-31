@@ -232,11 +232,12 @@ export async function fetchInvitationsBundle(
     .not("status", "in", "(cancelled,removed)");
 
   const counts = new Map<string, number>();
-  const attendingByMe = new Set<string>();
+  const attendingByProfile = new Map<string, Set<string>>();
   for (const r of attRows ?? []) {
     const mid = r.meetup_id as string;
     counts.set(mid, (counts.get(mid) ?? 0) + 1);
-    if (r.profile_id === meProfileId) attendingByMe.add(mid);
+    if (!attendingByProfile.has(mid)) attendingByProfile.set(mid, new Set());
+    attendingByProfile.get(mid)!.add(r.profile_id as string);
   }
 
   const byId = new Map(meetups.map((m) => [m.id, m]));
@@ -247,9 +248,11 @@ export async function fetchInvitationsBundle(
     out.set(inv.id, {
       invitation: inv,
       meetup: summary,
-      recipientAttending: attendingByMe.has(inv.meetup_id),
+      recipientAttending:
+        attendingByProfile.get(inv.meetup_id)?.has(inv.recipient_id) ?? false,
     });
   }
+
   return out;
 }
 
