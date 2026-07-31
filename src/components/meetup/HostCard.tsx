@@ -13,7 +13,7 @@ export function HostCard({ host }: Props) {
         <div className="flex-1 min-w-0">
           <div className="text-xs text-charcoal-muted">Hosted by</div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-charcoal">{host.displayName}</span>
+            <span className="font-semibold text-charcoal break-words min-w-0">{host.displayName}</span>
             {host.isActiveHost && <ActiveHostBadge />}
           </div>
         </div>
