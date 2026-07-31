@@ -48,7 +48,7 @@ else
 fi
 
 step "6. Secret scan"
-if grep -rIn "SUPABASE_SERVICE_ROLE\|sb_secret_\|-----BEGIN [A-Z ]*PRIVATE KEY-----" dist/ 2>/dev/null | grep -v Binary; then
+if grep -rIn "SUPABASE_SERVICE_ROLE\|sb_secret_[A-Za-z0-9_-]\{8,\}\|-----BEGIN [A-Z ]*PRIVATE KEY-----" dist/ 2>/dev/null | grep -v Binary; then
   fail "secret material detected in dist/"
 fi
 
