@@ -408,6 +408,27 @@ export async function fetchCommunityPlacesByCity(cityId: string): Promise<Commun
   return (data as unknown as DBCommunityPlaceRow[]).map(toCommunityPlace);
 }
 
+/**
+ * Published Community Places for the discovery list (WO-044).
+ * Reads ONLY from community_places — never place_candidates. Restricted to
+ * verified + active records; closed businesses are excluded.
+ */
+export async function fetchPublishedCommunityPlaces(
+  cityId: string | null,
+): Promise<CommunityPlace[]> {
+  let q = supabase
+    .from("community_places")
+    .select("*, cities(name)")
+    .eq("verification_status", "verified")
+    .neq("is_active", false);
+  if (cityId) q = q.eq("city_id", cityId);
+  const { data, error } = await q.order("name");
+  if (error || !data) return [];
+  return (data as unknown as (DBCommunityPlaceRow & { business_status?: string | null })[])
+    .filter((r) => !r.business_status || r.business_status === "OPERATIONAL")
+    .map(toCommunityPlace);
+}
+
 /** All active Community Places in a city plus one selected by id (for host picker). */
 export async function fetchCommunityPlaceById(placeId: string): Promise<CommunityPlace | null> {
   const { data, error } = await supabase
