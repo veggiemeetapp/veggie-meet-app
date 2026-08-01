@@ -85,7 +85,17 @@ export interface CommunityPlace {
   timezone?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  /** Original VeggieMeet copy. Never Google editorial content. */
+  description?: string | null;
+  /** Original VeggieMeet reason-to-visit copy. */
+  veggieReason?: string | null;
+  websiteUrl?: string | null;
+  googleMapsUrl?: string | null;
+  veggieClassification?: string | null;
+  /** False when the place has no rights-cleared cover image. */
+  hasCoverImage?: boolean;
 }
+
 
 export type AttendanceStatus = "joined" | "checked_in" | "attended" | "cancelled";
 

@@ -359,6 +359,11 @@ interface DBCommunityPlaceRow {
   latitude: number | null;
   longitude: number | null;
   is_active: boolean | null;
+  description?: string | null;
+  veggie_reason?: string | null;
+  website_url?: string | null;
+  google_maps_url?: string | null;
+  veggie_classification?: string | null;
   cities?: { name: string | null } | null;
 }
 
@@ -372,6 +377,7 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
     category: cat,
     address: row.address ?? "",
     coverImageUrl: sanitizeCover(row.cover_image_url),
+    hasCoverImage: !!row.cover_image_url && !row.cover_image_url.startsWith("blob:"),
     upcomingMeetupsCount: row.upcoming_meetups_count ?? 0,
     meetupsThisMonth: row.meetups_this_month ?? 0,
     veggiesVisitedCount: row.veggies_visited_count ?? 0,
@@ -381,8 +387,14 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
     timezone: row.timezone,
     latitude: row.latitude,
     longitude: row.longitude,
+    description: row.description ?? null,
+    veggieReason: row.veggie_reason ?? null,
+    websiteUrl: row.website_url ?? null,
+    googleMapsUrl: row.google_maps_url ?? null,
+    veggieClassification: row.veggie_classification ?? null,
   };
 }
+
 
 /** Community Places filtered by canonical city_id. Archived places excluded. */
 export async function fetchCommunityPlacesByCity(cityId: string): Promise<CommunityPlace[]> {
