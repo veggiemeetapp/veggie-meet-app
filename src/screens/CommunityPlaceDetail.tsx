@@ -135,6 +135,21 @@ const CLASSIFICATION_LABEL: Record<string, string> = {
   not_food: "Community Space",
 };
 
+const CATEGORY_LABEL: Record<string, string> = {
+  restaurant: "Restaurant",
+  cafe: "Café",
+  park: "Park",
+  market: "Market",
+  studio: "Studio",
+  venue: "Venue",
+};
+
+function placeCategoryLabel(category: string) {
+  return CATEGORY_LABEL[category] ?? "Venue";
+}
+
+
+
 export default function CommunityPlaceDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
@@ -287,18 +302,23 @@ export default function CommunityPlaceDetail() {
       )}
 
 
-      {/* Community Highlights */}
-      <SectionTitle>Community Highlights</SectionTitle>
-      <div className="px-5">
-        <Card className="space-y-2.5">
-          {extras.highlights.map((h) => (
-            <div key={h} className="flex items-start gap-2.5">
-              <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-              <span className="text-sm text-charcoal leading-relaxed">{h}</span>
-            </div>
-          ))}
-        </Card>
-      </div>
+      {/* Community Highlights (demo content only) */}
+      {!isVerifiedPlace && (
+        <>
+          <SectionTitle>Community Highlights</SectionTitle>
+          <div className="px-5">
+            <Card className="space-y-2.5">
+              {extras.highlights.map((h) => (
+                <div key={h} className="flex items-start gap-2.5">
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                  <span className="text-sm text-charcoal leading-relaxed">{h}</span>
+                </div>
+              ))}
+            </Card>
+          </div>
+        </>
+      )}
+
 
       {/* Upcoming Here */}
       <SectionTitle>Upcoming Here</SectionTitle>
@@ -314,68 +334,70 @@ export default function CommunityPlaceDetail() {
         )}
       </div>
 
-      {/* Community Activity */}
-      <SectionTitle>Community Activity</SectionTitle>
-      <div className="px-5">
-        <Card className="space-y-3">
-          {extras.activity.map((a, i) => {
-            const Icon = i === 0 ? Users : i === 1 ? CalendarDays : Sparkles;
-            return (
-              <div key={a} className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-soft-green flex items-center justify-center text-primary shrink-0">
-                  <Icon className="w-4 h-4" />
-                </span>
-                <span className="text-sm text-charcoal">{a}</span>
-              </div>
-            );
-          })}
-        </Card>
-      </div>
-
-      {/* About */}
-      <SectionTitle>About</SectionTitle>
-      <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted">
-        {extras.about}
-      </p>
-
-      {/* Amenities */}
-      <SectionTitle>Amenities</SectionTitle>
-      <div className="px-5 flex flex-wrap gap-2">
-        {extras.amenities.map((label) => {
-          const Icon = AMENITY_ICONS[label];
-          return (
-            <span
-              key={label}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-charcoal text-xs font-medium"
-            >
-              <Icon className="w-3.5 h-3.5 text-charcoal-muted" />
-              {label}
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Photos */}
-      {extras.photos.length > 0 && (
+      {/* Demo-only enrichment sections */}
+      {!isVerifiedPlace && (
         <>
-          <SectionTitle>Photos</SectionTitle>
-          <div
-            className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
-            style={{ scrollSnapType: "x mandatory" }}
-          >
-            {extras.photos.map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt=""
-                loading="lazy"
-                className="h-40 w-56 rounded-2xl object-cover shrink-0 bg-muted"
-                style={{ scrollSnapAlign: "start" }}
-              />
-            ))}
+          <SectionTitle>Community Activity</SectionTitle>
+          <div className="px-5">
+            <Card className="space-y-3">
+              {extras.activity.map((a, i) => {
+                const Icon = i === 0 ? Users : i === 1 ? CalendarDays : Sparkles;
+                return (
+                  <div key={a} className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-full bg-soft-green flex items-center justify-center text-primary shrink-0">
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <span className="text-sm text-charcoal">{a}</span>
+                  </div>
+                );
+              })}
+            </Card>
           </div>
+
+          <SectionTitle>About</SectionTitle>
+          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted">
+            {extras.about}
+          </p>
+
+          <SectionTitle>Amenities</SectionTitle>
+          <div className="px-5 flex flex-wrap gap-2">
+            {extras.amenities.map((label) => {
+              const Icon = AMENITY_ICONS[label];
+              return (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-charcoal text-xs font-medium"
+                >
+                  <Icon className="w-3.5 h-3.5 text-charcoal-muted" />
+                  {label}
+                </span>
+              );
+            })}
+          </div>
+
+          {extras.photos.length > 0 && (
+            <>
+              <SectionTitle>Photos</SectionTitle>
+              <div
+                className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
+                style={{ scrollSnapType: "x mandatory" }}
+              >
+                {extras.photos.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    className="h-40 w-56 rounded-2xl object-cover shrink-0 bg-muted"
+                    style={{ scrollSnapAlign: "start" }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
+
 
       {/* Bottom action */}
       <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0" style={{ bottom: "var(--nav-height)" }}>
