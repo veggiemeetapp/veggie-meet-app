@@ -1,5 +1,7 @@
 import { Component, ReactNode, createRef } from "react";
 import { PrimaryButton, SecondaryButton } from "@/components/app";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 
 interface Props {
   children: ReactNode;
@@ -22,7 +24,14 @@ export class AppErrorBoundary extends Component<Props, State> {
       const message = error instanceof Error ? error.message : "unknown";
       console.error("[app-error-boundary]", message);
     }
+    // WO-042 §9: bounded activation signal for first-week ops. Route only
+    // (no query string), plus the error name — never the message or stack.
+    logAnalyticsEvent("error_boundary_activated", {
+      route: typeof window !== "undefined" ? window.location.pathname : "unknown",
+      error_name: error instanceof Error ? error.name : "unknown",
+    });
   }
+
 
   componentDidMount() {
     // Connectivity-loss errors resolve themselves once the device is back
