@@ -402,14 +402,14 @@ function PlaceNearbyCard({
         </div>
 
         <div className="p-3">
-          <h3 className="font-semibold text-charcoal text-sm leading-tight line-clamp-1">
+          <h3 className="font-semibold text-charcoal text-sm leading-snug line-clamp-2 break-words min-h-[2.25rem]">
             {place.name}
           </h3>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-charcoal-muted">
-            <span>{placeCategoryLabel[place.category]}</span>
+          <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
+            <span className="shrink-0">{placeCategoryLabel[place.category]}</span>
             {label && (
-              <span className="flex items-center gap-1 truncate max-w-[9rem]">
-                <MapPin className="w-3 h-3" aria-hidden />
+              <span className="flex items-center gap-1 min-w-0">
+                <MapPin className="w-3 h-3 shrink-0" aria-hidden />
                 <span className="truncate">{label}</span>
               </span>
             )}
