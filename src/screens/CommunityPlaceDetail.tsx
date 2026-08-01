@@ -184,6 +184,17 @@ export default function CommunityPlaceDetail() {
     },
   });
 
+  const { profile } = useAuth();
+  const [checkInOpen, setCheckInOpen] = useState(false);
+
+  const { data: checkInState } = useQuery({
+    queryKey: ["place-checkin-state", id],
+    enabled: !!id && isVerifiedPlace && !!profile?.id,
+    queryFn: () => fetchPlaceCheckInState(id),
+  });
+  const isCheckedIn = !!checkInState?.checkedIn;
+
+
 
   if (!place) {
     return (
