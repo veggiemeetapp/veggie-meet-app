@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 // chunk and is fetched only when its route is visited, cutting the initial
 // JS payload dramatically on cold cache.
 const Community = lazy(() => import("./screens/Community"));
+const CommunityPlaces = lazy(() => import("./screens/CommunityPlaces"));
 const Host = lazy(() => import("./screens/Host"));
 const Chats = lazy(() => import("./screens/Chats"));
 const You = lazy(() => import("./screens/You"));
@@ -90,6 +91,7 @@ const App = () => (
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/" element={gated(<Today />)} />
                 <Route path="/community" element={gated(<Community />)} />
+                <Route path="/community/places" element={gated(<CommunityPlaces />)} />
                 <Route path="/search" element={gated(<Search />)} />
                 <Route path="/discover" element={<Navigate to="/community" replace />} />
                 <Route path="/host" element={gated(<Host />)} />
