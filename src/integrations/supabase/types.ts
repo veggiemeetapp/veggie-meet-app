@@ -2207,6 +2207,7 @@ export type Database = {
         }[]
       }
       get_my_settings: { Args: never; Returns: Json }
+      get_my_supported_places: { Args: never; Returns: Json }
       get_my_today_experience: { Args: never; Returns: Json }
       get_onboarding_starting_options: { Args: never; Returns: Json }
       get_or_create_dm: { Args: { _other_profile_id: string }; Returns: string }

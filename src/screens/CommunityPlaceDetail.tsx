@@ -447,7 +447,9 @@ export default function CommunityPlaceDetail() {
           alreadyCheckedIn={isCheckedIn}
           directionsHref={directionsHref}
           onCheckedIn={() => undefined}
-          onViewImpact={() => navigate("/impact")}
+          onViewImpact={() =>
+            navigate("/you/places-supported?from=check_in_success")
+          }
         />
       )}
     </div>

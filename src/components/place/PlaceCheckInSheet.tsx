@@ -206,7 +206,7 @@ export function PlaceCheckInSheet({
               </PrimaryButton>
               {onViewImpact && (
                 <SecondaryButton fullWidth onClick={onViewImpact}>
-                  View Community Impact
+                  View Supported Places
                 </SecondaryButton>
               )}
             </DialogFooter>

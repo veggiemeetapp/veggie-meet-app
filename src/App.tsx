@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 // JS payload dramatically on cold cache.
 const Community = lazy(() => import("./screens/Community"));
 const CommunityPlaces = lazy(() => import("./screens/CommunityPlaces"));
+const SupportedPlaces = lazy(() => import("./screens/SupportedPlaces"));
 const Host = lazy(() => import("./screens/Host"));
 const Chats = lazy(() => import("./screens/Chats"));
 const You = lazy(() => import("./screens/You"));
@@ -98,6 +99,7 @@ const App = () => (
                 <Route path="/chats" element={gated(<Chats />)} />
                 <Route path="/you" element={gated(<You />)} />
                 <Route path="/you/edit" element={gated(<EditProfile />)} />
+                <Route path="/you/places-supported" element={gated(<SupportedPlaces />)} />
                 <Route path="/meetup/:id" element={gated(<MeetupDetail />)} />
                 <Route path="/meetup/:id/manage" element={gated(<MeetupManagement />)} />
                 <Route path="/meetup/:id/summary" element={gated(<MeetupSummary />)} />
