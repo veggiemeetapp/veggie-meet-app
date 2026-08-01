@@ -20,6 +20,10 @@ import {
 import { Card, PrimaryButton, SecondaryButton, MeetupCard } from "@/components/app";
 import { getCommunityPlace } from "@/lib/placeCheckin";
 import { fetchUpcomingMeetups, fetchCommunityPlaceById } from "@/lib/backend";
+import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
+import { fetchPlaceCheckInState } from "@/lib/placeVisits";
+import { useAuth } from "@/hooks/useAuth";
+
 
 import { meetups as mockMeetups } from "@/lib/mock-data";
 
