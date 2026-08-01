@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton, MeetupCard } from "@/components/app";
 import { getCommunityPlace } from "@/lib/placeCheckin";
-import { fetchUpcomingMeetups } from "@/lib/backend";
+import { fetchUpcomingMeetups, fetchCommunityPlaceById } from "@/lib/backend";
+
 import { meetups as mockMeetups } from "@/lib/mock-data";
 
 type DietaryBadge = "100% Vegan" | "Vegetarian Friendly" | "Vegan Options";
@@ -126,11 +127,28 @@ const DEFAULT_EXTRAS: PlaceExtras = {
   photos: [],
 };
 
+const CLASSIFICATION_LABEL: Record<string, string> = {
+  fully_vegan: "100% Vegan",
+  fully_vegetarian: "100% Vegetarian",
+  vegetarian_friendly: "Vegetarian Friendly",
+  vegan_options: "Vegan Options",
+  not_food: "Community Space",
+};
+
 export default function CommunityPlaceDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const place = useMemo(() => getCommunityPlace(id), [id]);
+  const mockPlace = useMemo(() => getCommunityPlace(id), [id]);
   const extras = PLACE_EXTRAS[id] ?? DEFAULT_EXTRAS;
+
+  const { data: dbPlace = null } = useQuery({
+    queryKey: ["community-place", id],
+    enabled: !!id && !mockPlace,
+    queryFn: () => fetchCommunityPlaceById(id),
+  });
+
+  const place = mockPlace ?? dbPlace;
+  const isVerifiedPlace = !mockPlace && !!dbPlace;
 
   const { data: upcomingHere = [] } = useQuery({
     queryKey: ["place-upcoming", id],
@@ -140,10 +158,12 @@ export default function CommunityPlaceDetail() {
       const backend = await fetchUpcomingMeetups(today).catch(() => []);
       const backendHere = backend.filter((m) => m.communityPlaceId === id);
       if (backendHere.length > 0) return backendHere;
+      if (isVerifiedPlace) return [];
       // Fallback so the section is always meaningful in demo mode.
       return mockMeetups.filter((m) => m.communityPlaceId === id);
     },
   });
+
 
   if (!place) {
     return (
