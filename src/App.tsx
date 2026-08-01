@@ -91,6 +91,7 @@ const App = () => (
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/" element={gated(<Today />)} />
                 <Route path="/community" element={gated(<Community />)} />
+                <Route path="/community/places" element={gated(<CommunityPlaces />)} />
                 <Route path="/search" element={gated(<Search />)} />
                 <Route path="/discover" element={<Navigate to="/community" replace />} />
                 <Route path="/host" element={gated(<Host />)} />
