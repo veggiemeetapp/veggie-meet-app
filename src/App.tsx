@@ -99,6 +99,7 @@ const App = () => (
                 <Route path="/chats" element={gated(<Chats />)} />
                 <Route path="/you" element={gated(<You />)} />
                 <Route path="/you/edit" element={gated(<EditProfile />)} />
+                <Route path="/you/places-supported" element={gated(<SupportedPlaces />)} />
                 <Route path="/meetup/:id" element={gated(<MeetupDetail />)} />
                 <Route path="/meetup/:id/manage" element={gated(<MeetupManagement />)} />
                 <Route path="/meetup/:id/summary" element={gated(<MeetupSummary />)} />
