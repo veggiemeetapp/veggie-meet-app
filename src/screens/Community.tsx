@@ -157,7 +157,6 @@ export default function Community() {
             title="Community Places"
             ctaLabel="Explore"
             ctaTo="/community/places"
-            ctaDisabled
           />
           {placesQuery.isPending ? (
             <HScrollSkeleton />
