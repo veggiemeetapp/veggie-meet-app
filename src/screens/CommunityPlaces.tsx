@@ -289,10 +289,15 @@ function PlaceListCard({
           <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
             <span className="min-w-0 truncate">{categoryLabel[place.category]}</span>
             {(distance || area) && (
-              <span className="flex items-center gap-1 shrink-0 whitespace-nowrap">
+              <span
+                className={`flex items-center gap-1 ${
+                  distance ? "shrink-0 whitespace-nowrap" : "min-w-0"
+                }`}
+              >
                 <MapPin className="w-3 h-3 shrink-0" aria-hidden />
-                <span>{distance ?? area}</span>
+                <span className={distance ? undefined : "truncate"}>{distance ?? area}</span>
               </span>
+
             )}
           </div>
           {distance && area && (
