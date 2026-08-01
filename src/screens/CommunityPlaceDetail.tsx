@@ -192,11 +192,22 @@ export default function CommunityPlaceDetail() {
     `${place.name} ${place.address}`,
   )}`;
 
+  const dietaryLabel = isVerifiedPlace
+    ? CLASSIFICATION_LABEL[place.veggieClassification ?? ""] ?? null
+    : extras.dietary;
+  const showCover = place.hasCoverImage !== false;
+
   return (
     <div className="flex flex-col min-h-dvh pb-40">
       {/* Hero */}
       <div className="relative h-64">
-        <img src={place.coverImageUrl} alt="" className="w-full h-full object-cover" />
+        {showCover ? (
+          <img src={place.coverImageUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-soft-green flex items-center justify-center">
+            <Leaf className="w-12 h-12 text-primary/60" aria-hidden />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-transparent to-background" />
         <button
           onClick={() => navigate(-1)}
@@ -211,20 +222,70 @@ export default function CommunityPlaceDetail() {
       <div className="px-5 -mt-6 relative">
         <div className="space-y-2.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-soft-green text-primary">
-              <Leaf className="w-3 h-3" />
-              {extras.dietary}
-            </span>
+            {dietaryLabel && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-soft-green text-primary">
+                <Leaf className="w-3 h-3" />
+                {dietaryLabel}
+              </span>
+            )}
+            {isVerifiedPlace && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-charcoal">
+                {placeCategoryLabel(place.category)}
+              </span>
+            )}
           </div>
           <h1 className="text-[26px] font-semibold text-charcoal leading-tight tracking-tight">
             {place.name}
           </h1>
           <div className="flex items-center gap-1.5 text-sm text-charcoal-muted">
             <MapPin className="w-4 h-4 shrink-0" />
-            <span>{extras.district || place.address}</span>
+            <span>{isVerifiedPlace ? place.address : extras.district || place.address}</span>
           </div>
         </div>
       </div>
+
+      {isVerifiedPlace && (
+        <>
+          <SectionTitle>About</SectionTitle>
+          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted break-words">
+            {place.description}
+          </p>
+
+          {place.veggieReason && (
+            <>
+              <SectionTitle>Why Veggies Visit</SectionTitle>
+              <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted break-words">
+                {place.veggieReason}
+              </p>
+            </>
+          )}
+
+          <SectionTitle>Links</SectionTitle>
+          <div className="px-5 flex flex-col gap-2">
+            {place.websiteUrl && (
+              <a
+                href={place.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-primary break-all"
+              >
+                Official website
+              </a>
+            )}
+            {place.googleMapsUrl && (
+              <a
+                href={place.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-primary break-all"
+              >
+                View on Google Maps
+              </a>
+            )}
+          </div>
+        </>
+      )}
+
 
       {/* Community Highlights */}
       <SectionTitle>Community Highlights</SectionTitle>
