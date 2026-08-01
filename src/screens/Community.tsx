@@ -114,7 +114,7 @@ export default function Community() {
             title="Meetups Near You"
             ctaLabel="View all"
             ctaTo="/community/meetups"
-            ctaDisabled
+            ctaComingSoon
           />
           {meetupsQuery.isPending ? (
             <HScrollSkeleton />
@@ -185,6 +185,7 @@ function SectionHeader({
   ctaLabel,
   ctaTo,
   ctaDisabled,
+  ctaComingSoon,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
@@ -192,6 +193,7 @@ function SectionHeader({
   ctaLabel?: string;
   ctaTo?: string;
   ctaDisabled?: boolean;
+  ctaComingSoon?: boolean;
 }) {
   return (
     <div className="flex items-end justify-between gap-3 px-5 mt-10 mb-4">
@@ -205,9 +207,17 @@ function SectionHeader({
         )}
       </div>
       {ctaLabel && ctaTo && (
-        ctaDisabled ? (
+        ctaComingSoon ? (
           <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted/70">
             Coming soon
+          </span>
+        ) : ctaDisabled ? (
+          <span
+            aria-disabled="true"
+            className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted/70"
+          >
+            {ctaLabel}
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden />
           </span>
         ) : (
           <Link
@@ -392,14 +402,14 @@ function PlaceNearbyCard({
         </div>
 
         <div className="p-3">
-          <h3 className="font-semibold text-charcoal text-sm leading-tight line-clamp-1">
+          <h3 className="font-semibold text-charcoal text-sm leading-snug line-clamp-2 break-words min-h-[2.25rem]">
             {place.name}
           </h3>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-charcoal-muted">
-            <span>{placeCategoryLabel[place.category]}</span>
+          <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
+            <span className="shrink-0">{placeCategoryLabel[place.category]}</span>
             {label && (
-              <span className="flex items-center gap-1 truncate max-w-[9rem]">
-                <MapPin className="w-3 h-3" aria-hidden />
+              <span className="flex items-center gap-1 min-w-0">
+                <MapPin className="w-3 h-3 shrink-0" aria-hidden />
                 <span className="truncate">{label}</span>
               </span>
             )}
