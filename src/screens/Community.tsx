@@ -185,6 +185,7 @@ function SectionHeader({
   ctaLabel,
   ctaTo,
   ctaDisabled,
+  ctaComingSoon,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
@@ -192,6 +193,7 @@ function SectionHeader({
   ctaLabel?: string;
   ctaTo?: string;
   ctaDisabled?: boolean;
+  ctaComingSoon?: boolean;
 }) {
   return (
     <div className="flex items-end justify-between gap-3 px-5 mt-10 mb-4">
@@ -205,9 +207,17 @@ function SectionHeader({
         )}
       </div>
       {ctaLabel && ctaTo && (
-        ctaDisabled ? (
+        ctaComingSoon ? (
           <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted/70">
             Coming soon
+          </span>
+        ) : ctaDisabled ? (
+          <span
+            aria-disabled="true"
+            className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted/70"
+          >
+            {ctaLabel}
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden />
           </span>
         ) : (
           <Link
