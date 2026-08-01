@@ -287,17 +287,18 @@ function PlaceListCard({
             {place.name}
           </h3>
           <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
-            <span className="shrink-0">{categoryLabel[place.category]}</span>
+            <span className="min-w-0 truncate">{categoryLabel[place.category]}</span>
             {(distance || area) && (
-              <span className="flex items-center gap-1 min-w-0">
+              <span className="flex items-center gap-1 shrink-0 whitespace-nowrap">
                 <MapPin className="w-3 h-3 shrink-0" aria-hidden />
-                <span className="truncate">{distance ?? area}</span>
+                <span>{distance ?? area}</span>
               </span>
             )}
           </div>
           {distance && area && (
             <div className="mt-1 text-[11px] text-charcoal-muted truncate">{area}</div>
           )}
+
           {isVegan && (
             <span className="mt-3 self-start inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-soft-green text-primary">
               <Leaf className="w-3 h-3" aria-hidden />
