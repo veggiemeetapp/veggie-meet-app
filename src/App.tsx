@@ -116,7 +116,9 @@ const App = () => (
                 <Route path="/impact" element={gated(<Impact />)} />
                 <Route path="/impact/:tab" element={gated(<Impact />)} />
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
-                <Route path="/settings" element={gated(<Settings />)} />
+                <Route path="/owner/places" element={gated(<OwnerPlaceVerification />)} />
+                <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
