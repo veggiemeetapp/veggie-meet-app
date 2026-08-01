@@ -419,21 +419,39 @@ export default function CommunityPlaceDetail() {
       <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0" style={{ bottom: "var(--nav-height)" }}>
         <div className="flex gap-2">
           <SecondaryButton
-            className="flex-1"
-            onClick={() => navigate(`/place/${place.id}/checkin`)}
+            className="flex-1 min-w-0"
+            onClick={() =>
+              isVerifiedPlace
+                ? setCheckInOpen(true)
+                : navigate(`/place/${place.id}/checkin`)
+            }
           >
-            Check In
+            <span className="truncate">{isCheckedIn ? "Checked In" : "Check In"}</span>
           </SecondaryButton>
           <PrimaryButton
-            className="flex-1"
+            className="flex-1 min-w-0"
             onClick={() => window.open(directionsHref, "_blank", "noopener,noreferrer")}
           >
-            <Navigation className="w-4 h-4 mr-1.5" />
-            Get Directions
+            <Navigation className="w-4 h-4 mr-1.5 shrink-0" />
+            <span className="truncate">Get Directions</span>
           </PrimaryButton>
         </div>
       </div>
+
+      {isVerifiedPlace && (
+        <PlaceCheckInSheet
+          open={checkInOpen}
+          onOpenChange={setCheckInOpen}
+          placeId={place.id}
+          placeName={place.name}
+          alreadyCheckedIn={isCheckedIn}
+          directionsHref={directionsHref}
+          onCheckedIn={() => setCheckInOpen(true)}
+          onViewImpact={() => navigate("/impact")}
+        />
+      )}
     </div>
+
   );
 }
 
