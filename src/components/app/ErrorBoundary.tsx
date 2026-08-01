@@ -1,5 +1,7 @@
 import { Component, ReactNode, createRef } from "react";
 import { PrimaryButton, SecondaryButton } from "@/components/app";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 
 interface Props {
   children: ReactNode;
