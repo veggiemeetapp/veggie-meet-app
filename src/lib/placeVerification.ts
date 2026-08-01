@@ -27,6 +27,11 @@ export interface PlaceCandidate {
   latitude: number | null;
   longitude: number | null;
   display_name: string;
+  /** Approved shorter public name. Falls back to display_name when empty. */
+  public_display_name: string | null;
+  /** Approved public address. Falls back to the Google address when empty. */
+  public_address: string | null;
+
   category: string | null;
   veggie_classification: string | null;
   veggie_reason: string | null;

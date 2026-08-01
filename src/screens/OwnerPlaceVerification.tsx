@@ -36,10 +36,12 @@ function publishBlockers(c: PlaceCandidate): string[] {
   if (!c.category) out.push("Category required");
   if (!c.description || c.description.trim().length < 20)
     out.push("Original VeggieMeet description required (20+ characters)");
-  if (c.image_rights_status !== "cleared" && c.image_rights_status !== "no_image")
-    out.push('Image rights must be "cleared" or "no_image"');
-  if (c.cover_image_url && c.image_rights_status !== "cleared")
+  if (c.image_rights_status !== "licensed" && c.image_rights_status !== "owner_supplied" &&
+      c.image_rights_status !== "restaurant_supplied" && c.image_rights_status !== "none")
+    out.push('Image rights must be "none" (no image), "owner_supplied", "restaurant_supplied" or "licensed"');
+  if (c.cover_image_url && c.image_rights_status === "none")
     out.push("A cover image requires cleared image rights");
+
   if (c.business_status && c.business_status !== "OPERATIONAL")
     out.push(`Google business status is ${c.business_status}`);
   if (c.verification_status === "published") out.push("Already published");
