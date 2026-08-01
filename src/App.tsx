@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 // JS payload dramatically on cold cache.
 const Community = lazy(() => import("./screens/Community"));
 const CommunityPlaces = lazy(() => import("./screens/CommunityPlaces"));
+const SupportedPlaces = lazy(() => import("./screens/SupportedPlaces"));
 const Host = lazy(() => import("./screens/Host"));
 const Chats = lazy(() => import("./screens/Chats"));
 const You = lazy(() => import("./screens/You"));
