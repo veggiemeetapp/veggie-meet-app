@@ -247,13 +247,28 @@ export default function OwnerPlaceVerification() {
             <section className="space-y-3">
               <h2 className="text-sm font-semibold">Curated VeggieMeet copy</h2>
               <div className="space-y-1.5">
-                <Label htmlFor="pv-name">Display name</Label>
+                <Label htmlFor="pv-name">Display name (internal)</Label>
                 <Input
                   id="pv-name"
                   value={merged.display_name ?? ""}
                   onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
                 />
+                <Label htmlFor="pv-public-name">Approved public display name</Label>
+                <Input
+                  id="pv-public-name"
+                  value={merged.public_display_name ?? ""}
+                  placeholder="Leave empty to use the internal name"
+                  onChange={(e) => setForm((f) => ({ ...f, public_display_name: e.target.value }))}
+                />
+                <Label htmlFor="pv-public-address">Approved public address</Label>
+                <Input
+                  id="pv-public-address"
+                  value={merged.public_address ?? ""}
+                  placeholder="Leave empty to use the verified Google address"
+                  onChange={(e) => setForm((f) => ({ ...f, public_address: e.target.value }))}
+                />
               </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="pv-cat">Category</Label>
