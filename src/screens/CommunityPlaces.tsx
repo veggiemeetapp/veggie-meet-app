@@ -167,11 +167,12 @@ export default function CommunityPlaces() {
 
         {/* Results */}
         {placesQuery.isPending ? (
-          <div className="mt-5 grid gap-3 grid-cols-1">
+          <div className="mt-5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
             ))}
           </div>
+
         ) : all.length === 0 ? (
           <EmptyBlock
             title="No Community Places here yet"
