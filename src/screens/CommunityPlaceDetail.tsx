@@ -268,7 +268,7 @@ export default function CommunityPlaceDetail() {
 
           {place.veggieReason && (
             <>
-              <SectionTitle>Why Veggies Visit</SectionTitle>
+              <SectionTitle>Why Veggies Love It</SectionTitle>
               <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted break-words">
                 {place.veggieReason}
               </p>
