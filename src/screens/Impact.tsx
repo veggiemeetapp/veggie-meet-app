@@ -294,41 +294,51 @@ function MetricCard({
   total,
   description,
   onView,
+  viewLabel,
 }: {
   icon: JSX.Element;
   title: string;
   total: number;
   description: string;
   onView: () => void;
+  viewLabel?: string;
 }) {
   return (
     <Card padding="lg">
-      <div className="flex items-start gap-3">
-        <div
-          aria-hidden
-          className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center shrink-0"
-        >
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-xs uppercase tracking-wider font-semibold text-charcoal-muted">
-            {title}
+      <button
+        type="button"
+        onClick={onView}
+        aria-label={viewLabel ?? `View ${title} details`}
+        className="w-full text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <div className="flex items-start gap-3">
+          <div
+            aria-hidden
+            className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center shrink-0"
+          >
+            {icon}
           </div>
-          <div className="mt-0.5 text-3xl font-bold text-charcoal leading-none tabular-nums">
-            {total}
+          <div className="flex-1 min-w-0">
+            <div className="text-xs uppercase tracking-wider font-semibold text-charcoal-muted">
+              {title}
+            </div>
+            <div className="mt-0.5 text-3xl font-bold text-charcoal leading-none tabular-nums">
+              {total}
+            </div>
+            <p className="mt-1.5 text-sm text-charcoal-muted">{description}</p>
           </div>
-          <p className="mt-1.5 text-sm text-charcoal-muted">{description}</p>
         </div>
-      </div>
+      </button>
       <div className="mt-4">
-        <SecondaryButton size="sm" fullWidth onClick={onView} aria-label={`View ${title} details`}>
-          View Details
+        <SecondaryButton size="sm" fullWidth onClick={onView} aria-label={viewLabel ?? `View ${title} details`}>
+          {viewLabel ? "View Places" : "View Details"}
           <ChevronRight className="w-4 h-4" />
         </SecondaryButton>
       </div>
     </Card>
   );
 }
+
 
 /* --------------------------- Recent Impact --------------------------- */
 
