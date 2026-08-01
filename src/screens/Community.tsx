@@ -114,7 +114,7 @@ export default function Community() {
             title="Meetups Near You"
             ctaLabel="View all"
             ctaTo="/community/meetups"
-            ctaDisabled
+            ctaComingSoon
           />
           {meetupsQuery.isPending ? (
             <HScrollSkeleton />
