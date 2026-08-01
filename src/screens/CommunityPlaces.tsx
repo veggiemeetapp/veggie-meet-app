@@ -192,7 +192,7 @@ export default function CommunityPlaces() {
             }
           />
         ) : (
-          <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-5 grid gap-3 grid-cols-1">
             {visible.map((place, i) => (
               <li key={place.id}>
                 <PlaceListCard
