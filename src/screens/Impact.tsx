@@ -261,7 +261,8 @@ function OverviewSection({
         description={
           p === 1 ? "You supported 1 Community Place." : `You supported ${p} Community Places.`
         }
-        onView={() => onTab("places")}
+        onView={() => navigateToSupported()}
+        viewLabel="View Places You’ve Supported"
       />
       <MetricCard
         icon={<Sparkles className="w-5 h-5" />}
