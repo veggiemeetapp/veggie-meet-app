@@ -318,6 +318,7 @@ export type Database = {
           city_id: string | null
           cover_image_url: string | null
           created_at: string
+          description: string | null
           google_maps_url: string | null
           google_place_id: string | null
           id: string
@@ -332,10 +333,13 @@ export type Database = {
           timezone: string | null
           upcoming_meetups_count: number
           updated_at: string
+          veggie_classification: string | null
+          veggie_reason: string | null
           veggies_visited_count: number
           verification_status: string
           verified_at: string | null
           verified_by: string | null
+          website_url: string | null
         }
         Insert: {
           address?: string
@@ -344,6 +348,7 @@ export type Database = {
           city_id?: string | null
           cover_image_url?: string | null
           created_at?: string
+          description?: string | null
           google_maps_url?: string | null
           google_place_id?: string | null
           id?: string
@@ -358,10 +363,13 @@ export type Database = {
           timezone?: string | null
           upcoming_meetups_count?: number
           updated_at?: string
+          veggie_classification?: string | null
+          veggie_reason?: string | null
           veggies_visited_count?: number
           verification_status?: string
           verified_at?: string | null
           verified_by?: string | null
+          website_url?: string | null
         }
         Update: {
           address?: string
@@ -370,6 +378,7 @@ export type Database = {
           city_id?: string | null
           cover_image_url?: string | null
           created_at?: string
+          description?: string | null
           google_maps_url?: string | null
           google_place_id?: string | null
           id?: string
@@ -384,10 +393,13 @@ export type Database = {
           timezone?: string | null
           upcoming_meetups_count?: number
           updated_at?: string
+          veggie_classification?: string | null
+          veggie_reason?: string | null
           veggies_visited_count?: number
           verification_status?: string
           verified_at?: string | null
           verified_by?: string | null
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -1329,6 +1341,8 @@ export type Database = {
           image_source: string | null
           latitude: number | null
           longitude: number | null
+          public_address: string | null
+          public_display_name: string | null
           published_at: string | null
           published_place_id: string | null
           review_order: number | null
@@ -1361,6 +1375,8 @@ export type Database = {
           image_source?: string | null
           latitude?: number | null
           longitude?: number | null
+          public_address?: string | null
+          public_display_name?: string | null
           published_at?: string | null
           published_place_id?: string | null
           review_order?: number | null
@@ -1393,6 +1409,8 @@ export type Database = {
           image_source?: string | null
           latitude?: number | null
           longitude?: number | null
+          public_address?: string | null
+          public_display_name?: string | null
           published_at?: string | null
           published_place_id?: string | null
           review_order?: number | null

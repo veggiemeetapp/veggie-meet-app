@@ -36,10 +36,12 @@ function publishBlockers(c: PlaceCandidate): string[] {
   if (!c.category) out.push("Category required");
   if (!c.description || c.description.trim().length < 20)
     out.push("Original VeggieMeet description required (20+ characters)");
-  if (c.image_rights_status !== "cleared" && c.image_rights_status !== "no_image")
-    out.push('Image rights must be "cleared" or "no_image"');
-  if (c.cover_image_url && c.image_rights_status !== "cleared")
+  if (c.image_rights_status !== "licensed" && c.image_rights_status !== "owner_supplied" &&
+      c.image_rights_status !== "restaurant_supplied" && c.image_rights_status !== "none")
+    out.push('Image rights must be "none" (no image), "owner_supplied", "restaurant_supplied" or "licensed"');
+  if (c.cover_image_url && c.image_rights_status === "none")
     out.push("A cover image requires cleared image rights");
+
   if (c.business_status && c.business_status !== "OPERATIONAL")
     out.push(`Google business status is ${c.business_status}`);
   if (c.verification_status === "published") out.push("Already published");
@@ -245,13 +247,28 @@ export default function OwnerPlaceVerification() {
             <section className="space-y-3">
               <h2 className="text-sm font-semibold">Curated VeggieMeet copy</h2>
               <div className="space-y-1.5">
-                <Label htmlFor="pv-name">Display name</Label>
+                <Label htmlFor="pv-name">Display name (internal)</Label>
                 <Input
                   id="pv-name"
                   value={merged.display_name ?? ""}
                   onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
                 />
+                <Label htmlFor="pv-public-name">Approved public display name</Label>
+                <Input
+                  id="pv-public-name"
+                  value={merged.public_display_name ?? ""}
+                  placeholder="Leave empty to use the internal name"
+                  onChange={(e) => setForm((f) => ({ ...f, public_display_name: e.target.value }))}
+                />
+                <Label htmlFor="pv-public-address">Approved public address</Label>
+                <Input
+                  id="pv-public-address"
+                  value={merged.public_address ?? ""}
+                  placeholder="Leave empty to use the verified Google address"
+                  onChange={(e) => setForm((f) => ({ ...f, public_address: e.target.value }))}
+                />
               </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="pv-cat">Category</Label>

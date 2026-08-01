@@ -377,13 +377,20 @@ function PlaceNearbyCard({
     <Link to={`/place/${place.id}`} className="block">
       <Card padding="none" interactive className="w-56 shrink-0 overflow-hidden">
         <div className="h-32">
-          <img
-            src={place.coverImageUrl}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          {place.hasCoverImage === false ? (
+            <div className="w-full h-full bg-soft-green flex items-center justify-center">
+              <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
+            </div>
+          ) : (
+            <img
+              src={place.coverImageUrl}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          )}
         </div>
+
         <div className="p-3">
           <h3 className="font-semibold text-charcoal text-sm leading-tight line-clamp-1">
             {place.name}

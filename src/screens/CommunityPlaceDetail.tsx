@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton, MeetupCard } from "@/components/app";
 import { getCommunityPlace } from "@/lib/placeCheckin";
-import { fetchUpcomingMeetups } from "@/lib/backend";
+import { fetchUpcomingMeetups, fetchCommunityPlaceById } from "@/lib/backend";
+
 import { meetups as mockMeetups } from "@/lib/mock-data";
 
 type DietaryBadge = "100% Vegan" | "Vegetarian Friendly" | "Vegan Options";
@@ -126,11 +127,43 @@ const DEFAULT_EXTRAS: PlaceExtras = {
   photos: [],
 };
 
+const CLASSIFICATION_LABEL: Record<string, string> = {
+  fully_vegan: "100% Vegan",
+  fully_vegetarian: "100% Vegetarian",
+  vegetarian_friendly: "Vegetarian Friendly",
+  vegan_options: "Vegan Options",
+  not_food: "Community Space",
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  restaurant: "Restaurant",
+  cafe: "Café",
+  park: "Park",
+  market: "Market",
+  studio: "Studio",
+  venue: "Venue",
+};
+
+function placeCategoryLabel(category: string) {
+  return CATEGORY_LABEL[category] ?? "Venue";
+}
+
+
+
 export default function CommunityPlaceDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const place = useMemo(() => getCommunityPlace(id), [id]);
+  const mockPlace = useMemo(() => getCommunityPlace(id), [id]);
   const extras = PLACE_EXTRAS[id] ?? DEFAULT_EXTRAS;
+
+  const { data: dbPlace = null } = useQuery({
+    queryKey: ["community-place", id],
+    enabled: !!id && !mockPlace,
+    queryFn: () => fetchCommunityPlaceById(id),
+  });
+
+  const place = mockPlace ?? dbPlace;
+  const isVerifiedPlace = !mockPlace && !!dbPlace;
 
   const { data: upcomingHere = [] } = useQuery({
     queryKey: ["place-upcoming", id],
@@ -140,10 +173,12 @@ export default function CommunityPlaceDetail() {
       const backend = await fetchUpcomingMeetups(today).catch(() => []);
       const backendHere = backend.filter((m) => m.communityPlaceId === id);
       if (backendHere.length > 0) return backendHere;
+      if (isVerifiedPlace) return [];
       // Fallback so the section is always meaningful in demo mode.
       return mockMeetups.filter((m) => m.communityPlaceId === id);
     },
   });
+
 
   if (!place) {
     return (
@@ -172,11 +207,22 @@ export default function CommunityPlaceDetail() {
     `${place.name} ${place.address}`,
   )}`;
 
+  const dietaryLabel = isVerifiedPlace
+    ? CLASSIFICATION_LABEL[place.veggieClassification ?? ""] ?? null
+    : extras.dietary;
+  const showCover = place.hasCoverImage !== false;
+
   return (
     <div className="flex flex-col min-h-dvh pb-40">
       {/* Hero */}
       <div className="relative h-64">
-        <img src={place.coverImageUrl} alt="" className="w-full h-full object-cover" />
+        {showCover ? (
+          <img src={place.coverImageUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-soft-green flex items-center justify-center">
+            <Leaf className="w-12 h-12 text-primary/60" aria-hidden />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-transparent to-background" />
         <button
           onClick={() => navigate(-1)}
@@ -191,33 +237,88 @@ export default function CommunityPlaceDetail() {
       <div className="px-5 -mt-6 relative">
         <div className="space-y-2.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-soft-green text-primary">
-              <Leaf className="w-3 h-3" />
-              {extras.dietary}
-            </span>
+            {dietaryLabel && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-soft-green text-primary">
+                <Leaf className="w-3 h-3" />
+                {dietaryLabel}
+              </span>
+            )}
+            {isVerifiedPlace && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-charcoal">
+                {placeCategoryLabel(place.category)}
+              </span>
+            )}
           </div>
           <h1 className="text-[26px] font-semibold text-charcoal leading-tight tracking-tight">
             {place.name}
           </h1>
           <div className="flex items-center gap-1.5 text-sm text-charcoal-muted">
             <MapPin className="w-4 h-4 shrink-0" />
-            <span>{extras.district || place.address}</span>
+            <span>{isVerifiedPlace ? place.address : extras.district || place.address}</span>
           </div>
         </div>
       </div>
 
-      {/* Community Highlights */}
-      <SectionTitle>Community Highlights</SectionTitle>
-      <div className="px-5">
-        <Card className="space-y-2.5">
-          {extras.highlights.map((h) => (
-            <div key={h} className="flex items-start gap-2.5">
-              <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-              <span className="text-sm text-charcoal leading-relaxed">{h}</span>
-            </div>
-          ))}
-        </Card>
-      </div>
+      {isVerifiedPlace && (
+        <>
+          <SectionTitle>About</SectionTitle>
+          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted break-words">
+            {place.description}
+          </p>
+
+          {place.veggieReason && (
+            <>
+              <SectionTitle>Why Veggies Visit</SectionTitle>
+              <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted break-words">
+                {place.veggieReason}
+              </p>
+            </>
+          )}
+
+          <SectionTitle>Links</SectionTitle>
+          <div className="px-5 flex flex-col gap-2">
+            {place.websiteUrl && (
+              <a
+                href={place.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-primary break-all"
+              >
+                Official website
+              </a>
+            )}
+            {place.googleMapsUrl && (
+              <a
+                href={place.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-primary break-all"
+              >
+                View on Google Maps
+              </a>
+            )}
+          </div>
+        </>
+      )}
+
+
+      {/* Community Highlights (demo content only) */}
+      {!isVerifiedPlace && (
+        <>
+          <SectionTitle>Community Highlights</SectionTitle>
+          <div className="px-5">
+            <Card className="space-y-2.5">
+              {extras.highlights.map((h) => (
+                <div key={h} className="flex items-start gap-2.5">
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                  <span className="text-sm text-charcoal leading-relaxed">{h}</span>
+                </div>
+              ))}
+            </Card>
+          </div>
+        </>
+      )}
+
 
       {/* Upcoming Here */}
       <SectionTitle>Upcoming Here</SectionTitle>
@@ -233,68 +334,70 @@ export default function CommunityPlaceDetail() {
         )}
       </div>
 
-      {/* Community Activity */}
-      <SectionTitle>Community Activity</SectionTitle>
-      <div className="px-5">
-        <Card className="space-y-3">
-          {extras.activity.map((a, i) => {
-            const Icon = i === 0 ? Users : i === 1 ? CalendarDays : Sparkles;
-            return (
-              <div key={a} className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-soft-green flex items-center justify-center text-primary shrink-0">
-                  <Icon className="w-4 h-4" />
-                </span>
-                <span className="text-sm text-charcoal">{a}</span>
-              </div>
-            );
-          })}
-        </Card>
-      </div>
-
-      {/* About */}
-      <SectionTitle>About</SectionTitle>
-      <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted">
-        {extras.about}
-      </p>
-
-      {/* Amenities */}
-      <SectionTitle>Amenities</SectionTitle>
-      <div className="px-5 flex flex-wrap gap-2">
-        {extras.amenities.map((label) => {
-          const Icon = AMENITY_ICONS[label];
-          return (
-            <span
-              key={label}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-charcoal text-xs font-medium"
-            >
-              <Icon className="w-3.5 h-3.5 text-charcoal-muted" />
-              {label}
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Photos */}
-      {extras.photos.length > 0 && (
+      {/* Demo-only enrichment sections */}
+      {!isVerifiedPlace && (
         <>
-          <SectionTitle>Photos</SectionTitle>
-          <div
-            className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
-            style={{ scrollSnapType: "x mandatory" }}
-          >
-            {extras.photos.map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt=""
-                loading="lazy"
-                className="h-40 w-56 rounded-2xl object-cover shrink-0 bg-muted"
-                style={{ scrollSnapAlign: "start" }}
-              />
-            ))}
+          <SectionTitle>Community Activity</SectionTitle>
+          <div className="px-5">
+            <Card className="space-y-3">
+              {extras.activity.map((a, i) => {
+                const Icon = i === 0 ? Users : i === 1 ? CalendarDays : Sparkles;
+                return (
+                  <div key={a} className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-full bg-soft-green flex items-center justify-center text-primary shrink-0">
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <span className="text-sm text-charcoal">{a}</span>
+                  </div>
+                );
+              })}
+            </Card>
           </div>
+
+          <SectionTitle>About</SectionTitle>
+          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted">
+            {extras.about}
+          </p>
+
+          <SectionTitle>Amenities</SectionTitle>
+          <div className="px-5 flex flex-wrap gap-2">
+            {extras.amenities.map((label) => {
+              const Icon = AMENITY_ICONS[label];
+              return (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-charcoal text-xs font-medium"
+                >
+                  <Icon className="w-3.5 h-3.5 text-charcoal-muted" />
+                  {label}
+                </span>
+              );
+            })}
+          </div>
+
+          {extras.photos.length > 0 && (
+            <>
+              <SectionTitle>Photos</SectionTitle>
+              <div
+                className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
+                style={{ scrollSnapType: "x mandatory" }}
+              >
+                {extras.photos.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    className="h-40 w-56 rounded-2xl object-cover shrink-0 bg-muted"
+                    style={{ scrollSnapAlign: "start" }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
+
 
       {/* Bottom action */}
       <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0" style={{ bottom: "var(--nav-height)" }}>
