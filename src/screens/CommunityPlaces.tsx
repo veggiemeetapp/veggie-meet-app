@@ -167,11 +167,12 @@ export default function CommunityPlaces() {
 
         {/* Results */}
         {placesQuery.isPending ? (
-          <div className="mt-5 grid gap-3 grid-cols-1">
+          <div className="mt-5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
             ))}
           </div>
+
         ) : all.length === 0 ? (
           <EmptyBlock
             title="No Community Places here yet"
@@ -192,9 +193,10 @@ export default function CommunityPlaces() {
             }
           />
         ) : (
-          <ul className="mt-5 grid gap-3 grid-cols-1">
+          <ul className="mt-5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
             {visible.map((place, i) => (
-              <li key={place.id}>
+              <li key={place.id} className="min-w-0">
+
                 <PlaceListCard
                   place={place}
                   position={i}
@@ -285,17 +287,23 @@ function PlaceListCard({
             {place.name}
           </h3>
           <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
-            <span className="shrink-0">{categoryLabel[place.category]}</span>
+            <span className="min-w-0 truncate">{categoryLabel[place.category]}</span>
             {(distance || area) && (
-              <span className="flex items-center gap-1 min-w-0">
+              <span
+                className={`flex items-center gap-1 ${
+                  distance ? "shrink-0 whitespace-nowrap" : "min-w-0"
+                }`}
+              >
                 <MapPin className="w-3 h-3 shrink-0" aria-hidden />
-                <span className="truncate">{distance ?? area}</span>
+                <span className={distance ? undefined : "truncate"}>{distance ?? area}</span>
               </span>
+
             )}
           </div>
           {distance && area && (
             <div className="mt-1 text-[11px] text-charcoal-muted truncate">{area}</div>
           )}
+
           {isVegan && (
             <span className="mt-3 self-start inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-soft-green text-primary">
               <Leaf className="w-3 h-3" aria-hidden />
