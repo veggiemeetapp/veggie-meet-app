@@ -446,7 +446,7 @@ export default function CommunityPlaceDetail() {
           placeName={place.name}
           alreadyCheckedIn={isCheckedIn}
           directionsHref={directionsHref}
-          onCheckedIn={() => setCheckInOpen(true)}
+          onCheckedIn={() => undefined}
           onViewImpact={() => navigate("/impact")}
         />
       )}

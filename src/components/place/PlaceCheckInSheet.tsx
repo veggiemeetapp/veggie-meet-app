@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, MapPin, Navigation } from "lucide-react";
 import {
@@ -101,10 +101,16 @@ export function PlaceCheckInSheet({
   const [phase, setPhase] = useState<Phase>("explain");
   const [reason, setReason] = useState<CheckInReason>("location_unavailable");
 
+  // Reset only when the dialog opens — later `alreadyCheckedIn` updates (e.g.
+  // the refetch triggered by a successful check-in) must not clobber the
+  // success state.
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (!open) return;
-    setPhase(alreadyCheckedIn ? "error" : "explain");
-    if (alreadyCheckedIn) setReason("already_checked_in");
+    if (open && !wasOpen.current) {
+      setPhase(alreadyCheckedIn ? "error" : "explain");
+      if (alreadyCheckedIn) setReason("already_checked_in");
+    }
+    wasOpen.current = open;
   }, [open, alreadyCheckedIn]);
 
   async function run() {
