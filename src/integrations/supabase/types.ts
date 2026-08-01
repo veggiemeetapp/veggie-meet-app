@@ -310,6 +310,57 @@ export type Database = {
         }
         Relationships: []
       }
+      community_place_visits: {
+        Row: {
+          community_place_id: string
+          created_at: string
+          distance_meters: number | null
+          id: string
+          location_accuracy_meters: number | null
+          profile_id: string
+          verification_method: string
+          verification_status: string
+          visited_at: string
+        }
+        Insert: {
+          community_place_id: string
+          created_at?: string
+          distance_meters?: number | null
+          id?: string
+          location_accuracy_meters?: number | null
+          profile_id: string
+          verification_method?: string
+          verification_status?: string
+          visited_at?: string
+        }
+        Update: {
+          community_place_id?: string
+          created_at?: string
+          distance_meters?: number | null
+          id?: string
+          location_accuracy_meters?: number | null
+          profile_id?: string
+          verification_method?: string
+          verification_status?: string
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_visits_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_visits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_places: {
         Row: {
           address: string
@@ -1987,6 +2038,15 @@ export type Database = {
         Args: { _meetup_id: string; _reason?: string }
         Returns: undefined
       }
+      check_in_to_community_place: {
+        Args: {
+          _accuracy: number
+          _latitude: number
+          _longitude: number
+          _place_id: string
+        }
+        Returns: Json
+      }
       complete_onboarding: {
         Args: never
         Returns: {
@@ -2082,6 +2142,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_my_place_check_in_state: {
+        Args: { _place_id: string }
+        Returns: Json
       }
       get_my_plans: {
         Args: { _past_cursor?: string; _past_limit?: number }

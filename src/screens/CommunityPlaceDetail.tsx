@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
+
   ArrowLeft,
   MapPin,
   Leaf,
@@ -19,6 +20,10 @@ import {
 import { Card, PrimaryButton, SecondaryButton, MeetupCard } from "@/components/app";
 import { getCommunityPlace } from "@/lib/placeCheckin";
 import { fetchUpcomingMeetups, fetchCommunityPlaceById } from "@/lib/backend";
+import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
+import { fetchPlaceCheckInState } from "@/lib/placeVisits";
+import { useAuth } from "@/hooks/useAuth";
+
 
 import { meetups as mockMeetups } from "@/lib/mock-data";
 
@@ -178,6 +183,17 @@ export default function CommunityPlaceDetail() {
       return mockMeetups.filter((m) => m.communityPlaceId === id);
     },
   });
+
+  const { profile } = useAuth();
+  const [checkInOpen, setCheckInOpen] = useState(false);
+
+  const { data: checkInState } = useQuery({
+    queryKey: ["place-checkin-state", id],
+    enabled: !!id && isVerifiedPlace && !!profile?.id,
+    queryFn: () => fetchPlaceCheckInState(id),
+  });
+  const isCheckedIn = !!checkInState?.checkedIn;
+
 
 
   if (!place) {
@@ -403,21 +419,39 @@ export default function CommunityPlaceDetail() {
       <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0" style={{ bottom: "var(--nav-height)" }}>
         <div className="flex gap-2">
           <SecondaryButton
-            className="flex-1"
-            onClick={() => navigate(`/place/${place.id}/checkin`)}
+            className="flex-1 min-w-0 px-4 text-[15px]"
+            onClick={() =>
+              isVerifiedPlace
+                ? setCheckInOpen(true)
+                : navigate(`/place/${place.id}/checkin`)
+            }
           >
-            Check In
+            <span className="truncate">{isCheckedIn ? "Checked In" : "Check In"}</span>
           </SecondaryButton>
           <PrimaryButton
-            className="flex-1"
+            className="flex-1 min-w-0 px-4 text-[15px]"
             onClick={() => window.open(directionsHref, "_blank", "noopener,noreferrer")}
           >
-            <Navigation className="w-4 h-4 mr-1.5" />
-            Get Directions
+            <Navigation className="w-4 h-4 mr-1.5 shrink-0" />
+            <span className="truncate">Get Directions</span>
           </PrimaryButton>
         </div>
       </div>
+
+      {isVerifiedPlace && (
+        <PlaceCheckInSheet
+          open={checkInOpen}
+          onOpenChange={setCheckInOpen}
+          placeId={place.id}
+          placeName={place.name}
+          alreadyCheckedIn={isCheckedIn}
+          directionsHref={directionsHref}
+          onCheckedIn={() => undefined}
+          onViewImpact={() => navigate("/impact")}
+        />
+      )}
     </div>
+
   );
 }
 
