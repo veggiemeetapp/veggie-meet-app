@@ -42,6 +42,8 @@ const Search = lazy(() => import("./screens/Search"));
 const Impact = lazy(() => import("./screens/Impact"));
 const Plans = lazy(() => import("./screens/Plans"));
 const Settings = lazy(() => import("./screens/Settings"));
+const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
+
 
 function RequireOnboarded({ children }: { children: JSX.Element }) {
   const { session, profile, loading } = useAuth();
@@ -115,7 +117,9 @@ const App = () => (
                 <Route path="/impact/:tab" element={gated(<Impact />)} />
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
                 <Route path="/settings" element={gated(<Settings />)} />
+                <Route path="/owner/places" element={gated(<OwnerPlaceVerification />)} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

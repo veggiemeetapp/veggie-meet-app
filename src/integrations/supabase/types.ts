@@ -313,57 +313,81 @@ export type Database = {
       community_places: {
         Row: {
           address: string
+          business_status: string | null
           category: Database["public"]["Enums"]["place_category"]
           city_id: string | null
           cover_image_url: string | null
           created_at: string
+          google_maps_url: string | null
+          google_place_id: string | null
           id: string
+          image_rights_status: string
           is_active: boolean
           latitude: number | null
           longitude: number | null
           meetups_this_month: number
           name: string
           neighborhood: string | null
+          source: string
           timezone: string | null
           upcoming_meetups_count: number
           updated_at: string
           veggies_visited_count: number
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           address?: string
+          business_status?: string | null
           category?: Database["public"]["Enums"]["place_category"]
           city_id?: string | null
           cover_image_url?: string | null
           created_at?: string
+          google_maps_url?: string | null
+          google_place_id?: string | null
           id?: string
+          image_rights_status?: string
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
           meetups_this_month?: number
           name: string
           neighborhood?: string | null
+          source?: string
           timezone?: string | null
           upcoming_meetups_count?: number
           updated_at?: string
           veggies_visited_count?: number
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           address?: string
+          business_status?: string | null
           category?: Database["public"]["Enums"]["place_category"]
           city_id?: string | null
           cover_image_url?: string | null
           created_at?: string
+          google_maps_url?: string | null
+          google_place_id?: string | null
           id?: string
+          image_rights_status?: string
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
           meetups_this_month?: number
           name?: string
           neighborhood?: string | null
+          source?: string
           timezone?: string | null
           upcoming_meetups_count?: number
           updated_at?: string
           veggies_visited_count?: number
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -371,6 +395,13 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_places_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1257,6 +1288,145 @@ export type Database = {
           },
         ]
       }
+      owner_allowlist: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          note: string | null
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          note?: string | null
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
+      place_candidates: {
+        Row: {
+          business_status: string | null
+          category: Database["public"]["Enums"]["place_category"] | null
+          city_id: string | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_name: string
+          district: string | null
+          google_display_name: string | null
+          google_formatted_address: string | null
+          google_maps_url: string | null
+          google_place_id: string | null
+          google_primary_type: string | null
+          google_website_url: string | null
+          group_suitability: string | null
+          id: string
+          image_rights_status: string
+          image_source: string | null
+          latitude: number | null
+          longitude: number | null
+          published_at: string | null
+          published_place_id: string | null
+          review_order: number | null
+          source: string
+          updated_at: string
+          veggie_classification: string | null
+          veggie_reason: string | null
+          verification_notes: string | null
+          verification_status: string
+        }
+        Insert: {
+          business_status?: string | null
+          category?: Database["public"]["Enums"]["place_category"] | null
+          city_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_name: string
+          district?: string | null
+          google_display_name?: string | null
+          google_formatted_address?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          google_primary_type?: string | null
+          google_website_url?: string | null
+          group_suitability?: string | null
+          id?: string
+          image_rights_status?: string
+          image_source?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          published_at?: string | null
+          published_place_id?: string | null
+          review_order?: number | null
+          source?: string
+          updated_at?: string
+          veggie_classification?: string | null
+          veggie_reason?: string | null
+          verification_notes?: string | null
+          verification_status?: string
+        }
+        Update: {
+          business_status?: string | null
+          category?: Database["public"]["Enums"]["place_category"] | null
+          city_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_name?: string
+          district?: string | null
+          google_display_name?: string | null
+          google_formatted_address?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          google_primary_type?: string | null
+          google_website_url?: string | null
+          group_suitability?: string | null
+          id?: string
+          image_rights_status?: string
+          image_source?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          published_at?: string | null
+          published_place_id?: string | null
+          review_order?: number | null
+          source?: string
+          updated_at?: string
+          veggie_classification?: string | null
+          veggie_reason?: string | null
+          verification_notes?: string | null
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_candidates_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_candidates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_candidates_published_place_id_fkey"
+            columns: ["published_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_check_ins: {
         Row: {
           checked_in_on: string
@@ -1985,6 +2155,7 @@ export type Database = {
         Returns: boolean
       }
       is_meetup_member: { Args: { _meetup_id: string }; Returns: boolean }
+      is_owner: { Args: never; Returns: boolean }
       issue_meetup_qr_token: {
         Args: { _meetup_id: string }
         Returns: {
@@ -2017,6 +2188,10 @@ export type Database = {
         Args: { _meetup_id: string }
         Returns: string
       }
+      publish_place_candidate: {
+        Args: { _candidate_id: string }
+        Returns: string
+      }
       record_first_meaningful_action: {
         Args: { _action_type: string; _entity_id: string }
         Returns: {
@@ -2041,6 +2216,10 @@ export type Database = {
       }
       record_permission_result: {
         Args: { _kind: string; _result: string }
+        Returns: undefined
+      }
+      reject_place_candidate: {
+        Args: { _candidate_id: string; _notes?: string }
         Returns: undefined
       }
       remove_meetup_attendee: {
