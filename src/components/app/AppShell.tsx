@@ -10,7 +10,7 @@ interface AppShellProps {
 }
 
 // Routes that hide bottom nav (focused flows)
-const HIDDEN_NAV_PATTERNS = [/^\/meetup\//, /^\/join\//, /^\/group\//, /^\/chat\//, /^\/dm\//, /^\/meetup-created\//, /^\/onboarding/, /^\/you\/edit/, /^\/checkin\//, /^\/veggie\//, /^\/notifications/, /^\/settings/, /^\/\.lovable\/oauth\//];
+const HIDDEN_NAV_PATTERNS = [/^\/meetup\//, /^\/join\//, /^\/group\//, /^\/chat\//, /^\/dm\//, /^\/meetup-created\//, /^\/onboarding/, /^\/you\/edit/, /^\/checkin\//, /^\/veggie\//, /^\/notifications/, /^\/settings/, /^\/owner\//, /^\/\.lovable\/oauth\//];
 
 export function AppShell({ children }: AppShellProps) {
   const { pathname } = useLocation();
