@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { TODAY_ISO } from "@/lib/mock-data";
 import type { CommunityPlace, MeetupCategory } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchCommunityPlacesByCity } from "@/lib/backend";
@@ -265,6 +266,16 @@ export default function Host() {
 
       if (error) throw error;
       if (data?.id) {
+        // WO-042 §9: authoritative, once-only event fired only after the
+        // backend insert succeeded. No PII — enums, ids and counts only.
+        logAnalyticsEvent("meetup_created", {
+          meetup_id: data.id,
+          category: cat.id,
+          capacity,
+          city_id: resolved.cityId,
+          location_source: resolved.locationSource,
+          has_custom_cover: Boolean(cover),
+        });
         setConfirmOpen(false);
         navigate(`/meetup-created/${data.id}`);
         return;
