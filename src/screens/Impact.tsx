@@ -208,6 +208,9 @@ function OverviewSection({
   onTab: (t: Tab) => void;
   onRetry: () => void;
 }) {
+  const navigate = useNavigate();
+  const navigateToSupported = () =>
+    navigate("/you/places-supported?from=community_impact");
   if (error) {
     return (
       <Card padding="lg" className="text-center">
