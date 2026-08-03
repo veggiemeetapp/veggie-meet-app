@@ -18,7 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton, MeetupCard } from "@/components/app";
-import { getCommunityPlace } from "@/lib/placeCheckin";
+import { communityPlaces } from "@/lib/mock-data";
 import { fetchUpcomingMeetups, fetchCommunityPlaceById } from "@/lib/backend";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { fetchPlaceCheckInState } from "@/lib/placeVisits";
@@ -158,7 +158,7 @@ function placeCategoryLabel(category: string) {
 export default function CommunityPlaceDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const mockPlace = useMemo(() => getCommunityPlace(id), [id]);
+  const mockPlace = useMemo(() => communityPlaces.find((p) => p.id === id), [id]);
   const extras = PLACE_EXTRAS[id] ?? DEFAULT_EXTRAS;
 
   const { data: dbPlace = null } = useQuery({
@@ -418,16 +418,16 @@ export default function CommunityPlaceDetail() {
       {/* Bottom action */}
       <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0" style={{ bottom: "var(--nav-height)" }}>
         <div className="flex gap-2">
-          <SecondaryButton
-            className="flex-1 min-w-0 px-4 text-[15px]"
-            onClick={() =>
-              isVerifiedPlace
-                ? setCheckInOpen(true)
-                : navigate(`/place/${place.id}/checkin`)
-            }
-          >
-            <span className="truncate">{isCheckedIn ? "Checked In" : "Check In"}</span>
-          </SecondaryButton>
+          {/* WO-048: one check-in system only. Verified Community Places open the
+              location-verified sheet; there is no alternate QR/legacy path. */}
+          {isVerifiedPlace && (
+            <SecondaryButton
+              className="flex-1 min-w-0 px-4 text-[15px]"
+              onClick={() => setCheckInOpen(true)}
+            >
+              <span className="truncate">{isCheckedIn ? "Checked In" : "Check In"}</span>
+            </SecondaryButton>
+          )}
           <PrimaryButton
             className="flex-1 min-w-0 px-4 text-[15px]"
             onClick={() => window.open(directionsHref, "_blank", "noopener,noreferrer")}

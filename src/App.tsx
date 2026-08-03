@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,7 +32,9 @@ const MeetupChat = lazy(() => import("./screens/MeetupChat"));
 const EditProfile = lazy(() => import("./screens/EditProfile"));
 const CheckIn = lazy(() => import("./screens/CheckIn"));
 const CommunityPlaceDetail = lazy(() => import("./screens/CommunityPlaceDetail"));
-const PlaceCheckIn = lazy(() => import("./screens/PlaceCheckIn"));
+// Legacy QR/mock place check-in screen (WO-048): removed. `/place/:id/checkin`
+// now redirects to the canonical place detail page, which hosts the single
+// location-verified check-in flow.
 const VeggieNetwork = lazy(() => import("./screens/VeggieNetwork"));
 const RelationshipDetail = lazy(() => import("./screens/RelationshipDetail"));
 const VeggieProfile = lazy(() => import("./screens/VeggieProfile"));
@@ -45,6 +47,18 @@ const Impact = lazy(() => import("./screens/Impact"));
 const Plans = lazy(() => import("./screens/Plans"));
 const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
+
+/**
+ * WO-048 compatibility route. The legacy QR/mock place check-in screen is gone;
+ * old `/place/:id/checkin` links land on the place detail page, where the single
+ * location-verified Check In flow lives. No location permission is requested
+ * during the redirect and history is replaced so Back skips the legacy URL.
+ */
+function LegacyPlaceCheckInRedirect() {
+  const { id = "" } = useParams();
+  return <Navigate to={id ? `/place/${id}` : "/community/places"} replace />;
+}
+
 
 
 function RequireOnboarded({ children }: { children: JSX.Element }) {
@@ -109,7 +123,7 @@ const App = () => (
                 <Route path="/chat/:id" element={gated(<MeetupChat />)} />
                 <Route path="/checkin/:meetupId" element={gated(<CheckIn />)} />
                 <Route path="/place/:id" element={gated(<CommunityPlaceDetail />)} />
-                <Route path="/place/:id/checkin" element={gated(<PlaceCheckIn />)} />
+                <Route path="/place/:id/checkin" element={gated(<LegacyPlaceCheckInRedirect />)} />
                 <Route path="/network" element={gated(<VeggieNetwork />)} />
                 <Route path="/network/:id" element={gated(<RelationshipDetail />)} />
                 <Route path="/veggie/:id" element={gated(<VeggieProfile />)} />
