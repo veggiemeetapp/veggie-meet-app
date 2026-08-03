@@ -81,18 +81,19 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
   const rows = q.data ?? [];
 
   return (
-    <section className="space-y-2">
+    <section className="min-w-0 space-y-2">
       <h2 className="text-sm font-semibold">Community Suggestions ({rows.length})</h2>
       {q.isPending && <p className="text-sm text-muted-foreground">Loading…</p>}
       {!q.isPending && rows.length === 0 && (
         <p className="text-sm text-muted-foreground">No community suggestions yet.</p>
       )}
-      <ul className="space-y-2">
+      <ul className="min-w-0 space-y-2">
+
         {rows.map((s) => (
-          <li key={s.id} className="rounded-lg border p-3">
+          <li key={s.id} className="min-w-0 overflow-hidden rounded-lg border p-3">
             <button
               type="button"
-              className="w-full text-left"
+              className="block w-full min-w-0 text-left"
               aria-expanded={openId === s.id}
               onClick={() => {
                 const next = openId === s.id ? null : s.id;
@@ -100,14 +101,19 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                 if (next) logAnalyticsEvent("community_place_suggestion_owner_opened", { suggestion_id: s.id });
               }}
             >
-              <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0 flex-1 text-sm font-medium break-all">{s.place_name}</span>
+              <div className="flex min-w-0 items-start justify-between gap-2">
+                <span
+                  className="min-w-0 flex-1 text-sm font-medium line-clamp-3 [overflow-wrap:anywhere]"
+                  title={s.place_name}
+                >
+                  {s.place_name}
+                </span>
                 <span className="text-[11px] shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
                   {OWNER_STATUS_LABEL[s.moderation_status] ?? s.moderation_status}
                 </span>
               </div>
 
-              <p className="mt-0.5 text-xs text-muted-foreground break-words">
+              <p className="mt-0.5 text-xs text-muted-foreground [overflow-wrap:anywhere]">
                 {s.city_name ?? "—"} · {new Date(s.submitted_at).toLocaleDateString()}
               </p>
               {s.possible_duplicate && (
@@ -116,6 +122,7 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                 </p>
               )}
             </button>
+
 
             {openId === s.id && <Detail s={s} />}
 
@@ -195,24 +202,27 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
 
 function Detail({ s }: { s: OwnerSuggestion }) {
   return (
-    <dl className="mt-3 space-y-2 text-xs">
+    <dl className="mt-3 min-w-0 space-y-2 text-xs">
+      <Row label="Full submitted name" value={s.place_name} />
       <Row label="Submitted address" value={s.address_text} />
-      <div>
+      <div className="min-w-0">
         <dt className="font-medium">Official source</dt>
-        <dd className="mt-0.5">
+        <dd className="mt-0.5 min-w-0">
           <a
             href={s.official_source_url}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-start gap-1 break-all text-primary underline"
+            className="block max-w-full [overflow-wrap:anywhere] break-words text-primary underline"
           >
             {s.official_source_url}
-            <ExternalLink className="h-3 w-3 shrink-0 mt-0.5" aria-hidden />
+            <ExternalLink className="ml-1 inline h-3 w-3 shrink-0 align-baseline" aria-hidden />
           </a>
         </dd>
       </div>
       <Row label="Why 100% vegan" value={s.vegan_reason} />
       {s.submitter_note && <Row label="Submitter note" value={s.submitter_note} />}
+      {s.rejection_reason && <Row label="Internal rejection reason" value={s.rejection_reason} />}
+      {s.possible_duplicate && <Row label="Duplicate reference" value="Possible duplicate of an existing place or suggestion" />}
       <Row label="Submitter profile" value={s.submitter_profile_id} />
       {s.promoted_candidate_id && <Row label="Promoted candidate" value={s.promoted_candidate_id} />}
     </dl>
@@ -221,9 +231,12 @@ function Detail({ s }: { s: OwnerSuggestion }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="font-medium">{label}</dt>
-      <dd className="mt-0.5 whitespace-pre-wrap break-words text-muted-foreground">{value}</dd>
+      <dd className="mt-0.5 max-w-full whitespace-pre-wrap [overflow-wrap:anywhere] break-words text-muted-foreground">
+        {value}
+      </dd>
     </div>
   );
 }
+
