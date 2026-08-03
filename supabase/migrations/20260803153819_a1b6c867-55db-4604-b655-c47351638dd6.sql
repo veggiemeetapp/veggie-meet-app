@@ -1,0 +1,1 @@
+delete from public.community_place_suggestions where place_name like 'QA050%' or place_name like 'AAAAAAAAAA%';
