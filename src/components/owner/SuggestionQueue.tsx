@@ -201,24 +201,27 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
 
 function Detail({ s }: { s: OwnerSuggestion }) {
   return (
-    <dl className="mt-3 space-y-2 text-xs">
+    <dl className="mt-3 min-w-0 space-y-2 text-xs">
+      <Row label="Full submitted name" value={s.place_name} />
       <Row label="Submitted address" value={s.address_text} />
-      <div>
+      <div className="min-w-0">
         <dt className="font-medium">Official source</dt>
-        <dd className="mt-0.5">
+        <dd className="mt-0.5 min-w-0">
           <a
             href={s.official_source_url}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-start gap-1 break-all text-primary underline"
+            className="block max-w-full [overflow-wrap:anywhere] break-words text-primary underline"
           >
             {s.official_source_url}
-            <ExternalLink className="h-3 w-3 shrink-0 mt-0.5" aria-hidden />
+            <ExternalLink className="ml-1 inline h-3 w-3 shrink-0 align-baseline" aria-hidden />
           </a>
         </dd>
       </div>
       <Row label="Why 100% vegan" value={s.vegan_reason} />
       {s.submitter_note && <Row label="Submitter note" value={s.submitter_note} />}
+      {s.rejection_reason && <Row label="Internal rejection reason" value={s.rejection_reason} />}
+      {s.possible_duplicate && <Row label="Duplicate reference" value="Possible duplicate of an existing place or suggestion" />}
       <Row label="Submitter profile" value={s.submitter_profile_id} />
       {s.promoted_candidate_id && <Row label="Promoted candidate" value={s.promoted_candidate_id} />}
     </dl>
@@ -227,9 +230,12 @@ function Detail({ s }: { s: OwnerSuggestion }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="font-medium">{label}</dt>
-      <dd className="mt-0.5 whitespace-pre-wrap break-words text-muted-foreground">{value}</dd>
+      <dd className="mt-0.5 max-w-full whitespace-pre-wrap [overflow-wrap:anywhere] break-words text-muted-foreground">
+        {value}
+      </dd>
     </div>
   );
 }
+
