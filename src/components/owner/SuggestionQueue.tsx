@@ -89,10 +89,10 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
       )}
       <ul className="space-y-2">
         {rows.map((s) => (
-          <li key={s.id} className="rounded-lg border p-3">
+          <li key={s.id} className="min-w-0 overflow-hidden rounded-lg border p-3">
             <button
               type="button"
-              className="w-full text-left"
+              className="block w-full min-w-0 text-left"
               aria-expanded={openId === s.id}
               onClick={() => {
                 const next = openId === s.id ? null : s.id;
@@ -100,14 +100,19 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                 if (next) logAnalyticsEvent("community_place_suggestion_owner_opened", { suggestion_id: s.id });
               }}
             >
-              <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0 flex-1 text-sm font-medium break-all">{s.place_name}</span>
+              <div className="flex min-w-0 items-start justify-between gap-2">
+                <span
+                  className="min-w-0 flex-1 text-sm font-medium line-clamp-3 [overflow-wrap:anywhere]"
+                  title={s.place_name}
+                >
+                  {s.place_name}
+                </span>
                 <span className="text-[11px] shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
                   {OWNER_STATUS_LABEL[s.moderation_status] ?? s.moderation_status}
                 </span>
               </div>
 
-              <p className="mt-0.5 text-xs text-muted-foreground break-words">
+              <p className="mt-0.5 text-xs text-muted-foreground [overflow-wrap:anywhere]">
                 {s.city_name ?? "—"} · {new Date(s.submitted_at).toLocaleDateString()}
               </p>
               {s.possible_duplicate && (
@@ -116,6 +121,7 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                 </p>
               )}
             </button>
+
 
             {openId === s.id && <Detail s={s} />}
 
