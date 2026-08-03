@@ -32,7 +32,7 @@ export function useToday() {
       "friendships",
       "meetup_follow_up_state",
       "user_blocks",
-      "place_check_ins",
+      "community_place_visits",
       "recommendation_feedback",
       "profile_preferences",
     ];

@@ -1496,38 +1496,6 @@ export type Database = {
           },
         ]
       }
-      place_check_ins: {
-        Row: {
-          checked_in_on: string
-          community_place_id: string
-          created_at: string
-          id: string
-          profile_id: string
-        }
-        Insert: {
-          checked_in_on?: string
-          community_place_id: string
-          created_at?: string
-          id?: string
-          profile_id: string
-        }
-        Update: {
-          checked_in_on?: string
-          community_place_id?: string
-          created_at?: string
-          id?: string
-          profile_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "place_check_ins_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profile_onboarding_state: {
         Row: {
           completed_at: string | null

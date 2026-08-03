@@ -28,10 +28,11 @@ export async function fetchCommunityImpact(profileId: string): Promise<Community
       .or(`profile_a_id.eq.${profileId},profile_b_id.eq.${profileId}`)
       .eq("status", "verified"),
     supabase
-      .from("place_check_ins")
-      .select("id, community_place_id, checked_in_on")
+      .from("community_place_visits")
+      .select("id, community_place_id, visited_at")
       .eq("profile_id", profileId)
-      .order("checked_in_on", { ascending: false }),
+      .eq("verification_status", "verified")
+      .order("visited_at", { ascending: false }),
     supabase
       .from("meetups")
       .select("id, title, date")
@@ -75,7 +76,7 @@ export async function fetchCommunityImpact(profileId: string): Promise<Community
     id: `p_${c.id}`,
     type: "place_supported",
     label: `Supported ${placeName(c.community_place_id)}`,
-    date: c.checked_in_on,
+    date: String(c.visited_at).slice(0, 10),
   }));
 
   const hostEvents: ImpactEvent[] = hosted.map((m: any) => ({

@@ -82,10 +82,11 @@ export async function fetchVeggieProfileBundle(
     fetchHostedMeetups(targetProfileId, TODAY_ISO),
     fetchAttendingMeetups(targetProfileId, TODAY_ISO),
     supabase
-      .from("place_check_ins")
-      .select("community_place_id, checked_in_on")
+      .from("community_place_visits")
+      .select("community_place_id, visited_at")
       .eq("profile_id", targetProfileId)
-      .order("checked_in_on", { ascending: false }),
+      .eq("verification_status", "verified")
+      .order("visited_at", { ascending: false }),
     // Bounded server-side projection: verified-connection count + shared
     // mutuals only. The global social graph is never readable by clients.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
