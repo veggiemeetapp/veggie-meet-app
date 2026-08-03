@@ -81,13 +81,14 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
   const rows = q.data ?? [];
 
   return (
-    <section className="space-y-2">
+    <section className="min-w-0 space-y-2">
       <h2 className="text-sm font-semibold">Community Suggestions ({rows.length})</h2>
       {q.isPending && <p className="text-sm text-muted-foreground">Loading…</p>}
       {!q.isPending && rows.length === 0 && (
         <p className="text-sm text-muted-foreground">No community suggestions yet.</p>
       )}
-      <ul className="space-y-2">
+      <ul className="min-w-0 space-y-2">
+
         {rows.map((s) => (
           <li key={s.id} className="min-w-0 overflow-hidden rounded-lg border p-3">
             <button
