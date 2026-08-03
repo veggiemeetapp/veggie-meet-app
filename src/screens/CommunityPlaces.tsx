@@ -207,7 +207,33 @@ export default function CommunityPlaces() {
             ))}
           </ul>
         )}
+
+        {/* Community suggestion entry point — intentionally placed below the
+            published results so it never competes with discovery. */}
+        <section
+          aria-labelledby="suggest-place-heading"
+          className="mt-8 rounded-2xl border border-border/70 bg-card p-5"
+        >
+          <h2 id="suggest-place-heading" className="text-base font-semibold text-charcoal">
+            Know a vegan place?
+          </h2>
+          <p className="mt-1 text-sm text-charcoal-muted">
+            Suggest a 100% vegan place for the VeggieMeet community.
+          </p>
+          <Link
+            to="/community/places/suggest"
+            onClick={() =>
+              logAnalyticsEvent("community_place_suggestion_started", {
+                source: "community_places_list",
+              })
+            }
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            Suggest a Place
+          </Link>
+        </section>
       </div>
+
     </>
   );
 }

@@ -1,0 +1,1 @@
+REVOKE ALL ON public.community_place_suggestions FROM anon;

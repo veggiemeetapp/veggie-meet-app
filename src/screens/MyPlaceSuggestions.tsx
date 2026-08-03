@@ -1,0 +1,95 @@
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Clock, Leaf } from "lucide-react";
+import { AppHeader, Card } from "@/components/app";
+import { Button } from "@/components/ui/button";
+import {
+  fetchMyPlaceSuggestions,
+  USER_STATUS_LABEL,
+  type SuggestionStatus,
+} from "@/lib/placeSuggestions";
+
+/** Status chips pair colour with an explicit label, never colour alone. */
+const STATUS_STYLE: Record<SuggestionStatus, string> = {
+  pending: "bg-muted text-charcoal-muted",
+  under_review: "bg-soft-green text-primary",
+  approved: "bg-soft-green text-primary",
+  rejected: "bg-muted text-charcoal-muted",
+  duplicate: "bg-muted text-charcoal-muted",
+};
+
+export default function MyPlaceSuggestions() {
+  const navigate = useNavigate();
+  const q = useQuery({ queryKey: ["my-place-suggestions"], queryFn: fetchMyPlaceSuggestions });
+
+  return (
+    <>
+      <AppHeader
+        left={
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ArrowLeft className="w-5 h-5" aria-hidden />
+          </button>
+        }
+        title="My place suggestions"
+      />
+
+      <div className="px-5 pt-4 pb-24 animate-fade-in">
+        <div className="mx-auto w-full max-w-xl">
+          <p className="text-sm text-charcoal-muted">
+            Every suggestion is reviewed before it can appear in VeggieMeet.
+          </p>
+
+          {q.isPending ? (
+            <div className="mt-5 space-y-3">
+              {[0, 1].map((i) => (
+                <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : (q.data ?? []).length === 0 ? (
+            <div className="mt-6 rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
+              <Leaf className="mx-auto h-7 w-7 text-primary/70" aria-hidden />
+              <h2 className="mt-3 text-base font-semibold text-charcoal">No suggestions yet</h2>
+              <p className="mt-1 text-sm text-charcoal-muted">
+                Know a 100% vegan place? Tell us about it.
+              </p>
+              <Button className="mt-5" asChild>
+                <Link to="/community/places/suggest">Suggest a Place</Link>
+              </Button>
+            </div>
+          ) : (
+            <ul className="mt-5 space-y-3">
+              {(q.data ?? []).map((s) => (
+                <li key={s.id}>
+                  <Card>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h2 className="text-sm font-semibold text-charcoal break-words">
+                          {s.place_name}
+                        </h2>
+                        <p className="mt-1 text-xs text-charcoal-muted flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 shrink-0" aria-hidden />
+                          {s.city_name ? `${s.city_name} · ` : ""}
+                          {new Date(s.submitted_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[s.status]}`}
+                      >
+                        {USER_STATUS_LABEL[s.status]}
+                      </span>
+                    </div>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
