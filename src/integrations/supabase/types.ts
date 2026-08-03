@@ -2115,6 +2115,15 @@ export type Database = {
           source_meetup_id: string
         }[]
       }
+      _notify_place_suggestion: {
+        Args: {
+          _place_name: string
+          _recipient: string
+          _status: string
+          _suggestion_id: string
+        }
+        Returns: undefined
+      }
       _suggestion_norm: { Args: { _t: string }; Returns: string }
       acknowledge_meetup_update: {
         Args: { _meetup_id: string }
@@ -2655,6 +2664,10 @@ export type Database = {
         | "meetup_updated"
         | "meetup_cancelled"
         | "meetup_attendee_removed"
+        | "place_suggestion_under_review"
+        | "place_suggestion_approved"
+        | "place_suggestion_duplicate"
+        | "place_suggestion_rejected"
       place_category:
         | "restaurant"
         | "cafe"
@@ -2834,6 +2847,10 @@ export const Constants = {
         "meetup_updated",
         "meetup_cancelled",
         "meetup_attendee_removed",
+        "place_suggestion_under_review",
+        "place_suggestion_approved",
+        "place_suggestion_duplicate",
+        "place_suggestion_rejected",
       ],
       place_category: [
         "restaurant",

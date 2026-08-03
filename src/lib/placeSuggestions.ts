@@ -60,10 +60,20 @@ export interface OwnerSuggestion {
 export const USER_STATUS_LABEL: Record<SuggestionStatus, string> = {
   pending: "Pending review",
   under_review: "Under review",
-  approved: "Approved",
+  approved: "Approved for verification",
   rejected: "Not approved",
   duplicate: "Already suggested",
 };
+
+/** Short, non-internal explanation shown under a suggestion's status. */
+export const USER_STATUS_HINT: Record<SuggestionStatus, string> = {
+  pending: "We'll review your suggestion soon.",
+  under_review: "The VeggieMeet team is reviewing this place.",
+  approved: "We're checking the place before it can appear publicly.",
+  rejected: "This place doesn't currently meet the requirements for Community Places.",
+  duplicate: "This place is already in our review process.",
+};
+
 
 export const REJECTION_REASONS = [
   { value: "not_fully_vegan", label: "Not fully vegan" },

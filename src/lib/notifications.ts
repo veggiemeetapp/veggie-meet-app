@@ -6,7 +6,19 @@ export type NotificationType =
   | "meetup_invitation_received"
   | "meetup_invitation_joined"
   | "meetup_updated"
-  | "meetup_cancelled";
+  | "meetup_cancelled"
+  | "place_suggestion_under_review"
+  | "place_suggestion_approved"
+  | "place_suggestion_duplicate"
+  | "place_suggestion_rejected";
+
+export const PLACE_SUGGESTION_TYPES: NotificationType[] = [
+  "place_suggestion_under_review",
+  "place_suggestion_approved",
+  "place_suggestion_duplicate",
+  "place_suggestion_rejected",
+];
+
 
 export interface NotificationRow {
   id: string;
@@ -149,7 +161,15 @@ export function notificationDestination(n: NotificationItem): string | null {
     case "meetup_updated":
     case "meetup_cancelled":
       return n.destination_id ? `/meetup/${n.destination_id}` : "/";
+    case "place_suggestion_under_review":
+    case "place_suggestion_approved":
+    case "place_suggestion_duplicate":
+    case "place_suggestion_rejected":
+      return n.destination_id
+        ? `/you/place-suggestions?suggestion=${n.destination_id}&from=notification`
+        : "/you/place-suggestions?from=notification";
     default:
       return null;
   }
 }
+

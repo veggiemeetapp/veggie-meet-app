@@ -1,10 +1,13 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Clock, Leaf } from "lucide-react";
 import { AppHeader, Card } from "@/components/app";
 import { Button } from "@/components/ui/button";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import {
   fetchMyPlaceSuggestions,
+  USER_STATUS_HINT,
   USER_STATUS_LABEL,
   type SuggestionStatus,
 } from "@/lib/placeSuggestions";
@@ -20,7 +23,31 @@ const STATUS_STYLE: Record<SuggestionStatus, string> = {
 
 export default function MyPlaceSuggestions() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const focusId = params.get("suggestion");
+  const source = params.get("from") ?? "direct";
   const q = useQuery({ queryKey: ["my-place-suggestions"], queryFn: fetchMyPlaceSuggestions });
+  const focusRef = useRef<HTMLLIElement | null>(null);
+  const loggedRef = useRef(false);
+
+  useEffect(() => {
+    if (loggedRef.current) return;
+    loggedRef.current = true;
+    logAnalyticsEvent("place_suggestion_history_opened", { source });
+  }, [source]);
+
+  const rows = useMemo(() => q.data ?? [], [q.data]);
+  // Only the signed-in user's own suggestions are ever returned, so a focus id
+  // that isn't in this list simply falls back to the plain history view.
+  const focusedExists = !!focusId && rows.some((s) => s.id === focusId);
+
+  useEffect(() => {
+    if (!focusedExists) return;
+    const node = focusRef.current;
+    if (!node) return;
+    node.scrollIntoView({ block: "center", behavior: "smooth" });
+    node.focus({ preventScroll: true });
+  }, [focusedExists]);
 
   return (
     <>
@@ -47,10 +74,10 @@ export default function MyPlaceSuggestions() {
           {q.isPending ? (
             <div className="mt-5 space-y-3">
               {[0, 1].map((i) => (
-                <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
+                <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
               ))}
             </div>
-          ) : (q.data ?? []).length === 0 ? (
+          ) : rows.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
               <Leaf className="mx-auto h-7 w-7 text-primary/70" aria-hidden />
               <h2 className="mt-3 text-base font-semibold text-charcoal">No suggestions yet</h2>
@@ -63,29 +90,41 @@ export default function MyPlaceSuggestions() {
             </div>
           ) : (
             <ul className="mt-5 space-y-3">
-              {(q.data ?? []).map((s) => (
-                <li key={s.id}>
-                  <Card>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h2 className="text-sm font-semibold text-charcoal break-words">
-                          {s.place_name}
-                        </h2>
-                        <p className="mt-1 text-xs text-charcoal-muted flex items-center gap-1.5">
-                          <Clock className="h-3 w-3 shrink-0" aria-hidden />
-                          {s.city_name ? `${s.city_name} · ` : ""}
-                          {new Date(s.submitted_at).toLocaleDateString()}
-                        </p>
+              {rows.map((s) => {
+                const focused = focusedExists && s.id === focusId;
+                return (
+                  <li
+                    key={s.id}
+                    ref={focused ? focusRef : undefined}
+                    tabIndex={focused ? -1 : undefined}
+                    aria-current={focused ? "true" : undefined}
+                    className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <Card className={focused ? "ring-2 ring-primary/40" : undefined}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h2 className="text-sm font-semibold text-charcoal break-words">
+                            {s.place_name}
+                          </h2>
+                          <p className="mt-1 text-xs text-charcoal-muted flex items-center gap-1.5">
+                            <Clock className="h-3 w-3 shrink-0" aria-hidden />
+                            {s.city_name ? `${s.city_name} · ` : ""}
+                            {new Date(s.submitted_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[s.status]}`}
+                        >
+                          {USER_STATUS_LABEL[s.status]}
+                        </span>
                       </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[s.status]}`}
-                      >
-                        {USER_STATUS_LABEL[s.status]}
-                      </span>
-                    </div>
-                  </Card>
-                </li>
-              ))}
+                      <p className="mt-2 text-xs text-charcoal-muted">
+                        {USER_STATUS_HINT[s.status]}
+                      </p>
+                    </Card>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

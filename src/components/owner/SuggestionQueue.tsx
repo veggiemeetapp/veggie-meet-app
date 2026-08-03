@@ -40,13 +40,23 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
   const moderateM = useMutation({
     mutationFn: (v: { id: string; action: "start_review" | "reject" | "duplicate" }) =>
       moderateSuggestion(v.id, v.action, v.action === "reject" ? reason : undefined, notes || undefined),
-    onSuccess: (r) => {
+    onSuccess: (r, v) => {
       if (!r.ok) return toast.error(`Not applied: ${r.reason}`);
       setNotes("");
       refresh();
-      toast.success("Suggestion updated.");
+      const type =
+        v.action === "start_review"
+          ? "place_suggestion_under_review"
+          : v.action === "duplicate"
+            ? "place_suggestion_duplicate"
+            : "place_suggestion_rejected";
+      logAnalyticsEvent("place_suggestion_notification_created", {
+        notification_type: type,
+        suggestion_id: v.id,
+      });
+      toast.success("Suggestion updated. The submitter was notified in-app.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error("We couldn't apply that moderation action. Nothing was changed."),
   });
 
   const promoteM = useMutation({
@@ -54,12 +64,19 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
     onSuccess: (r, id) => {
       if (!r.ok) return toast.error(`Not promoted: ${r.reason}`);
       logAnalyticsEvent("community_place_suggestion_promoted", { suggestion_id: id });
+      logAnalyticsEvent("place_suggestion_notification_created", {
+        notification_type: "place_suggestion_approved",
+        suggestion_id: id,
+      });
       refresh();
       if (r.candidate_id) onPromoted?.(r.candidate_id);
-      toast.success("Private candidate created. Nothing is public yet.");
+      toast.success(
+        "Private candidate created and the submitter was notified. Nothing is public yet.",
+      );
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error("We couldn't promote that suggestion. Nothing was changed."),
   });
+
 
   const rows = q.data ?? [];
 
@@ -84,11 +101,12 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
               }}
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="text-sm font-medium break-words">{s.place_name}</span>
+                <span className="min-w-0 flex-1 text-sm font-medium break-all">{s.place_name}</span>
                 <span className="text-[11px] shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
                   {OWNER_STATUS_LABEL[s.moderation_status] ?? s.moderation_status}
                 </span>
               </div>
+
               <p className="mt-0.5 text-xs text-muted-foreground break-words">
                 {s.city_name ?? "—"} · {new Date(s.submitted_at).toLocaleDateString()}
               </p>

@@ -171,7 +171,11 @@ export default function SuggestPlace() {
               can appear publicly.
             </p>
             <div className="mt-8 space-y-3">
-              <Button className="w-full" onClick={() => navigate("/you/place-suggestions")}>
+              <Button
+                className="w-full"
+                onClick={() => navigate("/you/place-suggestions?from=suggestion_success")}
+              >
+
                 Done
               </Button>
               <Button variant="outline" className="w-full" asChild>
