@@ -47,6 +47,8 @@ const Impact = lazy(() => import("./screens/Impact"));
 const Plans = lazy(() => import("./screens/Plans"));
 const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
+const SuggestPlace = lazy(() => import("./screens/SuggestPlace"));
+const MyPlaceSuggestions = lazy(() => import("./screens/MyPlaceSuggestions"));
 
 /**
  * WO-048 compatibility route. The legacy QR/mock place check-in screen is gone;
@@ -107,6 +109,7 @@ const App = () => (
                 <Route path="/" element={gated(<Today />)} />
                 <Route path="/community" element={gated(<Community />)} />
                 <Route path="/community/places" element={gated(<CommunityPlaces />)} />
+                <Route path="/community/places/suggest" element={gated(<SuggestPlace />)} />
                 <Route path="/search" element={gated(<Search />)} />
                 <Route path="/discover" element={<Navigate to="/community" replace />} />
                 <Route path="/host" element={gated(<Host />)} />
@@ -114,6 +117,7 @@ const App = () => (
                 <Route path="/you" element={gated(<You />)} />
                 <Route path="/you/edit" element={gated(<EditProfile />)} />
                 <Route path="/you/places-supported" element={gated(<SupportedPlaces />)} />
+                <Route path="/you/place-suggestions" element={gated(<MyPlaceSuggestions />)} />
                 <Route path="/meetup/:id" element={gated(<MeetupDetail />)} />
                 <Route path="/meetup/:id/manage" element={gated(<MeetupManagement />)} />
                 <Route path="/meetup/:id/summary" element={gated(<MeetupSummary />)} />

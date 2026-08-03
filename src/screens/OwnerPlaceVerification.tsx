@@ -18,6 +18,7 @@ import {
   type GoogleCandidate,
   type PlaceCandidate,
 } from "@/lib/placeVerification";
+import { SuggestionQueue } from "@/components/owner/SuggestionQueue";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
@@ -164,6 +165,9 @@ export default function OwnerPlaceVerification() {
       </header>
 
       <div className="p-4 space-y-6">
+        {/* ---- Community suggestions (private intake queue) ---- */}
+        <SuggestionQueue onPromoted={(id) => setSelectedId(id)} />
+
         {/* ---- Candidate queue ---- */}
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Candidates ({candidatesQ.data?.length ?? 0})</h2>
