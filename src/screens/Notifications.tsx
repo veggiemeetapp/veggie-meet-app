@@ -8,11 +8,13 @@ import {
   CalendarOff,
   CheckCheck,
   Handshake,
+  Leaf,
   Loader2,
   MailPlus,
   PartyPopper,
   UserPlus,
 } from "lucide-react";
+
 import {
   AppHeader,
   Card,
@@ -24,16 +26,19 @@ import {
 } from "@/components/app";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import {
   fetchNotificationsPage,
   markAllNotificationsRead,
   markNotificationRead,
   notificationDestination,
   NOTIFICATIONS_PAGE_SIZE,
+  PLACE_SUGGESTION_TYPES,
   type NotificationItem,
   type NotificationsPage,
   type NotificationType,
 } from "@/lib/notifications";
+
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -82,7 +87,12 @@ const iconFor: Record<NotificationType, JSX.Element> = {
   meetup_invitation_joined: <PartyPopper className="w-4 h-4" />,
   meetup_updated: <CalendarClock className="w-4 h-4" />,
   meetup_cancelled: <CalendarOff className="w-4 h-4" />,
+  place_suggestion_under_review: <Leaf className="w-4 h-4" />,
+  place_suggestion_approved: <Leaf className="w-4 h-4" />,
+  place_suggestion_duplicate: <Leaf className="w-4 h-4" />,
+  place_suggestion_rejected: <Leaf className="w-4 h-4" />,
 };
+
 
 export default function Notifications() {
   const navigate = useNavigate();
@@ -193,12 +203,19 @@ export default function Notifications() {
         );
         markNotificationRead(n.id).catch(() => {});
       }
+      if (PLACE_SUGGESTION_TYPES.includes(n.type)) {
+        logAnalyticsEvent("place_suggestion_notification_opened", {
+          notification_type: n.type,
+          source: "notifications_list",
+        });
+      }
       const dest = notificationDestination(n);
       if (!dest) {
         toast("This activity is no longer available.");
         return;
       }
       navigate(dest);
+
     },
     [navigate, profile?.id, qc],
   );
@@ -329,7 +346,7 @@ function NotificationRow({
         type="button"
         onClick={() => onTap(n)}
         className="w-full text-left"
-        aria-label={`${n.body ?? "Notification"}${unread ? ", unread" : ""}`}
+        aria-label={`${n.title ? `${n.title}. ` : ""}${n.body ?? "Notification"}${unread ? ", unread" : ", read"}`}
       >
         <Card
           interactive
@@ -360,14 +377,21 @@ function NotificationRow({
             )}
           </div>
           <div className="min-w-0 flex-1">
+            {n.title && (
+              <p className="text-sm font-semibold text-charcoal leading-snug break-words">
+                {n.title}
+              </p>
+            )}
             <p
               className={cn(
-                "text-sm text-charcoal leading-snug",
-                unread ? "font-medium" : "text-charcoal/90",
+                "text-sm text-charcoal leading-snug break-words",
+                n.title && "mt-0.5 text-charcoal/90",
+                !n.title && (unread ? "font-medium" : "text-charcoal/90"),
               )}
             >
               {n.body ?? "New activity"}
             </p>
+
             <p className="text-[11px] text-charcoal-muted mt-1">
               {relativeTime(n.created_at)}
             </p>
