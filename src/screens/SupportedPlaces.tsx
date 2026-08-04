@@ -210,7 +210,7 @@ function SupportedPlaceCard({
         area ? `, ${area}` : ""
       }, ${sourceLabel}${date ? `, latest activity ${date}` : ""}${
         repeat ? `, ${place.direct_visit_count} verified visits` : ""
-      }${place.is_active ? "" : ", currently unavailable"}`}
+      }${statusLabel ? `, ${statusLabel}` : ""}`}
       className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <Card interactive padding="none" className="overflow-hidden h-full">
@@ -246,9 +246,9 @@ function SupportedPlaceCard({
                 {place.direct_visit_count} verified visits
               </span>
             )}
-            {!place.is_active && (
-              <span className="inline-flex items-center rounded-full bg-muted text-charcoal-muted text-[11px] font-medium px-2.5 py-1">
-                Currently unavailable
+            {statusLabel && (
+              <span className="inline-flex items-center rounded-full bg-muted text-charcoal-muted text-[11px] font-medium px-2.5 py-1 [overflow-wrap:anywhere]">
+                {statusLabel}
               </span>
             )}
           </div>
