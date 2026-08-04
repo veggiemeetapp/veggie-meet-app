@@ -13,6 +13,8 @@ import {
   MailPlus,
   MapPin,
   PartyPopper,
+  ShieldCheck,
+
   UserMinus,
   UserPlus,
 } from "lucide-react";
