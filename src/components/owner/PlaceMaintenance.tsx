@@ -289,7 +289,19 @@ export function PlaceMaintenance() {
                     >
                       Edit public details
                     </Button>
+                    {/* WO-058 — owner-only vegan verification review. */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      aria-label={`Review the vegan status of ${p.name}`}
+                      onClick={() =>
+                        navigate(`/owner/places/${p.id}/vegan-review?source=place_maintenance`)
+                      }
+                    >
+                      Review vegan status
+                    </Button>
                   </div>
+
 
 
                   <div className="rounded-lg border p-3 space-y-2">

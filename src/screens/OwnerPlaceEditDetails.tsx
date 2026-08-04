@@ -292,10 +292,24 @@ export default function OwnerPlaceEditDetails() {
                 ] ?? place.maintenance_status}
               </Meta>
               <Meta label="Classification">
-                {CLASSIFICATION_LABEL[place.veggie_classification ?? ""] ??
-                  place.veggie_classification ??
-                  "—"}
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                  {CLASSIFICATION_LABEL[place.veggie_classification ?? ""] ??
+                    place.veggie_classification ??
+                    "—"}
+                  <span className="text-muted-foreground">(locked)</span>
+                  {/* WO-058 — vegan status only ever changes in its own workflow. */}
+                  <button
+                    type="button"
+                    className="text-primary underline underline-offset-2"
+                    onClick={() =>
+                      navigate(`/owner/places/${placeId}/vegan-review?source=place_edit`)
+                    }
+                  >
+                    Review vegan status
+                  </button>
+                </span>
               </Meta>
+
               <Meta label="Google Place ID">
                 {place.has_google_place_id ? "Present (locked)" : "Not set"}
               </Meta>

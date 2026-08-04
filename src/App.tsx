@@ -49,6 +49,8 @@ const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
 const OwnerPlaceReverify = lazy(() => import("./screens/OwnerPlaceReverify"));
 const OwnerPlaceEditDetails = lazy(() => import("./screens/OwnerPlaceEditDetails"));
+const OwnerPlaceVeganReview = lazy(() => import("./screens/OwnerPlaceVeganReview"));
+
 
 const SuggestPlace = lazy(() => import("./screens/SuggestPlace"));
 const MyPlaceSuggestions = lazy(() => import("./screens/MyPlaceSuggestions"));
@@ -158,6 +160,11 @@ const App = () => (
                   path="/owner/places/:placeId/edit"
                   element={gated(<OwnerPlaceEditDetails />)}
                 />
+                <Route
+                  path="/owner/places/:placeId/vegan-review"
+                  element={gated(<OwnerPlaceVeganReview />)}
+                />
+
 
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
