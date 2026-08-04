@@ -364,6 +364,9 @@ interface DBCommunityPlaceRow {
   website_url?: string | null;
   google_maps_url?: string | null;
   veggie_classification?: string | null;
+  maintenance_status?: string | null;
+  status_note?: string | null;
+  last_reverified_at?: string | null;
   cities?: { name: string | null } | null;
 }
 
