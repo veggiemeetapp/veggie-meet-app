@@ -213,6 +213,12 @@ export default function Notifications() {
           source: "notifications_list",
         });
       }
+      if (n.type === "meetup_location_changed") {
+        logAnalyticsEvent("meetup_location_change_notification_opened", {
+          meetup_id: n.destination_id ?? n.entity_id,
+          source: "notifications_list",
+        });
+      }
       const dest = notificationDestination(n);
       if (!dest) {
         toast("This activity is no longer available.");
