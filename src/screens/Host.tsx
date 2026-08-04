@@ -401,79 +401,89 @@ export default function Host() {
             </div>
 
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5">
-                Community place
+              <div
+                id="host-location-mode-label"
+                className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5"
+              >
+                Location type
               </div>
-              {!cityId ? (
-                <p className="text-sm text-charcoal-muted">Pick a city first.</p>
-              ) : placesQuery.isPending ? (
-                <div className="flex items-center gap-2 text-sm text-charcoal-muted">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading places…
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {places.map((p) => {
-                    const active = placeId === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setPlaceId(p.id)}
-                        className={cn(
-                          "w-full flex items-center gap-3 p-3 rounded-2xl border transition-all text-left",
-                          active
-                            ? "border-primary bg-accent/40 shadow-sm"
-                            : "border-border bg-card hover:bg-accent/30",
-                        )}
-                      >
-                        <img
-                          src={p.coverImageUrl}
-                          alt=""
-                          className="w-14 h-14 rounded-xl object-cover shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-charcoal truncate">{p.name}</div>
-                          <div className="text-xs text-charcoal-muted truncate">
-                            {p.neighborhood ? `${p.neighborhood} · ` : ""}
-                            {p.address}
-                          </div>
-                        </div>
-                        <div
-                          className={cn(
-                            "w-5 h-5 rounded-full border-2 shrink-0",
-                            active ? "border-primary bg-primary" : "border-border",
-                          )}
-                        />
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={() => setPlaceId(CUSTOM_PLACE_ID)}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-2xl border transition-all text-left",
-                      isCustom
-                        ? "border-primary bg-accent/40 shadow-sm"
-                        : "border-border bg-card hover:bg-accent/30",
-                    )}
-                  >
-                    <div className="w-14 h-14 rounded-xl bg-soft-green/60 flex items-center justify-center text-2xl shrink-0">
-                      📍
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-charcoal truncate">Custom location</div>
-                      <div className="text-xs text-charcoal-muted truncate">
-                        Somewhere not listed here.
-                      </div>
-                    </div>
-                    <div
+              <div
+                role="radiogroup"
+                aria-labelledby="host-location-mode-label"
+                className="grid grid-cols-2 gap-2"
+              >
+                {(
+                  [
+                    { mode: "community_place" as const, label: "Community Place" },
+                    { mode: "custom" as const, label: "Custom location" },
+                  ]
+                ).map((opt) => {
+                  const active = locationMode === opt.mode;
+                  return (
+                    <button
+                      key={opt.mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => selectMode(opt.mode)}
                       className={cn(
-                        "w-5 h-5 rounded-full border-2 shrink-0",
-                        isCustom ? "border-primary bg-primary" : "border-border",
+                        "h-11 px-3 rounded-xl border text-sm font-semibold transition-all",
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-card text-charcoal border-border hover:bg-accent/50",
                       )}
-                    />
-                  </button>
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3">
+                {locationMode === "community_place" ? (
+                  !cityId ? (
+                    <p className="text-sm text-charcoal-muted">Pick a city first.</p>
+                  ) : (
+                    <>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5">
+                        Choose a Community Place
+                      </div>
+                      <CommunityPlacePicker
+                        places={places}
+                        loading={placesQuery.isPending}
+                        errored={placesQuery.isError}
+                        onRetry={() => placesQuery.refetch()}
+                        selectedPlaceId={isCustom ? null : placeId}
+                        onSelect={(p) => {
+                          setPlaceId(p.id);
+                          logAnalyticsEvent("meetup_community_place_selected", {
+                            place_id: p.id,
+                            source: preselectSource,
+                          });
+                        }}
+                        onUseCustom={() => selectMode("custom")}
+                        onSuggestPlace={() => navigate("/community/places/suggest")}
+                        onViewPlace={(pid) => navigate(`/place/${pid}`)}
+                      />
+                      {placeError && (
+                        <p
+                          id="host-location-error"
+                          role="alert"
+                          className="mt-2 text-xs text-destructive"
+                        >
+                          {placeError}
+                        </p>
+                      )}
+                    </>
+                  )
+                ) : null}
+              </div>
+            </div>
+
+            <div>
+              <div className="space-y-2">
+                {/* Custom-location fields (preserved behavior) */}
+
 
                   {isCustom && (
                     <div className="mt-2 space-y-3 rounded-2xl border border-border bg-muted/30 p-3">
