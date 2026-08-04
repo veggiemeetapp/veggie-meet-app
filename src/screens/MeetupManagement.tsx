@@ -151,6 +151,20 @@ export default function MeetupManagement() {
     staleTime: 60_000,
   });
 
+  // WO-053: the linked Community Place may have gone non-operational after the
+  // Meetup was created. The Meetup is never auto-cancelled — the host is asked
+  // to move it. Read directly by id so closed places are still resolvable.
+  const linkedPlaceQuery = useQuery({
+    queryKey: ["manage-linked-place", meetup?.communityPlaceId],
+    enabled: !!meetup?.communityPlaceId,
+    queryFn: () => fetchCommunityPlaceById(meetup!.communityPlaceId as string),
+    staleTime: 30_000,
+  });
+  const linkedPlaceUnavailable =
+    !!linkedPlaceQuery.data &&
+    (linkedPlaceQuery.data.maintenanceStatus ?? "operational") !== "operational";
+
+
 
   // Realtime: keep summary + attendee list in sync with backend.
   useEffect(() => {
