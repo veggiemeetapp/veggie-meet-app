@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Camera, X, MapPin, Loader2, AlertTriangle } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
+import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { cn } from "@/lib/utils";
 import { TODAY_ISO } from "@/lib/mock-data";
 import type { CommunityPlace, MeetupCategory } from "@/types";
@@ -11,7 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext } from "@/hooks/useLocation";
-import { fetchCommunityPlacesByCity } from "@/lib/backend";
+import { fetchPublishedCommunityPlaces } from "@/lib/backend";
+
 import {
   Dialog,
   DialogContent,
@@ -119,6 +121,16 @@ export default function Host() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // WO-051: location mode (Community Place vs Custom location).
+  const [searchParams] = useSearchParams();
+  const preselectedPlaceId = searchParams.get("community_place");
+  const preselectSource = preselectedPlaceId ? "place_detail" : "host_flow";
+  const [locationMode, setLocationMode] = useState<"community_place" | "custom">(
+    "community_place",
+  );
+  const [modeLogged, setModeLogged] = useState<string | null>(null);
+  const [preselectApplied, setPreselectApplied] = useState(false);
+
   // Seed city from Selected/Home once context resolves.
   useEffect(() => {
     if (cityId || !defaultCityId || !defaultCityName) return;
@@ -126,18 +138,46 @@ export default function Host() {
     setCityName(defaultCityName);
   }, [defaultCityId, defaultCityName, cityId]);
 
+  // Discovery list source of truth: published + verified + active + operational.
   const placesQuery = useQuery({
-    queryKey: ["host-places", cityId],
+    queryKey: ["host-published-places", cityId],
     enabled: !!cityId,
-    queryFn: () => fetchCommunityPlacesByCity(cityId!),
+    queryFn: () => fetchPublishedCommunityPlaces(cityId!),
     staleTime: 60_000,
   });
 
   const places = placesQuery.data ?? [];
-  const isCustom = placeId === CUSTOM_PLACE_ID;
-  const selectedPlace: CommunityPlace | undefined = places.find(
-    (p) => p.id === placeId,
-  );
+  const isCustom = locationMode === "custom";
+  const selectedPlace: CommunityPlace | undefined = isCustom
+    ? undefined
+    : places.find((p) => p.id === placeId);
+
+  function selectMode(mode: "community_place" | "custom") {
+    setLocationMode(mode);
+    if (mode === "custom") setPlaceId(CUSTOM_PLACE_ID);
+    else setPlaceId(null);
+    if (modeLogged !== mode) {
+      setModeLogged(mode);
+      logAnalyticsEvent("meetup_location_mode_selected", {
+        mode: mode === "custom" ? "custom" : "community_place",
+      });
+    }
+  }
+
+  // Preselect a Community Place arriving from /place/:id → Host a Meetup Here.
+  // Invalid or unavailable ids fall back silently to the normal Host flow.
+  useEffect(() => {
+    if (preselectApplied || !preselectedPlaceId || places.length === 0) return;
+    const match = places.find((p) => p.id === preselectedPlaceId);
+    setPreselectApplied(true);
+    if (!match) return;
+    setLocationMode("community_place");
+    setPlaceId(match.id);
+    logAnalyticsEvent("meetup_community_place_selected", {
+      place_id: match.id,
+      source: "place_detail",
+    });
+  }, [preselectApplied, preselectedPlaceId, places]);
 
   const coordsValid =
     (customLat === "" && customLng === "") ||
@@ -146,14 +186,19 @@ export default function Host() {
       Number(customLat) >= -90 && Number(customLat) <= 90 &&
       Number(customLng) >= -180 && Number(customLng) <= 180);
 
+  const placeError =
+    !isCustom && placeId === null && places.length > 0
+      ? "Choose a Community Place, or switch to a custom location."
+      : null;
+
   const canSubmit =
     title.trim().length > 0 &&
     categoryIdx !== null &&
     !!cityId &&
-    placeId !== null &&
     (!isCustom
       ? !!selectedPlace
       : customName.trim().length > 0 && customAddress.trim().length > 0 && coordsValid);
+
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -276,6 +321,13 @@ export default function Host() {
           location_source: resolved.locationSource,
           has_custom_cover: Boolean(cover),
         });
+        if (resolved.communityPlaceId) {
+          logAnalyticsEvent("meetup_created_at_community_place", {
+            meetup_id: data.id,
+            place_id: resolved.communityPlaceId,
+          });
+        }
+
         setConfirmOpen(false);
         navigate(`/meetup-created/${data.id}`);
         return;
@@ -390,7 +442,8 @@ export default function Host() {
                 onSelect={(id, name) => {
                   setCityId(id);
                   setCityName(name);
-                  setPlaceId(null);
+                  if (locationMode === "community_place") setPlaceId(null);
+
                 }}
               />
               {defaultCityId && cityId === defaultCityId && (
@@ -401,79 +454,89 @@ export default function Host() {
             </div>
 
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5">
-                Community place
+              <div
+                id="host-location-mode-label"
+                className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5"
+              >
+                Location type
               </div>
-              {!cityId ? (
-                <p className="text-sm text-charcoal-muted">Pick a city first.</p>
-              ) : placesQuery.isPending ? (
-                <div className="flex items-center gap-2 text-sm text-charcoal-muted">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading places…
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {places.map((p) => {
-                    const active = placeId === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setPlaceId(p.id)}
-                        className={cn(
-                          "w-full flex items-center gap-3 p-3 rounded-2xl border transition-all text-left",
-                          active
-                            ? "border-primary bg-accent/40 shadow-sm"
-                            : "border-border bg-card hover:bg-accent/30",
-                        )}
-                      >
-                        <img
-                          src={p.coverImageUrl}
-                          alt=""
-                          className="w-14 h-14 rounded-xl object-cover shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-charcoal truncate">{p.name}</div>
-                          <div className="text-xs text-charcoal-muted truncate">
-                            {p.neighborhood ? `${p.neighborhood} · ` : ""}
-                            {p.address}
-                          </div>
-                        </div>
-                        <div
-                          className={cn(
-                            "w-5 h-5 rounded-full border-2 shrink-0",
-                            active ? "border-primary bg-primary" : "border-border",
-                          )}
-                        />
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={() => setPlaceId(CUSTOM_PLACE_ID)}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-2xl border transition-all text-left",
-                      isCustom
-                        ? "border-primary bg-accent/40 shadow-sm"
-                        : "border-border bg-card hover:bg-accent/30",
-                    )}
-                  >
-                    <div className="w-14 h-14 rounded-xl bg-soft-green/60 flex items-center justify-center text-2xl shrink-0">
-                      📍
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-charcoal truncate">Custom location</div>
-                      <div className="text-xs text-charcoal-muted truncate">
-                        Somewhere not listed here.
-                      </div>
-                    </div>
-                    <div
+              <div
+                role="radiogroup"
+                aria-labelledby="host-location-mode-label"
+                className="grid grid-cols-2 gap-2"
+              >
+                {(
+                  [
+                    { mode: "community_place" as const, label: "Community Place" },
+                    { mode: "custom" as const, label: "Custom location" },
+                  ]
+                ).map((opt) => {
+                  const active = locationMode === opt.mode;
+                  return (
+                    <button
+                      key={opt.mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => selectMode(opt.mode)}
                       className={cn(
-                        "w-5 h-5 rounded-full border-2 shrink-0",
-                        isCustom ? "border-primary bg-primary" : "border-border",
+                        "h-11 px-3 rounded-xl border text-sm font-semibold transition-all",
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-card text-charcoal border-border hover:bg-accent/50",
                       )}
-                    />
-                  </button>
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3">
+                {locationMode === "community_place" ? (
+                  !cityId ? (
+                    <p className="text-sm text-charcoal-muted">Pick a city first.</p>
+                  ) : (
+                    <>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5">
+                        Choose a Community Place
+                      </div>
+                      <CommunityPlacePicker
+                        places={places}
+                        loading={placesQuery.isPending}
+                        errored={placesQuery.isError}
+                        onRetry={() => placesQuery.refetch()}
+                        selectedPlaceId={isCustom ? null : placeId}
+                        onSelect={(p) => {
+                          setPlaceId(p.id);
+                          logAnalyticsEvent("meetup_community_place_selected", {
+                            place_id: p.id,
+                            source: preselectSource,
+                          });
+                        }}
+                        onUseCustom={() => selectMode("custom")}
+                        onSuggestPlace={() => navigate("/community/places/suggest")}
+                        onViewPlace={(pid) => navigate(`/place/${pid}`)}
+                      />
+                      {placeError && (
+                        <p
+                          id="host-location-error"
+                          role="alert"
+                          className="mt-2 text-xs text-destructive"
+                        >
+                          {placeError}
+                        </p>
+                      )}
+                    </>
+                  )
+                ) : null}
+              </div>
+            </div>
+
+            <div>
+              <div className="space-y-2">
+                {/* Custom-location fields (preserved behavior) */}
+
 
                   {isCustom && (
                     <div className="mt-2 space-y-3 rounded-2xl border border-border bg-muted/30 p-3">
@@ -531,9 +594,9 @@ export default function Host() {
                       </p>
                     </div>
                   )}
-                </div>
-              )}
+              </div>
             </div>
+
           </div>
         </section>
 
@@ -665,25 +728,60 @@ export default function Host() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-2 space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-sm">
-            <div className="font-semibold text-charcoal">{title || "Untitled Meetup"}</div>
+            <div className="font-semibold text-charcoal [overflow-wrap:anywhere]">
+              {title || "Untitled Meetup"}
+            </div>
             <div className="text-charcoal-muted">
-              {date} · {startTime}
+              {date} · {startTime} · up to {capacity} Veggies
             </div>
             {resolved && (
               <div className="pt-1">
-                <div className="text-charcoal">
+                <div className="text-charcoal [overflow-wrap:anywhere]">
                   <MapPin className="inline w-3.5 h-3.5 mr-1" />
                   {resolved.locationName}
                 </div>
                 {resolved.address && (
-                  <div className="text-xs text-charcoal-muted">{resolved.address}</div>
+                  <div className="text-xs text-charcoal-muted [overflow-wrap:anywhere]">
+                    {resolved.address}
+                  </div>
                 )}
                 <div className="text-xs text-charcoal-muted">
-                  {resolved.cityName ?? cityName} · Timezone {resolved.timezone ?? "not set"}
+                  {[resolved.neighborhood, resolved.cityName ?? cityName]
+                    .filter(Boolean)
+                    .join(" · ")}{" "}
+                  · Timezone {resolved.timezone ?? "not set"}
                 </div>
+                {selectedPlace && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    {selectedPlace.veggieClassification === "fully_vegan" && (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-soft-green text-primary">
+                        100% Vegan
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/place/${selectedPlace.id}`, "_blank", "noopener,noreferrer")}
+                      className="text-xs font-semibold text-primary"
+                    >
+                      View Place
+                    </button>
+                  </div>
+                )}
               </div>
             )}
+            {description.trim() && (
+              <p className="text-xs text-charcoal-muted [overflow-wrap:anywhere] line-clamp-4">
+                {description.trim()}
+              </p>
+            )}
+            {selectedPlace && (
+              <p className="text-[11px] text-charcoal-muted">
+                This Meetup is hosted by a VeggieMeet member. The venue may not be
+                affiliated with VeggieMeet.
+              </p>
+            )}
           </div>
+
           {resolved && !resolved.timezone && (
             <div className="mt-2 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />

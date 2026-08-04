@@ -519,3 +519,24 @@ export async function fetchNearbyVeggiesByCity(
 
 
 
+
+/**
+ * WO-051 — Upcoming Meetups hosted at a specific Community Place.
+ * Uses the (community_place_id, date, start_time) index; cancelled excluded.
+ */
+export async function fetchUpcomingMeetupsAtPlace(
+  placeId: string,
+  fromDate: string,
+): Promise<Meetup[]> {
+  const { data, error } = await supabase
+    .from("meetups")
+    .select("*, chats(id)")
+    .eq("community_place_id", placeId)
+    .gte("date", fromDate)
+    .neq("status", "cancelled")
+    .order("date")
+    .order("start_time")
+    .limit(20);
+  if (error || !data) return [];
+  return (data as unknown as DBMeetupRow[]).map(toMeetup);
+}

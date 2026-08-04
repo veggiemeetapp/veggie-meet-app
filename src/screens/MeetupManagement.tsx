@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { fetchCommunityPlacesByCity, fetchMeetupById } from "@/lib/backend";
+import { fetchPublishedCommunityPlaces, fetchMeetupById } from "@/lib/backend";
+import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchMeetupAttendees,
@@ -146,7 +147,7 @@ export default function MeetupManagement() {
   const placesQuery = useQuery({
     queryKey: ["manage-places", locCityId],
     enabled: !!locCityId,
-    queryFn: () => fetchCommunityPlacesByCity(locCityId!),
+    queryFn: () => fetchPublishedCommunityPlaces(locCityId!),
     staleTime: 60_000,
   });
 
@@ -611,60 +612,40 @@ export default function MeetupManagement() {
 
           <div>
             <FieldLabel>Place</FieldLabel>
-            <div className="grid gap-2">
-              {!locCityId && (
-                <p className="text-xs text-charcoal-muted">Pick a city first.</p>
-              )}
-              {locCityId && placesQuery.isLoading && (
-                <p className="text-xs text-charcoal-muted">Loading places…</p>
-              )}
-              {locCityId && !placesQuery.isLoading && (placesQuery.data ?? []).length === 0 && (
-                <p className="text-xs text-charcoal-muted">
-                  No Community Places in this city yet — use a custom location.
-                </p>
-              )}
-              {(placesQuery.data ?? []).map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setLocPlaceId(p.id)}
-                  className={cn(
-                    "w-full text-left rounded-xl border px-3 py-2.5 flex items-start gap-2",
-                    locPlaceId === p.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card hover:bg-muted/40",
-                  )}
-                >
-                  <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-charcoal truncate">
-                      {p.name}
-                    </span>
-                    {(p.neighborhood || p.address) && (
-                      <span className="block text-[11px] text-charcoal-muted truncate">
-                        {[p.neighborhood, p.address].filter(Boolean).join(" · ")}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              ))}
-              {locCityId && (
-                <button
-                  type="button"
-                  onClick={() => setLocPlaceId(CUSTOM_PLACE_ID)}
-                  className={cn(
-                    "w-full text-left rounded-xl border px-3 py-2.5 flex items-center gap-2",
-                    locIsCustom
-                      ? "border-primary bg-primary/5"
-                      : "border-dashed border-border bg-card hover:bg-muted/40",
-                  )}
-                >
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-charcoal">Custom location</span>
-                </button>
-              )}
-            </div>
+            {!locCityId ? (
+              <p className="text-xs text-charcoal-muted">Pick a city first.</p>
+            ) : (
+              <CommunityPlacePicker
+                places={placesQuery.data ?? []}
+                loading={placesQuery.isLoading}
+                errored={placesQuery.isError}
+                onRetry={() => placesQuery.refetch()}
+                selectedPlaceId={locIsCustom ? null : locPlaceId}
+                onSelect={(p) => setLocPlaceId(p.id)}
+                onUseCustom={() => setLocPlaceId(CUSTOM_PLACE_ID)}
+                onSuggestPlace={() => navigate("/community/places/suggest")}
+                onViewPlace={(pid) =>
+                  window.open(`/place/${pid}`, "_blank", "noopener,noreferrer")
+                }
+              />
+            )}
+            {locCityId && (
+              <button
+                type="button"
+                onClick={() => setLocPlaceId(CUSTOM_PLACE_ID)}
+                className={cn(
+                  "mt-2 w-full text-left rounded-xl border px-3 py-2.5 flex items-center gap-2",
+                  locIsCustom
+                    ? "border-primary bg-primary/5"
+                    : "border-dashed border-border bg-card hover:bg-muted/40",
+                )}
+              >
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-charcoal">Custom location</span>
+              </button>
+            )}
           </div>
+
 
           {locIsCustom && (
             <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">

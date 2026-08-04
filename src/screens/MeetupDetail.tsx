@@ -13,6 +13,7 @@ import { PrimaryButton, SecondaryButton } from "@/components/app";
 import {
   MeetupHero,
   MeetupInfo,
+  MeetupPlaceSection,
   HostCard,
   AttendeePreview,
   WhatToExpect,
@@ -260,6 +261,8 @@ export default function MeetupDetail() {
         ) : null}
 
         <MeetupInfo meetup={meetup} place={place} distanceKm={mockDistance(meetup.id)} />
+
+        <MeetupPlaceSection communityPlaceId={meetup.communityPlaceId} />
 
 
         {host && <HostCard host={host} />}
