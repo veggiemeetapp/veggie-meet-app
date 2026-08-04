@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { fetchPublishedCommunityPlaces, fetchMeetupById } from "@/lib/backend";
+import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { supabase } from "@/integrations/supabase/client";
 import {
