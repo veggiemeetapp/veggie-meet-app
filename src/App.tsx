@@ -132,7 +132,9 @@ const App = () => (
                 <Route path="/chat/:id" element={gated(<MeetupChat />)} />
                 <Route path="/checkin/:meetupId" element={gated(<CheckIn />)} />
                 <Route path="/place/:id" element={gated(<CommunityPlaceDetail />)} />
+                <Route path="/place/:id/report" element={gated(<ReportPlaceIssue />)} />
                 <Route path="/place/:id/checkin" element={gated(<LegacyPlaceCheckInRedirect />)} />
+
                 <Route path="/network" element={gated(<VeggieNetwork />)} />
                 <Route path="/network/:id" element={gated(<RelationshipDetail />)} />
                 <Route path="/veggie/:id" element={gated(<VeggieProfile />)} />
