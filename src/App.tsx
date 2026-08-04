@@ -166,6 +166,11 @@ const App = () => (
                   path="/owner/places/:placeId/vegan-review"
                   element={gated(<OwnerPlaceVeganReview />)}
                 />
+                <Route
+                  path="/owner/places/:placeId/identity-review"
+                  element={gated(<OwnerPlaceIdentityReview />)}
+                />
+
 
 
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
