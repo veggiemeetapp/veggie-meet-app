@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Leaf, MapPin, Navigation } from "lucide-react";
 import { fetchCommunityPlaceById, isUuid } from "@/lib/backend";
-import { logAnalyticsEvent } from "@/lib/analytics";
 
 const CATEGORY_LABEL: Record<string, string> = {
   restaurant: "Restaurant",
@@ -14,7 +13,6 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 interface Props {
-  meetupId: string;
   communityPlaceId?: string | null;
 }
 
@@ -22,7 +20,7 @@ interface Props {
  * WO-051 — Meetup detail location section for Meetups hosted at a verified
  * Community Place. Public place fields only; no verification internals.
  */
-export function MeetupPlaceSection({ meetupId, communityPlaceId }: Props) {
+export function MeetupPlaceSection({ communityPlaceId }: Props) {
   const navigate = useNavigate();
   const enabled = isUuid(communityPlaceId);
 

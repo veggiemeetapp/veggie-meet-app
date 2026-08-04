@@ -261,6 +261,8 @@ export default function MeetupDetail() {
 
         <MeetupInfo meetup={meetup} place={place} distanceKm={mockDistance(meetup.id)} />
 
+        <MeetupPlaceSection communityPlaceId={meetup.communityPlaceId} />
+
 
         {host && <HostCard host={host} />}
 
