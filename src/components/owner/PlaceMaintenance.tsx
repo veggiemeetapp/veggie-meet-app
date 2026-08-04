@@ -312,7 +312,21 @@ export function PlaceMaintenance() {
                         ? "Reconfirm vegan status"
                         : "Review vegan status"}
                     </Button>
+                    {/* WO-059 — owner-only identity replacement and relocation. */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      aria-label={`Review the identity or location of ${p.name}`}
+                      onClick={() =>
+                        navigate(
+                          `/owner/places/${p.id}/identity-review?source=place_maintenance`,
+                        )
+                      }
+                    >
+                      Identity or location
+                    </Button>
                   </div>
+
 
 
 
