@@ -300,6 +300,8 @@ export interface CompleteVeganReviewOutcome {
   public_action?: VeganPublicAction;
   public_action_applied?: boolean;
   classification?: string;
+  /** WO-058A — true when this completion restored a revoked 100% Vegan status. */
+  restored?: boolean;
   freshness_updated?: boolean;
   needs_action?: boolean;
 }

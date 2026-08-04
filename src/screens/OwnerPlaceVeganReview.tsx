@@ -307,14 +307,20 @@ export default function OwnerPlaceVeganReview() {
       invalidate();
       setStatusMsg(
         r.result === "confirmed_fully_vegan"
-          ? "Confirmed fully vegan. The 100% Vegan classification and the public place are unchanged; only the freshness date advanced."
+          ? r.restored
+            ? r.public_action_applied
+              ? "Reconfirmed 100% vegan. The classification was restored and the place is visible in Community Places discovery again. All history was preserved."
+              : "Reconfirmed 100% vegan. The classification was restored and the place stays hidden from discovery until you restore its visibility."
+            : "Confirmed fully vegan. The 100% Vegan classification and the public place are unchanged; only the freshness date advanced."
           : r.result === "no_longer_fully_vegan"
             ? "The 100% Vegan classification was removed and the place is hidden from Community Places discovery. The record and its history are preserved."
             : r.public_action_applied
               ? "Recorded as insufficient evidence and the place was temporarily hidden from discovery. The classification is unchanged."
               : "Recorded as insufficient evidence. No public change was made.",
       );
-      toast.success("Vegan review completed.");
+      toast.success(
+        r.restored ? "100% Vegan status reconfirmed." : "Vegan review completed.",
+      );
       setResult("");
       setSummary("");
       setNote("");
@@ -324,6 +330,7 @@ export default function OwnerPlaceVeganReview() {
       setProductChecks({});
       setIdentityChecks({});
       setInsufficientAction("none");
+      setRestoreAction("none");
       if (reportId) navigate("/owner/places?tab=reports");
     },
     onError: (e: Error) => toast.error(e.message),
