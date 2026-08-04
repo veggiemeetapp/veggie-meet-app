@@ -259,6 +259,22 @@ export function ReportQueue() {
                     >
                       Edit public details
                     </Button>
+                    {/* WO-058 — a vegan-status report can only trigger a review, never change status. */}
+                    {r.reason_code === "vegan_status_concern" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label={`Review the vegan status of ${r.place_name}`}
+                        onClick={() =>
+                          navigate(
+                            `/owner/places/${r.community_place_id}/vegan-review?source=member_report&report=${r.id}`,
+                          )
+                        }
+                      >
+                        Review vegan status
+                      </Button>
+                    )}
+
                     <p className="text-[11px] text-muted-foreground">
                       The reporter is notified of the outcome only. Internal notes, your identity,
                       and other members' reports are never shared. Editing public details never

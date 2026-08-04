@@ -396,6 +396,7 @@ export default function OwnerPlaceReverify() {
                       Edit public details
                     </Button>
                   </div>
+
                 );
               })()}
             </section>
