@@ -39,6 +39,8 @@ import {
   distanceMeters,
   fetchIdentityReviewWorkspace,
   formatDistance,
+  moveTier,
+
   formatIdentityDate,
   googlePlaceIdError,
   identityBlockMessage,
@@ -48,10 +50,8 @@ import {
   type IdentityResult,
 } from "@/lib/placeIdentity";
 
-/** Distance above which a move must be explicitly acknowledged. */
-const LARGE_MOVE_M = 10000;
-/** Distance above which an identity replacement is treated as suspicious. */
-const IDENTITY_MOVE_M = 1000;
+/* Distance tiers live in @/lib/placeIdentity and mirror the server rules. */
+
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -194,9 +194,11 @@ export default function OwnerPlaceIdentityReview() {
 
   const needsPublicChange = result === "identity_replaced" || result === "location_moved";
 
-  const largeMove =
-    (result === "location_moved" && dist != null && dist > LARGE_MOVE_M) ||
-    (result === "identity_replaced" && applyLocation && dist != null && dist > IDENTITY_MOVE_M);
+  const tier = moveTier(dist);
+  const relocating = result === "location_moved" || (result === "identity_replaced" && applyLocation);
+  const showNearby = relocating && tier === "nearby";
+  const largeMove = relocating && (tier === "high_risk" || tier === "exceptional");
+
 
   const validationError = useMemo(() => {
     if (!caseType) return "Select what the evidence shows.";
@@ -724,12 +726,33 @@ export default function OwnerPlaceIdentityReview() {
                       </div>
                     </div>
 
+                    {showNearby && (
+                      <div
+                        role="note"
+                        className="rounded-lg border p-3 text-xs space-y-1 [overflow-wrap:anywhere]"
+                      >
+                        <p className="font-medium">Nearby relocation — {formatDistance(dist)} away</p>
+                        <p className="text-muted-foreground">
+                          This is close enough to be the same branch moving down the street, but it
+                          still needs a primary source: the official listing, website or a statement
+                          from the business. The same place record is kept, check-ins start using
+                          the new coordinates, and existing Meetups are never cancelled or moved.
+                        </p>
+                      </div>
+                    )}
+
                     {largeMove && (
-                      <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs space-y-2 [overflow-wrap:anywhere]">
+                      <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-xs space-y-2 [overflow-wrap:anywhere]">
+                        <p className="font-medium text-destructive">
+                          {tier === "exceptional"
+                            ? `Exceptional distance — ${formatDistance(dist)} away`
+                            : `High risk — ${formatDistance(dist)} away`}
+                        </p>
                         <p>
-                          The proposed coordinates are {formatDistance(dist)} from the current
-                          location. A move this large usually means a different location, not the
-                          same branch. Existing Meetups here are never cancelled or moved.
+                          {tier === "exceptional"
+                            ? "A move this far is almost always a different location. Only continue if primary-source evidence proves this exact branch relocated. Another branch can never take over this record."
+                            : "A move over 1 km usually means a different location, not the same branch. Continue only with primary-source evidence for this exact branch."}{" "}
+                          Existing Meetups here are never cancelled or moved.
                         </p>
                         <div className="flex items-start gap-2">
                           <Checkbox
@@ -744,6 +767,7 @@ export default function OwnerPlaceIdentityReview() {
                         </div>
                       </div>
                     )}
+
                   </section>
                 )}
 
@@ -1019,7 +1043,23 @@ export default function OwnerPlaceIdentityReview() {
               <div className="space-y-2 text-left">
                 {needsPublicChange ? (
                   <ul className="list-disc pl-4 space-y-1">
-                    <li>The same place record is kept — nothing is duplicated or deleted.</li>
+                    <li>
+                      The same Community Place record is kept — the same place ID{" "}
+                      <span className="[overflow-wrap:anywhere]">{place?.id}</span> and the same
+                      verified candidate record. Nothing is duplicated or deleted.
+                    </li>
+                    {gid.trim() !== "" && applyIdentity && !sameIdentity && (
+                      <>
+                        <li className="[overflow-wrap:anywhere]">
+                          Google Place ID: {place?.google_place_id ?? "—"} → {gid.trim()}
+                        </li>
+                        <li>
+                          The public Google Maps link changes to the new listing. The old map link
+                          stops being shown to members.
+                        </li>
+                      </>
+                    )}
+
                     <li>
                       Updated:{" "}
                       {[
