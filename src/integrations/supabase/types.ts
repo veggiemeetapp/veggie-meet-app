@@ -2720,6 +2720,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_community_place_active: {
+        Args: { _active: boolean; _note: string; _place_id: string }
+        Returns: Json
+      }
       set_community_place_status: {
         Args: { _note?: string; _place_id: string; _status: string }
         Returns: Json
