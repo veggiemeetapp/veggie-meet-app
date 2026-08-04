@@ -176,7 +176,12 @@ export default function OwnerPlaceVerification() {
         <ReportQueue />
 
         {/* ---- Published place status maintenance (WO-053) ---- */}
+        {/* ---- Published place status maintenance (WO-053) ---- */}
         <PlaceMaintenance />
+
+        {/* ---- Reverification and data freshness (WO-056) ---- */}
+        <ReverificationQueue />
+
 
 
 
