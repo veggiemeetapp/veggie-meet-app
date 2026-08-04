@@ -13,6 +13,7 @@ import { PrimaryButton, SecondaryButton } from "@/components/app";
 import {
   MeetupHero,
   MeetupInfo,
+  MeetupPlaceSection,
   HostCard,
   AttendeePreview,
   WhatToExpect,
