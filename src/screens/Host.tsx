@@ -442,7 +442,8 @@ export default function Host() {
                 onSelect={(id, name) => {
                   setCityId(id);
                   setCityName(name);
-                  setPlaceId(null);
+                  if (locationMode === "community_place") setPlaceId(null);
+
                 }}
               />
               {defaultCityId && cityId === defaultCityId && (
