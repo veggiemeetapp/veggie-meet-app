@@ -292,8 +292,8 @@ export function PlaceMaintenance() {
                           className="text-xs text-muted-foreground min-w-0 [overflow-wrap:anywhere]"
                         >
                           {new Date(h.created_at).toLocaleString()} —{" "}
-                          {h.old_status ?? "—"} → {h.new_status} ({h.action})
-                          {h.note ? `: ${h.note}` : ""}
+                          {statusLabel(h.old_status)} → {statusLabel(h.new_status)} (
+                          {actionLabel(h.action)}){h.note ? `: ${h.note}` : ""}
                         </li>
                       ))}
                     </ul>
