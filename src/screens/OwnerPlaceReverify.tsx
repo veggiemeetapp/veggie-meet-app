@@ -133,10 +133,16 @@ export default function OwnerPlaceReverify() {
   const openReview = wsQ.data?.open_review ?? null;
 
   const noteError = useMemo(() => {
-    if (!note.trim()) return "An internal reverification note is required.";
-    if (note.trim().length > 1000) return "Keep the note to 1000 characters or fewer.";
+    const len = note.trim().length;
+    if (!len) return "An internal reverification note is required.";
+    // When the owner also applies the public closure status, the same note is
+    // reused as the public-facing status reason, which allows 500 characters.
+    // Cap it here so the owner never hits an avoidable server-side failure.
+    if (applyPlaceAction && len > 500)
+      return "When you also apply the public status, keep the note to 500 characters or fewer.";
+    if (len > 1000) return "Keep the note to 1000 characters or fewer.";
     return null;
-  }, [note]);
+  }, [note, applyPlaceAction]);
 
   const urlError = useMemo(() => {
     const v = evidenceUrl.trim();
@@ -662,18 +668,21 @@ export default function OwnerPlaceReverify() {
       <AlertDialog open={confirmOpen} onOpenChange={(o) => !o && closeConfirm()}>
         <AlertDialogContent className="max-w-[min(92vw,32rem)]">
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {result ? RESULT_LABEL[result as ReverificationResult] : "Confirm"}
+            <AlertDialogTitle className="[overflow-wrap:anywhere]">
+              {result ? RESULT_LABEL[result as ReverificationResult] : "Confirm"} —{" "}
+              {place?.name ?? "this place"}
             </AlertDialogTitle>
             <AlertDialogDescription className="[overflow-wrap:anywhere]">
               {result && RESULT_CONSEQUENCE[result as ReverificationResult]}
               {applyPlaceAction
-                ? " You have chosen to apply this status to the public place now."
+                ? ` You have chosen to apply this status now: ${place?.name ?? "this place"} will publicly become ${
+                    result === "permanently_closed" ? "Permanently closed" : "Temporarily closed"
+                  }.`
                 : " No public change will be made — the place is only flagged for you."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={closeConfirm}>Go back</AlertDialogCancel>
+            <AlertDialogCancel onClick={closeConfirm}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 closeConfirm();
