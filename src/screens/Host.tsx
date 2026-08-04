@@ -728,25 +728,60 @@ export default function Host() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-2 space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-sm">
-            <div className="font-semibold text-charcoal">{title || "Untitled Meetup"}</div>
+            <div className="font-semibold text-charcoal [overflow-wrap:anywhere]">
+              {title || "Untitled Meetup"}
+            </div>
             <div className="text-charcoal-muted">
-              {date} · {startTime}
+              {date} · {startTime} · up to {capacity} Veggies
             </div>
             {resolved && (
               <div className="pt-1">
-                <div className="text-charcoal">
+                <div className="text-charcoal [overflow-wrap:anywhere]">
                   <MapPin className="inline w-3.5 h-3.5 mr-1" />
                   {resolved.locationName}
                 </div>
                 {resolved.address && (
-                  <div className="text-xs text-charcoal-muted">{resolved.address}</div>
+                  <div className="text-xs text-charcoal-muted [overflow-wrap:anywhere]">
+                    {resolved.address}
+                  </div>
                 )}
                 <div className="text-xs text-charcoal-muted">
-                  {resolved.cityName ?? cityName} · Timezone {resolved.timezone ?? "not set"}
+                  {[resolved.neighborhood, resolved.cityName ?? cityName]
+                    .filter(Boolean)
+                    .join(" · ")}{" "}
+                  · Timezone {resolved.timezone ?? "not set"}
                 </div>
+                {selectedPlace && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    {selectedPlace.veggieClassification === "fully_vegan" && (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-soft-green text-primary">
+                        100% Vegan
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/place/${selectedPlace.id}`, "_blank", "noopener,noreferrer")}
+                      className="text-xs font-semibold text-primary"
+                    >
+                      View Place
+                    </button>
+                  </div>
+                )}
               </div>
             )}
+            {description.trim() && (
+              <p className="text-xs text-charcoal-muted [overflow-wrap:anywhere] line-clamp-4">
+                {description.trim()}
+              </p>
+            )}
+            {selectedPlace && (
+              <p className="text-[11px] text-charcoal-muted">
+                This Meetup is hosted by a VeggieMeet member. The venue may not be
+                affiliated with VeggieMeet.
+              </p>
+            )}
           </div>
+
           {resolved && !resolved.timezone && (
             <div className="mt-2 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
