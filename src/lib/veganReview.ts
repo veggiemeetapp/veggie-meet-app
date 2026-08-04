@@ -22,7 +22,11 @@ export type EvidenceConfidence =
   | "shows_non_vegan"
   | "no_source";
 
-export type VeganPublicAction = "none" | "deactivate" | "revoke_and_deactivate";
+export type VeganPublicAction =
+  | "none"
+  | "deactivate"
+  | "revoke_and_deactivate"
+  | "restore_and_reactivate";
 
 export const VEGAN_CLASSIFICATION_LABEL: Record<string, string> = {
   fully_vegan: "100% Vegan",
@@ -81,6 +85,15 @@ export const RESULT_CONSEQUENCE: Record<VeganReviewResult, string> = {
   no_longer_fully_vegan:
     "The 100% Vegan classification is removed and the place is hidden from Community Places discovery in one step. The record, its Google Place ID, its operational status, and every past visit, Meetup and support count are preserved. Nothing is deleted and the business is not marked closed.",
 };
+
+/**
+ * WO-058A — consequence copy shown instead of the normal "confirmed" copy when
+ * the place currently carries a revoked classification. Confirming restores the
+ * 100% Vegan classification; returning it to discovery is a separate, explicitly
+ * confirmed choice.
+ */
+export const RESTORE_RESULT_CONSEQUENCE =
+  "This place’s 100% Vegan status was previously removed. A fully-evidenced confirmation restores the 100% Vegan classification and advances the freshness date. Returning it to Community Places discovery is a separate choice you confirm below — nothing is duplicated, no history is deleted, and the Google identity and operational status are untouched.";
 
 /** Acceptable primary evidence, and what can only trigger a review. */
 export const ACCEPTABLE_EVIDENCE = [
@@ -204,6 +217,8 @@ export const BLOCK_REASON_MESSAGE: Record<string, string> = {
   identity_not_established:
     "Confirm the evidence belongs to this business and this branch before completing.",
   invalid_public_action: "That public action is not valid for this result.",
+  place_not_operational:
+    "Restore the operational status first — a closed or reverification-pending place cannot return to discovery here.",
   confirmation_required: "Confirm the public consequence before completing.",
   invalid_related_report: "The linked member report does not match this place.",
   invalid_related_reverification: "The linked reverification does not match this place.",
