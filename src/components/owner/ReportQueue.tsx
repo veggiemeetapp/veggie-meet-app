@@ -1,7 +1,17 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { logAnalyticsEvent } from "@/lib/analytics";
@@ -52,6 +62,10 @@ export function ReportQueue() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [placeAction, setPlaceAction] = useState<"" | ReportPlaceAction>("");
+  // WO-054A: resolving with a place-status action changes the PUBLIC place, so
+  // it must be confirmed explicitly with the selected action named back.
+  const [confirming, setConfirming] = useState<OwnerPlaceReport | null>(null);
+  const confirmTriggerRef = useRef<HTMLElement | null>(null);
 
   const q = useQuery({ queryKey: ["place-report-queue"], queryFn: fetchPlaceReportQueue });
 
@@ -76,6 +90,7 @@ export function ReportQueue() {
       toast.success("Report updated.");
       setNote("");
       setPlaceAction("");
+      setConfirming(null);
       qc.invalidateQueries({ queryKey: ["place-report-queue"] });
       qc.invalidateQueries({ queryKey: ["maintenance-places"] });
       qc.invalidateQueries({ queryKey: ["published-places-all"] });
@@ -211,7 +226,14 @@ export function ReportQueue() {
                           moderateM.isPending ||
                           !(r.status === "pending" || r.status === "under_review")
                         }
-                        onClick={() => moderateM.mutate({ id: r.id, action: "resolve" })}
+                        onClick={(e) => {
+                          if (placeAction) {
+                            confirmTriggerRef.current = e.currentTarget;
+                            setConfirming(r);
+                            return;
+                          }
+                          moderateM.mutate({ id: r.id, action: "resolve" });
+                        }}
                       >
                         {moderateM.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -231,6 +253,70 @@ export function ReportQueue() {
           ))}
         </ul>
       )}
+
+      <AlertDialog
+        open={!!confirming}
+        onOpenChange={(o) => {
+          if (!o && !moderateM.isPending) {
+            const label = confirming
+              ? `Resolve the report for ${confirming.place_name}`
+              : null;
+            setConfirming(null);
+            // Radix restores focus to its own trigger on close; this dialog is
+            // opened programmatically, so put focus back on the Resolve button
+            // that opened it (re-queried, since the row may have re-rendered).
+            setTimeout(() => {
+              const el =
+                confirmTriggerRef.current?.isConnected
+                  ? confirmTriggerRef.current
+                  : label
+                    ? (document.querySelector(
+                        `button[aria-label="${label.replace(/"/g, '\\"')}"]`,
+                      ) as HTMLElement | null)
+                    : null;
+              el?.focus();
+            }, 0);
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-[min(92vw,32rem)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="[overflow-wrap:anywhere]">
+              Resolve this report and change the public place status?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="[overflow-wrap:anywhere]">
+              Two things will happen together:
+              <span className="mt-2 block">
+                1. The member's report is marked <strong>Resolved</strong>. They are told the
+                outcome only — never your internal note.
+              </span>
+              <span className="mt-1 block">
+                2. <strong>{confirming?.place_name}</strong> is publicly set to{" "}
+                <strong>
+                  {PLACE_ACTIONS.find((a) => a.value === placeAction)?.label ?? "no change"}
+                </strong>
+                . Every member browsing VeggieMeet sees this change.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={moderateM.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={moderateM.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirming) moderateM.mutate({ id: confirming.id, action: "resolve" });
+              }}
+            >
+              {moderateM.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                "Resolve and change status"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
