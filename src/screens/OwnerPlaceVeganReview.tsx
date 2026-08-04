@@ -720,16 +720,21 @@ export default function OwnerPlaceVeganReview() {
                           onChange={() => {
                             setResult(r);
                             setInsufficientAction("none");
+                            setRestoreAction("none");
                             setBlockMsg("");
                           }}
                         />
                         <Label htmlFor={`res-${r}`} className="text-xs font-medium min-w-0">
-                          {RESULT_LABEL[r]}
+                          {isRevoked && r === "confirmed_fully_vegan"
+                            ? "Reconfirm 100% vegan"
+                            : RESULT_LABEL[r]}
                         </Label>
                       </div>
                       {result === r && (
                         <p className="text-[11px] text-muted-foreground pl-6 [overflow-wrap:anywhere]">
-                          {RESULT_CONSEQUENCE[r]}
+                          {isRevoked && r === "confirmed_fully_vegan"
+                            ? RESTORE_RESULT_CONSEQUENCE
+                            : RESULT_CONSEQUENCE[r]}
                         </p>
                       )}
                     </div>
