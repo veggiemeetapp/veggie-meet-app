@@ -7,6 +7,8 @@ export type NotificationType =
   | "meetup_invitation_joined"
   | "meetup_updated"
   | "meetup_cancelled"
+  | "meetup_attendee_removed"
+  | "meetup_location_changed"
   | "place_suggestion_under_review"
   | "place_suggestion_approved"
   | "place_suggestion_duplicate"
@@ -160,6 +162,8 @@ export function notificationDestination(n: NotificationItem): string | null {
       return n.destination_id ? `/dm/${n.destination_id}` : "/chats";
     case "meetup_updated":
     case "meetup_cancelled":
+    case "meetup_attendee_removed":
+    case "meetup_location_changed":
       return n.destination_id ? `/meetup/${n.destination_id}` : "/";
     case "place_suggestion_under_review":
     case "place_suggestion_approved":

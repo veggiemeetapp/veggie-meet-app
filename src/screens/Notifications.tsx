@@ -11,7 +11,9 @@ import {
   Leaf,
   Loader2,
   MailPlus,
+  MapPin,
   PartyPopper,
+  UserMinus,
   UserPlus,
 } from "lucide-react";
 
@@ -87,6 +89,8 @@ const iconFor: Record<NotificationType, JSX.Element> = {
   meetup_invitation_joined: <PartyPopper className="w-4 h-4" />,
   meetup_updated: <CalendarClock className="w-4 h-4" />,
   meetup_cancelled: <CalendarOff className="w-4 h-4" />,
+  meetup_attendee_removed: <UserMinus className="w-4 h-4" />,
+  meetup_location_changed: <MapPin className="w-4 h-4" />,
   place_suggestion_under_review: <Leaf className="w-4 h-4" />,
   place_suggestion_approved: <Leaf className="w-4 h-4" />,
   place_suggestion_duplicate: <Leaf className="w-4 h-4" />,
@@ -206,6 +210,12 @@ export default function Notifications() {
       if (PLACE_SUGGESTION_TYPES.includes(n.type)) {
         logAnalyticsEvent("place_suggestion_notification_opened", {
           notification_type: n.type,
+          source: "notifications_list",
+        });
+      }
+      if (n.type === "meetup_location_changed") {
+        logAnalyticsEvent("meetup_location_change_notification_opened", {
+          meetup_id: n.destination_id ?? n.entity_id,
           source: "notifications_list",
         });
       }

@@ -950,13 +950,17 @@ export type Database = {
           meetup_id: string
           new_address: string | null
           new_city_id: string | null
+          new_community_place_id: string | null
           new_latitude: number | null
+          new_location_mode: string | null
           new_location_name: string | null
           new_longitude: number | null
           new_timezone: string | null
           old_address: string | null
           old_city_id: string | null
+          old_community_place_id: string | null
           old_latitude: number | null
+          old_location_mode: string | null
           old_location_name: string | null
           old_longitude: number | null
           old_timezone: string | null
@@ -969,13 +973,17 @@ export type Database = {
           meetup_id: string
           new_address?: string | null
           new_city_id?: string | null
+          new_community_place_id?: string | null
           new_latitude?: number | null
+          new_location_mode?: string | null
           new_location_name?: string | null
           new_longitude?: number | null
           new_timezone?: string | null
           old_address?: string | null
           old_city_id?: string | null
+          old_community_place_id?: string | null
           old_latitude?: number | null
+          old_location_mode?: string | null
           old_location_name?: string | null
           old_longitude?: number | null
           old_timezone?: string | null
@@ -988,13 +996,17 @@ export type Database = {
           meetup_id?: string
           new_address?: string | null
           new_city_id?: string | null
+          new_community_place_id?: string | null
           new_latitude?: number | null
+          new_location_mode?: string | null
           new_location_name?: string | null
           new_longitude?: number | null
           new_timezone?: string | null
           old_address?: string | null
           old_city_id?: string | null
+          old_community_place_id?: string | null
           old_latitude?: number | null
+          old_location_mode?: string | null
           old_location_name?: string | null
           old_longitude?: number | null
           old_timezone?: string | null
@@ -1022,10 +1034,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "meetup_location_changes_new_community_place_id_fkey"
+            columns: ["new_community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "meetup_location_changes_old_city_id_fkey"
             columns: ["old_city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetup_location_changes_old_community_place_id_fkey"
+            columns: ["old_community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
             referencedColumns: ["id"]
           },
         ]
@@ -2668,6 +2694,7 @@ export type Database = {
         | "place_suggestion_approved"
         | "place_suggestion_duplicate"
         | "place_suggestion_rejected"
+        | "meetup_location_changed"
       place_category:
         | "restaurant"
         | "cafe"
@@ -2851,6 +2878,7 @@ export const Constants = {
         "place_suggestion_approved",
         "place_suggestion_duplicate",
         "place_suggestion_rejected",
+        "meetup_location_changed",
       ],
       place_category: [
         "restaurant",

@@ -418,14 +418,14 @@ export default function MeetupManagement() {
       });
       // Copy is driven by notifications_inserted (not recipients_count), so we
       // never claim attendees were notified when zero notifications landed.
-      if (res.meaningful_change && res.notifications_inserted > 0) {
+      if (res.notifications_inserted > 0) {
         toast({
           title: "Location updated",
           description: `${res.notifications_inserted} ${
             res.notifications_inserted === 1 ? "attendee was" : "attendees were"
           } notified.`,
         });
-      } else if (res.meaningful_change) {
+      } else if (res.notified ?? res.meaningful_change) {
         toast({ title: "Location updated" });
       } else {
         toast({ title: "Location details updated" });
