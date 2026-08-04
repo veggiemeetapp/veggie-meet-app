@@ -602,6 +602,18 @@ export default function MeetupManagement() {
             </p>
           </div>
 
+          {linkedPlaceUnavailable && (
+            <div
+              role="status"
+              className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs text-charcoal min-w-0 [overflow-wrap:anywhere]"
+            >
+              <span className="font-semibold block">Location needs attention</span>
+              {linkedPlaceQuery.data?.name} is no longer available as a Community Place. This
+              Meetup is still scheduled — choose a new place or a custom location below.
+              Attendees are notified when you save the new location.
+            </div>
+          )}
+
           {meetup.location?.isInferred && (
             <div className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs text-charcoal">
               This Meetup's location was inferred from the city. Confirm a real place or custom
