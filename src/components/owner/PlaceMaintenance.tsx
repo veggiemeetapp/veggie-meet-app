@@ -289,16 +289,28 @@ export function PlaceMaintenance() {
                     >
                       Edit public details
                     </Button>
-                    {/* WO-058 — owner-only vegan verification review. */}
+                    {/* WO-058 / WO-058A — owner-only vegan verification review. A place
+                        whose 100% Vegan status was revoked is reconfirmed and restored
+                        through the same workspace. */}
                     <Button
                       size="sm"
-                      variant="outline"
-                      aria-label={`Review the vegan status of ${p.name}`}
+                      variant={
+                        p.veggie_classification === "not_confirmed_fully_vegan"
+                          ? "default"
+                          : "outline"
+                      }
+                      aria-label={
+                        p.veggie_classification === "not_confirmed_fully_vegan"
+                          ? `Reconfirm and restore the vegan status of ${p.name}`
+                          : `Review the vegan status of ${p.name}`
+                      }
                       onClick={() =>
                         navigate(`/owner/places/${p.id}/vegan-review?source=place_maintenance`)
                       }
                     >
-                      Review vegan status
+                      {p.veggie_classification === "not_confirmed_fully_vegan"
+                        ? "Reconfirm vegan status"
+                        : "Review vegan status"}
                     </Button>
                   </div>
 

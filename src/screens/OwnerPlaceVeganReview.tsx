@@ -29,6 +29,7 @@ import {
   IDENTITY_CHECKS,
   INSUFFICIENT_EVIDENCE_SOURCES,
   PRODUCT_CHECKS,
+  RESTORE_RESULT_CONSEQUENCE,
   RESULT_CONSEQUENCE,
   RESULT_LABEL,
   SOURCE_CHECKS,
@@ -124,6 +125,8 @@ export default function OwnerPlaceVeganReview() {
   const [note, setNote] = useState("");
   const [result, setResult] = useState<VeganReviewResult | "">("");
   const [insufficientAction, setInsufficientAction] = useState<"none" | "deactivate">("none");
+  /** WO-058A — restore choice, only offered on a previously revoked place. */
+  const [restoreAction, setRestoreAction] = useState<"none" | "restore_and_reactivate">("none");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
   const [blockMsg, setBlockMsg] = useState("");
@@ -146,12 +149,23 @@ export default function OwnerPlaceVeganReview() {
     }
   }, [ownerQ.data, placeId, entrySource]);
 
+  /**
+   * WO-058A — a place whose 100% Vegan status was revoked can be reconfirmed.
+   * Confirming always restores the classification server-side; returning it to
+   * discovery is the separate, explicitly confirmed `restore_and_reactivate`.
+   */
+  const isRevoked = place?.veggie_classification === "not_confirmed_fully_vegan";
+  const canRestoreVisibility =
+    isRevoked && place?.maintenance_status === "operational" && place?.is_active === false;
+
   const publicAction: VeganPublicAction =
     result === "no_longer_fully_vegan"
       ? "revoke_and_deactivate"
       : result === "insufficient_evidence"
         ? insufficientAction
-        : "none";
+        : result === "confirmed_fully_vegan" && canRestoreVisibility
+          ? restoreAction
+          : "none";
 
   const urlError = useMemo(() => {
     const shape = veganEvidenceUrlError(evidenceUrl);
@@ -293,14 +307,20 @@ export default function OwnerPlaceVeganReview() {
       invalidate();
       setStatusMsg(
         r.result === "confirmed_fully_vegan"
-          ? "Confirmed fully vegan. The 100% Vegan classification and the public place are unchanged; only the freshness date advanced."
+          ? r.restored
+            ? r.public_action_applied
+              ? "Reconfirmed 100% vegan. The classification was restored and the place is visible in Community Places discovery again. All history was preserved."
+              : "Reconfirmed 100% vegan. The classification was restored and the place stays hidden from discovery until you restore its visibility."
+            : "Confirmed fully vegan. The 100% Vegan classification and the public place are unchanged; only the freshness date advanced."
           : r.result === "no_longer_fully_vegan"
             ? "The 100% Vegan classification was removed and the place is hidden from Community Places discovery. The record and its history are preserved."
             : r.public_action_applied
               ? "Recorded as insufficient evidence and the place was temporarily hidden from discovery. The classification is unchanged."
               : "Recorded as insufficient evidence. No public change was made.",
       );
-      toast.success("Vegan review completed.");
+      toast.success(
+        r.restored ? "100% Vegan status reconfirmed." : "Vegan review completed.",
+      );
       setResult("");
       setSummary("");
       setNote("");
@@ -310,6 +330,7 @@ export default function OwnerPlaceVeganReview() {
       setProductChecks({});
       setIdentityChecks({});
       setInsufficientAction("none");
+      setRestoreAction("none");
       if (reportId) navigate("/owner/places?tab=reports");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -699,16 +720,21 @@ export default function OwnerPlaceVeganReview() {
                           onChange={() => {
                             setResult(r);
                             setInsufficientAction("none");
+                            setRestoreAction("none");
                             setBlockMsg("");
                           }}
                         />
                         <Label htmlFor={`res-${r}`} className="text-xs font-medium min-w-0">
-                          {RESULT_LABEL[r]}
+                          {isRevoked && r === "confirmed_fully_vegan"
+                            ? "Reconfirm 100% vegan"
+                            : RESULT_LABEL[r]}
                         </Label>
                       </div>
                       {result === r && (
                         <p className="text-[11px] text-muted-foreground pl-6 [overflow-wrap:anywhere]">
-                          {RESULT_CONSEQUENCE[r]}
+                          {isRevoked && r === "confirmed_fully_vegan"
+                            ? RESTORE_RESULT_CONSEQUENCE
+                            : RESULT_CONSEQUENCE[r]}
                         </p>
                       )}
                     </div>
@@ -756,6 +782,63 @@ export default function OwnerPlaceVeganReview() {
                     ))}
                   </fieldset>
                 )}
+
+                {/* WO-058A — restore visibility after a reconfirmation. */}
+                {result === "confirmed_fully_vegan" && isRevoked && (
+                  <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+                    <legend className="px-1 text-xs font-semibold">
+                      What should happen publicly?
+                    </legend>
+                    <p className="text-[11px] text-muted-foreground">
+                      The 100% Vegan classification is restored either way. Returning the place to
+                      Community Places discovery is a separate, deliberate choice.
+                    </p>
+                    {canRestoreVisibility ? (
+                      (
+                        [
+                          {
+                            v: "none" as const,
+                            label:
+                              "Restore the classification only — the place stays hidden from discovery for now",
+                          },
+                          {
+                            v: "restore_and_reactivate" as const,
+                            label:
+                              "Reconfirm and restore — bring the place back into Community Places discovery",
+                          },
+                        ] satisfies Array<{
+                          v: "none" | "restore_and_reactivate";
+                          label: string;
+                        }>
+                      ).map((o) => (
+                        <div key={o.v} className="flex items-start gap-2 min-w-0">
+                          <input
+                            type="radio"
+                            id={`rst-${o.v}`}
+                            name="restore-action"
+                            className="mt-1 h-4 w-4"
+                            checked={restoreAction === o.v}
+                            onChange={() => setRestoreAction(o.v)}
+                          />
+                          <Label
+                            htmlFor={`rst-${o.v}`}
+                            className="text-xs leading-snug font-normal min-w-0 [overflow-wrap:anywhere]"
+                          >
+                            {o.label}
+                          </Label>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground [overflow-wrap:anywhere]">
+                        {place?.is_active
+                          ? "This place is already visible in discovery, so only the classification and freshness date are restored."
+                          : "This place is not operational right now, so it cannot return to discovery here. Restore its operational status in published place maintenance first, then reconfirm."}
+                      </p>
+                    )}
+                  </fieldset>
+                )}
+
+
 
                 {contradictionError && (
                   <p
@@ -863,13 +946,29 @@ export default function OwnerPlaceVeganReview() {
         <AlertDialogContent className="max-w-[min(92vw,32rem)]">
           <AlertDialogHeader>
             <AlertDialogTitle className="[overflow-wrap:anywhere]">
-              {result === "no_longer_fully_vegan"
-                ? `Remove the 100% Vegan status from ${place?.name ?? "this place"}?`
-                : `Temporarily hide ${place?.name ?? "this place"} from discovery?`}
+              {publicAction === "restore_and_reactivate"
+                ? `Reconfirm and restore ${place?.name ?? "this place"}?`
+                : result === "no_longer_fully_vegan"
+                  ? `Remove the 100% Vegan status from ${place?.name ?? "this place"}?`
+                  : `Temporarily hide ${place?.name ?? "this place"} from discovery?`}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-left">
-                {result === "no_longer_fully_vegan" ? (
+                {publicAction === "restore_and_reactivate" ? (
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>The 100% Vegan classification will be restored.</li>
+                    <li>
+                      The place will appear again in Community Places discovery, search and the
+                      Host place picker, and members can check in again.
+                    </li>
+                    <li>The freshness date advances to today; the original verification date stays.</li>
+                    <li>
+                      The same record is reused — its Google identity, past visits, Meetups and
+                      support counts are all preserved and nothing is duplicated.
+                    </li>
+                    <li>Its operational status is unchanged by this step.</li>
+                  </ul>
+                ) : result === "no_longer_fully_vegan" ? (
                   <ul className="list-disc pl-4 space-y-1">
                     <li>The 100% Vegan classification will be removed.</li>
                     <li>The place will be hidden from Community Places discovery and search.</li>
@@ -900,7 +999,11 @@ export default function OwnerPlaceVeganReview() {
                 completeM.mutate();
               }}
             >
-              {result === "no_longer_fully_vegan" ? "Remove and hide" : "Hide from discovery"}
+              {publicAction === "restore_and_reactivate"
+                ? "Reconfirm and restore"
+                : result === "no_longer_fully_vegan"
+                  ? "Remove and hide"
+                  : "Hide from discovery"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
