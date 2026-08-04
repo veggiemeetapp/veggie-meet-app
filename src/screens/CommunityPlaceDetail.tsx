@@ -380,10 +380,12 @@ export default function CommunityPlaceDetail() {
           </div>
         ) : (
           <p className="text-sm text-charcoal-muted">
-            No Meetups scheduled here yet. Be the first to host one.
+            {isOperational
+              ? "No Meetups scheduled here yet. Be the first to host one."
+              : "No Meetups scheduled here."}
           </p>
         )}
-        {isVerifiedPlace && (
+        {isVerifiedPlace && isOperational && (
           <PrimaryButton
             fullWidth
             className="mt-3"
