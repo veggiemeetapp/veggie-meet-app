@@ -94,7 +94,19 @@ export interface CommunityPlace {
   veggieClassification?: string | null;
   /** False when the place has no rights-cleared cover image. */
   hasCoverImage?: boolean;
+  /** False once the owner permanently closes/archives the place. */
+  isActive?: boolean;
+  /** Owner-maintained operational status (WO-053). */
+  maintenanceStatus?: CommunityPlaceMaintenanceStatus;
+  /** Owner-written public reason shown while the place isn't operational. */
+  statusNote?: string | null;
 }
+
+export type CommunityPlaceMaintenanceStatus =
+  | "operational"
+  | "needs_reverification"
+  | "temporarily_closed"
+  | "permanently_closed";
 
 
 export type AttendanceStatus = "joined" | "checked_in" | "attended" | "cancelled";
