@@ -20,6 +20,8 @@ import {
 } from "@/lib/placeVerification";
 import { SuggestionQueue } from "@/components/owner/SuggestionQueue";
 import { PlaceMaintenance } from "@/components/owner/PlaceMaintenance";
+import { ReportQueue } from "@/components/owner/ReportQueue";
+
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
