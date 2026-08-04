@@ -783,6 +783,63 @@ export default function OwnerPlaceVeganReview() {
                   </fieldset>
                 )}
 
+                {/* WO-058A — restore visibility after a reconfirmation. */}
+                {result === "confirmed_fully_vegan" && isRevoked && (
+                  <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+                    <legend className="px-1 text-xs font-semibold">
+                      What should happen publicly?
+                    </legend>
+                    <p className="text-[11px] text-muted-foreground">
+                      The 100% Vegan classification is restored either way. Returning the place to
+                      Community Places discovery is a separate, deliberate choice.
+                    </p>
+                    {canRestoreVisibility ? (
+                      (
+                        [
+                          {
+                            v: "none" as const,
+                            label:
+                              "Restore the classification only — the place stays hidden from discovery for now",
+                          },
+                          {
+                            v: "restore_and_reactivate" as const,
+                            label:
+                              "Reconfirm and restore — bring the place back into Community Places discovery",
+                          },
+                        ] satisfies Array<{
+                          v: "none" | "restore_and_reactivate";
+                          label: string;
+                        }>
+                      ).map((o) => (
+                        <div key={o.v} className="flex items-start gap-2 min-w-0">
+                          <input
+                            type="radio"
+                            id={`rst-${o.v}`}
+                            name="restore-action"
+                            className="mt-1 h-4 w-4"
+                            checked={restoreAction === o.v}
+                            onChange={() => setRestoreAction(o.v)}
+                          />
+                          <Label
+                            htmlFor={`rst-${o.v}`}
+                            className="text-xs leading-snug font-normal min-w-0 [overflow-wrap:anywhere]"
+                          >
+                            {o.label}
+                          </Label>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground [overflow-wrap:anywhere]">
+                        {place?.is_active
+                          ? "This place is already visible in discovery, so only the classification and freshness date are restored."
+                          : "This place is not operational right now, so it cannot return to discovery here. Restore its operational status in published place maintenance first, then reconfirm."}
+                      </p>
+                    )}
+                  </fieldset>
+                )}
+
+
+
                 {contradictionError && (
                   <p
                     ref={blockRef}
