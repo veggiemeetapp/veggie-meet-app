@@ -7,6 +7,8 @@ export type NotificationType =
   | "meetup_invitation_joined"
   | "meetup_updated"
   | "meetup_cancelled"
+  | "meetup_attendee_removed"
+  | "meetup_location_changed"
   | "place_suggestion_under_review"
   | "place_suggestion_approved"
   | "place_suggestion_duplicate"
