@@ -383,6 +383,85 @@ export type Database = {
           },
         ]
       }
+      community_place_reverifications: {
+        Row: {
+          community_place_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          details_status_observed: string | null
+          google_status_observed: string | null
+          id: string
+          official_source_url: string | null
+          owner_note: string | null
+          place_action_applied: boolean
+          result: string | null
+          started_at: string
+          started_by: string | null
+          status: string
+          updated_at: string
+          vegan_status_observed: string | null
+        }
+        Insert: {
+          community_place_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          details_status_observed?: string | null
+          google_status_observed?: string | null
+          id?: string
+          official_source_url?: string | null
+          owner_note?: string | null
+          place_action_applied?: boolean
+          result?: string | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+          vegan_status_observed?: string | null
+        }
+        Update: {
+          community_place_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          details_status_observed?: string | null
+          google_status_observed?: string | null
+          id?: string
+          official_source_url?: string | null
+          owner_note?: string | null
+          place_action_applied?: boolean
+          result?: string | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+          vegan_status_observed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_reverifications_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_reverifications_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_reverifications_started_by_fkey"
+            columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_place_status_history: {
         Row: {
           action: string
@@ -2319,6 +2398,10 @@ export type Database = {
         Args: { _meetup_id: string; _reason?: string }
         Returns: undefined
       }
+      cancel_place_reverification: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
       check_in_to_community_place: {
         Args: {
           _accuracy: number
@@ -2349,6 +2432,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      complete_place_reverification: {
+        Args: {
+          _apply_place_action?: boolean
+          _details_status_observed?: string
+          _google_status_observed?: string
+          _official_source_url?: string
+          _owner_note: string
+          _place_id: string
+          _result: string
+          _vegan_status_observed?: string
+        }
+        Returns: Json
       }
       create_meetup_invitation: {
         Args: {
@@ -2500,6 +2596,11 @@ export type Database = {
       get_onboarding_starting_options: { Args: never; Returns: Json }
       get_or_create_dm: { Args: { _other_profile_id: string }; Returns: string }
       get_place_report_queue: { Args: never; Returns: Json }
+      get_place_reverification_queue: { Args: never; Returns: Json }
+      get_place_reverification_workspace: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
       get_place_suggestion_queue: { Args: never; Returns: Json }
       get_profile_connection_summary: {
         Args: { _target_profile_id: string }
@@ -2578,6 +2679,10 @@ export type Database = {
           _suggestion_id: string
         }
         Returns: Json
+      }
+      place_freshness_label: {
+        Args: { _last_reverified_at: string; _verified_at: string }
+        Returns: string
       }
       promote_place_suggestion_to_candidate: {
         Args: { _suggestion_id: string }
@@ -2731,6 +2836,7 @@ export type Database = {
       set_home_city: { Args: { _city_id: string }; Returns: Json }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }
       shares_context_with: { Args: { _profile_id: string }; Returns: boolean }
+      start_place_reverification: { Args: { _place_id: string }; Returns: Json }
       submit_community_place_report: {
         Args: {
           _additional_details?: string
