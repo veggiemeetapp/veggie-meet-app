@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
+import { ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,6 @@ import {
   type GoogleCandidate,
   type PlaceCandidate,
 } from "@/lib/placeVerification";
-import { SuggestionQueue } from "@/components/owner/SuggestionQueue";
-import { PlaceMaintenance } from "@/components/owner/PlaceMaintenance";
-import { ReportQueue } from "@/components/owner/ReportQueue";
-import { ReverificationQueue } from "@/components/owner/ReverificationQueue";
 
 
 const STATUS_LABEL: Record<string, string> = {
