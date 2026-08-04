@@ -38,6 +38,8 @@ import {
   notificationDestination,
   NOTIFICATIONS_PAGE_SIZE,
   PLACE_SUGGESTION_TYPES,
+  PLACE_REPORT_TYPES,
+
   type NotificationItem,
   type NotificationsPage,
   type NotificationType,
