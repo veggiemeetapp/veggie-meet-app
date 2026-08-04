@@ -55,6 +55,26 @@ const IMPACT_COPY: Record<CommunityPlaceMaintenanceStatus, string> = {
     "This is destructive: the place is hidden from all discovery and search permanently. No new hosting or check-ins. The place page stays reachable as a read-only historical record. Prior member support already earned stays counted.",
 };
 
+/** Human labels for history rows — internal enum values are never shown. */
+function statusLabel(raw: string | null | undefined): string {
+  if (!raw) return "—";
+  return (
+    MAINTENANCE_STATUS_LABEL[raw as CommunityPlaceMaintenanceStatus] ??
+    raw.replace(/_/g, " ")
+  );
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  status_change: "status change",
+  reverification: "reverification",
+  reverified: "reverification",
+  publish: "published",
+};
+
+function actionLabel(raw: string): string {
+  return ACTION_LABEL[raw] ?? raw.replace(/_/g, " ");
+}
+
 /**
  * WO-053 — Owner-only status maintenance for published Community Places.
  * Presentation only: every action is re-authorised and validated server-side.
