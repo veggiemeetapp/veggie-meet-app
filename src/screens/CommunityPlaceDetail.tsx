@@ -294,13 +294,11 @@ export default function CommunityPlaceDetail() {
             <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
               {statusBanner.title}
             </p>
-            {place.statusNote && (
-              <p className="mt-1 text-[13px] leading-relaxed text-charcoal-muted line-clamp-4 [overflow-wrap:anywhere]">
-                {place.statusNote}
-              </p>
-            )}
+            {/* WO-053: the owner reason note is internal only and is never rendered here. */}
             <p className="mt-1 text-xs text-charcoal-muted">
-              Hosting and check-ins are paused here for now.
+              {maintenanceStatus === "permanently_closed"
+                ? "This place is kept as a historical record. Hosting and check-ins are closed."
+                : "Hosting and check-ins are paused here for now."}
             </p>
           </div>
         </div>
