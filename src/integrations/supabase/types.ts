@@ -373,6 +373,233 @@ export type Database = {
           },
         ]
       }
+      community_place_identity_history: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          community_place_id: string
+          created_at: string
+          id: string
+          identity_review_id: string | null
+          internal_reason: string | null
+          new_address: string | null
+          new_google_place_id: string | null
+          new_latitude: number | null
+          new_longitude: number | null
+          old_address: string | null
+          old_google_place_id: string | null
+          old_latitude: number | null
+          old_longitude: number | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          community_place_id: string
+          created_at?: string
+          id?: string
+          identity_review_id?: string | null
+          internal_reason?: string | null
+          new_address?: string | null
+          new_google_place_id?: string | null
+          new_latitude?: number | null
+          new_longitude?: number | null
+          old_address?: string | null
+          old_google_place_id?: string | null
+          old_latitude?: number | null
+          old_longitude?: number | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          community_place_id?: string
+          created_at?: string
+          id?: string
+          identity_review_id?: string | null
+          internal_reason?: string | null
+          new_address?: string | null
+          new_google_place_id?: string | null
+          new_latitude?: number | null
+          new_longitude?: number | null
+          old_address?: string | null
+          old_google_place_id?: string | null
+          old_latitude?: number | null
+          old_longitude?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_identity_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_identity_history_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_identity_history_identity_review_id_fkey"
+            columns: ["identity_review_id"]
+            isOneToOne: false
+            referencedRelation: "community_place_identity_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_place_identity_reviews: {
+        Row: {
+          case_type: string | null
+          community_place_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_candidate_id: string | null
+          distance_meters: number | null
+          evidence_summary: string | null
+          id: string
+          official_source_url: string | null
+          old_address: string | null
+          old_google_place_id: string | null
+          old_latitude: number | null
+          old_longitude: number | null
+          old_name: string | null
+          owner_note: string | null
+          proposed_address: string | null
+          proposed_google_place_id: string | null
+          proposed_latitude: number | null
+          proposed_longitude: number | null
+          proposed_name: string | null
+          public_action_applied: boolean
+          related_report_id: string | null
+          related_reverification_id: string | null
+          relocation_confirmed: boolean
+          result: string | null
+          same_branch_confirmed: boolean
+          same_business_confirmed: boolean
+          started_at: string
+          started_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          case_type?: string | null
+          community_place_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_candidate_id?: string | null
+          distance_meters?: number | null
+          evidence_summary?: string | null
+          id?: string
+          official_source_url?: string | null
+          old_address?: string | null
+          old_google_place_id?: string | null
+          old_latitude?: number | null
+          old_longitude?: number | null
+          old_name?: string | null
+          owner_note?: string | null
+          proposed_address?: string | null
+          proposed_google_place_id?: string | null
+          proposed_latitude?: number | null
+          proposed_longitude?: number | null
+          proposed_name?: string | null
+          public_action_applied?: boolean
+          related_report_id?: string | null
+          related_reverification_id?: string | null
+          relocation_confirmed?: boolean
+          result?: string | null
+          same_branch_confirmed?: boolean
+          same_business_confirmed?: boolean
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          case_type?: string | null
+          community_place_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_candidate_id?: string | null
+          distance_meters?: number | null
+          evidence_summary?: string | null
+          id?: string
+          official_source_url?: string | null
+          old_address?: string | null
+          old_google_place_id?: string | null
+          old_latitude?: number | null
+          old_longitude?: number | null
+          old_name?: string | null
+          owner_note?: string | null
+          proposed_address?: string | null
+          proposed_google_place_id?: string | null
+          proposed_latitude?: number | null
+          proposed_longitude?: number | null
+          proposed_name?: string | null
+          public_action_applied?: boolean
+          related_report_id?: string | null
+          related_reverification_id?: string | null
+          relocation_confirmed?: boolean
+          result?: string | null
+          same_branch_confirmed?: boolean
+          same_business_confirmed?: boolean
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_identity_reviews_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_identity_reviews_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_identity_reviews_created_candidate_id_fkey"
+            columns: ["created_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "place_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_identity_reviews_related_report_id_fkey"
+            columns: ["related_report_id"]
+            isOneToOne: false
+            referencedRelation: "community_place_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_identity_reviews_related_reverification_id_fkey"
+            columns: ["related_reverification_id"]
+            isOneToOne: false
+            referencedRelation: "community_place_reverifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_identity_reviews_started_by_fkey"
+            columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_place_reports: {
         Row: {
           additional_details: string | null
@@ -2642,6 +2869,10 @@ export type Database = {
       }
       are_connected: { Args: { _a: string; _b: string }; Returns: boolean }
       block_profile: { Args: { _blocked_profile_id: string }; Returns: string }
+      cancel_community_place_identity_review: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
       cancel_community_place_vegan_review: {
         Args: { _place_id: string }
         Returns: Json
@@ -2660,6 +2891,37 @@ export type Database = {
           _latitude: number
           _longitude: number
           _place_id: string
+        }
+        Returns: Json
+      }
+      complete_community_place_identity_review: {
+        Args: {
+          _acknowledge_large_move?: boolean
+          _apply_google_identity?: boolean
+          _apply_location?: boolean
+          _apply_name?: boolean
+          _apply_website?: boolean
+          _case_type: string
+          _confirm_public_action?: boolean
+          _create_candidate?: boolean
+          _evidence_summary?: string
+          _official_source_url?: string
+          _owner_note?: string
+          _place_id: string
+          _proposed_address?: string
+          _proposed_google_place_id?: string
+          _proposed_latitude?: number
+          _proposed_longitude?: number
+          _proposed_maps_url?: string
+          _proposed_name?: string
+          _proposed_neighborhood?: string
+          _proposed_website_url?: string
+          _related_report_id?: string
+          _related_reverification_id?: string
+          _relocation_confirmed?: boolean
+          _result: string
+          _same_branch_confirmed?: boolean
+          _same_business_confirmed?: boolean
         }
         Returns: Json
       }
@@ -2751,6 +3013,14 @@ export type Database = {
       }
       get_community_place_edit_workspace: {
         Args: { _place_id: string }
+        Returns: Json
+      }
+      get_community_place_identity_review_workspace: {
+        Args: {
+          _place_id: string
+          _report_id?: string
+          _reverification_id?: string
+        }
         Returns: Json
       }
       get_community_place_maintenance: { Args: never; Returns: Json }
@@ -3122,6 +3392,10 @@ export type Database = {
       set_home_city: { Args: { _city_id: string }; Returns: Json }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }
       shares_context_with: { Args: { _profile_id: string }; Returns: boolean }
+      start_community_place_identity_review: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
       start_community_place_vegan_review: {
         Args: { _place_id: string }
         Returns: Json
