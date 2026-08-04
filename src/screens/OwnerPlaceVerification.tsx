@@ -19,6 +19,7 @@ import {
   type PlaceCandidate,
 } from "@/lib/placeVerification";
 import { SuggestionQueue } from "@/components/owner/SuggestionQueue";
+import { PlaceMaintenance } from "@/components/owner/PlaceMaintenance";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
