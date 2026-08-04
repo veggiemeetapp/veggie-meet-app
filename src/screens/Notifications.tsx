@@ -91,6 +91,7 @@ const iconFor: Record<NotificationType, JSX.Element> = {
   meetup_cancelled: <CalendarOff className="w-4 h-4" />,
   meetup_attendee_removed: <UserMinus className="w-4 h-4" />,
   meetup_location_changed: <MapPin className="w-4 h-4" />,
+  meetup_location_needs_attention: <MapPin className="w-4 h-4" />,
   place_suggestion_under_review: <Leaf className="w-4 h-4" />,
   place_suggestion_approved: <Leaf className="w-4 h-4" />,
   place_suggestion_duplicate: <Leaf className="w-4 h-4" />,
