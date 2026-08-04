@@ -323,7 +323,7 @@ export function PlaceMaintenance() {
                         )
                       }
                     >
-                      Identity or location
+                      Review place identity
                     </Button>
                   </div>
 

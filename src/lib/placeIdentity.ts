@@ -85,6 +85,28 @@ export const ALLOWED_RESULTS: Record<IdentityCaseType, IdentityResult[]> = {
   different_business_or_unclear: ["different_business", "insufficient_evidence"],
 };
 
+/**
+ * WO-059A — distance tiers, mirrored server-side.
+ *  · under 150 m      → a pin correction, no extra warning
+ *  · 150 m to 1 km    → nearby relocation: guidance shown
+ *  · over 1 km        → high risk: explicit acknowledgement required
+ *  · over 10 km       → exceptional: strongest warning, still acknowledged
+ */
+export const NEARBY_MOVE_M = 150;
+export const HIGH_RISK_MOVE_M = 1000;
+export const EXCEPTIONAL_MOVE_M = 10000;
+
+export type MoveTier = "none" | "pin" | "nearby" | "high_risk" | "exceptional";
+
+export function moveTier(dist: number | null): MoveTier {
+  if (dist == null) return "none";
+  if (dist > EXCEPTIONAL_MOVE_M) return "exceptional";
+  if (dist > HIGH_RISK_MOVE_M) return "high_risk";
+  if (dist >= NEARBY_MOVE_M) return "nearby";
+  return "pin";
+}
+
+
 
 export const ACCEPTABLE_EVIDENCE = [
   "The Google listing itself (name, address, coordinates, map link)",
