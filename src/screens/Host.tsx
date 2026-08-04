@@ -321,6 +321,13 @@ export default function Host() {
           location_source: resolved.locationSource,
           has_custom_cover: Boolean(cover),
         });
+        if (resolved.communityPlaceId) {
+          logAnalyticsEvent("meetup_created_at_community_place", {
+            meetup_id: data.id,
+            place_id: resolved.communityPlaceId,
+          });
+        }
+
         setConfirmOpen(false);
         navigate(`/meetup-created/${data.id}`);
         return;
