@@ -145,12 +145,16 @@ export default function ReportPlaceIssue() {
       <>
         <AppHeader title="Report sent" />
         <div className="px-5 pt-10 pb-24 animate-fade-in">
-          <div className="mx-auto w-full max-w-xl text-center">
+          <div
+            role="status"
+            aria-live="polite"
+            className="mx-auto w-full max-w-xl text-center"
+          >
             <CheckCircle2 className="mx-auto h-10 w-10 text-primary" aria-hidden />
             <h1 className="mt-4 text-xl font-semibold text-charcoal">Thanks for the heads-up</h1>
             <p className="mt-2 text-sm text-charcoal-muted [overflow-wrap:anywhere]">
-              Our team reviews every report before anything on {placeName} changes. Nothing about
-              this place has changed yet.
+              Your report was received. Our team reviews every report before anything on {placeName}{" "}
+              changes. Nothing about this place has changed yet.
             </p>
             <div className="mt-6 flex flex-col gap-2">
               <Button onClick={() => navigate("/you/place-reports?from=report_success")}>
