@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -55,6 +55,26 @@ const IMPACT_COPY: Record<CommunityPlaceMaintenanceStatus, string> = {
     "This is destructive: the place is hidden from all discovery and search permanently. No new hosting or check-ins. The place page stays reachable as a read-only historical record. Prior member support already earned stays counted.",
 };
 
+/** Human labels for history rows — internal enum values are never shown. */
+function statusLabel(raw: string | null | undefined): string {
+  if (!raw) return "—";
+  return (
+    MAINTENANCE_STATUS_LABEL[raw as CommunityPlaceMaintenanceStatus] ??
+    raw.replace(/_/g, " ")
+  );
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  status_change: "status change",
+  reverification: "reverification",
+  reverified: "reverification",
+  publish: "published",
+};
+
+function actionLabel(raw: string): string {
+  return ACTION_LABEL[raw] ?? raw.replace(/_/g, " ");
+}
+
 /**
  * WO-053 — Owner-only status maintenance for published Community Places.
  * Presentation only: every action is re-authorised and validated server-side.
@@ -66,6 +86,19 @@ export function PlaceMaintenance() {
   const [note, setNote] = useState("");
   const [classification, setClassification] = useState<string>("fully_vegan");
   const [confirm, setConfirm] = useState<null | "status" | "reverify">(null);
+  /** Element that opened the confirmation dialog — focus returns here on close. */
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  function openConfirm(kind: "status" | "reverify", e: MouseEvent<HTMLButtonElement>) {
+    triggerRef.current = e.currentTarget;
+    setConfirm(kind);
+  }
+
+  function closeConfirm() {
+    setConfirm(null);
+    const el = triggerRef.current;
+    if (el) requestAnimationFrame(() => el.focus());
+  }
 
   const placesQ = useQuery({
     queryKey: ["place-maintenance"],
@@ -99,12 +132,12 @@ export function PlaceMaintenance() {
     },
     onSuccess: () => {
       setNote("");
-      setConfirm(null);
+      closeConfirm();
       invalidate();
       toast.success("Status updated.");
     },
     onError: (e: Error) => {
-      setConfirm(null);
+      closeConfirm();
       toast.error(e.message);
     },
   });
@@ -116,12 +149,12 @@ export function PlaceMaintenance() {
     },
     onSuccess: () => {
       setNote("");
-      setConfirm(null);
+      closeConfirm();
       invalidate();
       toast.success("Reverification recorded. Place is operational again.");
     },
     onError: (e: Error) => {
-      setConfirm(null);
+      closeConfirm();
       toast.error(e.message);
     },
   });
@@ -237,7 +270,7 @@ export function PlaceMaintenance() {
                     <Button
                       size="sm"
                       variant={status === "permanently_closed" ? "destructive" : "default"}
-                      onClick={() => setConfirm("status")}
+                      onClick={(e) => openConfirm("status", e)}
                       disabled={pending || note.trim().length === 0}
                     >
                       {statusM.isPending
@@ -270,7 +303,7 @@ export function PlaceMaintenance() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setConfirm("reverify")}
+                      onClick={(e) => openConfirm("reverify", e)}
                       disabled={pending || note.trim().length === 0}
                     >
                       {reverifyM.isPending ? "Recording…" : "Mark reverified"}
@@ -292,8 +325,8 @@ export function PlaceMaintenance() {
                           className="text-xs text-muted-foreground min-w-0 [overflow-wrap:anywhere]"
                         >
                           {new Date(h.created_at).toLocaleString()} —{" "}
-                          {h.old_status ?? "—"} → {h.new_status} ({h.action})
-                          {h.note ? `: ${h.note}` : ""}
+                          {statusLabel(h.old_status)} → {statusLabel(h.new_status)} (
+                          {actionLabel(h.action)}){h.note ? `: ${h.note}` : ""}
                         </li>
                       ))}
                     </ul>
@@ -308,7 +341,7 @@ export function PlaceMaintenance() {
       <AlertDialog
         open={confirm !== null}
         onOpenChange={(o) => {
-          if (!o) setConfirm(null);
+          if (!o) closeConfirm();
         }}
       >
         <AlertDialogContent className="max-w-[min(92vw,32rem)]">
