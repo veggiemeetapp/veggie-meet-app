@@ -46,7 +46,7 @@ const Search = lazy(() => import("./screens/Search"));
 const Impact = lazy(() => import("./screens/Impact"));
 const Plans = lazy(() => import("./screens/Plans"));
 const Settings = lazy(() => import("./screens/Settings"));
-const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
+const OwnerPlaceOperations = lazy(() => import("./screens/OwnerPlaceOperations"));
 const OwnerPlaceReverify = lazy(() => import("./screens/OwnerPlaceReverify"));
 const OwnerPlaceEditDetails = lazy(() => import("./screens/OwnerPlaceEditDetails"));
 const OwnerPlaceVeganReview = lazy(() => import("./screens/OwnerPlaceVeganReview"));
@@ -153,7 +153,7 @@ const App = () => (
                 <Route path="/impact/:tab" element={gated(<Impact />)} />
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
                 <Route path="/settings" element={gated(<Settings />)} />
-                <Route path="/owner/places" element={gated(<OwnerPlaceVerification />)} />
+                <Route path="/owner/places" element={gated(<OwnerPlaceOperations />)} />
                 <Route
                   path="/owner/places/:placeId/reverify"
                   element={gated(<OwnerPlaceReverify />)}

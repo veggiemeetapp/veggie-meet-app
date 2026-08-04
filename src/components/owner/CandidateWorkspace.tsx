@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
+import { ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,6 @@ import {
   type GoogleCandidate,
   type PlaceCandidate,
 } from "@/lib/placeVerification";
-import { SuggestionQueue } from "@/components/owner/SuggestionQueue";
-import { PlaceMaintenance } from "@/components/owner/PlaceMaintenance";
-import { ReportQueue } from "@/components/owner/ReportQueue";
-import { ReverificationQueue } from "@/components/owner/ReverificationQueue";
 
 
 const STATUS_LABEL: Record<string, string> = {
@@ -158,35 +154,11 @@ export default function OwnerPlaceVerification() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3 flex items-center gap-3">
-        <Button variant="ghost" size="icon" aria-label="Back" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-base font-semibold leading-tight">Place verification</h1>
-          <p className="text-xs text-muted-foreground">Owner only — drafts are never public</p>
-        </div>
-      </header>
+      <div className="space-y-6">
+        {/* Candidate curation only. Suggestions, reports, maintenance and
+            reverification live in their own tabs of the operations dashboard,
+            so they are intentionally not repeated here. */}
 
-      <div className="p-4 space-y-6">
-        {/* ---- Community suggestions (private intake queue) ---- */}
-        <SuggestionQueue onPromoted={(id) => setSelectedId(id)} />
-
-        {/* ---- Member place reports (WO-054, private moderation queue) ---- */}
-        <ReportQueue />
-
-        {/* ---- Published place status maintenance (WO-053) ---- */}
-        {/* ---- Published place status maintenance (WO-053) ---- */}
-        <PlaceMaintenance />
-
-        {/* ---- Reverification and data freshness (WO-056) ---- */}
-        <ReverificationQueue />
-
-
-
-
-
-        {/* ---- Candidate queue ---- */}
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Candidates ({candidatesQ.data?.length ?? 0})</h2>
           {candidatesQ.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}

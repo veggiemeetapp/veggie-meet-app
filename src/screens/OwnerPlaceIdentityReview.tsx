@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { fieldLabelList } from "@/lib/fieldLabels";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -344,7 +345,7 @@ export default function OwnerPlaceIdentityReview() {
         r.no_op && !r.public_action_applied
           ? "Nothing needed changing — the proposed identity already matches this place. The review was recorded."
           : r.result === "identity_replaced"
-            ? `Google identity replaced. Updated: ${(r.changed_fields ?? []).join(", ") || "nothing"}. Vegan classification, status, visibility and all member history were preserved.`
+            ? `Google identity replaced. Updated: ${fieldLabelList(r.changed_fields)}. Vegan classification, status, visibility and all member history were preserved.`
             : r.result === "location_moved"
               ? `Relocation recorded (${formatDistance(r.distance_meters ?? null)}). The same place record was kept — existing Meetups were not cancelled or moved.`
               : r.result === "new_branch_required"
