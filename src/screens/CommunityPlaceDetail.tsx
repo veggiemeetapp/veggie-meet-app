@@ -228,6 +228,11 @@ export default function CommunityPlaceDetail() {
     ? CLASSIFICATION_LABEL[place.veggieClassification ?? ""] ?? null
     : extras.dietary;
   const showCover = place.hasCoverImage !== false;
+  // WO-053: owner-maintained status. Non-operational places stay readable but
+  // lose hosting and check-in; the server enforces both independently.
+  const maintenanceStatus = isVerifiedPlace ? place.maintenanceStatus ?? "operational" : "operational";
+  const isOperational = maintenanceStatus === "operational";
+  const statusBanner = placeStatusBanner(maintenanceStatus);
 
   return (
     <div className="flex flex-col min-h-dvh pb-40">
