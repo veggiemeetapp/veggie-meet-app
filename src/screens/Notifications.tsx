@@ -221,6 +221,13 @@ export default function Notifications() {
           source: "notifications_list",
         });
       }
+      if (PLACE_REPORT_TYPES.includes(n.type)) {
+        logAnalyticsEvent("community_place_report_notification_opened", {
+          notification_type: n.type,
+          source: "notifications_list",
+        });
+      }
+
       if (n.type === "meetup_location_changed") {
         logAnalyticsEvent("meetup_location_change_notification_opened", {
           meetup_id: n.destination_id ?? n.entity_id,
