@@ -541,9 +541,9 @@ export default function Host() {
                       </p>
                     </div>
                   )}
-                </div>
-              )}
+              </div>
             </div>
+
           </div>
         </section>
 
