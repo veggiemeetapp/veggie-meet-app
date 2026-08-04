@@ -310,6 +310,79 @@ export type Database = {
         }
         Relationships: []
       }
+      community_place_reports: {
+        Row: {
+          additional_details: string | null
+          community_place_id: string
+          created_at: string
+          explanation: string
+          id: string
+          official_source_url: string | null
+          owner_note: string | null
+          owner_resolution: string | null
+          reason_code: string
+          reporter_profile_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          additional_details?: string | null
+          community_place_id: string
+          created_at?: string
+          explanation: string
+          id?: string
+          official_source_url?: string | null
+          owner_note?: string | null
+          owner_resolution?: string | null
+          reason_code: string
+          reporter_profile_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          additional_details?: string | null
+          community_place_id?: string
+          created_at?: string
+          explanation?: string
+          id?: string
+          official_source_url?: string | null
+          owner_note?: string | null
+          owner_resolution?: string | null
+          reason_code?: string
+          reporter_profile_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_reports_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_reports_reporter_profile_id_fkey"
+            columns: ["reporter_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_place_status_history: {
         Row: {
           action: string
@@ -2217,6 +2290,15 @@ export type Database = {
           source_meetup_id: string
         }[]
       }
+      _notify_place_report: {
+        Args: {
+          _place_name: string
+          _recipient: string
+          _report_id: string
+          _status: string
+        }
+        Returns: undefined
+      }
       _notify_place_suggestion: {
         Args: {
           _place_name: string
@@ -2351,6 +2433,7 @@ export type Database = {
         Args: { _place_id: string }
         Returns: Json
       }
+      get_my_place_reports: { Args: never; Returns: Json }
       get_my_place_suggestions: { Args: never; Returns: Json }
       get_my_plans: {
         Args: { _past_cursor?: string; _past_limit?: number }
@@ -2416,6 +2499,7 @@ export type Database = {
       get_my_today_experience: { Args: never; Returns: Json }
       get_onboarding_starting_options: { Args: never; Returns: Json }
       get_or_create_dm: { Args: { _other_profile_id: string }; Returns: string }
+      get_place_report_queue: { Args: never; Returns: Json }
       get_place_suggestion_queue: { Args: never; Returns: Json }
       get_profile_connection_summary: {
         Args: { _target_profile_id: string }
@@ -2476,6 +2560,15 @@ export type Database = {
       meetup_in_check_in_window: {
         Args: { _meetup_id: string }
         Returns: string
+      }
+      moderate_community_place_report: {
+        Args: {
+          _action: string
+          _note?: string
+          _place_action?: string
+          _report_id: string
+        }
+        Returns: Json
       }
       moderate_place_suggestion: {
         Args: {
@@ -2634,6 +2727,16 @@ export type Database = {
       set_home_city: { Args: { _city_id: string }; Returns: Json }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }
       shares_context_with: { Args: { _profile_id: string }; Returns: boolean }
+      submit_community_place_report: {
+        Args: {
+          _additional_details?: string
+          _explanation: string
+          _official_source_url?: string
+          _place_id: string
+          _reason_code: string
+        }
+        Returns: Json
+      }
       submit_community_place_suggestion: {
         Args: {
           _address_text: string
