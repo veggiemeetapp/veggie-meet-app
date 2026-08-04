@@ -188,8 +188,16 @@ export function notificationDestination(n: NotificationItem): string | null {
       return n.destination_id
         ? `/you/place-suggestions?suggestion=${n.destination_id}&from=notification`
         : "/you/place-suggestions?from=notification";
+    case "community_place_report_under_review":
+    case "community_place_report_resolved":
+    case "community_place_report_dismissed":
+    case "community_place_report_duplicate":
+      return n.destination_id
+        ? `/you/place-reports?report=${n.destination_id}&from=notification`
+        : "/you/place-reports?from=notification";
     default:
       return null;
   }
 }
+
 
