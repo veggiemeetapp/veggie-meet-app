@@ -23,6 +23,7 @@ import { communityPlaces } from "@/lib/mock-data";
 import { fetchUpcomingMeetupsAtPlace, fetchCommunityPlaceById } from "@/lib/backend";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { fetchPlaceCheckInState } from "@/lib/placeVisits";
+import { placeStatusBanner } from "@/lib/placeMaintenance";
 import { useAuth } from "@/hooks/useAuth";
 
 
