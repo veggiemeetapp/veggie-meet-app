@@ -49,6 +49,9 @@ const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
 const SuggestPlace = lazy(() => import("./screens/SuggestPlace"));
 const MyPlaceSuggestions = lazy(() => import("./screens/MyPlaceSuggestions"));
+const ReportPlaceIssue = lazy(() => import("./screens/ReportPlaceIssue"));
+const MyPlaceReports = lazy(() => import("./screens/MyPlaceReports"));
+
 
 /**
  * WO-048 compatibility route. The legacy QR/mock place check-in screen is gone;
@@ -118,6 +121,8 @@ const App = () => (
                 <Route path="/you/edit" element={gated(<EditProfile />)} />
                 <Route path="/you/places-supported" element={gated(<SupportedPlaces />)} />
                 <Route path="/you/place-suggestions" element={gated(<MyPlaceSuggestions />)} />
+                <Route path="/you/place-reports" element={gated(<MyPlaceReports />)} />
+
                 <Route path="/meetup/:id" element={gated(<MeetupDetail />)} />
                 <Route path="/meetup/:id/manage" element={gated(<MeetupManagement />)} />
                 <Route path="/meetup/:id/summary" element={gated(<MeetupSummary />)} />
@@ -127,7 +132,9 @@ const App = () => (
                 <Route path="/chat/:id" element={gated(<MeetupChat />)} />
                 <Route path="/checkin/:meetupId" element={gated(<CheckIn />)} />
                 <Route path="/place/:id" element={gated(<CommunityPlaceDetail />)} />
+                <Route path="/place/:id/report" element={gated(<ReportPlaceIssue />)} />
                 <Route path="/place/:id/checkin" element={gated(<LegacyPlaceCheckInRedirect />)} />
+
                 <Route path="/network" element={gated(<VeggieNetwork />)} />
                 <Route path="/network/:id" element={gated(<RelationshipDetail />)} />
                 <Route path="/veggie/:id" element={gated(<VeggieProfile />)} />

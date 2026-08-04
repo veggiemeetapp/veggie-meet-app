@@ -13,6 +13,8 @@ import {
   MailPlus,
   MapPin,
   PartyPopper,
+  ShieldCheck,
+
   UserMinus,
   UserPlus,
 } from "lucide-react";
@@ -36,6 +38,8 @@ import {
   notificationDestination,
   NOTIFICATIONS_PAGE_SIZE,
   PLACE_SUGGESTION_TYPES,
+  PLACE_REPORT_TYPES,
+
   type NotificationItem,
   type NotificationsPage,
   type NotificationType,
@@ -96,6 +100,11 @@ const iconFor: Record<NotificationType, JSX.Element> = {
   place_suggestion_approved: <Leaf className="w-4 h-4" />,
   place_suggestion_duplicate: <Leaf className="w-4 h-4" />,
   place_suggestion_rejected: <Leaf className="w-4 h-4" />,
+  community_place_report_under_review: <ShieldCheck className="w-4 h-4" />,
+  community_place_report_resolved: <ShieldCheck className="w-4 h-4" />,
+  community_place_report_dismissed: <ShieldCheck className="w-4 h-4" />,
+  community_place_report_duplicate: <ShieldCheck className="w-4 h-4" />,
+
 };
 
 
@@ -214,6 +223,13 @@ export default function Notifications() {
           source: "notifications_list",
         });
       }
+      if (PLACE_REPORT_TYPES.includes(n.type)) {
+        logAnalyticsEvent("community_place_report_notification_opened", {
+          notification_type: n.type,
+          source: "notifications_list",
+        });
+      }
+
       if (n.type === "meetup_location_changed") {
         logAnalyticsEvent("meetup_location_change_notification_opened", {
           meetup_id: n.destination_id ?? n.entity_id,
