@@ -9,6 +9,7 @@ export type NotificationType =
   | "meetup_cancelled"
   | "meetup_attendee_removed"
   | "meetup_location_changed"
+  | "meetup_location_needs_attention"
   | "place_suggestion_under_review"
   | "place_suggestion_approved"
   | "place_suggestion_duplicate"
@@ -165,6 +166,8 @@ export function notificationDestination(n: NotificationItem): string | null {
     case "meetup_attendee_removed":
     case "meetup_location_changed":
       return n.destination_id ? `/meetup/${n.destination_id}` : "/";
+    case "meetup_location_needs_attention":
+      return n.destination_id ? `/meetup/${n.destination_id}/manage` : "/";
     case "place_suggestion_under_review":
     case "place_suggestion_approved":
     case "place_suggestion_duplicate":

@@ -20,6 +20,8 @@ export interface SupportedPlace {
   has_cover_image: boolean;
   veggie_classification: string | null;
   is_active: boolean;
+  /** WO-053 neutral current status: operational | needs_reverification | temporarily_closed | permanently_closed */
+  maintenance_status?: string | null;
   first_activity_at: string | null;
   last_activity_at: string | null;
   direct_visit_count: number;

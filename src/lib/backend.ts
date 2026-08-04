@@ -403,12 +403,18 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
 }
 
 
-/** Community Places filtered by canonical city_id. Archived places excluded. */
+/**
+ * WO-053 — the single discovery eligibility rule shared by every browse surface:
+ * published + verified + active + maintenance_status = operational.
+ * Direct place routes deliberately bypass this so historical pages stay readable.
+ */
 export async function fetchCommunityPlacesByCity(cityId: string): Promise<CommunityPlace[]> {
   const { data, error } = await supabase
     .from("community_places")
     .select("*, cities(name)")
     .eq("city_id", cityId)
+    .eq("verification_status", "verified")
+    .eq("maintenance_status", "operational")
     .neq("is_active", false)
     .order("name");
   if (error || !data) return [];
@@ -416,9 +422,9 @@ export async function fetchCommunityPlacesByCity(cityId: string): Promise<Commun
 }
 
 /**
- * Published Community Places for the discovery list (WO-044).
+ * Published Community Places for the discovery list (WO-044) and the Host picker.
  * Reads ONLY from community_places — never place_candidates. Restricted to
- * verified + active records; closed businesses are excluded.
+ * verified + active + operational records; closed businesses are excluded.
  */
 export async function fetchPublishedCommunityPlaces(
   cityId: string | null,
@@ -427,6 +433,7 @@ export async function fetchPublishedCommunityPlaces(
     .from("community_places")
     .select("*, cities(name)")
     .eq("verification_status", "verified")
+    .eq("maintenance_status", "operational")
     .neq("is_active", false);
   if (cityId) q = q.eq("city_id", cityId);
   const { data, error } = await q.order("name");

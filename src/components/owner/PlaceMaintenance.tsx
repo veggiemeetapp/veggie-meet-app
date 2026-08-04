@@ -1,10 +1,20 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   MAINTENANCE_STATUS_LABEL,
   fetchMaintenancePlaces,
@@ -15,7 +25,6 @@ import {
 import type { CommunityPlaceMaintenanceStatus } from "@/types";
 
 const STATUS_OPTIONS: CommunityPlaceMaintenanceStatus[] = [
-  "operational",
   "needs_reverification",
   "temporarily_closed",
   "permanently_closed",
@@ -28,6 +37,24 @@ const STATUS_TONE: Record<CommunityPlaceMaintenanceStatus, string> = {
   permanently_closed: "bg-destructive/10 text-destructive",
 };
 
+const CLASSIFICATIONS: { value: string; label: string }[] = [
+  { value: "fully_vegan", label: "100% Vegan" },
+  { value: "fully_vegetarian", label: "100% Vegetarian" },
+  { value: "vegetarian_friendly", label: "Vegetarian friendly" },
+  { value: "vegan_options", label: "Vegan options" },
+  { value: "not_food", label: "Community space" },
+];
+
+const IMPACT_COPY: Record<CommunityPlaceMaintenanceStatus, string> = {
+  operational: "",
+  needs_reverification:
+    "The place is removed from discovery, search and the Host picker while its vegan verification is reviewed. Check-ins are blocked. The place page stays reachable with a review banner. Returning it to operational requires Mark reverified.",
+  temporarily_closed:
+    "The place is removed from discovery, search and the Host picker. No new Meetups can be hosted here and check-ins are blocked. The place page stays reachable with a closed banner. Returning it to operational requires Mark reverified.",
+  permanently_closed:
+    "This is destructive: the place is hidden from all discovery and search permanently. No new hosting or check-ins. The place page stays reachable as a read-only historical record. Prior member support already earned stays counted.",
+};
+
 /**
  * WO-053 — Owner-only status maintenance for published Community Places.
  * Presentation only: every action is re-authorised and validated server-side.
@@ -35,8 +62,10 @@ const STATUS_TONE: Record<CommunityPlaceMaintenanceStatus, string> = {
 export function PlaceMaintenance() {
   const qc = useQueryClient();
   const [openId, setOpenId] = useState<string | null>(null);
-  const [status, setStatus] = useState<CommunityPlaceMaintenanceStatus>("operational");
+  const [status, setStatus] = useState<CommunityPlaceMaintenanceStatus>("needs_reverification");
   const [note, setNote] = useState("");
+  const [classification, setClassification] = useState<string>("fully_vegan");
+  const [confirm, setConfirm] = useState<null | "status" | "reverify">(null);
 
   const placesQ = useQuery({
     queryKey: ["place-maintenance"],
@@ -59,6 +88,8 @@ export function PlaceMaintenance() {
     qc.invalidateQueries({ queryKey: ["place-status-history"] });
     qc.invalidateQueries({ queryKey: ["community-places"] });
     qc.invalidateQueries({ queryKey: ["community-place"] });
+    qc.invalidateQueries({ queryKey: ["host-published-places"] });
+    qc.invalidateQueries({ queryKey: ["manage-places"] });
   }
 
   const statusM = useMutation({
@@ -68,24 +99,34 @@ export function PlaceMaintenance() {
     },
     onSuccess: () => {
       setNote("");
+      setConfirm(null);
       invalidate();
       toast.success("Status updated.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setConfirm(null);
+      toast.error(e.message);
+    },
   });
 
   const reverifyM = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("No place selected");
-      await reverifyPlace(selected.id, note.trim());
+      await reverifyPlace(selected.id, note.trim(), classification);
     },
     onSuccess: () => {
       setNote("");
+      setConfirm(null);
       invalidate();
       toast.success("Reverification recorded. Place is operational again.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setConfirm(null);
+      toast.error(e.message);
+    },
   });
+
+  const pending = statusM.isPending || reverifyM.isPending;
 
   return (
     <section className="space-y-2 min-w-0">
@@ -94,7 +135,8 @@ export function PlaceMaintenance() {
       </h2>
       <p className="text-[11px] text-muted-foreground">
         Change a published place's status when it closes or needs its vegan verification
-        reviewed again. Non-operational places can't be chosen for new Meetups or checked into.
+        reviewed again. Non-operational places are hidden from discovery, search and the Host
+        picker, and can't be checked into — their place page stays reachable with a banner.
       </p>
 
       {placesQ.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -111,17 +153,23 @@ export function PlaceMaintenance() {
             <li key={p.id} className="min-w-0 rounded-lg border">
               <button
                 type="button"
+                aria-expanded={open}
                 onClick={() => {
                   const next = open ? null : p.id;
                   setOpenId(next);
                   setNote("");
-                  setStatus(p.maintenance_status);
+                  setStatus(
+                    p.maintenance_status === "operational"
+                      ? "needs_reverification"
+                      : p.maintenance_status,
+                  );
+                  setClassification(p.veggie_classification ?? "fully_vegan");
                 }}
                 className={`w-full text-left p-3 min-w-0 transition-colors ${
                   open ? "bg-primary/5" : "hover:bg-muted/50"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2 min-w-0">
+                <div className="flex flex-wrap items-start justify-between gap-2 min-w-0">
                   <span className="text-sm font-medium line-clamp-2 [overflow-wrap:anywhere]">
                     {p.name}
                   </span>
@@ -136,7 +184,7 @@ export function PlaceMaintenance() {
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 [overflow-wrap:anywhere]">
                   {p.neighborhood ?? "—"} · {p.upcoming_meetups_here} upcoming Meetup
                   {p.upcoming_meetups_here === 1 ? "" : "s"} here
-                  {p.is_active ? "" : " · hidden from discovery"}
+                  {p.maintenance_status === "operational" ? "" : " · hidden from discovery"}
                 </p>
                 {p.status_note && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-3 [overflow-wrap:anywhere]">
@@ -161,43 +209,69 @@ export function PlaceMaintenance() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor={`note-${p.id}`}>
-                      Reason note {status === "operational" ? "(optional)" : "(required)"}
-                    </Label>
+                    <Label htmlFor={`note-${p.id}`}>Owner reason note (required)</Label>
                     <Textarea
                       id={`note-${p.id}`}
                       rows={2}
                       maxLength={500}
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      placeholder="Why is this status changing? Shown to members when the place isn't operational."
+                      placeholder="Why is this status changing? Kept internal — members only see a neutral status banner."
                     />
+                    <p className="text-[11px] text-muted-foreground">
+                      Internal only. Never shown publicly.
+                    </p>
                   </div>
 
-                  {p.upcoming_meetups_here > 0 && status !== "operational" && (
-                    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
+                  {p.upcoming_meetups_here > 0 && (
+                    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs [overflow-wrap:anywhere]">
+                      <AlertTriangle className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden />
                       {p.upcoming_meetups_here} upcoming Meetup
                       {p.upcoming_meetups_here === 1 ? " is" : "s are"} scheduled here.
-                      Existing Meetups are not cancelled — hosts should move them to a new location.
+                      Existing Meetups are never cancelled or moved — each host is notified once
+                      that the location needs attention.
                     </div>
                   )}
 
                   <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
-                      onClick={() => statusM.mutate()}
-                      disabled={
-                        statusM.isPending ||
-                        (status !== "operational" && note.trim().length === 0)
-                      }
+                      variant={status === "permanently_closed" ? "destructive" : "default"}
+                      onClick={() => setConfirm("status")}
+                      disabled={pending || note.trim().length === 0}
                     >
-                      {statusM.isPending ? "Saving…" : "Save status"}
+                      {statusM.isPending
+                        ? "Saving…"
+                        : `Set ${MAINTENANCE_STATUS_LABEL[status].toLowerCase()}`}
                     </Button>
+                  </div>
+
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <p className="text-xs font-medium">Restore through reverification</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      A place can only return to operational here — a casual status toggle back is
+                      refused. Requires an owner note and a confirmed vegan classification.
+                    </p>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`class-${p.id}`}>Confirmed vegan classification</Label>
+                      <select
+                        id={`class-${p.id}`}
+                        value={classification}
+                        onChange={(e) => setClassification(e.target.value)}
+                        className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                      >
+                        {CLASSIFICATIONS.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => reverifyM.mutate()}
-                      disabled={reverifyM.isPending || note.trim().length === 0}
+                      onClick={() => setConfirm("reverify")}
+                      disabled={pending || note.trim().length === 0}
                     >
                       {reverifyM.isPending ? "Recording…" : "Mark reverified"}
                     </Button>
@@ -230,6 +304,68 @@ export function PlaceMaintenance() {
           );
         })}
       </ul>
+
+      <AlertDialog
+        open={confirm !== null}
+        onOpenChange={(o) => {
+          if (!o) setConfirm(null);
+        }}
+      >
+        <AlertDialogContent className="max-w-[min(92vw,32rem)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="[overflow-wrap:anywhere]">
+              {confirm === "reverify"
+                ? "Reverify this place?"
+                : status === "permanently_closed"
+                  ? "Permanently close this place?"
+                  : `Set status to ${MAINTENANCE_STATUS_LABEL[status].toLowerCase()}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="[overflow-wrap:anywhere]">
+              {confirm === "reverify" ? (
+                <>
+                  {selected?.name} returns to discovery, search, the Host picker, hosting and
+                  check-in. The confirmed classification and reverification date are recorded in
+                  status history.
+                </>
+              ) : (
+                <>
+                  {selected?.name}: {IMPACT_COPY[status]}
+                  {selected && selected.upcoming_meetups_here > 0 && (
+                    <>
+                      {" "}
+                      {selected.upcoming_meetups_here} upcoming Meetup
+                      {selected.upcoming_meetups_here === 1 ? "" : "s"} linked here will stay
+                      scheduled; the host is notified to update the location.
+                    </>
+                  )}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pending}
+              className={
+                confirm === "status" && status === "permanently_closed"
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : undefined
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirm === "reverify") reverifyM.mutate();
+                else statusM.mutate();
+              }}
+            >
+              {confirm === "reverify"
+                ? "Mark reverified"
+                : status === "permanently_closed"
+                  ? "Permanently close"
+                  : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

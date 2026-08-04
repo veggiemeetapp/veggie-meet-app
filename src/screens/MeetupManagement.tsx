@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { fetchPublishedCommunityPlaces, fetchMeetupById } from "@/lib/backend";
+import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -150,6 +150,20 @@ export default function MeetupManagement() {
     queryFn: () => fetchPublishedCommunityPlaces(locCityId!),
     staleTime: 60_000,
   });
+
+  // WO-053: the linked Community Place may have gone non-operational after the
+  // Meetup was created. The Meetup is never auto-cancelled — the host is asked
+  // to move it. Read directly by id so closed places are still resolvable.
+  const linkedPlaceQuery = useQuery({
+    queryKey: ["manage-linked-place", meetup?.communityPlaceId],
+    enabled: !!meetup?.communityPlaceId,
+    queryFn: () => fetchCommunityPlaceById(meetup!.communityPlaceId as string),
+    staleTime: 30_000,
+  });
+  const linkedPlaceUnavailable =
+    !!linkedPlaceQuery.data &&
+    (linkedPlaceQuery.data.maintenanceStatus ?? "operational") !== "operational";
+
 
 
   // Realtime: keep summary + attendee list in sync with backend.
@@ -587,6 +601,18 @@ export default function MeetupManagement() {
               Changing the city, place, or address notifies confirmed attendees.
             </p>
           </div>
+
+          {linkedPlaceUnavailable && (
+            <div
+              role="status"
+              className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs text-charcoal min-w-0 [overflow-wrap:anywhere]"
+            >
+              <span className="font-semibold block">Location needs attention</span>
+              {linkedPlaceQuery.data?.name} is no longer available as a Community Place. This
+              Meetup is still scheduled — choose a new place or a custom location below.
+              Attendees are notified when you save the new location.
+            </div>
+          )}
 
           {meetup.location?.isInferred && (
             <div className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs text-charcoal">
