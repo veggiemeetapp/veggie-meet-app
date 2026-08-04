@@ -698,6 +698,181 @@ export type Database = {
           },
         ]
       }
+      community_place_vegan_classification_history: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          community_place_id: string
+          created_at: string
+          id: string
+          internal_reason: string | null
+          new_classification: string
+          old_classification: string | null
+          vegan_review_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          community_place_id: string
+          created_at?: string
+          id?: string
+          internal_reason?: string | null
+          new_classification: string
+          old_classification?: string | null
+          vegan_review_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          community_place_id?: string
+          created_at?: string
+          id?: string
+          internal_reason?: string | null
+          new_classification?: string
+          old_classification?: string | null
+          vegan_review_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_vegan_classification_hi_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_vegan_classification_histo_vegan_review_id_fkey"
+            columns: ["vegan_review_id"]
+            isOneToOne: false
+            referencedRelation: "community_place_vegan_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_vegan_classification_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_place_vegan_reviews: {
+        Row: {
+          community_place_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          evidence_confidence: string | null
+          evidence_source_url: string | null
+          evidence_summary: string | null
+          id: string
+          identity_checks: string[]
+          owner_note: string | null
+          prior_classification: string | null
+          product_checks: string[]
+          public_action: string | null
+          public_action_applied: boolean
+          related_report_id: string | null
+          related_reverification_id: string | null
+          result: string | null
+          resulting_classification: string | null
+          source_checks: string[]
+          started_at: string
+          started_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          community_place_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          evidence_confidence?: string | null
+          evidence_source_url?: string | null
+          evidence_summary?: string | null
+          id?: string
+          identity_checks?: string[]
+          owner_note?: string | null
+          prior_classification?: string | null
+          product_checks?: string[]
+          public_action?: string | null
+          public_action_applied?: boolean
+          related_report_id?: string | null
+          related_reverification_id?: string | null
+          result?: string | null
+          resulting_classification?: string | null
+          source_checks?: string[]
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          community_place_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          evidence_confidence?: string | null
+          evidence_source_url?: string | null
+          evidence_summary?: string | null
+          id?: string
+          identity_checks?: string[]
+          owner_note?: string | null
+          prior_classification?: string | null
+          product_checks?: string[]
+          public_action?: string | null
+          public_action_applied?: boolean
+          related_report_id?: string | null
+          related_reverification_id?: string | null
+          result?: string | null
+          resulting_classification?: string | null
+          source_checks?: string[]
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_vegan_reviews_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_vegan_reviews_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_vegan_reviews_related_report_id_fkey"
+            columns: ["related_report_id"]
+            isOneToOne: false
+            referencedRelation: "community_place_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_vegan_reviews_related_reverification_id_fkey"
+            columns: ["related_reverification_id"]
+            isOneToOne: false
+            referencedRelation: "community_place_reverifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_vegan_reviews_started_by_fkey"
+            columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_place_visits: {
         Row: {
           community_place_id: string
@@ -2467,6 +2642,10 @@ export type Database = {
       }
       are_connected: { Args: { _a: string; _b: string }; Returns: boolean }
       block_profile: { Args: { _blocked_profile_id: string }; Returns: string }
+      cancel_community_place_vegan_review: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
       cancel_meetup: {
         Args: { _meetup_id: string; _reason?: string }
         Returns: undefined
@@ -2481,6 +2660,24 @@ export type Database = {
           _latitude: number
           _longitude: number
           _place_id: string
+        }
+        Returns: Json
+      }
+      complete_community_place_vegan_review: {
+        Args: {
+          _confirm_public_action?: boolean
+          _evidence_confidence: string
+          _evidence_source_url?: string
+          _evidence_summary: string
+          _identity_checks?: string[]
+          _owner_note: string
+          _place_id: string
+          _product_checks?: string[]
+          _public_action?: string
+          _related_report_id?: string
+          _related_reverification_id?: string
+          _result: string
+          _source_checks?: string[]
         }
         Returns: Json
       }
@@ -2559,6 +2756,14 @@ export type Database = {
       get_community_place_maintenance: { Args: never; Returns: Json }
       get_community_place_status_history: {
         Args: { _place_id: string }
+        Returns: Json
+      }
+      get_community_place_vegan_review_workspace: {
+        Args: {
+          _place_id: string
+          _report_id?: string
+          _reverification_id?: string
+        }
         Returns: Json
       }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
@@ -2917,6 +3122,10 @@ export type Database = {
       set_home_city: { Args: { _city_id: string }; Returns: Json }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }
       shares_context_with: { Args: { _profile_id: string }; Returns: boolean }
+      start_community_place_vegan_review: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
       start_place_reverification: { Args: { _place_id: string }; Returns: Json }
       submit_community_place_report: {
         Args: {
