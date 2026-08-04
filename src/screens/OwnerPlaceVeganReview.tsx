@@ -946,13 +946,29 @@ export default function OwnerPlaceVeganReview() {
         <AlertDialogContent className="max-w-[min(92vw,32rem)]">
           <AlertDialogHeader>
             <AlertDialogTitle className="[overflow-wrap:anywhere]">
-              {result === "no_longer_fully_vegan"
-                ? `Remove the 100% Vegan status from ${place?.name ?? "this place"}?`
-                : `Temporarily hide ${place?.name ?? "this place"} from discovery?`}
+              {publicAction === "restore_and_reactivate"
+                ? `Reconfirm and restore ${place?.name ?? "this place"}?`
+                : result === "no_longer_fully_vegan"
+                  ? `Remove the 100% Vegan status from ${place?.name ?? "this place"}?`
+                  : `Temporarily hide ${place?.name ?? "this place"} from discovery?`}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-left">
-                {result === "no_longer_fully_vegan" ? (
+                {publicAction === "restore_and_reactivate" ? (
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>The 100% Vegan classification will be restored.</li>
+                    <li>
+                      The place will appear again in Community Places discovery, search and the
+                      Host place picker, and members can check in again.
+                    </li>
+                    <li>The freshness date advances to today; the original verification date stays.</li>
+                    <li>
+                      The same record is reused — its Google identity, past visits, Meetups and
+                      support counts are all preserved and nothing is duplicated.
+                    </li>
+                    <li>Its operational status is unchanged by this step.</li>
+                  </ul>
+                ) : result === "no_longer_fully_vegan" ? (
                   <ul className="list-disc pl-4 space-y-1">
                     <li>The 100% Vegan classification will be removed.</li>
                     <li>The place will be hidden from Community Places discovery and search.</li>
@@ -983,7 +999,11 @@ export default function OwnerPlaceVeganReview() {
                 completeM.mutate();
               }}
             >
-              {result === "no_longer_fully_vegan" ? "Remove and hide" : "Hide from discovery"}
+              {publicAction === "restore_and_reactivate"
+                ? "Reconfirm and restore"
+                : result === "no_longer_fully_vegan"
+                  ? "Remove and hide"
+                  : "Hide from discovery"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
