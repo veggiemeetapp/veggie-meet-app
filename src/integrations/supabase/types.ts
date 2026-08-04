@@ -3007,6 +3007,10 @@ export type Database = {
           timezone: string
         }[]
       }
+      get_community_place_activity: {
+        Args: { _before_at?: string; _before_id?: string; _limit?: number }
+        Returns: Json
+      }
       get_community_place_detail_changes: {
         Args: { _place_id: string }
         Returns: Json
@@ -3024,6 +3028,7 @@ export type Database = {
         Returns: Json
       }
       get_community_place_maintenance: { Args: never; Returns: Json }
+      get_community_place_operations_dashboard: { Args: never; Returns: Json }
       get_community_place_status_history: {
         Args: { _place_id: string }
         Returns: Json
