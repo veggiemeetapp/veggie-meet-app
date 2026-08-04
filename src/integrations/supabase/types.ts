@@ -2789,6 +2789,10 @@ export type Database = {
         | "place_suggestion_rejected"
         | "meetup_location_changed"
         | "meetup_location_needs_attention"
+        | "community_place_report_under_review"
+        | "community_place_report_resolved"
+        | "community_place_report_dismissed"
+        | "community_place_report_duplicate"
       place_category:
         | "restaurant"
         | "cafe"
@@ -2974,6 +2978,10 @@ export const Constants = {
         "place_suggestion_rejected",
         "meetup_location_changed",
         "meetup_location_needs_attention",
+        "community_place_report_under_review",
+        "community_place_report_resolved",
+        "community_place_report_dismissed",
+        "community_place_report_duplicate",
       ],
       place_category: [
         "restaurant",
