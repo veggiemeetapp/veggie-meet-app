@@ -96,6 +96,11 @@ const iconFor: Record<NotificationType, JSX.Element> = {
   place_suggestion_approved: <Leaf className="w-4 h-4" />,
   place_suggestion_duplicate: <Leaf className="w-4 h-4" />,
   place_suggestion_rejected: <Leaf className="w-4 h-4" />,
+  community_place_report_under_review: <ShieldCheck className="w-4 h-4" />,
+  community_place_report_resolved: <ShieldCheck className="w-4 h-4" />,
+  community_place_report_dismissed: <ShieldCheck className="w-4 h-4" />,
+  community_place_report_duplicate: <ShieldCheck className="w-4 h-4" />,
+
 };
 
 
