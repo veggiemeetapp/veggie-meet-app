@@ -99,7 +99,6 @@ export interface CommunityPlace {
   /** Owner-maintained operational status (WO-053). */
   maintenanceStatus?: CommunityPlaceMaintenanceStatus;
   /** Owner-written public reason shown while the place isn't operational. */
-  statusNote?: string | null;
 }
 
 export type CommunityPlaceMaintenanceStatus =

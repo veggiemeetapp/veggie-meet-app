@@ -365,7 +365,6 @@ interface DBCommunityPlaceRow {
   google_maps_url?: string | null;
   veggie_classification?: string | null;
   maintenance_status?: string | null;
-  status_note?: string | null;
   last_reverified_at?: string | null;
   cities?: { name: string | null } | null;
 }
@@ -398,10 +397,16 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
     isActive: row.is_active !== false,
     maintenanceStatus:
       (row.maintenance_status as CommunityPlace["maintenanceStatus"]) ?? "operational",
-    statusNote: row.status_note ?? null,
   };
 }
 
+
+/**
+ * WO-053 — public place columns. The owner reason note (status_note) and
+ * status_changed_by are deliberately excluded: they are internal-only and are
+ * readable exclusively through the owner-only maintenance RPCs.
+ */
+const PUBLIC_PLACE_COLUMNS = "id,name,category,address,cover_image_url,upcoming_meetups_count,meetups_this_month,veggies_visited_count,created_at,updated_at,city_id,neighborhood,timezone,latitude,longitude,is_active,google_place_id,google_maps_url,verification_status,verified_at,source,business_status,image_rights_status,description,veggie_reason,website_url,veggie_classification,maintenance_status,status_changed_at,last_reverified_at, cities(name)";
 
 /**
  * WO-053 — the single discovery eligibility rule shared by every browse surface:
@@ -411,7 +416,7 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
 export async function fetchCommunityPlacesByCity(cityId: string): Promise<CommunityPlace[]> {
   const { data, error } = await supabase
     .from("community_places")
-    .select("*, cities(name)")
+    .select(PUBLIC_PLACE_COLUMNS)
     .eq("city_id", cityId)
     .eq("verification_status", "verified")
     .eq("maintenance_status", "operational")
@@ -431,7 +436,7 @@ export async function fetchPublishedCommunityPlaces(
 ): Promise<CommunityPlace[]> {
   let q = supabase
     .from("community_places")
-    .select("*, cities(name)")
+    .select(PUBLIC_PLACE_COLUMNS)
     .eq("verification_status", "verified")
     .eq("maintenance_status", "operational")
     .neq("is_active", false);
@@ -447,7 +452,7 @@ export async function fetchPublishedCommunityPlaces(
 export async function fetchCommunityPlaceById(placeId: string): Promise<CommunityPlace | null> {
   const { data, error } = await supabase
     .from("community_places")
-    .select("*, cities(name)")
+    .select(PUBLIC_PLACE_COLUMNS)
     .eq("id", placeId)
     .maybeSingle();
   if (error || !data) return null;
