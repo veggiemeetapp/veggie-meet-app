@@ -169,8 +169,12 @@ export default function OwnerPlaceVerification() {
         {/* ---- Community suggestions (private intake queue) ---- */}
         <SuggestionQueue onPromoted={(id) => setSelectedId(id)} />
 
+        {/* ---- Member place reports (WO-054, private moderation queue) ---- */}
+        <ReportQueue />
+
         {/* ---- Published place status maintenance (WO-053) ---- */}
         <PlaceMaintenance />
+
 
 
 
