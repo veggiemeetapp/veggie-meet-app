@@ -17,9 +17,10 @@ import {
   CalendarDays,
   Sparkles,
 } from "lucide-react";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { Card, PrimaryButton, SecondaryButton, MeetupCard } from "@/components/app";
 import { communityPlaces } from "@/lib/mock-data";
-import { fetchUpcomingMeetups, fetchCommunityPlaceById } from "@/lib/backend";
+import { fetchUpcomingMeetupsAtPlace, fetchCommunityPlaceById } from "@/lib/backend";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { fetchPlaceCheckInState } from "@/lib/placeVisits";
 import { useAuth } from "@/hooks/useAuth";
@@ -175,8 +176,7 @@ export default function CommunityPlaceDetail() {
     enabled: !!place,
     queryFn: async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const backend = await fetchUpcomingMeetups(today).catch(() => []);
-      const backendHere = backend.filter((m) => m.communityPlaceId === id);
+      const backendHere = await fetchUpcomingMeetupsAtPlace(id, today).catch(() => []);
       if (backendHere.length > 0) return backendHere;
       if (isVerifiedPlace) return [];
       // Fallback so the section is always meaningful in demo mode.
@@ -346,7 +346,21 @@ export default function CommunityPlaceDetail() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-charcoal-muted">No meetups scheduled here yet.</p>
+          <p className="text-sm text-charcoal-muted">
+            No Meetups scheduled here yet. Be the first to host one.
+          </p>
+        )}
+        {isVerifiedPlace && (
+          <PrimaryButton
+            fullWidth
+            className="mt-3"
+            onClick={() => {
+              logAnalyticsEvent("host_from_place_tapped", { place_id: place.id });
+              navigate(`/host?community_place=${place.id}`);
+            }}
+          >
+            Host a Meetup Here
+          </PrimaryButton>
         )}
       </div>
 
