@@ -399,7 +399,42 @@ export default function OwnerPlaceReverify() {
 
                 );
               })()}
+
+              {/* WO-058 — vegan status only ever changes in its own workflow. */}
+              {(() => {
+                const veganFlagId = wsQ.data?.history.find(
+                  (h) => h.result === "needs_vegan_review",
+                )?.id;
+                return (
+                  <div className="rounded-lg border p-3 space-y-1.5 min-w-0">
+                    <p className="text-xs font-medium">
+                      {veganFlagId
+                        ? "This place was flagged Needs vegan review"
+                        : "100% vegan status needs checking?"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      The 100% Vegan classification is never changed here. It can only change
+                      through an explicitly confirmed vegan review, which links back to this
+                      reverification without modifying it.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        navigate(
+                          `/owner/places/${place.id}/vegan-review?source=reverification${
+                            veganFlagId ? `&reverification=${veganFlagId}` : ""
+                          }`,
+                        )
+                      }
+                    >
+                      Review vegan status
+                    </Button>
+                  </div>
+                );
+              })()}
             </section>
+
 
 
             {/* ---- Open member reports (safe summary) ---- */}
