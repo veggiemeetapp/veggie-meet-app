@@ -50,6 +50,8 @@ const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerificati
 const OwnerPlaceReverify = lazy(() => import("./screens/OwnerPlaceReverify"));
 const OwnerPlaceEditDetails = lazy(() => import("./screens/OwnerPlaceEditDetails"));
 const OwnerPlaceVeganReview = lazy(() => import("./screens/OwnerPlaceVeganReview"));
+const OwnerPlaceIdentityReview = lazy(() => import("./screens/OwnerPlaceIdentityReview"));
+
 
 
 const SuggestPlace = lazy(() => import("./screens/SuggestPlace"));
