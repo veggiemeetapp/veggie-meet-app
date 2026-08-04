@@ -29,6 +29,7 @@ import {
   IDENTITY_CHECKS,
   INSUFFICIENT_EVIDENCE_SOURCES,
   PRODUCT_CHECKS,
+  RESTORE_RESULT_CONSEQUENCE,
   RESULT_CONSEQUENCE,
   RESULT_LABEL,
   SOURCE_CHECKS,
@@ -124,6 +125,8 @@ export default function OwnerPlaceVeganReview() {
   const [note, setNote] = useState("");
   const [result, setResult] = useState<VeganReviewResult | "">("");
   const [insufficientAction, setInsufficientAction] = useState<"none" | "deactivate">("none");
+  /** WO-058A — restore choice, only offered on a previously revoked place. */
+  const [restoreAction, setRestoreAction] = useState<"none" | "restore_and_reactivate">("none");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
   const [blockMsg, setBlockMsg] = useState("");
@@ -146,12 +149,23 @@ export default function OwnerPlaceVeganReview() {
     }
   }, [ownerQ.data, placeId, entrySource]);
 
+  /**
+   * WO-058A — a place whose 100% Vegan status was revoked can be reconfirmed.
+   * Confirming always restores the classification server-side; returning it to
+   * discovery is the separate, explicitly confirmed `restore_and_reactivate`.
+   */
+  const isRevoked = place?.veggie_classification === "not_confirmed_fully_vegan";
+  const canRestoreVisibility =
+    isRevoked && place?.maintenance_status === "operational" && place?.is_active === false;
+
   const publicAction: VeganPublicAction =
     result === "no_longer_fully_vegan"
       ? "revoke_and_deactivate"
       : result === "insufficient_evidence"
         ? insufficientAction
-        : "none";
+        : result === "confirmed_fully_vegan" && canRestoreVisibility
+          ? restoreAction
+          : "none";
 
   const urlError = useMemo(() => {
     const shape = veganEvidenceUrlError(evidenceUrl);
