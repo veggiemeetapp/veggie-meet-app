@@ -20,6 +20,8 @@ export interface UpdateMeetupLocationResult {
   meetup_id: string;
   change_id: string;
   meaningful_change: boolean;
+  /** True when the change was user-facing enough to notify attendees. */
+  notified?: boolean;
   coord_shift_m: number;
   recipients_count: number;
   notifications_inserted: number;
