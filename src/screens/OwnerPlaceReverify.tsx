@@ -311,7 +311,6 @@ export default function OwnerPlaceReverify() {
                     ? `${place.latitude}, ${place.longitude}`
                     : "—"}
                 </Row>
-                <Row label="Place type">{place.category ?? "—"}</Row>
                 <Row label="Category">{place.category ?? "—"}</Row>
                 <Row label="Google Place ID">{place.google_place_id ?? "Missing"}</Row>
                 <Row label="Maps link">
