@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState, type MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -81,6 +83,8 @@ function actionLabel(raw: string): string {
  */
 export function PlaceMaintenance() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+
   const [openId, setOpenId] = useState<string | null>(null);
   const [status, setStatus] = useState<CommunityPlaceMaintenanceStatus>("needs_reverification");
   const [note, setNote] = useState("");
@@ -277,7 +281,16 @@ export function PlaceMaintenance() {
                         ? "Saving…"
                         : `Set ${MAINTENANCE_STATUS_LABEL[status].toLowerCase()}`}
                     </Button>
+                    {/* WO-057 — owner-only public detail corrections. */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/owner/places/${p.id}/edit?from=owner_places`)}
+                    >
+                      Edit public details
+                    </Button>
                   </div>
+
 
                   <div className="rounded-lg border p-3 space-y-2">
                     <p className="text-xs font-medium">Restore through reverification</p>

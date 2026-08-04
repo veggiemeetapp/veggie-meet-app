@@ -48,6 +48,8 @@ const Plans = lazy(() => import("./screens/Plans"));
 const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
 const OwnerPlaceReverify = lazy(() => import("./screens/OwnerPlaceReverify"));
+const OwnerPlaceEditDetails = lazy(() => import("./screens/OwnerPlaceEditDetails"));
+
 const SuggestPlace = lazy(() => import("./screens/SuggestPlace"));
 const MyPlaceSuggestions = lazy(() => import("./screens/MyPlaceSuggestions"));
 const ReportPlaceIssue = lazy(() => import("./screens/ReportPlaceIssue"));
@@ -152,6 +154,11 @@ const App = () => (
                   path="/owner/places/:placeId/reverify"
                   element={gated(<OwnerPlaceReverify />)}
                 />
+                <Route
+                  path="/owner/places/:placeId/edit"
+                  element={gated(<OwnerPlaceEditDetails />)}
+                />
+
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
                 <Route path="*" element={<NotFound />} />
