@@ -462,7 +462,28 @@ export default function CommunityPlaceDetail() {
       )}
 
 
+      {/* WO-054: member issue reporting. Available on every published place,
+          including non-operational ones, and never changes the place itself. */}
+      {isVerifiedPlace && (
+        <div className="px-5 mt-8">
+          <button
+            type="button"
+            onClick={() => {
+              logAnalyticsEvent("community_place_report_entry_tapped", { place_id: place.id });
+              navigate(`/place/${place.id}/report`);
+            }}
+            className="text-sm font-semibold text-charcoal-muted underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            Report an issue with this place
+          </button>
+          <p className="mt-1.5 text-xs text-charcoal-muted">
+            Reports are private and reviewed by our team before anything changes.
+          </p>
+        </div>
+      )}
+
       {/* Bottom action */}
+
       <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0" style={{ bottom: "var(--nav-height)" }}>
         <div className="flex gap-2">
           {/* WO-048: one check-in system only. Verified Community Places open the
