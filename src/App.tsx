@@ -148,6 +148,10 @@ const App = () => (
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
                 <Route path="/settings" element={gated(<Settings />)} />
                 <Route path="/owner/places" element={gated(<OwnerPlaceVerification />)} />
+                <Route
+                  path="/owner/places/:placeId/reverify"
+                  element={gated(<OwnerPlaceReverify />)}
+                />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
                 <Route path="*" element={<NotFound />} />
