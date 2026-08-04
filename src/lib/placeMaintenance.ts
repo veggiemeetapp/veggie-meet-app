@@ -60,10 +60,19 @@ export function placeStatusBanner(
   }
 }
 
-const rpc = supabase.rpc as unknown as (
+/** Bound wrapper — `supabase.rpc` loses its `this` binding when detached. */
+const rpc = (
   name: string,
   args?: Record<string, unknown>,
-) => Promise<{ data: unknown; error: { message: string } | null }>;
+): Promise<{ data: unknown; error: { message: string } | null }> =>
+  (supabase.rpc as unknown as (
+    n: string,
+    a?: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>).call(
+    supabase,
+    name,
+    args,
+  );
 
 export async function fetchMaintenancePlaces(): Promise<MaintenancePlace[]> {
   const { data, error } = await rpc("get_community_place_maintenance");
