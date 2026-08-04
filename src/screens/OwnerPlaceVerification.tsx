@@ -21,6 +21,7 @@ import {
 import { SuggestionQueue } from "@/components/owner/SuggestionQueue";
 import { PlaceMaintenance } from "@/components/owner/PlaceMaintenance";
 import { ReportQueue } from "@/components/owner/ReportQueue";
+import { ReverificationQueue } from "@/components/owner/ReverificationQueue";
 
 
 const STATUS_LABEL: Record<string, string> = {
