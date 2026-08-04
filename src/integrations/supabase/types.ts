@@ -310,6 +310,60 @@ export type Database = {
         }
         Relationships: []
       }
+      community_place_status_history: {
+        Row: {
+          action: string
+          changed_by: string | null
+          community_place_id: string
+          created_at: string
+          id: string
+          new_is_active: boolean | null
+          new_status: string
+          note: string | null
+          old_is_active: boolean | null
+          old_status: string | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          community_place_id: string
+          created_at?: string
+          id?: string
+          new_is_active?: boolean | null
+          new_status: string
+          note?: string | null
+          old_is_active?: boolean | null
+          old_status?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          community_place_id?: string
+          created_at?: string
+          id?: string
+          new_is_active?: boolean | null
+          new_status?: string
+          note?: string | null
+          old_is_active?: boolean | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_status_history_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_place_suggestions: {
         Row: {
           address_text: string
@@ -494,12 +548,17 @@ export type Database = {
           id: string
           image_rights_status: string
           is_active: boolean
+          last_reverified_at: string | null
           latitude: number | null
           longitude: number | null
+          maintenance_status: string
           meetups_this_month: number
           name: string
           neighborhood: string | null
           source: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          status_note: string | null
           timezone: string | null
           upcoming_meetups_count: number
           updated_at: string
@@ -524,12 +583,17 @@ export type Database = {
           id?: string
           image_rights_status?: string
           is_active?: boolean
+          last_reverified_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          maintenance_status?: string
           meetups_this_month?: number
           name: string
           neighborhood?: string | null
           source?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          status_note?: string | null
           timezone?: string | null
           upcoming_meetups_count?: number
           updated_at?: string
@@ -554,12 +618,17 @@ export type Database = {
           id?: string
           image_rights_status?: string
           is_active?: boolean
+          last_reverified_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          maintenance_status?: string
           meetups_this_month?: number
           name?: string
           neighborhood?: string | null
           source?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          status_note?: string | null
           timezone?: string | null
           upcoming_meetups_count?: number
           updated_at?: string
@@ -577,6 +646,13 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_places_status_changed_by_fkey"
+            columns: ["status_changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2221,6 +2297,11 @@ export type Database = {
           timezone: string
         }[]
       }
+      get_community_place_maintenance: { Args: never; Returns: Json }
+      get_community_place_status_history: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
       get_my_blocked_profiles: {
         Args: never
@@ -2453,6 +2534,14 @@ export type Database = {
       }
       request_account_deletion: { Args: never; Returns: Json }
       resolve_viewer_city_id: { Args: { _profile_id: string }; Returns: string }
+      reverify_community_place: {
+        Args: {
+          _note?: string
+          _place_id: string
+          _veggie_classification?: string
+        }
+        Returns: Json
+      }
       save_onboarding_step: {
         Args: {
           _completed?: boolean
@@ -2537,6 +2626,10 @@ export type Database = {
           _reason_code?: string
         }
         Returns: undefined
+      }
+      set_community_place_status: {
+        Args: { _note?: string; _place_id: string; _status: string }
+        Returns: Json
       }
       set_home_city: { Args: { _city_id: string }; Returns: Json }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }

@@ -19,6 +19,7 @@ import {
   type PlaceCandidate,
 } from "@/lib/placeVerification";
 import { SuggestionQueue } from "@/components/owner/SuggestionQueue";
+import { PlaceMaintenance } from "@/components/owner/PlaceMaintenance";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
@@ -167,6 +168,11 @@ export default function OwnerPlaceVerification() {
       <div className="p-4 space-y-6">
         {/* ---- Community suggestions (private intake queue) ---- */}
         <SuggestionQueue onPromoted={(id) => setSelectedId(id)} />
+
+        {/* ---- Published place status maintenance (WO-053) ---- */}
+        <PlaceMaintenance />
+
+
 
         {/* ---- Candidate queue ---- */}
         <section className="space-y-2">

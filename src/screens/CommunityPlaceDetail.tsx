@@ -23,6 +23,7 @@ import { communityPlaces } from "@/lib/mock-data";
 import { fetchUpcomingMeetupsAtPlace, fetchCommunityPlaceById } from "@/lib/backend";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { fetchPlaceCheckInState } from "@/lib/placeVisits";
+import { placeStatusBanner } from "@/lib/placeMaintenance";
 import { useAuth } from "@/hooks/useAuth";
 
 
@@ -227,6 +228,11 @@ export default function CommunityPlaceDetail() {
     ? CLASSIFICATION_LABEL[place.veggieClassification ?? ""] ?? null
     : extras.dietary;
   const showCover = place.hasCoverImage !== false;
+  // WO-053: owner-maintained status. Non-operational places stay readable but
+  // lose hosting and check-in; the server enforces both independently.
+  const maintenanceStatus = isVerifiedPlace ? place.maintenanceStatus ?? "operational" : "operational";
+  const isOperational = maintenanceStatus === "operational";
+  const statusBanner = placeStatusBanner(maintenanceStatus);
 
   return (
     <div className="flex flex-col min-h-dvh pb-40">
@@ -274,6 +280,33 @@ export default function CommunityPlaceDetail() {
           </div>
         </div>
       </div>
+
+      {statusBanner && (
+        <div className="px-5 mt-4">
+          <div
+            role="status"
+            className={`rounded-2xl border p-3.5 min-w-0 ${
+              statusBanner.tone === "closed"
+                ? "border-destructive/40 bg-destructive/5"
+                : "border-amber-500/40 bg-amber-500/10"
+            }`}
+          >
+            <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
+              {statusBanner.title}
+            </p>
+            {place.statusNote && (
+              <p className="mt-1 text-[13px] leading-relaxed text-charcoal-muted line-clamp-4 [overflow-wrap:anywhere]">
+                {place.statusNote}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-charcoal-muted">
+              Hosting and check-ins are paused here for now.
+            </p>
+          </div>
+        </div>
+      )}
+
+
 
       {isVerifiedPlace && (
         <>
@@ -347,10 +380,12 @@ export default function CommunityPlaceDetail() {
           </div>
         ) : (
           <p className="text-sm text-charcoal-muted">
-            No Meetups scheduled here yet. Be the first to host one.
+            {isOperational
+              ? "No Meetups scheduled here yet. Be the first to host one."
+              : "No Meetups scheduled here."}
           </p>
         )}
-        {isVerifiedPlace && (
+        {isVerifiedPlace && isOperational && (
           <PrimaryButton
             fullWidth
             className="mt-3"
@@ -434,7 +469,7 @@ export default function CommunityPlaceDetail() {
         <div className="flex gap-2">
           {/* WO-048: one check-in system only. Verified Community Places open the
               location-verified sheet; there is no alternate QR/legacy path. */}
-          {isVerifiedPlace && (
+          {isVerifiedPlace && isOperational && (
             <SecondaryButton
               className="flex-1 min-w-0 px-4 text-[15px]"
               onClick={() => setCheckInOpen(true)}
@@ -452,7 +487,7 @@ export default function CommunityPlaceDetail() {
         </div>
       </div>
 
-      {isVerifiedPlace && (
+      {isVerifiedPlace && isOperational && (
         <PlaceCheckInSheet
           open={checkInOpen}
           onOpenChange={setCheckInOpen}

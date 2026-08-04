@@ -364,6 +364,9 @@ interface DBCommunityPlaceRow {
   website_url?: string | null;
   google_maps_url?: string | null;
   veggie_classification?: string | null;
+  maintenance_status?: string | null;
+  status_note?: string | null;
+  last_reverified_at?: string | null;
   cities?: { name: string | null } | null;
 }
 
@@ -392,6 +395,10 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
     websiteUrl: row.website_url ?? null,
     googleMapsUrl: row.google_maps_url ?? null,
     veggieClassification: row.veggie_classification ?? null,
+    isActive: row.is_active !== false,
+    maintenanceStatus:
+      (row.maintenance_status as CommunityPlace["maintenanceStatus"]) ?? "operational",
+    statusNote: row.status_note ?? null,
   };
 }
 
