@@ -49,6 +49,9 @@ const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceVerification = lazy(() => import("./screens/OwnerPlaceVerification"));
 const SuggestPlace = lazy(() => import("./screens/SuggestPlace"));
 const MyPlaceSuggestions = lazy(() => import("./screens/MyPlaceSuggestions"));
+const ReportPlaceIssue = lazy(() => import("./screens/ReportPlaceIssue"));
+const MyPlaceReports = lazy(() => import("./screens/MyPlaceReports"));
+
 
 /**
  * WO-048 compatibility route. The legacy QR/mock place check-in screen is gone;
