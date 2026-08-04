@@ -184,6 +184,17 @@ function SupportedPlaceCard({
   const date = formatActivityDate(place.last_activity_at);
   const area = place.neighborhood ?? null;
   const repeat = place.direct_visit_count > 1;
+  // WO-053: neutral current-status label. Past support always stays counted.
+  const statusLabel =
+    !place.is_active || (place.maintenance_status ?? "operational") !== "operational"
+      ? place.maintenance_status === "temporarily_closed"
+        ? "Temporarily closed"
+        : place.maintenance_status === "permanently_closed"
+          ? "Permanently closed"
+          : place.maintenance_status === "needs_reverification"
+            ? "Verification under review"
+            : "Currently unavailable"
+      : null;
 
   return (
     <Link
