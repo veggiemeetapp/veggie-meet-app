@@ -179,8 +179,17 @@ export default function OwnerPlaceOperations() {
     const places = dashQ.data?.places ?? [];
     return items.filter((i) => {
       if (term && !i.title.toLowerCase().includes(term)) return false;
-      if (typeFilter !== "all" && i.item_type !== typeFilter) return false;
-      if (urgencyFilter !== "all" && urgencyOf(i.item_type) !== urgencyFilter) return false;
+      // Attention items are deduplicated per place, so a single row can carry
+      // several reasons. Match the primary reason OR any merged secondary one,
+      // otherwise filtering by e.g. "Open issue report" would hide a place
+      // whose top reason happens to be a review in progress.
+      const allTypes = [i.item_type, ...i.secondary_types.map((s) => s.type)];
+      if (typeFilter !== "all" && !allTypes.includes(typeFilter as AttentionType)) return false;
+      if (
+        urgencyFilter !== "all" &&
+        !allTypes.some((t) => urgencyOf(t) === urgencyFilter)
+      )
+        return false;
       const p = places.find((x) => x.id === i.entity_id);
       if (visibilityFilter !== "all") {
         if (!p) return false;
