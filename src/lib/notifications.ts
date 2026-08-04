@@ -13,7 +13,11 @@ export type NotificationType =
   | "place_suggestion_under_review"
   | "place_suggestion_approved"
   | "place_suggestion_duplicate"
-  | "place_suggestion_rejected";
+  | "place_suggestion_rejected"
+  | "community_place_report_under_review"
+  | "community_place_report_resolved"
+  | "community_place_report_dismissed"
+  | "community_place_report_duplicate";
 
 export const PLACE_SUGGESTION_TYPES: NotificationType[] = [
   "place_suggestion_under_review",
@@ -21,6 +25,15 @@ export const PLACE_SUGGESTION_TYPES: NotificationType[] = [
   "place_suggestion_duplicate",
   "place_suggestion_rejected",
 ];
+
+export const PLACE_REPORT_TYPES: NotificationType[] = [
+  "community_place_report_under_review",
+  "community_place_report_resolved",
+  "community_place_report_dismissed",
+  "community_place_report_duplicate",
+];
+
+
 
 
 export interface NotificationRow {
