@@ -487,7 +487,7 @@ export default function CommunityPlaceDetail() {
         </div>
       </div>
 
-      {isVerifiedPlace && (
+      {isVerifiedPlace && isOperational && (
         <PlaceCheckInSheet
           open={checkInOpen}
           onOpenChange={setCheckInOpen}
