@@ -469,7 +469,7 @@ export default function CommunityPlaceDetail() {
         <div className="flex gap-2">
           {/* WO-048: one check-in system only. Verified Community Places open the
               location-verified sheet; there is no alternate QR/legacy path. */}
-          {isVerifiedPlace && (
+          {isVerifiedPlace && isOperational && (
             <SecondaryButton
               className="flex-1 min-w-0 px-4 text-[15px]"
               onClick={() => setCheckInOpen(true)}
