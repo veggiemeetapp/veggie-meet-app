@@ -146,7 +146,11 @@ export default function Host() {
     staleTime: 60_000,
   });
 
-  const places = placesQuery.data ?? [];
+  // WO-053: places under status maintenance can't host new Meetups. The server
+  // re-validates this on insert; this only keeps them out of the picker.
+  const places = (placesQuery.data ?? []).filter(
+    (p) => (p.maintenanceStatus ?? "operational") === "operational",
+  );
   const isCustom = locationMode === "custom";
   const selectedPlace: CommunityPlace | undefined = isCustom
     ? undefined
