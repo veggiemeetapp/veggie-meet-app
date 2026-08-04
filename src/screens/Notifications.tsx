@@ -11,7 +11,9 @@ import {
   Leaf,
   Loader2,
   MailPlus,
+  MapPin,
   PartyPopper,
+  UserMinus,
   UserPlus,
 } from "lucide-react";
 
