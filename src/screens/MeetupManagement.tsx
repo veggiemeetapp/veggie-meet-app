@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { fetchCommunityPlacesByCity, fetchMeetupById } from "@/lib/backend";
+import { fetchPublishedCommunityPlaces, fetchMeetupById } from "@/lib/backend";
+import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchMeetupAttendees,
@@ -146,7 +147,7 @@ export default function MeetupManagement() {
   const placesQuery = useQuery({
     queryKey: ["manage-places", locCityId],
     enabled: !!locCityId,
-    queryFn: () => fetchCommunityPlacesByCity(locCityId!),
+    queryFn: () => fetchPublishedCommunityPlaces(locCityId!),
     staleTime: 60_000,
   });
 
