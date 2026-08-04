@@ -364,7 +364,42 @@ export default function OwnerPlaceReverify() {
                   {place.last_reverified_at ? formatDate(place.last_reverified_at) : "Never"}
                 </Row>
               </dl>
+
+              {/* WO-057 — correct the public details of this existing place. */}
+              {(() => {
+                const needsUpdateId = wsQ.data?.history.find(
+                  (h) => h.result === "needs_place_update",
+                )?.id;
+                return (
+                  <div className="rounded-lg border p-3 space-y-1.5 min-w-0">
+                    <p className="text-xs font-medium">
+                      {needsUpdateId
+                        ? "This place was flagged Needs place update"
+                        : "Public details need a correction?"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Corrections update this existing place. They never change its Google
+                      identity, vegan classification or operational status, and they never mark it
+                      Confirmed current.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        navigate(
+                          `/owner/places/${place.id}/edit?from=reverification${
+                            needsUpdateId ? `&reverification=${needsUpdateId}` : ""
+                          }`,
+                        )
+                      }
+                    >
+                      Edit public details
+                    </Button>
+                  </div>
+                );
+              })()}
             </section>
+
 
             {/* ---- Open member reports (safe summary) ---- */}
             <section className="space-y-2 min-w-0">

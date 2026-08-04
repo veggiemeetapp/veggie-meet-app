@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -59,6 +61,8 @@ const FAILURE_COPY: Record<string, string> = {
  */
 export function ReportQueue() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [placeAction, setPlaceAction] = useState<"" | ReportPlaceAction>("");
@@ -242,10 +246,25 @@ export function ReportQueue() {
                         )}
                       </Button>
                     </div>
+                    {/* WO-057 — correct wrong public details for this place. */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      aria-label={`Edit the public details of ${r.place_name}`}
+                      onClick={() =>
+                        navigate(
+                          `/owner/places/${r.community_place_id}/edit?from=member_report&report=${r.id}`,
+                        )
+                      }
+                    >
+                      Edit public details
+                    </Button>
                     <p className="text-[11px] text-muted-foreground">
                       The reporter is notified of the outcome only. Internal notes, your identity,
-                      and other members' reports are never shared.
+                      and other members' reports are never shared. Editing public details never
+                      resolves this report.
                     </p>
+
                   </div>
                 </>
               )}

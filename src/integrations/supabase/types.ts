@@ -310,6 +310,69 @@ export type Database = {
         }
         Relationships: []
       }
+      community_place_detail_changes: {
+        Row: {
+          after_data: Json
+          before_data: Json
+          changed_at: string
+          changed_by: string | null
+          changed_fields: string[]
+          community_place_id: string
+          created_at: string
+          id: string
+          internal_note: string
+          official_source_url: string | null
+          reason: string | null
+          source: string
+          source_reference_id: string | null
+        }
+        Insert: {
+          after_data?: Json
+          before_data?: Json
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[]
+          community_place_id: string
+          created_at?: string
+          id?: string
+          internal_note: string
+          official_source_url?: string | null
+          reason?: string | null
+          source: string
+          source_reference_id?: string | null
+        }
+        Update: {
+          after_data?: Json
+          before_data?: Json
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[]
+          community_place_id?: string
+          created_at?: string
+          id?: string
+          internal_note?: string
+          official_source_url?: string | null
+          reason?: string | null
+          source?: string
+          source_reference_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_detail_changes_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_place_detail_changes_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_place_reports: {
         Row: {
           additional_details: string | null
@@ -2328,6 +2391,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _detail_distance_m: {
+        Args: { _lat1: number; _lat2: number; _lon1: number; _lon2: number }
+        Returns: number
+      }
+      _detail_norm: { Args: { _t: string }; Returns: string }
+      _detail_token_overlap: {
+        Args: { _a: string; _b: string }
+        Returns: number
+      }
+      _detail_url_ok: { Args: { _u: string }; Returns: boolean }
       _insert_notification: {
         Args: {
           _actor: string
@@ -2474,6 +2547,14 @@ export type Database = {
           name: string
           timezone: string
         }[]
+      }
+      get_community_place_detail_changes: {
+        Args: { _place_id: string }
+        Returns: Json
+      }
+      get_community_place_edit_workspace: {
+        Args: { _place_id: string }
+        Returns: Json
       }
       get_community_place_maintenance: { Args: never; Returns: Json }
       get_community_place_status_history: {
@@ -2894,9 +2975,30 @@ export type Database = {
       }
       to_plan: { Args: { r: unknown }; Returns: Json }
       unaccent: { Args: { "": string }; Returns: string }
+      unaccent_fallback: { Args: { _t: string }; Returns: string }
       unblock_profile: {
         Args: { _blocked_profile_id: string }
         Returns: undefined
+      }
+      update_community_place_details: {
+        Args: {
+          _acknowledge_identity_risk?: boolean
+          _address: string
+          _category: string
+          _description?: string
+          _google_maps_url?: string
+          _internal_note?: string
+          _latitude?: number
+          _longitude?: number
+          _name: string
+          _neighborhood: string
+          _official_source_url?: string
+          _place_id: string
+          _source?: string
+          _source_reference_id?: string
+          _website_url?: string
+        }
+        Returns: Json
       }
       update_discovery_settings: {
         Args: {
