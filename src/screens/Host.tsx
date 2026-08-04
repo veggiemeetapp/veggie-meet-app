@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Camera, X, MapPin, Loader2, AlertTriangle } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
+import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { cn } from "@/lib/utils";
 import { TODAY_ISO } from "@/lib/mock-data";
 import type { CommunityPlace, MeetupCategory } from "@/types";
@@ -11,7 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext } from "@/hooks/useLocation";
-import { fetchCommunityPlacesByCity } from "@/lib/backend";
+import { fetchPublishedCommunityPlaces } from "@/lib/backend";
+
 import {
   Dialog,
   DialogContent,
