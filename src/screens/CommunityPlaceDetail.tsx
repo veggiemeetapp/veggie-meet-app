@@ -281,6 +281,33 @@ export default function CommunityPlaceDetail() {
         </div>
       </div>
 
+      {statusBanner && (
+        <div className="px-5 mt-4">
+          <div
+            role="status"
+            className={`rounded-2xl border p-3.5 min-w-0 ${
+              statusBanner.tone === "closed"
+                ? "border-destructive/40 bg-destructive/5"
+                : "border-amber-500/40 bg-amber-500/10"
+            }`}
+          >
+            <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
+              {statusBanner.title}
+            </p>
+            {place.statusNote && (
+              <p className="mt-1 text-[13px] leading-relaxed text-charcoal-muted line-clamp-4 [overflow-wrap:anywhere]">
+                {place.statusNote}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-charcoal-muted">
+              Hosting and check-ins are paused here for now.
+            </p>
+          </div>
+        </div>
+      )}
+
+
+
       {isVerifiedPlace && (
         <>
           <SectionTitle>About</SectionTitle>
