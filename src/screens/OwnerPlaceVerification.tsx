@@ -169,6 +169,11 @@ export default function OwnerPlaceVerification() {
         {/* ---- Community suggestions (private intake queue) ---- */}
         <SuggestionQueue onPromoted={(id) => setSelectedId(id)} />
 
+        {/* ---- Published place status maintenance (WO-053) ---- */}
+        <PlaceMaintenance />
+
+
+
         {/* ---- Candidate queue ---- */}
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Candidates ({candidatesQ.data?.length ?? 0})</h2>
