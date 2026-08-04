@@ -121,6 +121,16 @@ export default function Host() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // WO-051: location mode (Community Place vs Custom location).
+  const [searchParams] = useSearchParams();
+  const preselectedPlaceId = searchParams.get("community_place");
+  const preselectSource = preselectedPlaceId ? "place_detail" : "host_flow";
+  const [locationMode, setLocationMode] = useState<"community_place" | "custom">(
+    "community_place",
+  );
+  const [modeLogged, setModeLogged] = useState<string | null>(null);
+  const [preselectApplied, setPreselectApplied] = useState(false);
+
   // Seed city from Selected/Home once context resolves.
   useEffect(() => {
     if (cityId || !defaultCityId || !defaultCityName) return;
@@ -128,18 +138,46 @@ export default function Host() {
     setCityName(defaultCityName);
   }, [defaultCityId, defaultCityName, cityId]);
 
+  // Discovery list source of truth: published + verified + active + operational.
   const placesQuery = useQuery({
-    queryKey: ["host-places", cityId],
+    queryKey: ["host-published-places", cityId],
     enabled: !!cityId,
-    queryFn: () => fetchCommunityPlacesByCity(cityId!),
+    queryFn: () => fetchPublishedCommunityPlaces(cityId!),
     staleTime: 60_000,
   });
 
   const places = placesQuery.data ?? [];
-  const isCustom = placeId === CUSTOM_PLACE_ID;
-  const selectedPlace: CommunityPlace | undefined = places.find(
-    (p) => p.id === placeId,
-  );
+  const isCustom = locationMode === "custom";
+  const selectedPlace: CommunityPlace | undefined = isCustom
+    ? undefined
+    : places.find((p) => p.id === placeId);
+
+  function selectMode(mode: "community_place" | "custom") {
+    setLocationMode(mode);
+    if (mode === "custom") setPlaceId(CUSTOM_PLACE_ID);
+    else setPlaceId(null);
+    if (modeLogged !== mode) {
+      setModeLogged(mode);
+      logAnalyticsEvent("meetup_location_mode_selected", {
+        mode: mode === "custom" ? "custom" : "community_place",
+      });
+    }
+  }
+
+  // Preselect a Community Place arriving from /place/:id → Host a Meetup Here.
+  // Invalid or unavailable ids fall back silently to the normal Host flow.
+  useEffect(() => {
+    if (preselectApplied || !preselectedPlaceId || places.length === 0) return;
+    const match = places.find((p) => p.id === preselectedPlaceId);
+    setPreselectApplied(true);
+    if (!match) return;
+    setLocationMode("community_place");
+    setPlaceId(match.id);
+    logAnalyticsEvent("meetup_community_place_selected", {
+      place_id: match.id,
+      source: "place_detail",
+    });
+  }, [preselectApplied, preselectedPlaceId, places]);
 
   const coordsValid =
     (customLat === "" && customLng === "") ||
@@ -148,14 +186,19 @@ export default function Host() {
       Number(customLat) >= -90 && Number(customLat) <= 90 &&
       Number(customLng) >= -180 && Number(customLng) <= 180);
 
+  const placeError =
+    !isCustom && placeId === null && places.length > 0
+      ? "Choose a Community Place, or switch to a custom location."
+      : null;
+
   const canSubmit =
     title.trim().length > 0 &&
     categoryIdx !== null &&
     !!cityId &&
-    placeId !== null &&
     (!isCustom
       ? !!selectedPlace
       : customName.trim().length > 0 && customAddress.trim().length > 0 && coordsValid);
+
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
