@@ -100,6 +100,8 @@ export function PlaceCheckInSheet({
   const qc = useQueryClient();
   const [phase, setPhase] = useState<Phase>("explain");
   const [reason, setReason] = useState<CheckInReason>("location_unavailable");
+  const [newlySupported, setNewlySupported] = useState(true);
+  const [supportedTotal, setSupportedTotal] = useState<number | null>(null);
 
   // Reset only when the dialog opens — later `alreadyCheckedIn` updates (e.g.
   // the refetch triggered by a successful check-in) must not clobber the
@@ -128,7 +130,14 @@ export function PlaceCheckInSheet({
           new_distinct_count: result.distinctPlacesSupported,
         });
       }
+      setNewlySupported(!!result.isFirstVisitToPlace);
+      setSupportedTotal(
+        typeof result.distinctPlacesSupported === "number"
+          ? result.distinctPlacesSupported
+          : null,
+      );
       qc.invalidateQueries({ queryKey: ["place-checkin-state", placeId] });
+      qc.invalidateQueries({ queryKey: ["place-detail", placeId] });
       qc.invalidateQueries({ queryKey: ["me-impact-overview"] });
       qc.invalidateQueries({ queryKey: ["impact-overview"] });
       onCheckedIn();
@@ -192,14 +201,18 @@ export function PlaceCheckInSheet({
               <div className="mx-auto mb-1 w-14 h-14 rounded-full bg-soft-green flex items-center justify-center text-primary">
                 <CheckCircle2 className="w-7 h-7" aria-hidden />
               </div>
-              <DialogTitle className="text-center text-xl">Checked in!</DialogTitle>
+              <DialogTitle className="text-center text-xl">Visit verified</DialogTitle>
               <DialogDescription className="text-center">
-                Your visit to {placeName} has been verified.
+                {newlySupported
+                  ? `You supported ${placeName} and added it to your VeggieMeet impact.`
+                  : `Your visit to ${placeName} was verified. This place was already part of your supported places.`}
               </DialogDescription>
             </DialogHeader>
-            <p className="text-center text-sm text-charcoal-muted px-2">
-              This place now counts toward your Community Places Supported.
-            </p>
+            {supportedTotal !== null && (
+              <p className="text-center text-sm text-charcoal-muted px-2">
+                Community Places Supported: {supportedTotal}
+              </p>
+            )}
             <DialogFooter className="flex-col gap-2 sm:flex-col pt-2">
               <PrimaryButton fullWidth onClick={() => onOpenChange(false)}>
                 Done
