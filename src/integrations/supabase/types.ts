@@ -2844,6 +2844,7 @@ export type Database = {
           source_meetup_id: string
         }[]
       }
+      _meetup_place_integrity: { Args: { _meetup_id: string }; Returns: Json }
       _notify_place_report: {
         Args: {
           _place_name: string
@@ -2863,6 +2864,10 @@ export type Database = {
         Returns: undefined
       }
       _suggestion_norm: { Args: { _t: string }; Returns: string }
+      accept_meetup_current_place_location: {
+        Args: { _meetup_id: string }
+        Returns: Json
+      }
       acknowledge_meetup_update: {
         Args: { _meetup_id: string }
         Returns: undefined
@@ -3047,6 +3052,7 @@ export type Database = {
         Returns: Json
       }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
+      get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
       get_my_blocked_profiles: {
         Args: never
         Returns: {
