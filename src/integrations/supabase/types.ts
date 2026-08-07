@@ -3042,6 +3042,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_community_places_discovery: {
+        Args: { _city_id?: string; _include_all_cities?: boolean }
+        Returns: Json
+      }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
       get_my_blocked_profiles: {
         Args: never

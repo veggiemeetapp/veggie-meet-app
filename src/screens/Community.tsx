@@ -14,7 +14,7 @@ import {
 } from "@/lib/backend";
 import { TODAY_ISO } from "@/lib/mock-data";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
-import { formatDistanceBetween, locationFallbackLabel } from "@/lib/distance";
+import { formatDistanceBetween, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import type { CommunityPlace, Meetup } from "@/types";
 
 function greeting(hour: number) {
@@ -165,7 +165,7 @@ export default function Community() {
           ) : (
             <HScroll>
               {placesQuery.data!.map((p) => (
-                <PlaceNearbyCard key={p.id} place={p} cityCoords={cityCoords} cityLabel={cityLabel} />
+                <PlaceNearbyCard key={p.id} place={p} cityLabel={cityLabel} />
               ))}
             </HScroll>
           )}
@@ -365,22 +365,18 @@ function VeggieNearbyCard({ veggie }: { veggie: NearbyVeggie }) {
 
 function PlaceNearbyCard({
   place,
-  cityCoords,
   cityLabel,
 }: {
   place: CommunityPlace;
-  cityCoords: { latitude: number; longitude: number } | null;
+  cityCoords?: { latitude: number; longitude: number } | null;
   cityLabel: string | null;
 }) {
-  const distance =
-    cityCoords &&
-    formatDistanceBetween(cityCoords, {
-      latitude: place.latitude ?? null,
-      longitude: place.longitude ?? null,
-    });
+  // WO-061A: distance comes pre-computed from the server; no coordinates here.
+  const distance = formatDistanceMeters(place.distanceMeters ?? null);
   const label =
     distance ??
     locationFallbackLabel({ neighborhood: place.neighborhood, cityName: place.cityName ?? cityLabel });
+
 
   return (
     <Link to={`/place/${place.id}`} className="block">

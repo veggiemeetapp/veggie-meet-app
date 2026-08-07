@@ -267,8 +267,9 @@ export default function MeetupManagement() {
       locationName: locSelectedPlace.name,
       address: locSelectedPlace.address ?? null,
       neighborhood: locSelectedPlace.neighborhood ?? null,
-      latitude: locSelectedPlace.latitude ?? null,
-      longitude: locSelectedPlace.longitude ?? null,
+      // WO-061A: coordinates for a Community Place are filled in server-side.
+      latitude: null,
+      longitude: null,
       timezone:
         locSelectedPlace.timezone ??
         (selectedCity?.id === locCityId ? selectedCity?.timezone : null) ??

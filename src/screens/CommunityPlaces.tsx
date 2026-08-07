@@ -5,7 +5,7 @@ import { ArrowLeft, Leaf, MapPin, Utensils } from "lucide-react";
 import { AppHeader, Card } from "@/components/app";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
-import { distanceMeters, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
+import { formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import type { CommunityPlace, CommunityPlaceCategory } from "@/types";
 
@@ -51,13 +51,8 @@ export default function CommunityPlaces() {
     staleTime: 60_000,
   });
 
-  const cityCoords = useMemo(
-    () =>
-      selectedCity && selectedCity.latitude != null && selectedCity.longitude != null
-        ? { latitude: selectedCity.latitude, longitude: selectedCity.longitude }
-        : null,
-    [selectedCity],
-  );
+  // WO-061A: no client-side coordinate maths on Community Places.
+
 
   const all = placesQuery.data ?? [];
 
@@ -73,13 +68,12 @@ export default function CommunityPlaces() {
       return true;
     });
     return [...list].sort((a, b) => {
-      if (cityCoords) {
-        const da = distanceMeters(cityCoords, { latitude: a.latitude, longitude: a.longitude });
-        const db = distanceMeters(cityCoords, { latitude: b.latitude, longitude: b.longitude });
-        if (da != null && db != null && da !== db) return da - db;
-        if (da != null && db == null) return -1;
-        if (da == null && db != null) return 1;
-      }
+      // WO-061A: distance is computed server-side; coordinates never reach the client.
+      const da = a.distanceMeters ?? null;
+      const db = b.distanceMeters ?? null;
+      if (da != null && db != null && da !== db) return da - db;
+      if (da != null && db == null) return -1;
+      if (da == null && db != null) return 1;
       // Stable fallback: selected city first, then district, then name.
       const ca = a.cityId === cityId ? 0 : 1;
       const cb = b.cityId === cityId ? 0 : 1;
@@ -88,7 +82,8 @@ export default function CommunityPlaces() {
       if (na !== 0) return na;
       return a.name.localeCompare(b.name);
     });
-  }, [all, filter, veganOnly, cityCoords, cityId]);
+  }, [all, filter, veganOnly, cityId]);
+
 
   function changeFilter(next: Filter, nextVegan = veganOnly) {
     setFilter(next);
@@ -200,7 +195,6 @@ export default function CommunityPlaces() {
                 <PlaceListCard
                   place={place}
                   position={i}
-                  cityCoords={cityCoords}
                   cityLabel={cityLabel}
                 />
               </li>
@@ -259,19 +253,16 @@ function EmptyBlock({
 function PlaceListCard({
   place,
   position,
-  cityCoords,
   cityLabel,
 }: {
   place: CommunityPlace;
   position: number;
-  cityCoords: { latitude: number; longitude: number } | null;
+  cityCoords?: { latitude: number; longitude: number } | null;
   cityLabel: string | null;
 }) {
-  const distance = cityCoords
-    ? formatDistanceMeters(
-        distanceMeters(cityCoords, { latitude: place.latitude, longitude: place.longitude }),
-      )
-    : null;
+  // WO-061A: server-provided coarse distance only.
+  const distance = formatDistanceMeters(place.distanceMeters ?? null);
+
   const area = locationFallbackLabel({
     neighborhood: place.neighborhood,
     cityName: place.cityName ?? cityLabel,
