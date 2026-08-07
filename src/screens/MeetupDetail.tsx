@@ -258,7 +258,7 @@ export default function MeetupDetail() {
       />
 
       <div className="px-5 pt-5 space-y-8">
-        {meetup.location?.locationSource === "unknown" ? (
+        {isHistorical ? null : meetup.location?.locationSource === "unknown" ? (
           <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4">
             <p className="text-sm font-semibold text-charcoal">Location not set yet.</p>
             <p className="mt-1 text-xs text-charcoal-muted">
