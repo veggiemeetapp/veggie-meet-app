@@ -262,7 +262,7 @@ export default function MeetupDetail() {
 
         <MeetupInfo meetup={meetup} place={place} distanceKm={mockDistance(meetup.id)} />
 
-        <MeetupPlaceSection communityPlaceId={meetup.communityPlaceId} />
+        {isRealMeetup && <MeetupPlaceSection meetupId={meetup.id} />}
 
 
         {host && <HostCard host={host} />}
