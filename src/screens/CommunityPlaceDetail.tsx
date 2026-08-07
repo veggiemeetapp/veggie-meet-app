@@ -1,245 +1,138 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-
   ArrowLeft,
   MapPin,
   Leaf,
   Navigation,
-  Wifi,
-  Plug,
-  Trees,
-  PawPrint,
-  Accessibility,
-  Car,
-  Users,
+  ShieldCheck,
   CalendarDays,
+  Users,
+  Share2,
+  ExternalLink,
+  Globe,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { logAnalyticsEvent } from "@/lib/analytics";
-import { Card, PrimaryButton, SecondaryButton, MeetupCard } from "@/components/app";
-import { communityPlaces } from "@/lib/mock-data";
-import { fetchUpcomingMeetupsAtPlace, fetchCommunityPlaceById } from "@/lib/backend";
+import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
-import { fetchPlaceCheckInState } from "@/lib/placeVisits";
 import { placeStatusBanner } from "@/lib/placeMaintenance";
-import { useAuth } from "@/hooks/useAuth";
-
-
-import { meetups as mockMeetups } from "@/lib/mock-data";
-
-type DietaryBadge = "100% Vegan" | "Vegetarian Friendly" | "Vegan Options";
-
-interface PlaceExtras {
-  district: string;
-  dietary: DietaryBadge;
-  about: string;
-  highlights: string[];
-  amenities: Array<keyof typeof AMENITY_ICONS>;
-  activity: string[];
-  photos: string[];
-  lat?: number;
-  lng?: number;
-}
-
-const AMENITY_ICONS = {
-  "Wi-Fi": Wifi,
-  "Power outlets": Plug,
-  "Outdoor seating": Trees,
-  "Pet friendly": PawPrint,
-  "Wheelchair accessible": Accessibility,
-  Parking: Car,
-} as const;
-
-const PLACE_EXTRAS: Record<string, PlaceExtras> = {
-  p_kashew: {
-    district: "District 1, Ho Chi Minh City",
-    dietary: "100% Vegan",
-    about:
-      "A calm, sunlit café built around a long communal table. Veggies love it for slow oat lattes, warm cashew pastries, and the kind of quiet that makes it easy to start a conversation with someone new.",
-    highlights: [
-      "Weekly coffee meetups",
-      "Great for first meetups",
-      "Quiet weekday mornings",
-      "Popular coworking spot",
-    ],
-    amenities: ["Wi-Fi", "Power outlets", "Outdoor seating", "Wheelchair accessible"],
-    activity: [
-      "Recently visited by Veggies",
-      "Frequently hosts Meetups",
-      "Popular with the community",
-    ],
-    photos: [
-      "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=800&q=80",
-      "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=800&q=80",
-      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&q=80",
-      "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=800&q=80",
-    ],
-  },
-  p_hum: {
-    district: "District 3, Ho Chi Minh City",
-    dietary: "100% Vegan",
-    about:
-      "A garden-set restaurant serving seasonal plant-based Vietnamese cooking. Big shared tables and a leafy courtyard make it a natural home for dinner clubs and celebration meetups.",
-    highlights: [
-      "Popular for dinner meetups",
-      "Great for groups",
-      "Garden seating",
-      "Warm, welcoming staff",
-    ],
-    amenities: ["Outdoor seating", "Wheelchair accessible", "Parking", "Pet friendly"],
-    activity: [
-      "Frequently hosts Meetups",
-      "Recently visited by Veggies",
-    ],
-    photos: [
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80",
-      "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=800&q=80",
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
-      "https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=800&q=80",
-    ],
-  },
-  p_running_bean: {
-    district: "District 1, Ho Chi Minh City",
-    dietary: "Vegan Options",
-    about:
-      "A cozy neighborhood café known for late hours and easy hangs. Veggies drop in for board game nights, casual catch-ups, and a reliable oat flat white.",
-    highlights: [
-      "Open late",
-      "Board game friendly",
-      "Casual atmosphere",
-      "Good for small groups",
-    ],
-    amenities: ["Wi-Fi", "Power outlets", "Outdoor seating"],
-    activity: [
-      "Popular with the community",
-      "Recently visited by Veggies",
-    ],
-    photos: [
-      "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=800&q=80",
-      "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80",
-    ],
-  },
-};
-
-const DEFAULT_EXTRAS: PlaceExtras = {
-  district: "",
-  dietary: "Vegan Options",
-  about: "A community-loved gathering spot.",
-  highlights: ["Popular with the community"],
-  amenities: ["Wi-Fi"],
-  activity: ["Recently visited by Veggies"],
-  photos: [],
-};
-
-const CLASSIFICATION_LABEL: Record<string, string> = {
-  fully_vegan: "100% Vegan",
-  fully_vegetarian: "100% Vegetarian",
-  vegetarian_friendly: "Vegetarian Friendly",
-  vegan_options: "Vegan Options",
-  not_food: "Community Space",
-};
-
-const CATEGORY_LABEL: Record<string, string> = {
-  restaurant: "Restaurant",
-  cafe: "Café",
-  park: "Park",
-  market: "Market",
-  studio: "Studio",
-  venue: "Venue",
-};
-
-function placeCategoryLabel(category: string) {
-  return CATEGORY_LABEL[category] ?? "Venue";
-}
-
-
+import type { CommunityPlaceMaintenanceStatus } from "@/types";
+import {
+  fetchCommunityPlaceDetail,
+  formatMeetupWhen,
+  formatVisitDate,
+  CLASSIFICATION_LABEL,
+  PLACE_CATEGORY_LABEL,
+  FRESHNESS_LABEL,
+  type PlaceDetailMeetup,
+} from "@/lib/placeDetail";
 
 export default function CommunityPlaceDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const mockPlace = useMemo(() => communityPlaces.find((p) => p.id === id), [id]);
-  const extras = PLACE_EXTRAS[id] ?? DEFAULT_EXTRAS;
+  const [search] = useSearchParams();
+  const source = search.get("from") ?? "direct";
 
-  const { data: dbPlace = null } = useQuery({
-    queryKey: ["community-place", id],
-    enabled: !!id && !mockPlace,
-    queryFn: () => fetchCommunityPlaceById(id),
-  });
+  const [checkInOpen, setCheckInOpen] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
 
-  const place = mockPlace ?? dbPlace;
-  const isVerifiedPlace = !mockPlace && !!dbPlace;
-
-  const { data: upcomingHere = [] } = useQuery({
-    queryKey: ["place-upcoming", id],
-    enabled: !!place,
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["place-detail", id],
+    enabled: !!id,
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const backendHere = await fetchUpcomingMeetupsAtPlace(id, today).catch(() => []);
-      if (backendHere.length > 0) return backendHere;
-      if (isVerifiedPlace) return [];
-      // Fallback so the section is always meaningful in demo mode.
-      return mockMeetups.filter((m) => m.communityPlaceId === id);
+      const detail = await fetchCommunityPlaceDetail(id);
+      logAnalyticsEvent("community_place_detail_opened", { source });
+      return detail;
     },
   });
 
-  const { profile } = useAuth();
-  const [checkInOpen, setCheckInOpen] = useState(false);
-
-  const { data: checkInState } = useQuery({
-    queryKey: ["place-checkin-state", id],
-    enabled: !!id && isVerifiedPlace && !!profile?.id,
-    queryFn: () => fetchPlaceCheckInState(id),
-  });
-  const isCheckedIn = !!checkInState?.checkedIn;
-
-
-
-  if (!place) {
+  if (isLoading) {
     return (
-      <div className="flex flex-col min-h-dvh">
-        <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Back"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-base font-semibold text-charcoal">Community Place</h1>
+      <PageFrame onBack={() => navigate(-1)}>
+        <div className="px-5 py-10 space-y-3" role="status" aria-live="polite">
+          <span className="sr-only">Loading this Community Place</span>
+          <div className="h-40 rounded-2xl bg-muted animate-pulse" />
+          <div className="h-5 w-2/3 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
-          <p className="text-charcoal font-medium">This place isn't available.</p>
-          <button onClick={() => navigate("/community")} className="mt-2 text-sm font-semibold text-primary">
-            Back to Community
-          </button>
-        </div>
-      </div>
+      </PageFrame>
     );
   }
 
-  const directionsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${place.name} ${place.address}`,
-  )}`;
+  if (isError) {
+    return (
+      <PageFrame onBack={() => navigate(-1)}>
+        <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 text-center gap-3" role="alert">
+          <p className="text-charcoal font-medium">We couldn't load this place.</p>
+          <SecondaryButton onClick={() => refetch()}>Try Again</SecondaryButton>
+        </div>
+      </PageFrame>
+    );
+  }
 
-  const dietaryLabel = isVerifiedPlace
-    ? CLASSIFICATION_LABEL[place.veggieClassification ?? ""] ?? null
-    : extras.dietary;
-  const showCover = place.hasCoverImage !== false;
-  // WO-053: owner-maintained status. Non-operational places stay readable but
-  // lose hosting and check-in; the server enforces both independently.
-  const maintenanceStatus = isVerifiedPlace ? place.maintenanceStatus ?? "operational" : "operational";
-  const isOperational = maintenanceStatus === "operational";
+  const place = data?.found ? data.place : undefined;
+
+  if (!place) {
+    return (
+      <PageFrame onBack={() => navigate(-1)}>
+        <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 text-center gap-3">
+          <p className="text-charcoal font-medium">This place isn't available.</p>
+          <button
+            onClick={() => navigate("/community/places")}
+            className="mt-2 text-sm font-semibold text-primary"
+          >
+            Browse Community Places
+          </button>
+        </div>
+      </PageFrame>
+    );
+  }
+
+  const mySupport = data!.my_support!;
+  const impact = data!.impact!;
+  const meetups = data!.upcoming_meetups;
+  const maintenanceStatus = place.maintenance_status as CommunityPlaceMaintenanceStatus;
   const statusBanner = placeStatusBanner(maintenanceStatus);
+  const isOperational = maintenanceStatus === "operational";
+  const canCheckIn = mySupport.check_in_available;
+  const canHost = data!.can_host_here;
+
+  const directionsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${place.name} ${place.address ?? ""}`,
+  )}`;
+  const dietaryLabel = CLASSIFICATION_LABEL[place.veggie_classification ?? ""] ?? null;
+
+  async function onShare() {
+    const url = `${window.location.origin}/place/${place!.id}`;
+    const shareData = {
+      title: place!.name,
+      text: `${place!.name} — a verified VeggieMeet Community Place`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        logAnalyticsEvent("community_place_shared", { method: "web_share" });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      logAnalyticsEvent("community_place_shared", { method: "copy_link" });
+      setShareMessage("Link copied");
+      window.setTimeout(() => setShareMessage(""), 2500);
+    } catch {
+      /* user dismissed the share sheet — nothing to report */
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-dvh pb-40">
       {/* Hero */}
-      <div className="relative h-64">
-        {showCover ? (
-          <img src={place.coverImageUrl} alt="" className="w-full h-full object-cover" />
+      <div className="relative h-56 sm:h-64">
+        {place.has_cover_image && place.cover_image_url ? (
+          <img src={place.cover_image_url} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-soft-green flex items-center justify-center">
             <Leaf className="w-12 h-12 text-primary/60" aria-hidden />
@@ -249,35 +142,35 @@ export default function CommunityPlaceDetail() {
         <button
           onClick={() => navigate(-1)}
           aria-label="Back"
-          className="absolute top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center bg-background/90 backdrop-blur text-charcoal shadow-sm"
+          className="absolute top-4 left-4 min-w-11 min-h-11 rounded-full flex items-center justify-center bg-background/90 backdrop-blur text-charcoal shadow-sm"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" aria-hidden />
         </button>
       </div>
 
-      {/* Title block */}
-      <div className="px-5 -mt-6 relative">
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            {dietaryLabel && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-soft-green text-primary">
-                <Leaf className="w-3 h-3" />
-                {dietaryLabel}
-              </span>
-            )}
-            {isVerifiedPlace && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-charcoal">
-                {placeCategoryLabel(place.category)}
-              </span>
-            )}
-          </div>
-          <h1 className="text-[26px] font-semibold text-charcoal leading-tight tracking-tight">
-            {place.name}
-          </h1>
-          <div className="flex items-center gap-1.5 text-sm text-charcoal-muted">
-            <MapPin className="w-4 h-4 shrink-0" />
-            <span>{isVerifiedPlace ? place.address : extras.district || place.address}</span>
-          </div>
+      <div className="px-5 -mt-6 relative space-y-2.5 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          {dietaryLabel && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-soft-green text-primary">
+              <Leaf className="w-3 h-3" aria-hidden />
+              {dietaryLabel}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-charcoal">
+            {PLACE_CATEGORY_LABEL[place.category] ?? "Venue"}
+          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-charcoal-muted">
+            {FRESHNESS_LABEL[place.verification_freshness]}
+          </span>
+        </div>
+        <h1 className="text-[26px] font-semibold text-charcoal leading-tight tracking-tight [overflow-wrap:anywhere]">
+          {place.name}
+        </h1>
+        <div className="flex items-start gap-1.5 text-sm text-charcoal-muted min-w-0">
+          <MapPin className="w-4 h-4 shrink-0 mt-0.5" aria-hidden />
+          <span className="[overflow-wrap:anywhere]">
+            {[place.neighborhood, place.address].filter(Boolean).join(" · ")}
+          </span>
         </div>
       </div>
 
@@ -294,234 +187,354 @@ export default function CommunityPlaceDetail() {
             <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
               {statusBanner.title}
             </p>
-            {/* WO-053: the owner reason note is internal only and is never rendered here. */}
             <p className="mt-1 text-xs text-charcoal-muted">
-              {maintenanceStatus === "permanently_closed"
-                ? "This place is kept as a historical record. Hosting and check-ins are closed."
-                : "Hosting and check-ins are paused here for now."}
+              Hosting and check-ins are paused here for now.
             </p>
           </div>
         </div>
       )}
 
+      {/* Trust */}
+      <SectionTitle>Verified by VeggieMeet</SectionTitle>
+      <div className="px-5">
+        <Card className="space-y-2.5 min-w-0">
+          <div className="flex items-start gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden />
+            <p className="text-sm text-charcoal leading-relaxed">
+              This place has been confirmed as a 100% vegan Community Place through
+              VeggieMeet's verification process.
+            </p>
+          </div>
+          <p className="text-xs text-charcoal-muted">
+            {FRESHNESS_LABEL[place.verification_freshness]}
+            {place.last_verified_at
+              ? ` · Last checked ${formatVisitDate(place.last_verified_at)}`
+              : ""}
+          </p>
+        </Card>
+      </div>
 
-
-      {isVerifiedPlace && (
+      {place.description && (
         <>
           <SectionTitle>About</SectionTitle>
-          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted break-words">
+          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted [overflow-wrap:anywhere]">
             {place.description}
           </p>
-
-          {place.veggieReason && (
-            <>
-              <SectionTitle>Why Veggies Love It</SectionTitle>
-              <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted break-words">
-                {place.veggieReason}
-              </p>
-            </>
-          )}
-
-          <SectionTitle>Links</SectionTitle>
-          <div className="px-5 flex flex-col gap-2">
-            {place.websiteUrl && (
-              <a
-                href={place.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-semibold text-primary break-all"
-              >
-                Official website
-              </a>
-            )}
-            {place.googleMapsUrl && (
-              <a
-                href={place.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-semibold text-primary break-all"
-              >
-                View on Google Maps
-              </a>
-            )}
-          </div>
         </>
       )}
 
-
-      {/* Community Highlights (demo content only) */}
-      {!isVerifiedPlace && (
+      {place.veggie_reason && (
         <>
-          <SectionTitle>Community Highlights</SectionTitle>
-          <div className="px-5">
-            <Card className="space-y-2.5">
-              {extras.highlights.map((h) => (
-                <div key={h} className="flex items-start gap-2.5">
-                  <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                  <span className="text-sm text-charcoal leading-relaxed">{h}</span>
-                </div>
-              ))}
-            </Card>
-          </div>
+          <SectionTitle>Why Veggies Love It</SectionTitle>
+          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted [overflow-wrap:anywhere]">
+            {place.veggie_reason}
+          </p>
         </>
       )}
 
-
-      {/* Upcoming Here */}
-      <SectionTitle>Upcoming Here</SectionTitle>
+      {/* Your support */}
+      <SectionTitle>Your support</SectionTitle>
       <div className="px-5">
-        {upcomingHere.length > 0 ? (
+        <Card className="space-y-2 min-w-0">
+          <p className="text-sm text-charcoal leading-relaxed">
+            {mySupport.verified_visit_count === 0
+              ? "You have not verified a visit here yet."
+              : mySupport.verified_visit_count === 1
+                ? "You have supported this Community Place once."
+                : `You have supported this Community Place ${mySupport.verified_visit_count} times.`}
+          </p>
+          {mySupport.last_verified_visit_at && (
+            <p className="text-xs text-charcoal-muted">
+              Last verified visit {formatVisitDate(mySupport.last_verified_visit_at)}
+            </p>
+          )}
+          <p className="text-xs text-charcoal-muted">
+            {mySupport.counts_toward_supported_places
+              ? "This place counts toward your Community Places Supported."
+              : canCheckIn
+                ? "Check in when you are at this place to add it to your Community Places Supported."
+                : "Check-ins are unavailable here right now."}
+          </p>
+          {mySupport.counts_toward_supported_places && (
+            <button
+              type="button"
+              onClick={() => navigate("/you/places-supported?from=place_detail")}
+              className="text-sm font-semibold text-primary underline underline-offset-4"
+            >
+              View places you've supported
+            </button>
+          )}
+        </Card>
+      </div>
+
+      {/* Upcoming Meetups */}
+      <SectionTitle>Upcoming Meetups here</SectionTitle>
+      <div className="px-5">
+        {meetups.length > 0 ? (
           <div className="space-y-3">
-            {upcomingHere.slice(0, 3).map((m) => (
-              <MeetupCard key={m.id} meetup={m} />
+            {meetups.slice(0, 3).map((m) => (
+              <PlaceMeetupCard
+                key={m.id}
+                meetup={m}
+                onOpen={() => {
+                  logAnalyticsEvent("community_place_meetup_opened", { source: "place_detail" });
+                  navigate(`/meetup/${m.id}`);
+                }}
+              />
             ))}
+            {data!.upcoming_meetups_total > 3 && (
+              <button
+                type="button"
+                onClick={() => navigate("/community?tab=meetups")}
+                className="text-sm font-semibold text-primary underline underline-offset-4"
+              >
+                Show all upcoming Meetups
+              </button>
+            )}
           </div>
         ) : (
-          <p className="text-sm text-charcoal-muted">
-            {isOperational
-              ? "No Meetups scheduled here yet. Be the first to host one."
-              : "No Meetups scheduled here."}
-          </p>
-        )}
-        {isVerifiedPlace && isOperational && (
-          <PrimaryButton
-            fullWidth
-            className="mt-3"
-            onClick={() => {
-              logAnalyticsEvent("host_from_place_tapped", { place_id: place.id });
-              navigate(`/host?community_place=${place.id}`);
-            }}
-          >
-            Host a Meetup Here
-          </PrimaryButton>
+          <Card className="space-y-2 min-w-0">
+            <h3 className="text-[15px] font-semibold text-charcoal">
+              No upcoming Meetups here yet
+            </h3>
+            <p className="text-sm text-charcoal-muted leading-relaxed">
+              This place can still be a great spot to bring the community together.
+            </p>
+            {canHost && (
+              <PrimaryButton
+                fullWidth
+                className="mt-1"
+                onClick={() => {
+                  logAnalyticsEvent("community_place_host_started", { source: "place_detail" });
+                  navigate(`/host?community_place=${place.id}`);
+                }}
+              >
+                Host a Meetup here
+              </PrimaryButton>
+            )}
+          </Card>
         )}
       </div>
 
-      {/* Demo-only enrichment sections */}
-      {!isVerifiedPlace && (
-        <>
-          <SectionTitle>Community Activity</SectionTitle>
-          <div className="px-5">
-            <Card className="space-y-3">
-              {extras.activity.map((a, i) => {
-                const Icon = i === 0 ? Users : i === 1 ? CalendarDays : Sparkles;
-                return (
-                  <div key={a} className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-full bg-soft-green flex items-center justify-center text-primary shrink-0">
-                      <Icon className="w-4 h-4" />
-                    </span>
-                    <span className="text-sm text-charcoal">{a}</span>
-                  </div>
-                );
-              })}
-            </Card>
-          </div>
+      {/* Community impact */}
+      <SectionTitle>Community impact</SectionTitle>
+      <div className="px-5">
+        <Card className="space-y-3 min-w-0">
+          <ImpactRow
+            icon={<Users className="w-4 h-4" aria-hidden />}
+            label="Community members who supported this place"
+            value={
+              impact.supporter_threshold_met && impact.supporter_count !== null
+                ? String(impact.supporter_count)
+                : "Community support is growing"
+            }
+          />
+          <ImpactRow
+            icon={<CalendarDays className="w-4 h-4" aria-hidden />}
+            label="Upcoming Meetups"
+            value={String(impact.upcoming_meetups)}
+          />
+          <ImpactRow
+            icon={<Sparkles className="w-4 h-4" aria-hidden />}
+            label="Meetups hosted here"
+            value={String(impact.meetups_hosted)}
+          />
+        </Card>
+      </div>
 
-          <SectionTitle>About</SectionTitle>
-          <p className="px-5 text-[15px] leading-relaxed text-charcoal-muted">
-            {extras.about}
-          </p>
-
-          <SectionTitle>Amenities</SectionTitle>
-          <div className="px-5 flex flex-wrap gap-2">
-            {extras.amenities.map((label) => {
-              const Icon = AMENITY_ICONS[label];
-              return (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-charcoal text-xs font-medium"
-                >
-                  <Icon className="w-3.5 h-3.5 text-charcoal-muted" />
-                  {label}
-                </span>
-              );
-            })}
-          </div>
-
-          {extras.photos.length > 0 && (
-            <>
-              <SectionTitle>Photos</SectionTitle>
-              <div
-                className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
-                style={{ scrollSnapType: "x mandatory" }}
-              >
-                {extras.photos.map((src, i) => (
-                  <img
-                    key={i}
-                    src={src}
-                    alt=""
-                    loading="lazy"
-                    className="h-40 w-56 rounded-2xl object-cover shrink-0 bg-muted"
-                    style={{ scrollSnapAlign: "start" }}
-                  />
-                ))}
-              </div>
-            </>
+      {/* Links & secondary actions */}
+      <SectionTitle>More</SectionTitle>
+      <div className="px-5 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {place.website_url && (
+            <a
+              href={place.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-sm font-semibold text-charcoal min-h-11"
+            >
+              <Globe className="w-4 h-4" aria-hidden />
+              Visit official website (opens in a new tab)
+            </a>
           )}
-        </>
-      )}
+          {place.google_maps_url && (
+            <a
+              href={place.google_maps_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() =>
+                logAnalyticsEvent("community_place_directions_opened", { source: "maps_link" })
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-sm font-semibold text-charcoal min-h-11"
+            >
+              <ExternalLink className="w-4 h-4" aria-hidden />
+              Open this place on Google Maps
+            </a>
+          )}
+        </div>
 
+        <div className="flex flex-wrap gap-2">
+          <SecondaryButton onClick={onShare}>
+            <Share2 className="w-4 h-4 mr-1.5" aria-hidden />
+            Share this place
+          </SecondaryButton>
+        </div>
+        <p role="status" aria-live="polite" className="text-xs font-medium text-primary min-h-4">
+          {shareMessage}
+        </p>
 
-      {/* WO-054: member issue reporting. Available on every published place,
-          including non-operational ones, and never changes the place itself. */}
-      {isVerifiedPlace && (
-        <div className="px-5 mt-8">
+        <div>
           <button
             type="button"
             onClick={() => {
-              logAnalyticsEvent("community_place_report_entry_tapped", { place_id: place.id });
+              logAnalyticsEvent("community_place_report_started");
               navigate(`/place/${place.id}/report`);
             }}
             className="text-sm font-semibold text-charcoal-muted underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
-            Report an issue with this place
+            Report an issue or suggest a correction
           </button>
           <p className="mt-1.5 text-xs text-charcoal-muted">
             Reports are private and reviewed by our team before anything changes.
           </p>
         </div>
-      )}
+      </div>
 
-      {/* Bottom action */}
-
-      <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0" style={{ bottom: "var(--nav-height)" }}>
+      {/* Sticky actions */}
+      <div
+        className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0"
+        style={{ bottom: "var(--nav-height)" }}
+      >
         <div className="flex gap-2">
-          {/* WO-048: one check-in system only. Verified Community Places open the
-              location-verified sheet; there is no alternate QR/legacy path. */}
-          {isVerifiedPlace && isOperational && (
+          {canCheckIn && (
             <SecondaryButton
               className="flex-1 min-w-0 px-4 text-[15px]"
               onClick={() => setCheckInOpen(true)}
             >
-              <span className="truncate">{isCheckedIn ? "Checked In" : "Check In"}</span>
+              {mySupport.in_cooldown ? (
+                <span className="truncate inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden />
+                  Checked In
+                </span>
+              ) : (
+                <span className="truncate">Check In</span>
+              )}
+            </SecondaryButton>
+          )}
+          {!canCheckIn && !isOperational && (
+            <SecondaryButton
+              className="flex-1 min-w-0 px-4 text-[15px]"
+              disabled
+              title="Check-ins are paused while this place isn't operational"
+            >
+              <span className="truncate">Check-in unavailable</span>
             </SecondaryButton>
           )}
           <PrimaryButton
             className="flex-1 min-w-0 px-4 text-[15px]"
-            onClick={() => window.open(directionsHref, "_blank", "noopener,noreferrer")}
+            onClick={() => {
+              logAnalyticsEvent("community_place_directions_opened", { source: "place_detail" });
+              window.open(directionsHref, "_blank", "noopener,noreferrer");
+            }}
           >
-            <Navigation className="w-4 h-4 mr-1.5 shrink-0" />
-            <span className="truncate">Get Directions</span>
+            <Navigation className="w-4 h-4 mr-1.5 shrink-0" aria-hidden />
+            <span className="truncate">Get directions</span>
           </PrimaryButton>
         </div>
       </div>
 
-      {isVerifiedPlace && isOperational && (
+      {canCheckIn && (
         <PlaceCheckInSheet
           open={checkInOpen}
           onOpenChange={setCheckInOpen}
           placeId={place.id}
           placeName={place.name}
-          alreadyCheckedIn={isCheckedIn}
+          alreadyCheckedIn={mySupport.in_cooldown}
           directionsHref={directionsHref}
-          onCheckedIn={() => undefined}
-          onViewImpact={() =>
-            navigate("/you/places-supported?from=check_in_success")
-          }
+          onCheckedIn={() => refetch()}
+          onViewImpact={() => navigate("/you/places-supported?from=check_in_success")}
         />
       )}
     </div>
+  );
+}
 
+function PageFrame({
+  children,
+  onBack,
+}: {
+  children: React.ReactNode;
+  onBack: () => void;
+}) {
+  return (
+    <div className="flex flex-col min-h-dvh">
+      <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
+        <button
+          onClick={onBack}
+          aria-label="Back"
+          className="min-w-11 min-h-11 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
+        >
+          <ArrowLeft className="w-5 h-5" aria-hidden />
+        </button>
+        <h1 className="text-base font-semibold text-charcoal">Community Place</h1>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ImpactRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 min-w-0">
+      <span className="w-8 h-8 rounded-full bg-soft-green flex items-center justify-center text-primary shrink-0">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">{value}</p>
+        <p className="text-xs text-charcoal-muted [overflow-wrap:anywhere]">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function PlaceMeetupCard({
+  meetup,
+  onOpen,
+}: {
+  meetup: PlaceDetailMeetup;
+  onOpen: () => void;
+}) {
+  const full = meetup.attendee_count >= meetup.capacity;
+  return (
+    <Card interactive onClick={onOpen} className="space-y-1.5 min-w-0">
+      <h3 className="text-[15px] font-semibold text-charcoal [overflow-wrap:anywhere]">
+        {meetup.title}
+      </h3>
+      <p className="text-xs text-charcoal-muted">
+        {formatMeetupWhen(meetup.date, meetup.start_time)}
+      </p>
+      <div className="flex items-center gap-2 flex-wrap text-xs text-charcoal-muted">
+        {meetup.host_display_name && <span>Hosted by {meetup.host_display_name}</span>}
+        <span className="inline-flex items-center gap-1">
+          <Users className="w-3.5 h-3.5" aria-hidden />
+          {meetup.attendee_count} of {meetup.capacity} joined
+        </span>
+        {full && (
+          <span className="px-2 py-0.5 rounded-full bg-muted font-semibold text-charcoal">
+            Full
+          </span>
+        )}
+      </div>
+      <span className="inline-block text-sm font-semibold text-primary">View Meetup</span>
+    </Card>
   );
 }
 
@@ -532,4 +545,3 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     </h2>
   );
 }
-
