@@ -406,7 +406,7 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
  * status_changed_by are deliberately excluded: they are internal-only and are
  * readable exclusively through the owner-only maintenance RPCs.
  */
-const PUBLIC_PLACE_COLUMNS = "id,name,category,address,cover_image_url,upcoming_meetups_count,meetups_this_month,veggies_visited_count,created_at,updated_at,city_id,neighborhood,timezone,latitude,longitude,is_active,google_place_id,google_maps_url,verification_status,verified_at,source,business_status,image_rights_status,description,veggie_reason,website_url,veggie_classification,maintenance_status,status_changed_at,last_reverified_at, cities(name)";
+const PUBLIC_PLACE_COLUMNS = "id,name,category,address,cover_image_url,upcoming_meetups_count,meetups_this_month,veggies_visited_count,created_at,updated_at,city_id,neighborhood,timezone,latitude,longitude,is_active,google_maps_url,verification_status,verified_at,business_status,image_rights_status,description,veggie_reason,website_url,veggie_classification,maintenance_status,status_changed_at,last_reverified_at, cities(name)";
 
 /**
  * WO-053 — the single discovery eligibility rule shared by every browse surface:
