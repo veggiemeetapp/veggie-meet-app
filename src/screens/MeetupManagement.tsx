@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   Save,
   Ban,
+  CheckCircle2,
+
 } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
 import {
@@ -36,6 +38,13 @@ import {
 } from "@/lib/meetupManagement";
 import { updateMeetupLocation } from "@/lib/location";
 import { fetchMeetupPlaceContext } from "@/lib/meetupPlaceContext";
+import {
+  blockedReasonCopy,
+  completeHostedMeetup,
+  fetchMeetupLifecycle,
+} from "@/lib/meetupLifecycle";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 import { MeetupLocationStatus } from "@/components/meetup";
 import { CitySelector } from "@/components/location/CitySelector";
 import { useLocationContext } from "@/hooks/useLocation";
@@ -86,6 +95,14 @@ export default function MeetupManagement() {
     enabled: !!id && !authLoading,
     queryFn: () => fetchMeetupAttendees(id!),
   });
+
+  // WO-063 — single server-authoritative lifecycle read model.
+  const lifecycleQuery = useQuery({
+    queryKey: ["meetup-lifecycle", id],
+    enabled: !!id && !authLoading,
+    queryFn: () => fetchMeetupLifecycle(id!),
+  });
+
 
   const meetup = meetupQuery.data;
   const isHost = !!(meetup && profile?.id && meetup.hostId === profile.id);
@@ -228,6 +245,9 @@ export default function MeetupManagement() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const [completing, setCompleting] = useState(false);
+
 
   // ---- Location editor derivations (must stay above early returns so the
   // hook order is stable across loading / not-found / not-host renders) ----
@@ -327,6 +347,49 @@ export default function MeetupManagement() {
   }
 
   const isCancelled = meetup.status === "cancelled";
+
+  // WO-063 — completion is decided by the server; the UI only mirrors it.
+  const lifecycle = lifecycleQuery.data;
+  const isCompleted = !!lifecycle?.is_completed;
+  const canComplete = !!lifecycle?.can_complete;
+  const completionBlocked =
+    lifecycle && lifecycle.is_host && lifecycle.has_ended && !isCompleted && !canComplete
+      ? blockedReasonCopy(lifecycle.blocked_reason)
+      : null;
+  const locked = isCancelled || isCompleted;
+
+  async function handleComplete() {
+    if (!meetup) return;
+    setCompleting(true);
+    try {
+      const res = await completeHostedMeetup(meetup.id);
+      toast({
+        title:
+          res.result === "already_completed"
+            ? "Already completed"
+            : "Meetup completed",
+        description:
+          "It now counts toward Hosting Meetups in your Community Impact.",
+      });
+      setCompleteOpen(false);
+      await qc.invalidateQueries({ queryKey: ["meetup-lifecycle", meetup.id] });
+      await qc.invalidateQueries({ queryKey: ["managed-meetup", meetup.id] });
+      await qc.invalidateQueries({ queryKey: ["meetup-membership", meetup.id] });
+      await qc.invalidateQueries({ queryKey: ["my-community-impact"] });
+      await qc.invalidateQueries({ queryKey: ["community-impact"] });
+      await qc.invalidateQueries({ queryKey: ["my-plans"] });
+    } catch (e: any) {
+      logAnalyticsEvent("meetup_completion_blocked", { reason: "rpc_error" });
+      toast({
+        title: "Couldn't complete Meetup",
+        description: e?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCompleting(false);
+    }
+  }
+
 
   async function handleSave() {
     if (!meetup || !canSave) return;
@@ -516,7 +579,45 @@ export default function MeetupManagement() {
         </section>
 
         {/* Edit form (disabled if cancelled) */}
-        <section className={cn("space-y-6", isCancelled && "opacity-60 pointer-events-none")}>
+        {/* WO-063 — completion state / Finish Meetup */}
+        {isCompleted ? (
+          <section className="rounded-2xl border border-primary/25 bg-primary/5 p-4">
+            <h2 className="font-semibold text-charcoal flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              Meetup completed
+            </h2>
+            <p className="mt-1 text-xs text-charcoal-muted">
+              This Meetup is final and counts toward Hosting Meetups in your Community Impact.
+              Details can no longer be edited.
+            </p>
+          </section>
+        ) : lifecycle?.is_host && lifecycle.has_ended && !isCancelled ? (
+          <section className="rounded-2xl border border-border bg-card p-4">
+            <h2 className="font-semibold text-charcoal">Finish this Meetup</h2>
+            <p className="mt-1 text-xs text-charcoal-muted">
+              {canComplete
+                ? "Marking it complete makes it final and counts it toward Hosting Meetups in your Community Impact. It won't create or change any connections."
+                : completionBlocked}
+            </p>
+            <PrimaryButton
+              fullWidth
+              className="mt-3"
+              disabled={!canComplete || completing}
+              onClick={() => setCompleteOpen(true)}
+            >
+              {completing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Finish Meetup
+            </PrimaryButton>
+          </section>
+        ) : null}
+
+        {/* Edit form (disabled if cancelled or completed) */}
+        <section className={cn("space-y-6", locked && "opacity-60 pointer-events-none")}>
+
           <div>
             <FieldLabel>Title</FieldLabel>
             <input
@@ -604,7 +705,7 @@ export default function MeetupManagement() {
           </PrimaryButton>
         </section>
 
-        {placeContextQuery.data?.linked && placeContextQuery.data.host && (
+        {!isCompleted && placeContextQuery.data?.linked && placeContextQuery.data.host && (
           <MeetupLocationStatus
             meetupId={id!}
             context={placeContextQuery.data}
@@ -617,7 +718,7 @@ export default function MeetupManagement() {
         )}
 
         {/* Location editor — writes through update_meetup_location (fires notifications). */}
-        <section className={cn("space-y-4", (isCancelled || isEnded) && "opacity-60 pointer-events-none")}>
+        <section className={cn("space-y-4", (locked || isEnded) && "opacity-60 pointer-events-none")}>
           <div>
             <h2 className="text-lg font-semibold text-charcoal">Location</h2>
             <p className="text-xs text-charcoal-muted mt-0.5">
@@ -793,7 +894,7 @@ export default function MeetupManagement() {
                         {isTheHost ? "Host" : "Attendee"}
                       </div>
                     </div>
-                    {!isTheHost && !isCancelled && (
+                    {!isTheHost && !locked && (
                       <button
                         onClick={() => {
                           setRemoveTarget(a);
@@ -812,7 +913,7 @@ export default function MeetupManagement() {
         </section>
 
         {/* Danger zone */}
-        {!isCancelled && (
+        {!locked && (
           <section className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
             <h3 className="font-semibold text-charcoal flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-destructive" />
@@ -884,6 +985,38 @@ export default function MeetupManagement() {
             </PrimaryButton>
           </DialogFooter>
 
+        </DialogContent>
+      </Dialog>
+
+      {/* WO-063 — completion confirmation */}
+      <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finish this Meetup?</DialogTitle>
+            <DialogDescription>
+              This is final and can't be undone. The Meetup becomes read-only and counts once
+              toward Hosting Meetups in your Community Impact. It won't create Verified
+              Connections or Community Place support.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <SecondaryButton onClick={() => setCompleteOpen(false)} disabled={completing}>
+              Not yet
+            </SecondaryButton>
+            <PrimaryButton onClick={handleComplete} disabled={completing}>
+              {completing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Completing…
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Finish Meetup
+                </>
+              )}
+            </PrimaryButton>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

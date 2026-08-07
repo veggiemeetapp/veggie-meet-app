@@ -1470,6 +1470,48 @@ export type Database = {
         }
         Relationships: []
       }
+      meetup_completions: {
+        Row: {
+          completed_at: string
+          completion_method: string
+          created_at: string
+          host_id: string
+          id: string
+          meetup_id: string
+        }
+        Insert: {
+          completed_at?: string
+          completion_method?: string
+          created_at?: string
+          host_id: string
+          id?: string
+          meetup_id: string
+        }
+        Update: {
+          completed_at?: string
+          completion_method?: string
+          created_at?: string
+          host_id?: string
+          id?: string
+          meetup_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetup_completions_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetup_completions_meetup_id_fkey"
+            columns: ["meetup_id"]
+            isOneToOne: true
+            referencedRelation: "meetups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetup_feedback: {
         Row: {
           created_at: string
@@ -2948,6 +2990,7 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_hosted_meetup: { Args: { _meetup_id: string }; Returns: Json }
       complete_onboarding: {
         Args: never
         Returns: {
@@ -3052,6 +3095,7 @@ export type Database = {
         Returns: Json
       }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
+      get_meetup_lifecycle: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
       get_my_blocked_profiles: {
         Args: never

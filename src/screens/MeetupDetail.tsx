@@ -30,6 +30,7 @@ import {
   isUuid,
   type MeetupRole,
 } from "@/lib/backend";
+import { fetchMeetupLifecycle, lifecycleLabel } from "@/lib/meetupLifecycle";
 import { useAuth } from "@/hooks/useAuth";
 import type { Meetup, Veggie } from "@/types";
 
@@ -95,6 +96,13 @@ export default function MeetupDetail() {
       return { meetup: { ...m, chatId }, role };
     },
   });
+  // WO-063 — server-authoritative lifecycle for calm historical states.
+  const lifecycleQuery = useQuery({
+    queryKey: ["meetup-lifecycle", id],
+    enabled: !!id && isRealMeetup && !authLoading,
+    queryFn: () => fetchMeetupLifecycle(id!),
+  });
+
 
   // Also refetch when tab becomes visible (some browsers do not fire focus).
   useEffect(() => {
@@ -149,6 +157,14 @@ export default function MeetupDetail() {
   const role: MeetupRole = isRealMeetup
     ? membershipQuery.data?.role ?? "visitor"
     : "visitor";
+
+  const lifecycleState = lifecycleQuery.data?.lifecycle_state ?? null;
+  const isHistorical =
+    lifecycleState === "ended" ||
+    lifecycleState === "completed" ||
+    lifecycleState === "cancelled";
+
+
 
   // Resolve backend host profile for display (mock hosts resolve locally).
   useEffect(() => {
@@ -242,7 +258,7 @@ export default function MeetupDetail() {
       />
 
       <div className="px-5 pt-5 space-y-8">
-        {meetup.location?.locationSource === "unknown" ? (
+        {isHistorical ? null : meetup.location?.locationSource === "unknown" ? (
           <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4">
             <p className="text-sm font-semibold text-charcoal">Location not set yet.</p>
             <p className="mt-1 text-xs text-charcoal-muted">
@@ -281,6 +297,23 @@ export default function MeetupDetail() {
 
       <div className="fixed bottom-0 inset-x-0 mx-auto max-w-phone bg-background/95 backdrop-blur-xl border-t border-border safe-bottom">
         <div className="px-5 py-4 flex flex-col gap-2">
+          {isHistorical ? (
+            <>
+              <div className="text-center text-sm font-semibold text-charcoal">
+                {lifecycleLabel(lifecycleState!)}
+              </div>
+              {role !== "visitor" && meetup.chatId && (
+                <Link
+                  to={`/chat/${meetup.chatId}`}
+                  className="text-center text-sm font-semibold text-primary py-1"
+                >
+                  Open meetup chat
+                </Link>
+              )}
+            </>
+          ) : (
+          <>
+
           {role === "host" && (
             <>
               <div className="flex items-center justify-center gap-2 text-sm font-semibold text-primary">
@@ -365,6 +398,8 @@ export default function MeetupDetail() {
 
 
           {role === "removed" && <RemovedBanner meetupId={meetup.id} />}
+          </>
+          )}
         </div>
       </div>
 
