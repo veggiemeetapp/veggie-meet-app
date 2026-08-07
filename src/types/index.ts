@@ -83,8 +83,12 @@ export interface CommunityPlace {
   cityName?: string | null;
   neighborhood?: string | null;
   timezone?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
+  /**
+   * WO-061A — coarse, server-computed distance from the viewer's selected city
+   * (nearest 50 m). Exact place coordinates are never exposed to members.
+   */
+  distanceMeters?: number | null;
+
   /** Original VeggieMeet copy. Never Google editorial content. */
   description?: string | null;
   /** Original VeggieMeet reason-to-visit copy. */

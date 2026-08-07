@@ -356,8 +356,6 @@ interface DBCommunityPlaceRow {
   city_id: string | null;
   neighborhood: string | null;
   timezone: string | null;
-  latitude: number | null;
-  longitude: number | null;
   is_active: boolean | null;
   description?: string | null;
   veggie_reason?: string | null;
@@ -366,6 +364,10 @@ interface DBCommunityPlaceRow {
   veggie_classification?: string | null;
   maintenance_status?: string | null;
   last_reverified_at?: string | null;
+  /** Only present on the discovery RPC payload. */
+  distance_meters?: number | null;
+  has_cover_image?: boolean | null;
+  city_name?: string | null;
   cities?: { name: string | null } | null;
 }
 
@@ -379,16 +381,18 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
     category: cat,
     address: row.address ?? "",
     coverImageUrl: sanitizeCover(row.cover_image_url),
-    hasCoverImage: !!row.cover_image_url && !row.cover_image_url.startsWith("blob:"),
+    hasCoverImage:
+      typeof row.has_cover_image === "boolean"
+        ? row.has_cover_image
+        : !!row.cover_image_url && !row.cover_image_url.startsWith("blob:"),
     upcomingMeetupsCount: row.upcoming_meetups_count ?? 0,
     meetupsThisMonth: row.meetups_this_month ?? 0,
     veggiesVisitedCount: row.veggies_visited_count ?? 0,
     cityId: row.city_id,
-    cityName: row.cities?.name ?? null,
+    cityName: row.city_name ?? row.cities?.name ?? null,
     neighborhood: row.neighborhood,
     timezone: row.timezone,
-    latitude: row.latitude,
-    longitude: row.longitude,
+    distanceMeters: row.distance_meters ?? null,
     description: row.description ?? null,
     veggieReason: row.veggie_reason ?? null,
     websiteUrl: row.website_url ?? null,
@@ -405,8 +409,33 @@ function toCommunityPlace(row: DBCommunityPlaceRow): CommunityPlace {
  * WO-053 — public place columns. The owner reason note (status_note) and
  * status_changed_by are deliberately excluded: they are internal-only and are
  * readable exclusively through the owner-only maintenance RPCs.
+ * WO-061A — latitude/longitude are deliberately excluded: exact Community Place
+ * coordinates are no longer readable through normal authenticated table access.
  */
-const PUBLIC_PLACE_COLUMNS = "id,name,category,address,cover_image_url,upcoming_meetups_count,meetups_this_month,veggies_visited_count,created_at,updated_at,city_id,neighborhood,timezone,latitude,longitude,is_active,google_maps_url,verification_status,verified_at,business_status,image_rights_status,description,veggie_reason,website_url,veggie_classification,maintenance_status,status_changed_at,last_reverified_at, cities(name)";
+const PUBLIC_PLACE_COLUMNS = "id,name,category,address,cover_image_url,upcoming_meetups_count,meetups_this_month,veggies_visited_count,created_at,updated_at,city_id,neighborhood,timezone,is_active,google_maps_url,verification_status,verified_at,business_status,image_rights_status,description,veggie_reason,website_url,veggie_classification,maintenance_status,status_changed_at,last_reverified_at, cities(name)";
+
+/**
+ * WO-061A — the single member-facing discovery source. Distance ordering and
+ * the coarse distance label are computed server-side inside a SECURITY DEFINER
+ * boundary so coordinates never reach the client.
+ */
+async function fetchDiscoveryPlaces(
+  cityId: string | null,
+  includeAllCities: boolean,
+): Promise<CommunityPlace[]> {
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      n: string,
+      a?: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>
+  ).call(supabase, "get_community_places_discovery", {
+    _city_id: cityId,
+    _include_all_cities: includeAllCities,
+  });
+  if (error || !data) return [];
+  return (data as DBCommunityPlaceRow[]).map(toCommunityPlace);
+}
+
 
 /**
  * WO-053 — the single discovery eligibility rule shared by every browse surface:
