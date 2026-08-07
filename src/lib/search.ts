@@ -67,8 +67,7 @@ export interface PlaceResult {
   city_id: string | null;
   city_name: string | null;
   neighborhood: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  // WO-061A: exact coordinates are never returned to clients.
   upcoming_meetups_count: number;
   reason_code: string;
   reason_label: string | null;
