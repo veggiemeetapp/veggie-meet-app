@@ -894,7 +894,7 @@ export default function MeetupManagement() {
                         {isTheHost ? "Host" : "Attendee"}
                       </div>
                     </div>
-                    {!isTheHost && !isCancelled && (
+                    {!isTheHost && !locked && (
                       <button
                         onClick={() => {
                           setRemoveTarget(a);
@@ -985,6 +985,38 @@ export default function MeetupManagement() {
             </PrimaryButton>
           </DialogFooter>
 
+        </DialogContent>
+      </Dialog>
+
+      {/* WO-063 — completion confirmation */}
+      <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finish this Meetup?</DialogTitle>
+            <DialogDescription>
+              This is final and can't be undone. The Meetup becomes read-only and counts once
+              toward Hosting Meetups in your Community Impact. It won't create Verified
+              Connections or Community Place support.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <SecondaryButton onClick={() => setCompleteOpen(false)} disabled={completing}>
+              Not yet
+            </SecondaryButton>
+            <PrimaryButton onClick={handleComplete} disabled={completing}>
+              {completing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Completing…
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Finish Meetup
+                </>
+              )}
+            </PrimaryButton>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
