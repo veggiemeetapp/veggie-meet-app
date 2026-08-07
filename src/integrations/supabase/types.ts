@@ -2845,6 +2845,10 @@ export type Database = {
         Returns: undefined
       }
       _suggestion_norm: { Args: { _t: string }; Returns: string }
+      accept_connection_request: {
+        Args: { _friendship_id: string }
+        Returns: Json
+      }
       accept_meetup_current_place_location: {
         Args: { _meetup_id: string }
         Returns: Json
@@ -2861,6 +2865,10 @@ export type Database = {
       }
       cancel_community_place_vegan_review: {
         Args: { _place_id: string }
+        Returns: Json
+      }
+      cancel_connection_request: {
+        Args: { _friendship_id: string }
         Returns: Json
       }
       cancel_meetup: {
@@ -2975,6 +2983,10 @@ export type Database = {
         Returns: string
       }
       current_profile_id: { Args: never; Returns: string }
+      decline_connection_request: {
+        Args: { _friendship_id: string }
+        Returns: Json
+      }
       decline_meetup_invitation: {
         Args: { _invitation_id: string }
         Returns: undefined
@@ -3275,6 +3287,7 @@ export type Database = {
         Args: { _candidate_id: string; _notes?: string }
         Returns: undefined
       }
+      remove_connection: { Args: { _friendship_id: string }; Returns: Json }
       remove_meetup_attendee: {
         Args: { _attendee_id: string; _meetup_id: string; _reason: string }
         Returns: undefined
@@ -3377,6 +3390,10 @@ export type Database = {
           _reason_code?: string
         }
         Returns: undefined
+      }
+      send_connection_request: {
+        Args: { _target_profile_id: string }
+        Returns: Json
       }
       set_community_place_active: {
         Args: { _active: boolean; _note: string; _place_id: string }

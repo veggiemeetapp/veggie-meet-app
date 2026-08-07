@@ -100,6 +100,23 @@ async function fetchAll(meId: string): Promise<FriendshipRow[]> {
   return (data ?? []) as FriendshipRow[];
 }
 
+/**
+ * Peer profile ids the viewer has an in-person Verified Connection with.
+ * Reads the append-only `verified_meetup_connections` table (SELECT-only for
+ * members; all writes go through `verify_meetup_connection`).
+ */
+async function fetchVerifiedPeerIds(meId: string): Promise<Set<string>> {
+  const { data } = await supabase
+    .from("verified_meetup_connections")
+    .select("profile_a_id, profile_b_id")
+    .or(`profile_a_id.eq.${meId},profile_b_id.eq.${meId}`);
+  const peers = new Set<string>();
+  (data ?? []).forEach((v) => {
+    peers.add(v.profile_a_id === meId ? (v.profile_b_id as string) : (v.profile_a_id as string));
+  });
+  return peers;
+}
+
 export async function fetchNetwork(meId: string) {
   const rows = await fetchAll(meId);
   // Hide blocked pairs from active views. Historical rows are preserved in DB;
@@ -130,12 +147,21 @@ export async function fetchNetwork(meId: string) {
   const outgoing = rows.filter(
     (r) => r.status === "pending" && r.requester_id === meId && notBlocked(r),
   );
-  const [all, inc, out] = await Promise.all([
+  const [all, inc, out, verifiedPeers] = await Promise.all([
     hydrate(active, meId),
     hydrate(incoming, meId),
     hydrate(outgoing, meId),
+    fetchVerifiedPeerIds(meId),
   ]);
+  // WO-067 — "Verified / Met in person" is derived from the append-only
+  // verified_meetup_connections table (server-only writes), never from the
+  // mutable friendships.status field. This keeps the Network badge consistent
+  // with Community Impact "Veggies Met".
+  all.forEach((r) => {
+    if (verifiedPeers.has(r.other.profileId)) r.status = "verified";
+  });
   const verified = all.filter((r) => r.status === "verified");
+
   return {
     all,
     verified,
@@ -181,80 +207,87 @@ export async function fetchRelationshipById(
 }
 
 /**
- * Send a new connection request from `meId` to `otherId`. Idempotent:
- * - No-op if a row already exists in an active/pending state.
- * - Re-opens a 'removed' row as a fresh pending request.
+ * WO-067 — every connection state transition is server-authoritative.
+ * Members hold no INSERT/UPDATE/DELETE privilege on `friendships`; each
+ * transition runs through a validated SECURITY DEFINER RPC that derives the
+ * actor from auth and enforces blocks, self-targeting, duplicates, and role
+ * (only the recipient can accept, only the sender can cancel).
+ */
+
+type RequestState =
+  | "requested"
+  | "already_pending"
+  | "already_connected"
+  | "connected"
+  | "unavailable"
+  | "invalid";
+
+function rpcState(data: unknown): string {
+  return (data as { state?: string } | null)?.state ?? "invalid";
+}
+
+/**
+ * Send a connection request from the authenticated member to `otherId`.
+ * Idempotent; re-opens a 'removed' pair, and accepts a pending reverse request.
  */
 export async function sendConnectionRequest(meId: string, otherId: string) {
   if (meId === otherId) throw new Error("You can't connect with yourself.");
-  const existing = await fetchRelationshipWith(meId, otherId);
-  if (existing) {
-    if (existing.status === "removed") {
-      const { error } = await supabase
-        .from("friendships")
-        .update({ status: "pending", requester_id: meId })
-        .eq("id", existing.id);
-      if (error) throw error;
-      return { ok: true, state: "requested" as const };
-    }
-    if (existing.status === "pending") {
-      // If the other person already sent us a request, auto-accept.
-      if (existing.requesterId && existing.requesterId !== meId) {
-        await acceptRequest(existing.id);
-        return { ok: true, state: "connected" as const };
-      }
-      return { ok: true, state: "already_pending" as const };
-    }
-    return { ok: true, state: "already_connected" as const };
-  }
-  const { error } = await supabase.from("friendships").insert({
-    profile_a_id: meId,
-    profile_b_id: otherId,
-    requester_id: meId,
-    status: "pending",
-    friends_since: new Date().toISOString().slice(0, 10),
+  const { data, error } = await (supabase.rpc as any)("send_connection_request", {
+    _target_profile_id: otherId,
   });
   if (error) throw error;
+  const state = rpcState(data);
+  if (state === "unavailable") throw new Error("This connection isn't available.");
+  if (state === "invalid") throw new Error("That Veggie couldn't be found.");
   // First meaningful action is recorded server-side via trg_activation_friendship.
   // Notification-worthy action → contextual (one-shot) permission prompt.
   try {
     const { maybePromptForNotifications } = await import("@/lib/notificationPrompt");
     maybePromptForNotifications();
   } catch { /* non-blocking */ }
-  return { ok: true, state: "requested" as const };
+  return { ok: true, state: state as RequestState };
 }
 
 export async function acceptRequest(friendshipId: string) {
-  const { error } = await supabase
-    .from("friendships")
-    .update({ status: "connected" })
-    .eq("id", friendshipId);
+  const { data, error } = await (supabase.rpc as any)("accept_connection_request", {
+    _friendship_id: friendshipId,
+  });
   if (error) throw error;
+  const state = rpcState(data);
+  if (state === "connected" || state === "already_connected") return;
+  if (state === "unavailable") throw new Error("This connection isn't available.");
+  throw new Error("That request is no longer available.");
 }
 
 export async function declineRequest(friendshipId: string) {
-  const { error } = await supabase
-    .from("friendships")
-    .delete()
-    .eq("id", friendshipId);
+  const { data, error } = await (supabase.rpc as any)("decline_connection_request", {
+    _friendship_id: friendshipId,
+  });
   if (error) throw error;
+  if (rpcState(data) !== "declined") {
+    throw new Error("That request is no longer available.");
+  }
 }
 
 export async function removeConnection(friendshipId: string) {
-  const { error } = await supabase
-    .from("friendships")
-    .update({ status: "removed" })
-    .eq("id", friendshipId);
+  const { data, error } = await (supabase.rpc as any)("remove_connection", {
+    _friendship_id: friendshipId,
+  });
   if (error) throw error;
+  if (rpcState(data) !== "removed") {
+    throw new Error("That connection is no longer available.");
+  }
 }
 
-/** Sender-initiated cancellation of an outgoing pending request. Deletes the row. */
+/** Sender-initiated cancellation of an outgoing pending request. */
 export async function cancelRequest(friendshipId: string) {
-  const { error } = await supabase
-    .from("friendships")
-    .delete()
-    .eq("id", friendshipId);
+  const { data, error } = await (supabase.rpc as any)("cancel_connection_request", {
+    _friendship_id: friendshipId,
+  });
   if (error) throw error;
+  if (rpcState(data) !== "cancelled") {
+    throw new Error("That request is no longer available.");
+  }
 }
 
 /* --------------------------- Meet Next --------------------------- */
