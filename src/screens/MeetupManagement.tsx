@@ -615,8 +615,13 @@ export default function MeetupManagement() {
           </section>
         ) : null}
 
-        {/* Edit form (disabled if cancelled or completed) */}
-        <section className={cn("space-y-6", locked && "opacity-60 pointer-events-none")}>
+        {/* Edit form (disabled once the Meetup has ended, been completed or cancelled) */}
+        <section
+          className={cn(
+            "space-y-6",
+            (locked || isEnded) && "opacity-60 pointer-events-none",
+          )}
+        >
 
           <div>
             <FieldLabel>Title</FieldLabel>
