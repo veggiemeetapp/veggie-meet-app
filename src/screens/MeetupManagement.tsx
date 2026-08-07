@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   Save,
   Ban,
+  CheckCircle2,
+
 } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
 import {
@@ -36,6 +38,13 @@ import {
 } from "@/lib/meetupManagement";
 import { updateMeetupLocation } from "@/lib/location";
 import { fetchMeetupPlaceContext } from "@/lib/meetupPlaceContext";
+import {
+  blockedReasonCopy,
+  completeHostedMeetup,
+  fetchMeetupLifecycle,
+} from "@/lib/meetupLifecycle";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 import { MeetupLocationStatus } from "@/components/meetup";
 import { CitySelector } from "@/components/location/CitySelector";
 import { useLocationContext } from "@/hooks/useLocation";
@@ -86,6 +95,14 @@ export default function MeetupManagement() {
     enabled: !!id && !authLoading,
     queryFn: () => fetchMeetupAttendees(id!),
   });
+
+  // WO-063 — single server-authoritative lifecycle read model.
+  const lifecycleQuery = useQuery({
+    queryKey: ["meetup-lifecycle", id],
+    enabled: !!id && !authLoading,
+    queryFn: () => fetchMeetupLifecycle(id!),
+  });
+
 
   const meetup = meetupQuery.data;
   const isHost = !!(meetup && profile?.id && meetup.hostId === profile.id);
