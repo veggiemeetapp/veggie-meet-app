@@ -19,6 +19,7 @@ import {
 } from "@/lib/meetupPlaceContext";
 
 interface Props {
+  meetupId: string;
   context: MeetupPlaceContext;
   onUpdated: () => void;
 }
@@ -29,7 +30,7 @@ interface Props {
  * explicit, server-validated "update to current location" action.
  * Owner-only moderation detail is never shown here.
  */
-export function MeetupLocationStatus({ context, onUpdated }: Props) {
+export function MeetupLocationStatus({ meetupId, context, onUpdated }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -44,10 +45,7 @@ export function MeetupLocationStatus({ context, onUpdated }: Props) {
     setSaving(true);
     logAnalyticsEvent("meetup_location_update_started", { source: "accept_current_place" });
     try {
-      await acceptMeetupCurrentPlaceLocation(
-        // meetup id is carried by the snapshot query key owner
-        (place as { id: string }) && contextMeetupId(context),
-      );
+      await acceptMeetupCurrentPlaceLocation(meetupId);
       logAnalyticsEvent("meetup_location_update_completed", { result: "accepted_current_place" });
       toast({ title: "Meetup location updated" });
       setConfirmOpen(false);
@@ -181,13 +179,8 @@ export function MeetupLocationStatus({ context, onUpdated }: Props) {
               Update location
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </section>
   );
-}
-
-function contextMeetupId(_c: MeetupPlaceContext): string {
-  throw new Error("meetupId must be provided");
 }
