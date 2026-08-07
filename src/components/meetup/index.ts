@@ -5,3 +5,4 @@ export { HostCard } from "./HostCard";
 export { AttendeePreview } from "./AttendeePreview";
 export { WhatToExpect } from "./WhatToExpect";
 export { MeetupDescription } from "./MeetupDescription";
+export { MeetupLocationStatus } from "./MeetupLocationStatus";

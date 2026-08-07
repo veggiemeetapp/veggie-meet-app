@@ -35,6 +35,8 @@ import {
   type ManagedAttendee,
 } from "@/lib/meetupManagement";
 import { updateMeetupLocation } from "@/lib/location";
+import { fetchMeetupPlaceContext } from "@/lib/meetupPlaceContext";
+import { MeetupLocationStatus } from "@/components/meetup";
 import { CitySelector } from "@/components/location/CitySelector";
 import { useLocationContext } from "@/hooks/useLocation";
 import { useAuth } from "@/hooks/useAuth";
@@ -69,6 +71,14 @@ export default function MeetupManagement() {
     queryKey: ["managed-meetup", id],
     enabled: !!id && !authLoading,
     queryFn: () => fetchMeetupById(id!),
+  });
+
+  // WO-062 — server-derived comparison of the Meetup snapshot vs. the current
+  // Community Place. Read-only; never rewrites the snapshot.
+  const placeContextQuery = useQuery({
+    queryKey: ["meetup-place-context", id],
+    enabled: !!id && !authLoading,
+    queryFn: () => fetchMeetupPlaceContext(id!),
   });
 
   const attendeesQuery = useQuery({
@@ -593,6 +603,18 @@ export default function MeetupManagement() {
             {saving ? "Saving…" : "Save changes"}
           </PrimaryButton>
         </section>
+
+        {placeContextQuery.data?.linked && placeContextQuery.data.host && (
+          <MeetupLocationStatus
+            meetupId={id!}
+            context={placeContextQuery.data}
+            onUpdated={() => {
+              void qc.invalidateQueries({ queryKey: ["meetup-place-context", id] });
+              void qc.invalidateQueries({ queryKey: ["managed-meetup", id] });
+              void qc.invalidateQueries({ queryKey: ["meetup-membership", id] });
+            }}
+          />
+        )}
 
         {/* Location editor — writes through update_meetup_location (fires notifications). */}
         <section className={cn("space-y-4", (isCancelled || isEnded) && "opacity-60 pointer-events-none")}>
