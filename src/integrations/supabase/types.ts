@@ -3011,6 +3011,7 @@ export type Database = {
         Args: { _before_at?: string; _before_id?: string; _limit?: number }
         Returns: Json
       }
+      get_community_place_detail: { Args: { _place_id: string }; Returns: Json }
       get_community_place_detail_changes: {
         Args: { _place_id: string }
         Returns: Json
