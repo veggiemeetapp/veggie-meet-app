@@ -68,7 +68,7 @@ export async function fetchVeggieProfileBundle(
   const { data: prof } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, bio, avatar_url, current_city, interests, home_city_id, is_active_host, meetups_hosted_count, meetups_attended_count, veggies_met_count, created_at, pronouns, dietary_identity, cities:home_city_id(name)",
+      "id, display_name, bio, avatar_url, current_city, interests, home_city_id, is_active_host, created_at, pronouns, dietary_identity, cities:home_city_id(name)",
     )
     .eq("id", targetProfileId)
     .maybeSingle();

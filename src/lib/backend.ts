@@ -306,7 +306,7 @@ export async function fetchProfileAsVeggie(profileId: string): Promise<Veggie | 
   const { data } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, avatar_url, bio, current_city, interests, created_at, meetups_hosted_count, meetups_attended_count, veggies_met_count, is_active_host",
+      "id, display_name, avatar_url, bio, current_city, interests, created_at, is_active_host",
     )
     .eq("id", profileId)
     .maybeSingle();
@@ -320,9 +320,6 @@ export async function fetchProfileAsVeggie(profileId: string): Promise<Veggie | 
     currentCity: data.current_city ?? "",
     interests: data.interests ?? [],
     memberSince: data.created_at,
-    meetupsHostedCount: data.meetups_hosted_count ?? 0,
-    meetupsAttendedCount: data.meetups_attended_count ?? 0,
-    veggiesMetCount: data.veggies_met_count ?? 0,
     isActiveHost: data.is_active_host ?? false,
   };
 }

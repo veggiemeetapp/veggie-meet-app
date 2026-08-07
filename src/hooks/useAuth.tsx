@@ -13,9 +13,6 @@ export type Profile = {
   home_city_id: string | null;
   interests: string[];
   is_active_host: boolean;
-  meetups_hosted_count: number;
-  meetups_attended_count: number;
-  veggies_met_count: number;
   onboarding_completed: boolean;
   dietary_identity: string | null;
   community_guidelines_accepted_at: string | null;

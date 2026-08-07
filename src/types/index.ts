@@ -9,9 +9,6 @@ export interface Veggie {
   currentCity: string;
   interests: string[];
   memberSince: string; // ISO
-  meetupsHostedCount: number;
-  meetupsAttendedCount: number;
-  veggiesMetCount: number;
   isActiveHost: boolean;
 }
 
