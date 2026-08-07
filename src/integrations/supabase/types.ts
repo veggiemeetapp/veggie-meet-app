@@ -2880,6 +2880,7 @@ export type Database = {
         }
         Returns: Json
       }
+      check_in_to_meetup: { Args: { _meetup_id: string }; Returns: Json }
       complete_community_place_identity_review: {
         Args: {
           _acknowledge_large_move?: boolean
