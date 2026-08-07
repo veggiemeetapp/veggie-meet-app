@@ -216,58 +216,6 @@ export type Database = {
           },
         ]
       }
-      check_in_requests: {
-        Row: {
-          created_at: string
-          id: string
-          meetup_id: string
-          requester_profile_id: string
-          status: string
-          target_profile_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          meetup_id: string
-          requester_profile_id: string
-          status?: string
-          target_profile_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          meetup_id?: string
-          requester_profile_id?: string
-          status?: string
-          target_profile_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "check_in_requests_meetup_id_fkey"
-            columns: ["meetup_id"]
-            isOneToOne: false
-            referencedRelation: "meetups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "check_in_requests_requester_profile_id_fkey"
-            columns: ["requester_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "check_in_requests_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       cities: {
         Row: {
           country_code: string
@@ -2492,12 +2440,9 @@ export type Database = {
           id: string
           interests: string[]
           is_active_host: boolean
-          meetups_attended_count: number
-          meetups_hosted_count: number
           onboarding_completed: boolean
           pronouns: string | null
           updated_at: string
-          veggies_met_count: number
         }
         Insert: {
           auth_user_id?: string | null
@@ -2513,12 +2458,9 @@ export type Database = {
           id?: string
           interests?: string[]
           is_active_host?: boolean
-          meetups_attended_count?: number
-          meetups_hosted_count?: number
           onboarding_completed?: boolean
           pronouns?: string | null
           updated_at?: string
-          veggies_met_count?: number
         }
         Update: {
           auth_user_id?: string | null
@@ -2534,12 +2476,9 @@ export type Database = {
           id?: string
           interests?: string[]
           is_active_host?: boolean
-          meetups_attended_count?: number
-          meetups_hosted_count?: number
           onboarding_completed?: boolean
           pronouns?: string | null
           updated_at?: string
-          veggies_met_count?: number
         }
         Relationships: [
           {
@@ -3167,12 +3106,9 @@ export type Database = {
           id: string
           interests: string[]
           is_active_host: boolean
-          meetups_attended_count: number
-          meetups_hosted_count: number
           onboarding_completed: boolean
           pronouns: string | null
           updated_at: string
-          veggies_met_count: number
         }
         SetofOptions: {
           from: "*"

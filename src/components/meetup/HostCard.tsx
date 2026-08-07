@@ -19,8 +19,8 @@ export function HostCard({ host }: Props) {
   });
 
   const impact = impactQuery.data?.available ? impactQuery.data : null;
-  const hosted = impact?.meetups_hosted ?? host.meetupsHostedCount;
-  const connected = impact?.veggies_met ?? host.veggiesMetCount;
+  const hosted = impact?.meetups_hosted ?? 0;
+  const connected = impact?.veggies_met ?? 0;
 
   return (
     <Card padding="md" className="bg-soft-green/60 border-transparent">

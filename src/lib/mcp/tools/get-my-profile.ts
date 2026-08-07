@@ -31,8 +31,6 @@ export default defineTool({
       current_city: row.current_city,
       interests: row.interests,
       is_active_host: row.is_active_host,
-      meetups_hosted_count: row.meetups_hosted_count,
-      meetups_attended_count: row.meetups_attended_count,
       onboarding_completed: row.onboarding_completed,
     };
     return {

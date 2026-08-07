@@ -21,9 +21,6 @@ export const currentUser: Veggie = {
   currentCity: "Ho Chi Minh City",
   interests: ["ramen", "hiking", "coffee"],
   memberSince: "2024-03-01",
-  meetupsHostedCount: 2,
-  meetupsAttendedCount: 8,
-  veggiesMetCount: 24,
   isActiveHost: false,
 };
 
@@ -39,9 +36,6 @@ export const veggies: Veggie[] = [
     currentCity: "Ho Chi Minh City",
     interests: ["coffee", "reading", "yoga"],
     memberSince: "2023-08-14",
-    meetupsHostedCount: 21,
-    meetupsAttendedCount: 40,
-    veggiesMetCount: 140,
     isActiveHost: true,
   },
   {
@@ -54,9 +48,6 @@ export const veggies: Veggie[] = [
     currentCity: "Ho Chi Minh City",
     interests: ["baking", "yoga"],
     memberSince: "2023-06-11",
-    meetupsHostedCount: 14,
-    meetupsAttendedCount: 32,
-    veggiesMetCount: 96,
     isActiveHost: true,
   },
   {
@@ -69,9 +60,6 @@ export const veggies: Veggie[] = [
     currentCity: "Ho Chi Minh City",
     interests: ["cooking", "cycling"],
     memberSince: "2024-01-20",
-    meetupsHostedCount: 5,
-    meetupsAttendedCount: 12,
-    veggiesMetCount: 40,
     isActiveHost: true,
   },
   {
@@ -84,9 +72,6 @@ export const veggies: Veggie[] = [
     currentCity: "Ho Chi Minh City",
     interests: ["running", "brunch"],
     memberSince: "2024-05-02",
-    meetupsHostedCount: 0,
-    meetupsAttendedCount: 6,
-    veggiesMetCount: 18,
     isActiveHost: false,
   },
   {
@@ -99,9 +84,6 @@ export const veggies: Veggie[] = [
     currentCity: "Ho Chi Minh City",
     interests: ["games", "wine"],
     memberSince: "2023-11-10",
-    meetupsHostedCount: 3,
-    meetupsAttendedCount: 20,
-    veggiesMetCount: 55,
     isActiveHost: false,
   },
   {
@@ -114,9 +96,6 @@ export const veggies: Veggie[] = [
     currentCity: "Ho Chi Minh City",
     interests: ["cooking", "markets"],
     memberSince: "2024-02-14",
-    meetupsHostedCount: 1,
-    meetupsAttendedCount: 9,
-    veggiesMetCount: 22,
     isActiveHost: false,
   },
 ];

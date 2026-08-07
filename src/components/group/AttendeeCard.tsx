@@ -212,20 +212,11 @@ export function AttendeeCard({ veggie, isHost, showConnect }: AttendeeCardProps)
             ))}
           </div>
         )}
-        <div className="mt-3 text-[11px] text-charcoal-muted">
-          {isHost ? (
-            <>
-              Hosted {veggie.meetupsHostedCount} meetups • Helped{" "}
-              {veggie.veggiesMetCount} Veggies connect
-            </>
-          ) : (
-            <>
-              {veggie.meetupsAttendedCount} meetups attended
-              {veggie.meetupsHostedCount > 0 &&
-                ` • ${veggie.meetupsHostedCount} hosted`}
-            </>
-          )}
-        </div>
+        {isHost && (
+          <div className="mt-3 text-[11px] text-charcoal-muted">
+            Hosting this Meetup
+          </div>
+        )}
       </div>
     </Card>
   );

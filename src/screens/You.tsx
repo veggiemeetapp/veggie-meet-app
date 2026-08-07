@@ -11,7 +11,6 @@ import {
   Leaf,
   LogOut,
   MapPin,
-  PartyPopper,
   Pencil,
   ShieldCheck,
   Settings as SettingsIcon,
@@ -30,7 +29,6 @@ import {
   SecondaryButton,
   UserAvatar,
 } from "@/components/app";
-import { fetchCommunityImpact, type ImpactEvent } from "@/lib/impact";
 
 import {
   Sheet,
@@ -94,7 +92,7 @@ export default function You() {
     };
   }, [profile?.id, qc]);
 
-  const hostedCount = hostingQuery.data?.length ?? profile?.meetups_hosted_count ?? 0;
+  const hostedCount = hostingQuery.data?.length ?? 0;
   const isActiveHost = hostedCount > 0 || profile?.is_active_host;
 
   const memberSince = useMemo(() => {
@@ -475,141 +473,6 @@ function ImpactMetric({
     </div>
   );
 }
-
-function RecentImpactSection({
-  loading,
-  events,
-  onExplore,
-}: {
-  loading: boolean;
-  events: ImpactEvent[];
-  onExplore: () => void;
-}) {
-  const groups = useMemo(() => groupEventsByDate(events), [events]);
-  const groupLabels = Array.from(groups.keys());
-
-  return (
-    <section>
-      <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
-        Recent Community Impact
-      </h3>
-      {loading ? (
-        <Card className="h-28 animate-pulse" />
-      ) : events.length === 0 ? (
-        <Card padding="lg" className="text-center">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-soft-green text-primary flex items-center justify-center text-2xl">
-            🌱
-          </div>
-          <p className="mt-3 text-sm text-charcoal leading-relaxed">
-            Your Community Impact will grow as you:
-          </p>
-          <ul className="mt-2 text-sm text-charcoal-muted space-y-1">
-            <li>Meet other Veggies</li>
-            <li>Support Community Places</li>
-            <li>Host Meetups</li>
-          </ul>
-          <div className="mt-4">
-            <PrimaryButton size="sm" onClick={onExplore}>
-              Start exploring
-            </PrimaryButton>
-          </div>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {groupLabels.map((label) => (
-            <div key={label}>
-              <p className="px-1 mb-2 text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
-                {label}
-              </p>
-              <Card padding="none">
-                <ul className="divide-y divide-border/60">
-                  {groups.get(label)!.map((e) => (
-                    <ImpactTimelineRow key={e.id} event={e} />
-                  ))}
-                </ul>
-              </Card>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function ImpactTimelineRow({ event }: { event: ImpactEvent }) {
-  const meta = eventMeta(event.type);
-  return (
-    <li className="flex items-center gap-3 px-4 py-3">
-      <div
-        className={cn(
-          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-          meta.bg,
-          meta.fg,
-        )}
-      >
-        {meta.icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-charcoal truncate">{event.label}</p>
-      </div>
-    </li>
-  );
-}
-
-function eventMeta(type: ImpactEvent["type"]) {
-  switch (type) {
-    case "veggie_met":
-      return {
-        icon: <Handshake className="w-4 h-4" />,
-        bg: "bg-soft-green",
-        fg: "text-primary",
-      };
-    case "place_supported":
-      return {
-        icon: <Home className="w-4 h-4" />,
-        bg: "bg-soft-green",
-        fg: "text-primary",
-      };
-    case "meetup_hosted":
-      return {
-        icon: <PartyPopper className="w-4 h-4" />,
-        bg: "bg-host-badge/15",
-        fg: "text-host-badge",
-      };
-  }
-}
-
-function groupEventsByDate(events: ImpactEvent[]): Map<string, ImpactEvent[]> {
-  const groups = new Map<string, ImpactEvent[]>();
-  for (const e of events) {
-    const label = dateGroupLabel(e.date);
-    const list = groups.get(label) ?? [];
-    list.push(e);
-    groups.set(label, list);
-  }
-  return groups;
-}
-
-function dateGroupLabel(iso: string): string {
-  if (iso === TODAY_ISO) return "Today";
-  if (iso === offsetDate(TODAY_ISO, -1)) return "Yesterday";
-  const d = new Date(iso + "T00:00:00");
-  const now = new Date(TODAY_ISO + "T00:00:00");
-  const diffDays = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
-  if (diffDays >= 0 && diffDays < 7) return "This Week";
-  return d.toLocaleDateString(undefined, {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function offsetDate(iso: string, days: number): string {
-  const d = new Date(iso + "T00:00:00");
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split("T")[0];
-}
-
 
 function TabButton({
   active,
