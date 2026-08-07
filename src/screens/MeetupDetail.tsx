@@ -390,6 +390,8 @@ export default function MeetupDetail() {
 
 
           {role === "removed" && <RemovedBanner meetupId={meetup.id} />}
+          </>
+          )}
         </div>
       </div>
 
