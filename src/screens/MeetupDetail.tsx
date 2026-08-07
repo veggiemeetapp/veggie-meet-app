@@ -356,8 +356,14 @@ export default function MeetupDetail() {
                 You're going
               </div>
               {isRealMeetup && profile?.id && (
-                <MeetupCheckInButton meetupId={meetup.id} profileId={profile.id} />
+                <MeetupCheckInButton
+                  meetupId={meetup.id}
+                  profileId={profile.id}
+                  startsAt={`${meetup.date}T${meetup.startTime}`}
+                  endsAt={`${meetup.date}T${meetup.endTime}`}
+                />
               )}
+
               {meetup.chatId ? (
 
                 <Link to={`/chat/${meetup.chatId}`}>
