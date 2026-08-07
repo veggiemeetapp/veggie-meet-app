@@ -14,7 +14,7 @@ import {
 } from "@/lib/backend";
 import { TODAY_ISO } from "@/lib/mock-data";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
-import { formatDistanceBetween, locationFallbackLabel } from "@/lib/distance";
+import { formatDistanceBetween, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import type { CommunityPlace, Meetup } from "@/types";
 
 function greeting(hour: number) {

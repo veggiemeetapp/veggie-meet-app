@@ -73,13 +73,12 @@ export default function CommunityPlaces() {
       return true;
     });
     return [...list].sort((a, b) => {
-      if (cityCoords) {
-        const da = distanceMeters(cityCoords, { latitude: a.latitude, longitude: a.longitude });
-        const db = distanceMeters(cityCoords, { latitude: b.latitude, longitude: b.longitude });
-        if (da != null && db != null && da !== db) return da - db;
-        if (da != null && db == null) return -1;
-        if (da == null && db != null) return 1;
-      }
+      // WO-061A: distance is computed server-side; coordinates never reach the client.
+      const da = a.distanceMeters ?? null;
+      const db = b.distanceMeters ?? null;
+      if (da != null && db != null && da !== db) return da - db;
+      if (da != null && db == null) return -1;
+      if (da == null && db != null) return 1;
       // Stable fallback: selected city first, then district, then name.
       const ca = a.cityId === cityId ? 0 : 1;
       const cb = b.cityId === cityId ? 0 : 1;
@@ -88,7 +87,8 @@ export default function CommunityPlaces() {
       if (na !== 0) return na;
       return a.name.localeCompare(b.name);
     });
-  }, [all, filter, veganOnly, cityCoords, cityId]);
+  }, [all, filter, veganOnly, cityId]);
+
 
   function changeFilter(next: Filter, nextVegan = veganOnly) {
     setFilter(next);
@@ -259,19 +259,16 @@ function EmptyBlock({
 function PlaceListCard({
   place,
   position,
-  cityCoords,
   cityLabel,
 }: {
   place: CommunityPlace;
   position: number;
-  cityCoords: { latitude: number; longitude: number } | null;
+  cityCoords?: { latitude: number; longitude: number } | null;
   cityLabel: string | null;
 }) {
-  const distance = cityCoords
-    ? formatDistanceMeters(
-        distanceMeters(cityCoords, { latitude: place.latitude, longitude: place.longitude }),
-      )
-    : null;
+  // WO-061A: server-provided coarse distance only.
+  const distance = formatDistanceMeters(place.distanceMeters ?? null);
+
   const area = locationFallbackLabel({
     neighborhood: place.neighborhood,
     cityName: place.cityName ?? cityLabel,
