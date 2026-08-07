@@ -30,6 +30,7 @@ import {
   isUuid,
   type MeetupRole,
 } from "@/lib/backend";
+import { fetchMeetupLifecycle, lifecycleLabel } from "@/lib/meetupLifecycle";
 import { useAuth } from "@/hooks/useAuth";
 import type { Meetup, Veggie } from "@/types";
 
