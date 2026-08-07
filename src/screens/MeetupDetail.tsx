@@ -158,6 +158,14 @@ export default function MeetupDetail() {
     ? membershipQuery.data?.role ?? "visitor"
     : "visitor";
 
+  const lifecycleState = lifecycleQuery.data?.lifecycle_state ?? null;
+  const isHistorical =
+    lifecycleState === "ended" ||
+    lifecycleState === "completed" ||
+    lifecycleState === "cancelled";
+
+
+
   // Resolve backend host profile for display (mock hosts resolve locally).
   useEffect(() => {
     if (!meetup || !isUuid(meetup.hostId)) return;
