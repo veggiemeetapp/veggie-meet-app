@@ -96,6 +96,13 @@ export default function MeetupDetail() {
       return { meetup: { ...m, chatId }, role };
     },
   });
+  // WO-063 — server-authoritative lifecycle for calm historical states.
+  const lifecycleQuery = useQuery({
+    queryKey: ["meetup-lifecycle", id],
+    enabled: !!id && isRealMeetup && !authLoading,
+    queryFn: () => fetchMeetupLifecycle(id!),
+  });
+
 
   // Also refetch when tab becomes visible (some browsers do not fire focus).
   useEffect(() => {
@@ -282,6 +289,23 @@ export default function MeetupDetail() {
 
       <div className="fixed bottom-0 inset-x-0 mx-auto max-w-phone bg-background/95 backdrop-blur-xl border-t border-border safe-bottom">
         <div className="px-5 py-4 flex flex-col gap-2">
+          {isHistorical ? (
+            <>
+              <div className="text-center text-sm font-semibold text-charcoal">
+                {lifecycleLabel(lifecycleState!)}
+              </div>
+              {role !== "visitor" && meetup.chatId && (
+                <Link
+                  to={`/chat/${meetup.chatId}`}
+                  className="text-center text-sm font-semibold text-primary py-1"
+                >
+                  Open meetup chat
+                </Link>
+              )}
+            </>
+          ) : (
+          <>
+
           {role === "host" && (
             <>
               <div className="flex items-center justify-center gap-2 text-sm font-semibold text-primary">
