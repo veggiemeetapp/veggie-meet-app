@@ -19,6 +19,8 @@ import {
   WhatToExpect,
   MeetupDescription,
 } from "@/components/meetup";
+import { MeetupCheckInButton } from "@/components/meetup/MeetupCheckInButton";
+
 import { getMeetup, getPlace, getVeggie, veggies } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -353,7 +355,11 @@ export default function MeetupDetail() {
                 <Check className="w-4 h-4" />
                 You're going
               </div>
+              {isRealMeetup && profile?.id && (
+                <MeetupCheckInButton meetupId={meetup.id} profileId={profile.id} />
+              )}
               {meetup.chatId ? (
+
                 <Link to={`/chat/${meetup.chatId}`}>
                   <PrimaryButton fullWidth>
                     <MessageCircle className="w-4 h-4" />
