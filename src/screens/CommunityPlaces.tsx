@@ -5,7 +5,7 @@ import { ArrowLeft, Leaf, MapPin, Utensils } from "lucide-react";
 import { AppHeader, Card } from "@/components/app";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
-import { distanceMeters, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
+import { formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import type { CommunityPlace, CommunityPlaceCategory } from "@/types";
 
@@ -51,13 +51,8 @@ export default function CommunityPlaces() {
     staleTime: 60_000,
   });
 
-  const cityCoords = useMemo(
-    () =>
-      selectedCity && selectedCity.latitude != null && selectedCity.longitude != null
-        ? { latitude: selectedCity.latitude, longitude: selectedCity.longitude }
-        : null,
-    [selectedCity],
-  );
+  // WO-061A: no client-side coordinate maths on Community Places.
+
 
   const all = placesQuery.data ?? [];
 
@@ -200,7 +195,6 @@ export default function CommunityPlaces() {
                 <PlaceListCard
                   place={place}
                   position={i}
-                  cityCoords={cityCoords}
                   cityLabel={cityLabel}
                 />
               </li>

@@ -165,7 +165,7 @@ export default function Community() {
           ) : (
             <HScroll>
               {placesQuery.data!.map((p) => (
-                <PlaceNearbyCard key={p.id} place={p} cityCoords={cityCoords} cityLabel={cityLabel} />
+                <PlaceNearbyCard key={p.id} place={p} cityLabel={cityLabel} />
               ))}
             </HScroll>
           )}
