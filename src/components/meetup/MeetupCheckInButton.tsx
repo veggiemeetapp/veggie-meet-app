@@ -16,9 +16,14 @@ import {
 export function MeetupCheckInButton({
   meetupId,
   profileId,
+  startsAt,
+  endsAt,
 }: {
   meetupId: string;
   profileId: string;
+  /** Local ISO-ish `YYYY-MM-DDTHH:mm` for presentation gating only. */
+  startsAt?: string;
+  endsAt?: string;
 }) {
   const qc = useQueryClient();
 
@@ -27,6 +32,7 @@ export function MeetupCheckInButton({
     queryFn: () => fetchMyAttendance(meetupId, profileId),
     staleTime: 0,
   });
+
 
   const mutation = useMutation({
     mutationFn: () => checkInToMeetup(meetupId),
@@ -61,6 +67,19 @@ export function MeetupCheckInButton({
 
   if (data?.status !== "joined") return null;
 
+  // Presentation gating only — the server still decides every transition.
+  const now = Date.now();
+  const startMs = startsAt ? new Date(startsAt).getTime() : NaN;
+  const endMs = endsAt ? new Date(endsAt).getTime() : NaN;
+  if (!Number.isNaN(startMs) && now < startMs - 60 * 60 * 1000) {
+    return (
+      <p className="text-center text-xs text-charcoal-muted">
+        Check-in opens an hour before the Meetup starts.
+      </p>
+    );
+  }
+  if (!Number.isNaN(endMs) && now > endMs + 4 * 60 * 60 * 1000) return null;
+
   return (
     <PrimaryButton
       fullWidth
@@ -71,4 +90,5 @@ export function MeetupCheckInButton({
       {mutation.isPending ? "Checking in…" : "I'm here — check in"}
     </PrimaryButton>
   );
+
 }

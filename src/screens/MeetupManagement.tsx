@@ -672,9 +672,10 @@ export default function MeetupManagement() {
               />
             </div>
           </div>
-          {startsInPast && (
+          {startsInPast && !locked && !isEnded && (
             <p className="text-xs text-destructive">Start time is in the past.</p>
           )}
+
 
           <div>
             <FieldLabel>
@@ -692,11 +693,12 @@ export default function MeetupManagement() {
             <p className="mt-1.5 text-xs text-charcoal-muted">
               Minimum {Math.max(1, activeAttendeeCount)} — matches people already attending.
             </p>
-            {capacityBelowAttendance && (
+            {capacityBelowAttendance && !locked && !isEnded && (
               <p className="mt-1 text-xs text-destructive">
                 Capacity can't be lower than current attendance.
               </p>
             )}
+
           </div>
 
           <p className="text-[11px] text-charcoal-muted">
