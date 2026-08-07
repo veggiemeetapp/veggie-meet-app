@@ -267,8 +267,9 @@ export default function Host() {
       locationName: selectedPlace.name,
       address: selectedPlace.address ?? null,
       neighborhood: selectedPlace.neighborhood ?? null,
-      latitude: selectedPlace.latitude ?? null,
-      longitude: selectedPlace.longitude ?? null,
+      // WO-061A: coordinates for a Community Place are filled in server-side.
+      latitude: null,
+      longitude: null,
       timezone: selectedPlace.timezone ?? selectedCity?.timezone ?? homeCity?.timezone ?? null,
       locationSource: "community_place" as const,
     };

@@ -440,19 +440,10 @@ async function fetchDiscoveryPlaces(
 /**
  * WO-053 — the single discovery eligibility rule shared by every browse surface:
  * published + verified + active + maintenance_status = operational.
- * Direct place routes deliberately bypass this so historical pages stay readable.
+ * WO-061A — served by the discovery RPC (no client-side coordinates).
  */
 export async function fetchCommunityPlacesByCity(cityId: string): Promise<CommunityPlace[]> {
-  const { data, error } = await supabase
-    .from("community_places")
-    .select(PUBLIC_PLACE_COLUMNS)
-    .eq("city_id", cityId)
-    .eq("verification_status", "verified")
-    .eq("maintenance_status", "operational")
-    .neq("is_active", false)
-    .order("name");
-  if (error || !data) return [];
-  return (data as unknown as DBCommunityPlaceRow[]).map(toCommunityPlace);
+  return fetchDiscoveryPlaces(cityId, false);
 }
 
 /**
@@ -463,19 +454,9 @@ export async function fetchCommunityPlacesByCity(cityId: string): Promise<Commun
 export async function fetchPublishedCommunityPlaces(
   cityId: string | null,
 ): Promise<CommunityPlace[]> {
-  let q = supabase
-    .from("community_places")
-    .select(PUBLIC_PLACE_COLUMNS)
-    .eq("verification_status", "verified")
-    .eq("maintenance_status", "operational")
-    .neq("is_active", false);
-  if (cityId) q = q.eq("city_id", cityId);
-  const { data, error } = await q.order("name");
-  if (error || !data) return [];
-  return (data as unknown as (DBCommunityPlaceRow & { business_status?: string | null })[])
-    .filter((r) => !r.business_status || r.business_status === "OPERATIONAL")
-    .map(toCommunityPlace);
+  return fetchDiscoveryPlaces(cityId, cityId == null);
 }
+
 
 /** All active Community Places in a city plus one selected by id (for host picker). */
 export async function fetchCommunityPlaceById(placeId: string): Promise<CommunityPlace | null> {

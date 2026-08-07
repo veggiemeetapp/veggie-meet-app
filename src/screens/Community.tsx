@@ -365,22 +365,18 @@ function VeggieNearbyCard({ veggie }: { veggie: NearbyVeggie }) {
 
 function PlaceNearbyCard({
   place,
-  cityCoords,
   cityLabel,
 }: {
   place: CommunityPlace;
-  cityCoords: { latitude: number; longitude: number } | null;
+  cityCoords?: { latitude: number; longitude: number } | null;
   cityLabel: string | null;
 }) {
-  const distance =
-    cityCoords &&
-    formatDistanceBetween(cityCoords, {
-      latitude: place.latitude ?? null,
-      longitude: place.longitude ?? null,
-    });
+  // WO-061A: distance comes pre-computed from the server; no coordinates here.
+  const distance = formatDistanceMeters(place.distanceMeters ?? null);
   const label =
     distance ??
     locationFallbackLabel({ neighborhood: place.neighborhood, cityName: place.cityName ?? cityLabel });
+
 
   return (
     <Link to={`/place/${place.id}`} className="block">
