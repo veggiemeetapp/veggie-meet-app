@@ -138,12 +138,20 @@ export async function fetchInbox(meProfileId: string): Promise<DMInboxItem[]> {
     .select("id, user_a_id, user_b_id, last_message_at, updated_at, created_at")
     .order("last_message_at", { ascending: false, nullsFirst: false });
   if (error) throw error;
-  const rows = (convs ?? []) as DMConversationRow[];
+  // Suppress conversations with blocked pairs in BOTH directions. The blocked
+  // party cannot read `user_blocks`, so this uses the server-side helper that
+  // never discloses which side placed the block.
+  const suppressed = await fetchSuppressedProfileIds();
+  const rows = ((convs ?? []) as DMConversationRow[]).filter((r) => {
+    const other = r.user_a_id === meProfileId ? r.user_b_id : r.user_a_id;
+    return !suppressed.has(other);
+  });
   if (rows.length === 0) return [];
 
   const otherIds = rows.map((r) =>
     r.user_a_id === meProfileId ? r.user_b_id : r.user_a_id,
   );
+
 
   const [{ data: profs }, { data: friends }] = await Promise.all([
     supabase
