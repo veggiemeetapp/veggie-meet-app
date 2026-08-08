@@ -95,6 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // navigation to a signed-out screen.
       qc.clear();
       setProfile(null);
+      // WO-073: drop any pending post-auth deep-link hint so the next identity
+      // on this tab never resumes into the previous member's destination.
+      try {
+        sessionStorage.removeItem("veggiemeet_post_auth_next");
+      } catch {
+        /* ignore */
+      }
       // (legacy `veggiemeet_onboarded` localStorage flag removed — route
       // gating derives onboarding state from the server profile only.)
     },
