@@ -743,10 +743,13 @@ function AccountSection({
           <DialogHeader>
             <DialogTitle>Delete your account?</DialogTitle>
             <DialogDescription>
-              This will anonymise your profile, sign you out, and cancel your
-              future attendance. Verified Meetup history is retained for the
-              other Veggies who were there. This can't be undone.
+              Your profile, avatar, connections, messages, invitations and
+              notifications will be permanently removed, your upcoming Meetups
+              will be cancelled, and you'll be signed out for good. Anonymised
+              records of Meetups that already happened and of any safety
+              reports are kept for the community. This can't be undone.
             </DialogDescription>
+
           </DialogHeader>
 
           <div className="space-y-2">
