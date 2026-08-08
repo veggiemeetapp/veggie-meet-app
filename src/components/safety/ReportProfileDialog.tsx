@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { PROFILE_REPORT_REASONS, submitProfileReport, blockProfile } from "@/lib/safety";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 
 type Step = "form" | "offer_block";
 
