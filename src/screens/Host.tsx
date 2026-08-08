@@ -313,7 +313,7 @@ export default function Host() {
         // WO-042 §9: authoritative, once-only event fired only after the
         // backend insert succeeded. No PII — enums, ids and counts only.
         logAnalyticsEvent("meetup_created", {
-          meetup_id: data.id,
+          meetup_id: newId,
           category: cat.id,
           capacity,
           city_id: resolved.cityId,
@@ -322,13 +322,13 @@ export default function Host() {
         });
         if (resolved.communityPlaceId) {
           logAnalyticsEvent("meetup_created_at_community_place", {
-            meetup_id: data.id,
+            meetup_id: newId,
             place_id: resolved.communityPlaceId,
           });
         }
 
         setConfirmOpen(false);
-        navigate(`/meetup-created/${data.id}`);
+        navigate(`/meetup-created/${newId}`);
         return;
       }
     } catch (e) {
