@@ -283,39 +283,33 @@ export default function Host() {
     setSaving(true);
     const cat = CATEGORIES[categoryIdx];
     try {
-      const { data, error } = await supabase
-        .from("meetups")
-        .insert({
-          title: title.trim(),
-          description: description.trim(),
-          category: cat.id,
-          host_id: profile.id,
-          community_place_id: resolved.communityPlaceId,
-          custom_location_name: resolved.communityPlaceId ? null : resolved.locationName,
-          custom_location_address: resolved.communityPlaceId ? null : resolved.address,
-          cover_image_url: cover || DEFAULT_COVER,
-          date,
-          start_time: startTime,
-          end_time: addMinutes(startTime, 120),
-          capacity,
-          status: "upcoming",
-          city_id: resolved.cityId,
-          city_name_snapshot: resolved.cityName,
-          timezone: resolved.timezone,
-          neighborhood: resolved.neighborhood,
-          location_name: resolved.locationName,
-          address: resolved.address,
-          latitude: resolved.latitude,
-          longitude: resolved.longitude,
-          location_source: resolved.locationSource,
-          location_is_inferred: false,
-          location_updated_at: new Date().toISOString(),
-        })
-        .select("id")
-        .maybeSingle();
+      // WO-076: creation is server-authoritative. Host identity is derived
+      // from auth inside `create_hosted_meetup` — never sent from the client —
+      // and every field (times, capacity, category, timezone, location) is
+      // validated server-side before a Meetup row can exist.
+      const { data, error } = await (supabase.rpc as any)("create_hosted_meetup", {
+        _title: title.trim(),
+        _description: description.trim(),
+        _category: cat.id,
+        _date: date,
+        _start_time: startTime,
+        _end_time: addMinutes(startTime, 120),
+        _capacity: capacity,
+        _city_id: resolved.cityId,
+        _community_place_id: resolved.communityPlaceId,
+        _location_name: resolved.locationName,
+        _address: resolved.address,
+        _neighborhood: resolved.neighborhood,
+        _latitude: resolved.latitude,
+        _longitude: resolved.longitude,
+        _timezone: resolved.timezone,
+        _cover_image_url: cover || DEFAULT_COVER,
+      });
 
       if (error) throw error;
-      if (data?.id) {
+      const newId = data as string | null;
+      if (newId) {
+
         // WO-042 §9: authoritative, once-only event fired only after the
         // backend insert succeeded. No PII — enums, ids and counts only.
         logAnalyticsEvent("meetup_created", {
