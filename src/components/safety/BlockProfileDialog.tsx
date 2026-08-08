@@ -30,8 +30,19 @@ export function BlockProfileDialog({
     if (busy) return;
     setBusy(true);
     try {
-      await blockProfile(profileId);
-      toast.success(`${displayName} has been blocked.`);
+      const out = await blockProfile(profileId);
+      logAnalyticsEvent("member_blocked", {
+        result: out.result,
+        neutralized_requests: out.neutralized_requests ?? 0,
+        neutralized_invitations: out.neutralized_invitations ?? 0,
+        cancelled_attendance: out.cancelled_attendance ?? 0,
+      });
+      toast.success(`${displayName} has been blocked.`, {
+        description:
+          (out.cancelled_attendance ?? 0) > 0 || (out.neutralized_requests ?? 0) > 0
+            ? "Pending requests, invitations and shared upcoming Meetups were cleared."
+            : undefined,
+      });
       onBlocked?.();
       onOpenChange(false);
     } catch (e) {
@@ -40,6 +51,7 @@ export function BlockProfileDialog({
       setBusy(false);
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
