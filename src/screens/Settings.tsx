@@ -634,8 +634,15 @@ function AccountSection({
         setTypedConfirm("");
         return;
       }
-      logOnboardingEvent("account_deletion_completed", {});
-      toast.success("Account deleted");
+      logOnboardingEvent("account_deletion_completed", {
+        already_deleted: res.status === "already_deleted",
+      });
+      toast.success(
+        res.status === "already_deleted"
+          ? "This account was already deleted"
+          : "Your account has been deleted",
+      );
+
       setConfirmOpen(false);
       setTypedConfirm("");
       await signOut();
