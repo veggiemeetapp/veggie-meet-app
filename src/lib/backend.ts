@@ -223,22 +223,13 @@ export async function fetchMyRemovalDetails(
 }
 
 /**
- * Ensure the user is a chat participant for a meetup's chat.
- * Repairs missing participant rows and returns the chat id (or null).
+ * WO-070 — chat rosters are maintained server-side from attendance.
+ * Resolve the meetup's chat id for navigation only.
  */
-export async function ensureChatMembership(
-  profileId: string,
+export async function resolveMeetupChatId(
   meetupId: string,
 ): Promise<string | null> {
-  const chatId = await fetchChatIdForMeetup(meetupId);
-  if (!chatId) return null;
-  await supabase
-    .from("chat_participants")
-    .upsert(
-      { chat_id: chatId, profile_id: profileId },
-      { onConflict: "chat_id,profile_id", ignoreDuplicates: true },
-    );
-  return chatId;
+  return fetchChatIdForMeetup(meetupId);
 }
 
 /**
