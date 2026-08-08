@@ -2845,6 +2845,10 @@ export type Database = {
         Returns: undefined
       }
       _suggestion_norm: { Args: { _t: string }; Returns: string }
+      _valid_report_reason: {
+        Args: { _code: string; _kind: string }
+        Returns: boolean
+      }
       accept_connection_request: {
         Args: { _friendship_id: string }
         Returns: Json
