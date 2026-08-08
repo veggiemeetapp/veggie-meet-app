@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { blockProfile } from "@/lib/safety";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 
 export function BlockProfileDialog({
   profileId,
