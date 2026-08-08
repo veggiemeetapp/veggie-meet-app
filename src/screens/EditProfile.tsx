@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Camera, ImagePlus, Shuffle, Trash2 } from "lucide-react";
 import { PrimaryButton, UserAvatar } from "@/components/app";
 import {
@@ -12,55 +13,21 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext, useSetHomeCity } from "@/hooks/useLocation";
 import { CitySelector } from "@/components/location/CitySelector";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-const INTERESTS = [
-  { emoji: "☕", label: "Coffee" },
-  { emoji: "🥗", label: "Vegan Food" },
-  { emoji: "🥾", label: "Hiking" },
-  { emoji: "📚", label: "Books" },
-  { emoji: "🎲", label: "Board Games" },
-  { emoji: "🎨", label: "Art" },
-  { emoji: "🏃", label: "Running" },
-  { emoji: "🎵", label: "Live Music" },
-  { emoji: "🌱", label: "Gardening" },
-  { emoji: "🧘", label: "Yoga" },
-  { emoji: "🎬", label: "Movies" },
-  { emoji: "🌍", label: "Travel" },
-];
-
+import { updateMyProfile } from "@/lib/profile";
+import { uploadAvatar } from "@/lib/imageUpload";
+import {
+  MAX_INTERESTS,
+  MIN_INTERESTS,
+  fetchInterestCatalogue,
+} from "@/lib/onboarding";
 
 function sampleAvatar() {
   const seed = `veggie-${Math.random().toString(36).slice(2, 8)}`;
   return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=c8e6c9`;
 }
 
-/** Compress an uploaded photo into a persistent JPEG data URL. */
-async function fileToCompressedDataUrl(file: File, max = 512): Promise<string> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const i = new Image();
-    i.onload = () => resolve(i);
-    i.onerror = reject;
-    i.src = dataUrl;
-  });
-  const scale = Math.min(1, max / Math.max(img.width, img.height));
-  const w = Math.round(img.width * scale);
-  const h = Math.round(img.height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  ctx?.drawImage(img, 0, 0, w, h);
-  return canvas.toDataURL("image/jpeg", 0.82);
-}
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -73,11 +40,22 @@ export default function EditProfile() {
   const [interests, setInterests] = useState<string[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const location = useLocationContext();
   const setHomeCity = useSetHomeCity();
   const homeCity = location.data?.home_city ?? null;
+
+  // Interests come from the approved server catalogue — the same taxonomy the
+  // `update_my_profile` RPC validates against, so the UI can never offer a
+  // value the server will reject.
+  const catalogue = useQuery({
+    queryKey: ["interest-catalogue"],
+    queryFn: fetchInterestCatalogue,
+    staleTime: 60 * 60 * 1000,
+  });
 
   useEffect(() => {
     if (!profile) return;
@@ -87,14 +65,19 @@ export default function EditProfile() {
     setInterests(profile.interests ?? []);
   }, [profile]);
 
-  const nameValid = displayName.trim().length > 0;
+  const nameValid = displayName.trim().length > 0 && displayName.trim().length <= 40;
   const cityValid = !!homeCity?.id;
-  const interestsValid = interests.length >= 1;
-  const canSave = nameValid && cityValid && interestsValid && dirty && !saving;
+  const interestsValid =
+    interests.length >= MIN_INTERESTS && interests.length <= MAX_INTERESTS;
+  const canSave = nameValid && cityValid && interestsValid && dirty && !saving && !uploading;
 
   function toggleInterest(label: string) {
     setInterests((s) =>
-      s.includes(label) ? s.filter((x) => x !== label) : [...s, label],
+      s.includes(label)
+        ? s.filter((x) => x !== label)
+        : s.length >= MAX_INTERESTS
+          ? s
+          : [...s, label],
     );
     setDirty(true);
   }
@@ -102,14 +85,23 @@ export default function EditProfile() {
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploading(true);
     try {
-      const url = await fileToCompressedDataUrl(file);
+      // Avatars live in the private `avatars` bucket under `<auth.uid()>/…`, so
+      // storage RLS enforces ownership. The profile row only ever stores the
+      // resulting hosted URL — never inline image data.
+      const url = await uploadAvatar(file);
       setAvatarUrl(url);
       setDirty(true);
       setAvatarSheet(false);
-    } catch {
-      toast.error("We couldn't read that image. Try another one.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "We couldn't upload that image. Try another one.",
+      );
     } finally {
+      setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   }
@@ -127,26 +119,31 @@ export default function EditProfile() {
   async function handleSave() {
     if (!profile || !canSave) return;
     setSaving(true);
-    // Home City is persisted via set_home_city RPC; profile mutation only writes
-    // the fields owned by this form so we never revert the canonical city model.
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        display_name: displayName.trim(),
+    setSaveError(null);
+    // Home City is persisted via set_home_city RPC; the profile mutation only
+    // writes the fields owned by this form. All validation is re-applied
+    // server-side inside update_my_profile.
+    try {
+      await updateMyProfile({
+        displayName: displayName.trim(),
         bio: bio.trim(),
-        avatar_url: avatarUrl,
+        avatarUrl,
+        clearAvatar: !avatarUrl,
         interests,
-      })
-      .eq("id", profile.id);
-    setSaving(false);
-    if (error) {
-      toast.error("We couldn't save your profile. Please try again.");
-      return;
+      });
+      await refreshProfile();
+      toast.success("Profile updated");
+      navigate("/you", { replace: true });
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "We couldn't save your profile.";
+      setSaveError(msg);
+      toast.error(msg);
+    } finally {
+      setSaving(false);
     }
-    await refreshProfile();
-    toast.success("Profile updated");
-    navigate("/you", { replace: true });
   }
+
 
   if (loading || !profile) {
     return (
@@ -259,34 +256,52 @@ export default function EditProfile() {
 
 
           <Field
-            label="Interests"
+            label={`Interests (${interests.length}/${MAX_INTERESTS})`}
             required
             error={
-              !interestsValid && dirty ? "Pick at least one interest." : undefined
+              !interestsValid && dirty
+                ? `Pick between ${MIN_INTERESTS} and ${MAX_INTERESTS} interests.`
+                : undefined
             }
           >
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map((i) => {
-                const active = interests.includes(i.label);
-                return (
-                  <button
-                    key={i.label}
-                    type="button"
-                    onClick={() => toggleInterest(i.label)}
-                    className={cn(
-                      "px-3.5 py-2 rounded-full text-sm font-medium border transition",
-                      active
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-charcoal border-border hover:bg-accent/60",
-                    )}
-                  >
-                    <span className="mr-1.5">{i.emoji}</span>
-                    {i.label}
-                  </button>
-                );
-              })}
-            </div>
+            {catalogue.isLoading ? (
+              <p className="text-sm text-charcoal-muted">Loading interests…</p>
+            ) : (
+              <div
+                className="flex flex-wrap gap-2"
+                role="group"
+                aria-label="Interests"
+              >
+                {(catalogue.data ?? []).map((i) => {
+                  const active = interests.includes(i.label);
+                  return (
+                    <button
+                      key={i.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggleInterest(i.label)}
+                      className={cn(
+                        "min-h-11 px-3.5 py-2 rounded-full text-sm font-medium border transition",
+                        active
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-charcoal border-border hover:bg-accent/60",
+                      )}
+                    >
+                      {active && <span className="mr-1.5" aria-hidden="true">✓</span>}
+                      {i.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </Field>
+
+          {saveError && (
+            <p role="alert" aria-live="polite" className="text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
+
         </div>
       </main>
 

@@ -2849,6 +2849,7 @@ export type Database = {
         Args: { _code: string; _kind: string }
         Returns: boolean
       }
+      accept_community_guidelines: { Args: never; Returns: string }
       accept_connection_request: {
         Args: { _friendship_id: string }
         Returns: Json
@@ -3216,6 +3217,7 @@ export type Database = {
         Returns: undefined
       }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
+      is_blocked_with_me: { Args: { _profile_id: string }; Returns: boolean }
       is_chat_participant: { Args: { _chat_id: string }; Returns: boolean }
       is_dm_participant: {
         Args: { _conversation_id: string }
@@ -3224,6 +3226,7 @@ export type Database = {
       is_meetup_member: { Args: { _meetup_id: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
       is_pair_blocked: { Args: { _other_profile_id: string }; Returns: boolean }
+      is_safe_avatar_url: { Args: { _url: string }; Returns: boolean }
       issue_meetup_qr_token: {
         Args: { _meetup_id: string }
         Returns: {
@@ -3279,6 +3282,7 @@ export type Database = {
         }
         Returns: Json
       }
+      normalize_interests: { Args: { _interests: string[] }; Returns: string[] }
       place_freshness_label: {
         Args: { _last_reverified_at: string; _verified_at: string }
         Returns: string
@@ -3587,6 +3591,18 @@ export type Database = {
           _timezone: string
         }
         Returns: Json
+      }
+      update_my_profile: {
+        Args: {
+          _avatar_url?: string
+          _bio?: string
+          _clear_avatar?: boolean
+          _dietary_identity?: string
+          _display_name?: string
+          _interests?: string[]
+          _pronouns?: string
+        }
+        Returns: undefined
       }
       update_notification_preferences: { Args: { _prefs: Json }; Returns: Json }
       update_privacy_settings: {
