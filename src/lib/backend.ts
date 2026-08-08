@@ -246,7 +246,7 @@ export async function joinMeetup(
     // Surface the DB-raised, user-facing message ("This Meetup is full.", etc.)
     throw new Error(error.message);
   }
-  const chatId = await ensureChatMembership(_profileId, meetupId);
+  const chatId = await resolveMeetupChatId(meetupId);
   // First meaningful action is recorded server-side via trg_activation_attendance.
   // Notification-worthy action → contextual (one-shot) permission prompt.
   try {

@@ -24,7 +24,7 @@ import { MeetupCheckInButton } from "@/components/meetup/MeetupCheckInButton";
 import { getMeetup, getPlace, getVeggie, veggies } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ensureChatMembership,
+  resolveMeetupChatId,
   fetchMeetupById,
   fetchMyRemovalDetails,
   fetchProfileAsVeggie,
@@ -93,7 +93,7 @@ export default function MeetupDetail() {
       // Repair: host/attendee should always have an openable chat.
       let chatId = m.chatId;
       if (role !== "visitor" && !chatId && profile?.id) {
-        chatId = (await ensureChatMembership(profile.id, m.id)) ?? "";
+        chatId = (await resolveMeetupChatId(m.id)) ?? "";
       }
       return { meetup: { ...m, chatId }, role };
     },
