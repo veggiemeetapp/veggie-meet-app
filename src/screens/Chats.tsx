@@ -43,7 +43,7 @@ export default function Chats() {
   const inboxQuery = useQuery({
     queryKey: ["dm-inbox", profile?.id],
     enabled: !!profile?.id,
-    queryFn: () => fetchInbox(profile!.id),
+    queryFn: () => fetchInbox(),
   });
 
   useEffect(() => {

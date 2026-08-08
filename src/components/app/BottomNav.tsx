@@ -31,7 +31,7 @@ function useUnreadConversations() {
     if (!profile?.id) return;
     let cancelled = false;
     const refresh = () =>
-      fetchInbox(profile.id)
+      fetchInbox()
         .then((rows) => {
           if (!cancelled) setCount(rows.filter((r) => r.unreadCount > 0).length);
         })

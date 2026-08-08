@@ -420,7 +420,7 @@ function DMScreen({
     const body = draft;
     setDraft("");
     try {
-      const msg = await sendDirectMessage(conversationId, meProfileId, body);
+      const msg = await sendDirectMessage(conversationId, body);
       setMessages((prev) => (prev.some((x) => x.id === msg.id) ? prev : [...prev, msg]));
       qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
     } catch (e) {
@@ -674,8 +674,7 @@ function DMScreen({
             displayName: other.displayName,
           }}
           onSent={async () => {
-            const rows = await fetchMessages(conversationId);
-            setMessages(rows);
+            await reloadThread();
           }}
         />
       )}
@@ -858,13 +857,13 @@ function ReportDialog({
   messageTimestamp?: string;
   onSubmit: (reason: string, details?: string) => Promise<void>;
 }) {
-  const [reason, setReason] = useState(REPORT_REASONS[0].label);
+  const [reason, setReason] = useState<string>(REPORT_REASONS[0].id);
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setReason(REPORT_REASONS[0].label);
+      setReason(REPORT_REASONS[0].id);
       setDetails("");
     }
   }, [open]);
@@ -896,7 +895,7 @@ function ReportDialog({
               htmlFor={`report-${r.id}`}
               className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
             >
-              <RadioGroupItem id={`report-${r.id}`} value={r.label} />
+              <RadioGroupItem id={`report-${r.id}`} value={r.id} />
               <span className="text-sm">{r.label}</span>
             </Label>
           ))}
