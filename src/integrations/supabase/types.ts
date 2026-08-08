@@ -3001,6 +3001,10 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: undefined
       }
+      discovery_eligible_profile_ids: {
+        Args: { _include_related?: boolean; _me: string }
+        Returns: string[]
+      }
       dismiss_meetup_follow_up: {
         Args: { _meetup_id: string }
         Returns: undefined
@@ -3066,6 +3070,7 @@ export type Database = {
         Returns: Json
       }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
+      get_meet_next_candidates: { Args: { _limit?: number }; Returns: Json }
       get_meetup_chat_context: { Args: { _chat_id: string }; Returns: Json }
       get_meetup_chat_thread: {
         Args: {
