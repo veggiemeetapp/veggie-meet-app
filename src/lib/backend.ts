@@ -161,42 +161,8 @@ export async function fetchChatIdForMeetup(meetupId: string): Promise<string | n
   return data?.id ?? null;
 }
 
-export async function fetchMessages(chatId: string): Promise<Message[]> {
-  const { data } = await supabase
-    .from("messages")
-    .select("*")
-    .eq("chat_id", chatId)
-    .order("created_at");
-  return (data ?? []).map((m) => ({
-    id: m.id as string,
-    chatId: m.chat_id as string,
-    senderId: (m.sender_id as string | null) ?? "system",
-    body: m.body as string,
-    createdAt: m.created_at as string,
-    type: m.type as MessageType,
-  }));
-}
-
-export async function sendMessage(
-  chatId: string,
-  senderProfileId: string,
-  body: string,
-): Promise<Message | null> {
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({ chat_id: chatId, sender_id: senderProfileId, body, type: "user" })
-    .select("*")
-    .maybeSingle();
-  if (error || !data) return null;
-  return {
-    id: data.id as string,
-    chatId: data.chat_id as string,
-    senderId: (data.sender_id as string | null) ?? "system",
-    body: data.body as string,
-    createdAt: data.created_at as string,
-    type: data.type as MessageType,
-  };
-}
+// WO-070 — Meetup group chat reads/writes moved to server-authoritative RPCs
+// in `src/lib/meetupChat.ts`. Direct `messages` DML is revoked for members.
 
 export async function hasAttendance(
   profileId: string,
@@ -257,22 +223,13 @@ export async function fetchMyRemovalDetails(
 }
 
 /**
- * Ensure the user is a chat participant for a meetup's chat.
- * Repairs missing participant rows and returns the chat id (or null).
+ * WO-070 — chat rosters are maintained server-side from attendance.
+ * Resolve the meetup's chat id for navigation only.
  */
-export async function ensureChatMembership(
-  profileId: string,
+export async function resolveMeetupChatId(
   meetupId: string,
 ): Promise<string | null> {
-  const chatId = await fetchChatIdForMeetup(meetupId);
-  if (!chatId) return null;
-  await supabase
-    .from("chat_participants")
-    .upsert(
-      { chat_id: chatId, profile_id: profileId },
-      { onConflict: "chat_id,profile_id", ignoreDuplicates: true },
-    );
-  return chatId;
+  return fetchChatIdForMeetup(meetupId);
 }
 
 /**
@@ -289,7 +246,7 @@ export async function joinMeetup(
     // Surface the DB-raised, user-facing message ("This Meetup is full.", etc.)
     throw new Error(error.message);
   }
-  const chatId = await ensureChatMembership(_profileId, meetupId);
+  const chatId = await resolveMeetupChatId(meetupId);
   // First meaningful action is recorded server-side via trg_activation_attendance.
   // Notification-worthy action → contextual (one-shot) permission prompt.
   try {

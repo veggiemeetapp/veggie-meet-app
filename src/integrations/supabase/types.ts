@@ -2863,6 +2863,8 @@ export type Database = {
       }
       are_connected: { Args: { _a: string; _b: string }; Returns: boolean }
       block_profile: { Args: { _blocked_profile_id: string }; Returns: Json }
+      can_post_meetup_chat: { Args: { _chat_id: string }; Returns: boolean }
+      can_read_meetup_chat: { Args: { _chat_id: string }; Returns: boolean }
       cancel_community_place_identity_review: {
         Args: { _place_id: string }
         Returns: Json
@@ -3060,6 +3062,16 @@ export type Database = {
         Returns: Json
       }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
+      get_meetup_chat_context: { Args: { _chat_id: string }; Returns: Json }
+      get_meetup_chat_thread: {
+        Args: {
+          _before_created_at?: string
+          _before_id?: string
+          _chat_id: string
+          _limit?: number
+        }
+        Returns: Json
+      }
       get_meetup_lifecycle: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
       get_member_report_queue: { Args: { _status?: string }; Returns: Json }
@@ -3238,6 +3250,11 @@ export type Database = {
       mark_meetup_follow_up_viewed: {
         Args: { _meetup_id: string }
         Returns: undefined
+      }
+      meetup_chat_meetup_id: { Args: { _chat_id: string }; Returns: string }
+      meetup_chat_post_block_reason: {
+        Args: { _chat_id: string }
+        Returns: string
       }
       meetup_has_ended: { Args: { _meetup_id: string }; Returns: boolean }
       meetup_in_check_in_window: {
@@ -3423,6 +3440,10 @@ export type Database = {
       }
       send_dm_message: {
         Args: { _body: string; _conversation_id: string }
+        Returns: Json
+      }
+      send_meetup_chat_message: {
+        Args: { _body: string; _chat_id: string }
         Returns: Json
       }
       set_community_place_active: {
