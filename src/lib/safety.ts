@@ -116,6 +116,20 @@ export async function isPairBlocked(profileId: string): Promise<boolean> {
   return data === true;
 }
 
+/**
+ * Peer profile ids that must be suppressed from the caller's active surfaces
+ * (Network, Requests, Chats). Covers blocks in BOTH directions without ever
+ * revealing which side placed the block — `user_blocks` RLS only exposes rows
+ * to the blocker, so the blocked party needs this server-side helper.
+ */
+export async function fetchSuppressedProfileIds(): Promise<Set<string>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("get_my_suppressed_profile_ids");
+  if (error) return new Set();
+  return new Set((data ?? []) as string[]);
+}
+
+
 
 export async function fetchBlockedProfiles(): Promise<BlockedProfile[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

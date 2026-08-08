@@ -119,21 +119,15 @@ async function fetchVerifiedPeerIds(meId: string): Promise<Set<string>> {
 
 export async function fetchNetwork(meId: string) {
   const rows = await fetchAll(meId);
-  // Hide blocked pairs from active views. Historical rows are preserved in DB;
-  // this only affects what the current user sees on Network / Requests / Meet Next.
-  const { data: blockRows } = await supabase
-    .from("user_blocks")
-    .select("blocker_profile_id, blocked_profile_id")
-    .or(`blocker_profile_id.eq.${meId},blocked_profile_id.eq.${meId}`);
-  const blockedOthers = new Set<string>();
-  (blockRows ?? []).forEach((b) => {
-    if (b.blocker_profile_id === meId) blockedOthers.add(b.blocked_profile_id as string);
-    if (b.blocked_profile_id === meId) blockedOthers.add(b.blocker_profile_id as string);
-  });
+  // Hide blocked pairs from active views, in BOTH directions. `user_blocks`
+  // rows are only visible to the blocker, so the suppression list comes from a
+  // server-side helper that never reveals which side placed the block.
+  const blockedOthers = await fetchSuppressedProfileIds();
   const notBlocked = (r: FriendshipRow) => {
     const other = r.profile_a_id === meId ? r.profile_b_id : r.profile_a_id;
     return !blockedOthers.has(other);
   };
+
   const active = rows.filter(
     (r) => (r.status === "connected" || r.status === "verified") && notBlocked(r),
   );
