@@ -1,14 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { fetchSuppressedProfileIds } from "@/lib/safety";
-
-export interface DMConversationRow {
-  id: string;
-  user_a_id: string;
-  user_b_id: string;
-  last_message_at: string | null;
-  updated_at: string;
-  created_at: string;
-}
 
 export interface DMMessage {
   id: string;
@@ -29,6 +19,16 @@ export interface DMOther {
   isVerifiedConnection: boolean;
 }
 
+export interface DMThread {
+  conversationId: string;
+  other: DMOther;
+  messages: DMMessage[];
+  hasMore: boolean;
+  canSend: boolean;
+  isBlocked: boolean;
+  isConnected: boolean;
+}
+
 export interface DMInboxItem {
   conversationId: string;
   other: DMOther;
@@ -39,6 +39,20 @@ export interface DMInboxItem {
 }
 
 export const MESSAGE_MAX = 2000;
+/** Bounded initial page — server clamps to 50. */
+export const MESSAGE_PAGE_SIZE = 40;
+
+function firstName(displayName: string): string {
+  return displayName.split(/\s+/)[0] ?? displayName;
+}
+
+/**
+ * WO-069: the entire DM surface is RPC-only.
+ * `authenticated` holds SELECT on dm_conversations / dm_messages (participant
+ * RLS + scoped realtime) and NO INSERT/UPDATE/DELETE — every write goes through
+ * a SECURITY DEFINER RPC that derives the actor from auth and re-checks
+ * connection eligibility plus both-direction blocks.
+ */
 
 export async function getOrCreateConversation(
   otherProfileId: string,
@@ -59,175 +73,95 @@ export async function markConversationRead(conversationId: string) {
 
 export async function sendDirectMessage(
   conversationId: string,
-  senderProfileId: string,
   body: string,
 ): Promise<DMMessage> {
   const trimmed = body.trim();
   if (!trimmed) throw new Error("Message can't be empty");
   if (trimmed.length > MESSAGE_MAX)
     throw new Error(`Messages must be under ${MESSAGE_MAX} characters`);
-  const { data, error } = await supabase
-    .from("dm_messages")
-    .insert({
-      conversation_id: conversationId,
-      sender_id: senderProfileId,
-      body: trimmed,
-    })
-    .select("*")
-    .single();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("send_dm_message", {
+    _conversation_id: conversationId,
+    _body: trimmed,
+  });
   if (error) throw error;
   return data as DMMessage;
 }
 
-export async function fetchMessages(conversationId: string): Promise<DMMessage[]> {
-  const { data, error } = await supabase
-    .from("dm_messages")
-    .select("id, conversation_id, sender_id, body, created_at, read_at, invitation_id")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as DMMessage[];
-}
-
-export async function fetchConversationWithOther(
+/**
+ * Bounded thread page. Pass the oldest loaded message as the cursor to page
+ * backwards; ordering is deterministic on (created_at, id).
+ */
+export async function fetchThread(
   conversationId: string,
-  meProfileId: string,
-): Promise<{ conversation: DMConversationRow; other: DMOther } | null> {
-  const { data: conv } = await supabase
-    .from("dm_conversations")
-    .select("id, user_a_id, user_b_id, last_message_at, updated_at, created_at")
-    .eq("id", conversationId)
-    .maybeSingle();
-  if (!conv) return null;
-  const c = conv as DMConversationRow;
-  const otherId = c.user_a_id === meProfileId ? c.user_b_id : c.user_a_id;
-  const other = await fetchOtherPerson(otherId, meProfileId);
-  return { conversation: c, other };
-}
-
-async function fetchOtherPerson(
-  otherId: string,
-  meProfileId: string,
-): Promise<DMOther> {
-  const { data } = await supabase
-    .from("profiles")
-    .select("id, display_name, avatar_url, current_city")
-    .eq("id", otherId)
-    .maybeSingle();
-  const displayName = (data?.display_name as string) ?? "Veggie";
-  // verified connection?
-  const [lo, hi] = meProfileId < otherId ? [meProfileId, otherId] : [otherId, meProfileId];
-  const { data: fRow } = await supabase
-    .from("friendships")
-    .select("status")
-    .eq("profile_a_id", lo)
-    .eq("profile_b_id", hi)
-    .maybeSingle();
+  cursor?: { createdAt: string; id: string } | null,
+): Promise<DMThread> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("get_dm_thread", {
+    _conversation_id: conversationId,
+    _before_created_at: cursor?.createdAt ?? null,
+    _before_id: cursor?.id ?? null,
+    _limit: MESSAGE_PAGE_SIZE,
+  });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = data as any;
+  const displayName = (d?.peer?.display_name as string) ?? "Veggie";
   return {
-    profileId: otherId,
-    displayName,
-    firstName: displayName.split(/\s+/)[0] ?? displayName,
-    avatarUrl: (data?.avatar_url as string | null) ?? null,
-    city: (data?.current_city as string | null) ?? null,
-    isVerifiedConnection: fRow?.status === "verified",
+    conversationId: d.conversation_id,
+    other: {
+      profileId: d.peer.profile_id,
+      displayName,
+      firstName: firstName(displayName),
+      avatarUrl: d.peer.avatar_url ?? null,
+      city: d.peer.city ?? null,
+      isVerifiedConnection: !!d.peer.is_verified_connection,
+    },
+    messages: (d.messages ?? []) as DMMessage[],
+    hasMore: !!d.has_more,
+    canSend: !!d.can_send,
+    isBlocked: !!d.is_blocked,
+    isConnected: !!d.is_connected,
   };
 }
 
-export async function fetchInbox(meProfileId: string): Promise<DMInboxItem[]> {
-  const { data: convs, error } = await supabase
-    .from("dm_conversations")
-    .select("id, user_a_id, user_b_id, last_message_at, updated_at, created_at")
-    .order("last_message_at", { ascending: false, nullsFirst: false });
+/**
+ * Single-RPC inbox: peer identity, last message, and per-recipient unread count
+ * in one round trip (no per-row queries). Conversations with a peer involved in
+ * a block in either direction are suppressed server-side (WO-068 policy).
+ */
+export async function fetchInbox(): Promise<DMInboxItem[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("get_my_dm_inbox");
   if (error) throw error;
-  // Suppress conversations with blocked pairs in BOTH directions. The blocked
-  // party cannot read `user_blocks`, so this uses the server-side helper that
-  // never discloses which side placed the block.
-  const suppressed = await fetchSuppressedProfileIds();
-  const rows = ((convs ?? []) as DMConversationRow[]).filter((r) => {
-    const other = r.user_a_id === meProfileId ? r.user_b_id : r.user_a_id;
-    return !suppressed.has(other);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((data ?? []) as any[]).map((r) => {
+    const displayName = (r.display_name as string) ?? "Veggie";
+    return {
+      conversationId: r.conversation_id,
+      other: {
+        profileId: r.peer_profile_id,
+        displayName,
+        firstName: firstName(displayName),
+        avatarUrl: r.avatar_url ?? null,
+        city: r.city ?? null,
+        isVerifiedConnection: !!r.is_verified_connection,
+      },
+      lastMessageBody: r.last_message_body ?? null,
+      lastMessageAt: r.last_message_at ?? null,
+      lastSenderId: r.last_sender_id ?? null,
+      unreadCount: Number(r.unread_count ?? 0),
+    };
   });
-  if (rows.length === 0) return [];
-
-  const otherIds = rows.map((r) =>
-    r.user_a_id === meProfileId ? r.user_b_id : r.user_a_id,
-  );
-
-
-  const [{ data: profs }, { data: friends }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, current_city")
-      .in("id", otherIds),
-    supabase
-      .from("friendships")
-      .select("profile_a_id, profile_b_id, status")
-      .or(`profile_a_id.eq.${meProfileId},profile_b_id.eq.${meProfileId}`),
-  ]);
-  const byId = new Map<string, { display_name: string; avatar_url: string | null; current_city: string | null }>();
-  (profs ?? []).forEach((p) =>
-    byId.set(p.id as string, {
-      display_name: p.display_name as string,
-      avatar_url: (p.avatar_url as string | null) ?? null,
-      current_city: (p.current_city as string | null) ?? null,
-    }),
-  );
-  const verifiedSet = new Set<string>();
-  (friends ?? []).forEach((f) => {
-    if (f.status !== "verified") return;
-    const other = f.profile_a_id === meProfileId ? f.profile_b_id : f.profile_a_id;
-    verifiedSet.add(other as string);
-  });
-
-  // Batch-fetch last message + unread count per conversation.
-  const items: DMInboxItem[] = await Promise.all(
-    rows.map(async (r) => {
-      const otherId = r.user_a_id === meProfileId ? r.user_b_id : r.user_a_id;
-      const [{ data: last }, { count }] = await Promise.all([
-        supabase
-          .from("dm_messages")
-          .select("body, sender_id, created_at")
-          .eq("conversation_id", r.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("dm_messages")
-          .select("id", { count: "exact", head: true })
-          .eq("conversation_id", r.id)
-          .neq("sender_id", meProfileId)
-          .is("read_at", null),
-      ]);
-      const p = byId.get(otherId);
-      const displayName = p?.display_name ?? "Veggie";
-      return {
-        conversationId: r.id,
-        other: {
-          profileId: otherId,
-          displayName,
-          firstName: displayName.split(/\s+/)[0] ?? displayName,
-          avatarUrl: p?.avatar_url ?? null,
-          city: p?.current_city ?? null,
-          isVerifiedConnection: verifiedSet.has(otherId),
-        },
-        lastMessageBody: (last?.body as string | undefined) ?? null,
-        lastMessageAt: (last?.created_at as string | undefined) ?? r.last_message_at,
-        lastSenderId: (last?.sender_id as string | undefined) ?? null,
-        unreadCount: count ?? 0,
-      };
-    }),
-  );
-  return items;
 }
 
-export async function unreadConversationCount(meProfileId: string): Promise<number> {
-  const inbox = await fetchInbox(meProfileId);
+export async function unreadConversationCount(): Promise<number> {
+  const inbox = await fetchInbox();
   return inbox.filter((i) => i.unreadCount > 0).length;
 }
 
 /* -------------------- Blocks --------------------
  * Block reads and writes live in `src/lib/safety.ts`. Composer gating uses the
  * pair-aware `isPairBlocked()` RPC so the blocked party is suppressed too, and
- * inbox suppression uses `fetchSuppressedProfileIds()`. Reading `user_blocks`
- * directly is not sufficient: RLS exposes those rows to the blocker only.
+ * inbox suppression happens inside `get_my_dm_inbox()`.
  */

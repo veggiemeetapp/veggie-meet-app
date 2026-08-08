@@ -3050,6 +3050,15 @@ export type Database = {
         Args: { _city_id?: string; _include_all_cities?: boolean }
         Returns: Json
       }
+      get_dm_thread: {
+        Args: {
+          _before_created_at?: string
+          _before_id?: string
+          _conversation_id: string
+          _limit?: number
+        }
+        Returns: Json
+      }
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_lifecycle: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
@@ -3065,6 +3074,7 @@ export type Database = {
         }[]
       }
       get_my_community_impact: { Args: never; Returns: Json }
+      get_my_dm_inbox: { Args: never; Returns: Json }
       get_my_impact_history: {
         Args: {
           _cursor?: string
@@ -3409,6 +3419,10 @@ export type Database = {
       }
       send_connection_request: {
         Args: { _target_profile_id: string }
+        Returns: Json
+      }
+      send_dm_message: {
+        Args: { _body: string; _conversation_id: string }
         Returns: Json
       }
       set_community_place_active: {

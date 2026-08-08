@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Ban,
@@ -34,8 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  fetchConversationWithOther,
-  fetchMessages,
+  fetchThread,
   getOrCreateConversation,
   markConversationRead,
   MESSAGE_MAX,
@@ -43,7 +42,12 @@ import {
   type DMMessage,
   type DMOther,
 } from "@/lib/directMessages";
-import { blockProfile, isPairBlocked, submitMessageReport } from "@/lib/safety";
+import {
+  blockProfile,
+  isPairBlocked,
+  submitMessageReport,
+  MESSAGE_REPORT_REASONS,
+} from "@/lib/safety";
 import {
   fetchInvitationsBundle,
   joinFromInvitation,
@@ -62,13 +66,8 @@ const STARTER_PROMPTS = [
   "What are your favorite veggie places nearby?",
 ];
 
-const REPORT_REASONS = [
-  { id: "harassment", label: "Harassment" },
-  { id: "spam", label: "Spam" },
-  { id: "inappropriate", label: "Inappropriate content" },
-  { id: "safety", label: "Safety concern" },
-  { id: "other", label: "Other" },
-];
+// Must match the server-side message report taxonomy (WO-068A validation).
+const REPORT_REASONS = MESSAGE_REPORT_REASONS;
 
 function formatDateSeparator(iso: string): string {
   const d = new Date(iso);
@@ -193,30 +192,61 @@ function DMScreen({
     new Map(),
   );
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [other, setOther] = useState<DMOther | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const otherQuery = useQuery({
-    queryKey: ["dm-conv", conversationId, meProfileId],
-    queryFn: () => fetchConversationWithOther(conversationId, meProfileId),
-  });
-  const other: DMOther | null = otherQuery.data?.other ?? null;
+  // Bounded initial page via get_dm_thread(): peer identity, eligibility and the
+  // most recent page of messages in a single RPC (no per-row queries).
+  const reloadThread = useMemo(
+    () => async () => {
+      const t = await fetchThread(conversationId);
+      setOther(t.other);
+      setMessages(t.messages);
+      setHasMore(t.hasMore);
+    },
+    [conversationId],
+  );
 
-  // Load messages
   useEffect(() => {
     let cancelled = false;
     setLoadingMsgs(true);
     setLoadError(null);
-    fetchMessages(conversationId)
-      .then((rows) => {
+    fetchThread(conversationId)
+      .then((t) => {
         if (cancelled) return;
-        setMessages(rows);
+        setOther(t.other);
+        setMessages(t.messages);
+        setHasMore(t.hasMore);
       })
-      .catch(() => setLoadError("Couldn't load this conversation."))
+      .catch(() => !cancelled && setLoadError("Couldn't load this conversation."))
       .finally(() => !cancelled && setLoadingMsgs(false));
     return () => {
       cancelled = true;
     };
   }, [conversationId]);
+
+  async function loadOlder() {
+    const oldest = messages[0];
+    if (!oldest || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const t = await fetchThread(conversationId, {
+        createdAt: oldest.created_at,
+        id: oldest.id,
+      });
+      setMessages((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        return [...t.messages.filter((m) => !seen.has(m.id)), ...prev];
+      });
+      setHasMore(t.hasMore);
+    } catch {
+      toast.error("Couldn't load earlier messages.");
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   // Check block state — pair-aware so the blocked party also gets a closed
   // composer with neutral wording instead of a failing send.
@@ -390,7 +420,7 @@ function DMScreen({
     const body = draft;
     setDraft("");
     try {
-      const msg = await sendDirectMessage(conversationId, meProfileId, body);
+      const msg = await sendDirectMessage(conversationId, body);
       setMessages((prev) => (prev.some((x) => x.id === msg.id) ? prev : [...prev, msg]));
       qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
     } catch (e) {
@@ -499,6 +529,24 @@ function DMScreen({
           aria-live="polite"
         >
           <div className="min-h-full flex flex-col justify-end space-y-4">
+            {!loadingMsgs && !loadError && hasMore && (
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadOlder}
+                  disabled={loadingOlder}
+                  className="rounded-full text-xs text-charcoal-muted"
+                >
+                  {loadingOlder ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    "Load earlier messages"
+                  )}
+                </Button>
+              </div>
+            )}
             {loadingMsgs ? (
               <div className="flex items-center justify-center py-10">
                 <Loader2 className="w-5 h-5 animate-spin text-charcoal-muted" />
@@ -644,8 +692,7 @@ function DMScreen({
             displayName: other.displayName,
           }}
           onSent={async () => {
-            const rows = await fetchMessages(conversationId);
-            setMessages(rows);
+            await reloadThread();
           }}
         />
       )}
@@ -828,13 +875,13 @@ function ReportDialog({
   messageTimestamp?: string;
   onSubmit: (reason: string, details?: string) => Promise<void>;
 }) {
-  const [reason, setReason] = useState(REPORT_REASONS[0].label);
+  const [reason, setReason] = useState<string>(REPORT_REASONS[0].id);
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setReason(REPORT_REASONS[0].label);
+      setReason(REPORT_REASONS[0].id);
       setDetails("");
     }
   }, [open]);
@@ -866,7 +913,7 @@ function ReportDialog({
               htmlFor={`report-${r.id}`}
               className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
             >
-              <RadioGroupItem id={`report-${r.id}`} value={r.label} />
+              <RadioGroupItem id={`report-${r.id}`} value={r.id} />
               <span className="text-sm">{r.label}</span>
             </Label>
           ))}
