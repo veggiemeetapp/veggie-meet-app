@@ -84,6 +84,8 @@ export default function VeggieProfile() {
   const showFooter = isSelf || (!isSelf && !!me);
 
 
+  // WO-072: public profile surfaces may only show real, member-owned imagery.
+  // No stock/filler images — an empty gallery renders nothing.
   const photos = useMemo(() => {
     if (!bundle) return [] as string[];
     const arr: string[] = [];
@@ -92,18 +94,9 @@ export default function VeggieProfile() {
       if (arr.length >= 3) break;
       if (m.coverImageUrl && !arr.includes(m.coverImageUrl)) arr.push(m.coverImageUrl);
     }
-    const fillers = [
-      "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=1200&q=80",
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1200&q=80",
-      "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80",
-    ];
-    let fi = 0;
-    while (arr.length < 3 && fi < fillers.length) {
-      if (!arr.includes(fillers[fi])) arr.push(fillers[fi]);
-      fi++;
-    }
     return arr.slice(0, 3);
   }, [bundle]);
+
 
   async function handleConnect() {
     if (!me || !id) return;
@@ -227,42 +220,62 @@ export default function VeggieProfile() {
             </Section>
           )}
 
-          {/* Photos */}
-          <Section title="Photos">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setPhotoOpen(photos[0])}
-                className="col-span-2 relative rounded-2xl overflow-hidden aspect-[16/10] bg-muted"
-              >
-                <img
-                  src={photos[0]}
-                  alt={`${bundle.profile.firstName} photo`}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-              {[photos[1], photos[2]].map((src, i) => (
+          {/* Photos — only rendered when the member actually has imagery */}
+          {(photos.length > 0 || isSelf) && (
+            <Section title="Photos">
+              {photos.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPhotoOpen(photos[0])}
+                    className={cn(
+                      "relative rounded-2xl overflow-hidden bg-muted",
+                      photos.length === 1
+                        ? "col-span-2 aspect-[16/10]"
+                        : "col-span-2 aspect-[16/10]",
+                    )}
+                  >
+                    <img
+                      src={photos[0]}
+                      alt={`${bundle.profile.firstName} photo`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                  {photos.slice(1, 3).map((src, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setPhotoOpen(src)}
+                      className="relative rounded-2xl overflow-hidden aspect-square bg-muted"
+                    >
+                      <img
+                        src={src}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-charcoal-muted">
+                  No photos yet. Add a profile photo so Veggies can recognise you.
+                </p>
+              )}
+              {isSelf && (
                 <button
-                  key={i}
                   type="button"
-                  onClick={() => setPhotoOpen(src)}
-                  className="relative rounded-2xl overflow-hidden aspect-square bg-muted"
+                  onClick={() => navigate("/you/edit")}
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-charcoal-muted hover:text-charcoal"
                 >
-                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <Pencil className="w-3 h-3" />
+                  Edit photos
                 </button>
-              ))}
-            </div>
-            {isSelf && (
-              <button
-                type="button"
-                onClick={() => navigate("/you/edit")}
-                className="mt-2 inline-flex items-center gap-1 text-xs text-charcoal-muted hover:text-charcoal"
-              >
-                <Pencil className="w-3 h-3" />
-                Edit photos
-              </button>
-            )}
-          </Section>
+              )}
+            </Section>
+          )}
+
 
           {/* Interests / Shared Interests */}
           {(() => {

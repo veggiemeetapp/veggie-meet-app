@@ -47,6 +47,8 @@ import {
   logOnboardingEvent,
   saveOnboardingStep,
 } from "@/lib/onboarding";
+import { acceptCommunityGuidelines, updateMyProfile, type ProfileEditInput } from "@/lib/profile";
+
 
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
@@ -198,33 +200,24 @@ export default function Onboarding() {
   }
 
   // Persist a partial profile field on step completion — keeps DB and UI in sync.
-  async function persistProfilePartial(patch: Record<string, unknown>) {
+  // WO-072: members hold no UPDATE privilege on `profiles`; every write goes
+  // through the `update_my_profile` RPC, which derives the actor from auth and
+  // validates each field server-side.
+  async function persistProfilePartial(patch: ProfileEditInput) {
     if (!session?.user) return;
-    // Ensure we have the caller's profile id (RPC-scoped to auth.uid()) so we
-    // can filter by primary key. Direct WHERE on auth_user_id is no longer
-    // permitted for authenticated callers.
-    let pid = profile?.id;
-    if (!pid) {
-      const { data } = await supabase.rpc("get_my_profile");
-      const row = (Array.isArray(data) ? data[0] : data) as { id?: string } | null;
-      pid = row?.id;
-    }
-    if (!pid) throw new Error("Profile not ready");
-    const { error } = await supabase
-      .from("profiles")
-      .update(patch as never)
-      .eq("id", pid);
-    if (error) throw new Error(error.message);
+    await updateMyProfile(patch);
     await refreshProfile();
   }
+
 
   async function handleIdentityContinue() {
     if (!displayName.trim()) return;
     try {
       await persistProfilePartial({
-        display_name: displayName.trim(),
+        displayName: displayName.trim(),
         pronouns: pronouns.trim() || null,
       });
+
       await advance("identity", "dietary");
     } catch (e) {
       toast.error("Couldn't save your name", {
@@ -236,7 +229,7 @@ export default function Onboarding() {
   async function handleDietaryContinue() {
     if (!dietary) return;
     try {
-      await persistProfilePartial({ dietary_identity: dietary });
+      await persistProfilePartial({ dietaryIdentity: dietary });
       await advance("dietary", "home_city");
     } catch (e) {
       toast.error("Couldn't save that yet", {
@@ -291,7 +284,7 @@ export default function Onboarding() {
 
   async function handlePhotoContinue(skipped: boolean) {
     try {
-      await persistProfilePartial({ avatar_url: avatarUrl });
+      await persistProfilePartial({ avatarUrl, clearAvatar: !avatarUrl });
       await advance("photo", "guidelines", { skipped });
     } catch (e) {
       toast.error("Couldn't save your photo", {
@@ -303,10 +296,11 @@ export default function Onboarding() {
   async function handleGuidelinesContinue() {
     if (!guidelinesAccepted) return;
     try {
-      await persistProfilePartial({
-        community_guidelines_accepted_at: new Date().toISOString(),
-      });
+      // Server-authoritative timestamp — clients cannot forge or back-date it.
+      await acceptCommunityGuidelines();
+      await refreshProfile();
       await advance("guidelines", "safety");
+
     } catch (e) {
       toast.error("Couldn't save that yet", {
         description: e instanceof Error ? e.message : undefined,
