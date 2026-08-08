@@ -2984,6 +2984,27 @@ export type Database = {
         }
         Returns: Json
       }
+      create_hosted_meetup: {
+        Args: {
+          _address: string
+          _capacity: number
+          _category: string
+          _city_id: string
+          _community_place_id: string
+          _cover_image_url: string
+          _date: string
+          _description: string
+          _end_time: string
+          _latitude: number
+          _location_name: string
+          _longitude: number
+          _neighborhood: string
+          _start_time: string
+          _timezone: string
+          _title: string
+        }
+        Returns: string
+      }
       create_meetup_invitation: {
         Args: {
           _meetup_id: string
@@ -3236,6 +3257,7 @@ export type Database = {
       is_owner: { Args: never; Returns: boolean }
       is_pair_blocked: { Args: { _other_profile_id: string }; Returns: boolean }
       is_safe_avatar_url: { Args: { _url: string }; Returns: boolean }
+      is_valid_timezone: { Args: { _tz: string }; Returns: boolean }
       issue_meetup_qr_token: {
         Args: { _meetup_id: string }
         Returns: {
@@ -3268,9 +3290,22 @@ export type Database = {
         Args: { _chat_id: string }
         Returns: string
       }
+      meetup_end_at: {
+        Args: {
+          _date: string
+          _end_time: string
+          _start_time: string
+          _timezone: string
+        }
+        Returns: string
+      }
       meetup_has_ended: { Args: { _meetup_id: string }; Returns: boolean }
       meetup_in_check_in_window: {
         Args: { _meetup_id: string }
+        Returns: string
+      }
+      meetup_start_at: {
+        Args: { _date: string; _start_time: string; _timezone: string }
         Returns: string
       }
       moderate_community_place_report: {
@@ -3296,6 +3331,7 @@ export type Database = {
         Args: { _last_reverified_at: string; _verified_at: string }
         Returns: string
       }
+      profile_is_eligible: { Args: { _profile_id: string }; Returns: boolean }
       promote_place_suggestion_to_candidate: {
         Args: { _suggestion_id: string }
         Returns: Json
