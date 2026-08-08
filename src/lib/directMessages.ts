@@ -225,20 +225,11 @@ export async function unreadConversationCount(meProfileId: string): Promise<numb
   return inbox.filter((i) => i.unreadCount > 0).length;
 }
 
-/* -------------------- Blocks (read-only helper) --------------------
- * Writing blocks/reports goes through the canonical safety RPCs in
- * `src/lib/safety.ts` (block_profile, submit_profile_report,
- * submit_message_report, submit_safety_report). The helper below is a
- * read-only convenience for gating the DM composer; it uses the same
- * `user_blocks` table under RLS that scopes rows to the blocker.
+/* -------------------- Blocks --------------------
+ * Block reads and writes live in `src/lib/safety.ts`. Composer gating uses the
+ * pair-aware `isPairBlocked()` RPC so the blocked party is suppressed too, and
+ * inbox suppression uses `fetchSuppressedProfileIds()`. Reading `user_blocks`
+ * directly is not sufficient: RLS exposes those rows to the blocker only.
  */
 
-export async function isBlockedByMe(meProfileId: string, otherProfileId: string) {
-  const { data } = await supabase
-    .from("user_blocks")
-    .select("id")
-    .eq("blocker_profile_id", meProfileId)
-    .eq("blocked_profile_id", otherProfileId)
-    .maybeSingle();
-  return !!data;
 }
