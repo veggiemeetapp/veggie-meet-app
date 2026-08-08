@@ -192,30 +192,61 @@ function DMScreen({
     new Map(),
   );
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [other, setOther] = useState<DMOther | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const otherQuery = useQuery({
-    queryKey: ["dm-conv", conversationId, meProfileId],
-    queryFn: () => fetchConversationWithOther(conversationId, meProfileId),
-  });
-  const other: DMOther | null = otherQuery.data?.other ?? null;
+  // Bounded initial page via get_dm_thread(): peer identity, eligibility and the
+  // most recent page of messages in a single RPC (no per-row queries).
+  const reloadThread = useMemo(
+    () => async () => {
+      const t = await fetchThread(conversationId);
+      setOther(t.other);
+      setMessages(t.messages);
+      setHasMore(t.hasMore);
+    },
+    [conversationId],
+  );
 
-  // Load messages
   useEffect(() => {
     let cancelled = false;
     setLoadingMsgs(true);
     setLoadError(null);
-    fetchMessages(conversationId)
-      .then((rows) => {
+    fetchThread(conversationId)
+      .then((t) => {
         if (cancelled) return;
-        setMessages(rows);
+        setOther(t.other);
+        setMessages(t.messages);
+        setHasMore(t.hasMore);
       })
-      .catch(() => setLoadError("Couldn't load this conversation."))
+      .catch(() => !cancelled && setLoadError("Couldn't load this conversation."))
       .finally(() => !cancelled && setLoadingMsgs(false));
     return () => {
       cancelled = true;
     };
   }, [conversationId]);
+
+  async function loadOlder() {
+    const oldest = messages[0];
+    if (!oldest || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const t = await fetchThread(conversationId, {
+        createdAt: oldest.created_at,
+        id: oldest.id,
+      });
+      setMessages((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        return [...t.messages.filter((m) => !seen.has(m.id)), ...prev];
+      });
+      setHasMore(t.hasMore);
+    } catch {
+      toast.error("Couldn't load earlier messages.");
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   // Check block state — pair-aware so the blocked party also gets a closed
   // composer with neutral wording instead of a failing send.
