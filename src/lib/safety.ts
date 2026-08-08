@@ -88,10 +88,18 @@ export function reasonLabel(code: string): string {
 
 /* ------------- Blocks ------------- */
 
-export async function blockProfile(profileId: string): Promise<void> {
+export type BlockOutcome = {
+  result: "blocked" | "already_blocked";
+  neutralized_requests?: number;
+  neutralized_invitations?: number;
+  cancelled_attendance?: number;
+};
+
+export async function blockProfile(profileId: string): Promise<BlockOutcome> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.rpc as any)("block_profile", { _blocked_profile_id: profileId });
+  const { data, error } = await (supabase.rpc as any)("block_profile", { _blocked_profile_id: profileId });
   if (error) throw error;
+  return (data ?? { result: "blocked" }) as BlockOutcome;
 }
 
 export async function unblockProfile(profileId: string): Promise<void> {
@@ -99,6 +107,15 @@ export async function unblockProfile(profileId: string): Promise<void> {
   const { error } = await (supabase.rpc as any)("unblock_profile", { _blocked_profile_id: profileId });
   if (error) throw error;
 }
+
+/** Caller-scoped only: answers "may I interact with this Veggie", never who blocked whom. */
+export async function isPairBlocked(profileId: string): Promise<boolean> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("is_pair_blocked", { _other_profile_id: profileId });
+  if (error) throw error;
+  return data === true;
+}
+
 
 export async function fetchBlockedProfiles(): Promise<BlockedProfile[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
