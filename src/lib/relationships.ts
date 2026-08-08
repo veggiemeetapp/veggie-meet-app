@@ -299,144 +299,53 @@ export interface MeetNextCandidate {
   reason: string;
 }
 
-interface CandidateProfileRow {
-  id: string;
-  display_name: string;
-  home_city_id: string | null;
-  cities?: { name: string | null } | null;
+interface MeetNextRow {
+  profile_id: string;
+  display_name: string | null;
   avatar_url: string | null;
+  city_name: string | null;
   interests: string[] | null;
+  shared_interests: string[] | null;
+  dietary_identity: string | null;
   is_active_host: boolean | null;
+  reason_code: string | null;
+  reason_label: string | null;
 }
 
 /**
- * Recommend up to `limit` real people the user is not already related to.
- * Every returned candidate has a concrete, data-backed reason.
+ * WO-075 — Meet Next is fully server-authoritative.
  *
- * `meCityId` is the viewer's Home City id. Same-city matches use canonical
- * `home_city_id`; free-text `current_city` is never consulted here.
+ * `get_meet_next_candidates` derives the viewer from `auth.uid()` and applies the
+ * canonical discovery eligibility rule (`discovery_eligible_profile_ids`):
+ * not self, not deleted, onboarding complete, discovery-visible, not blocked in
+ * either direction, and no existing friendship row. Reasons, ranking and the
+ * result field set are decided server-side; the client never filters candidates
+ * and never receives coordinates or internal scores.
  */
-export async function fetchMeetNext(
-  meProfileId: string,
-  meCityId: string | null,
-  meInterests: string[],
-  limit = 6,
-): Promise<MeetNextCandidate[]> {
-  // 1. Exclude everyone the user already has any friendship row with.
-  const { data: fRows } = await supabase
-    .from("friendships")
-    .select("profile_a_id, profile_b_id, status")
-    .or(`profile_a_id.eq.${meProfileId},profile_b_id.eq.${meProfileId}`);
-  const excluded = new Set<string>([meProfileId]);
-  (fRows ?? []).forEach((r) => {
-    excluded.add(r.profile_a_id);
-    excluded.add(r.profile_b_id);
+export async function fetchMeetNext(limit = 6): Promise<MeetNextCandidate[]> {
+  const { data, error } = await (supabase.rpc as unknown as (
+    n: string,
+    a?: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>)(
+    "get_meet_next_candidates",
+    { _limit: limit },
+  );
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as MeetNextRow[];
+  return rows.map((r) => {
+    const displayName = r.display_name ?? "Veggie";
+    return {
+      profileId: r.profile_id,
+      displayName,
+      firstName: displayName.split(/\s+/)[0] ?? displayName,
+      city: r.city_name,
+      avatarUrl: r.avatar_url,
+      interests: r.interests ?? [],
+      sharedInterests: r.shared_interests ?? [],
+      isActiveHost: !!r.is_active_host,
+      reason: r.reason_label ?? "Suggested for you",
+    };
   });
-  const { data: blockRows } = await supabase
-    .from("user_blocks")
-    .select("blocker_profile_id, blocked_profile_id")
-    .or(`blocker_profile_id.eq.${meProfileId},blocked_profile_id.eq.${meProfileId}`);
-  (blockRows ?? []).forEach((b) => {
-    excluded.add(b.blocker_profile_id as string);
-    excluded.add(b.blocked_profile_id as string);
-  });
-
-  // 2. Attendance context: profiles who share an upcoming meetup with me.
-  const { data: myAtt } = await supabase
-    .from("attendance")
-    .select("meetup_id, meetups!inner(id, title, date)")
-    .eq("profile_id", meProfileId)
-    .neq("status", "cancelled")
-    .gte("meetups.date", TODAY_ISO);
-  type AttRow = { meetup_id: string; meetups: { title: string } };
-  const myMeetups = (myAtt ?? []) as unknown as AttRow[];
-  const sharedMeetup = new Map<string, string>();
-  if (myMeetups.length > 0) {
-    const ids = myMeetups.map((r) => r.meetup_id);
-    const titleById = new Map(myMeetups.map((r) => [r.meetup_id, r.meetups.title]));
-    const { data: others } = await supabase
-      .from("attendance")
-      .select("profile_id, meetup_id")
-      .in("meetup_id", ids)
-      .neq("status", "cancelled");
-    (others ?? []).forEach((r) => {
-      if (r.profile_id === meProfileId) return;
-      const title = titleById.get(r.meetup_id);
-      if (title && !sharedMeetup.has(r.profile_id)) {
-        sharedMeetup.set(r.profile_id, title);
-      }
-    });
-  }
-
-  // 3. Candidate profiles — canonical `home_city_id`, joined city name for display.
-  const { data: profs } = await supabase
-    .from("profiles")
-    .select(
-      "id, display_name, home_city_id, cities:home_city_id(name), avatar_url, interests, is_active_host",
-    )
-    .neq("id", meProfileId)
-    .limit(80);
-
-  const meInterestSet = new Set(meInterests.map((i) => i.toLowerCase()));
-
-  const scored = ((profs ?? []) as unknown as CandidateProfileRow[])
-    .filter((p) => !excluded.has(p.id))
-    .map((p) => {
-      const interests = p.interests ?? [];
-      const cityName = p.cities?.name ?? null;
-      const sameCity = !!meCityId && p.home_city_id === meCityId;
-      const sharedInterests = interests.filter((i) =>
-        meInterestSet.has(i.toLowerCase()),
-      );
-      let reason: string | null = null;
-      let score = 0;
-
-      if (sharedMeetup.has(p.id)) {
-        reason = `Attending ${sharedMeetup.get(p.id)}`;
-        score = 100;
-      } else if (sharedInterests.length >= 2) {
-        reason = `${sharedInterests.length} shared interests`;
-        score = 60 + sharedInterests.length;
-      } else if (sameCity && p.is_active_host && cityName) {
-        reason = `Active Host in ${cityName}`;
-        score = 50;
-      } else if (sameCity && cityName) {
-        reason = `Also in ${cityName}`;
-        score = 30;
-      } else if (sharedInterests.length === 1) {
-        reason = `Also interested in ${sharedInterests[0]}`;
-        score = 15;
-      }
-
-      if (!reason) return null;
-      const displayName = p.display_name ?? "Veggie";
-      return {
-        profileId: p.id,
-        displayName,
-        firstName: displayName.split(/\s+/)[0] ?? displayName,
-        city: cityName,
-        avatarUrl: p.avatar_url,
-        interests,
-        sharedInterests,
-        isActiveHost: !!p.is_active_host,
-        reason,
-        score,
-      };
-    })
-    .filter((x): x is MeetNextCandidate & { score: number } => !!x)
-    .sort((a, b) => b.score - a.score);
-
-  // Deduplicate by unique profile ID — keep the highest-scoring (strongest reason) entry.
-  const seen = new Set<string>();
-  const unique: MeetNextCandidate[] = [];
-  for (const c of scored) {
-    if (seen.has(c.profileId)) continue;
-    seen.add(c.profileId);
-    const { score: _s, ...rest } = c;
-    unique.push(rest);
-    if (unique.length >= limit) break;
-  }
-
-  return unique;
 }
+
 

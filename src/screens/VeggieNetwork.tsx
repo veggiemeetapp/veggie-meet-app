@@ -78,16 +78,13 @@ export default function VeggieNetwork() {
   });
 
   const meetNextQuery = useQuery({
-    queryKey: ["meet-next", profile?.id, profile?.home_city_id ?? null],
+    // Identity-scoped key — WO-075 cache isolation across account switches.
+    queryKey: ["meet-next", profile?.id],
     enabled: !!profile?.id,
-    queryFn: () =>
-      fetchMeetNext(
-        profile!.id,
-        profile?.home_city_id ?? null,
-        profile?.interests ?? [],
-      ),
+    queryFn: () => fetchMeetNext(6),
     staleTime: 60_000,
   });
+
 
   // Realtime — refresh both lists when any friendship of mine changes.
   useEffect(() => {

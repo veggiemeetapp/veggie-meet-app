@@ -17,8 +17,10 @@ export interface VeggieResult {
   city_name: string | null;
   city_id: string | null;
   is_active_host: boolean;
+  dietary_identity: string | null;
   interests: string[];
   shared_interests_label: string | null;
+
   shared_meetup_title: string | null;
   relationship: "none" | "pending" | "connected" | "verified";
   friendship_id: string | null;
@@ -140,26 +142,13 @@ export async function searchVeggies(
     _cursor: cursor,
   });
   if (error) throw new Error(error.message);
-  const page = data ?? { items: [], next_cursor: null };
-  if (page.items.length === 0) return page;
-  // Respect discovery_visible: hide opted-out profiles from strangers.
-  // Existing connections/pending relationships remain visible everywhere.
-  const candidateIds = page.items
-    .filter((v) => v.relationship === "none")
-    .map((v) => v.entity_id);
-  if (candidateIds.length === 0) return page;
-  const { data: visRows } = await supabase
-    .from("profiles")
-    .select("id, discovery_visible")
-    .in("id", candidateIds);
-  const hidden = new Set(
-    (visRows ?? [])
-      .filter((r) => (r as { discovery_visible?: boolean }).discovery_visible === false)
-      .map((r) => r.id),
-  );
-  if (hidden.size === 0) return page;
-  return { ...page, items: page.items.filter((v) => !hidden.has(v.entity_id)) };
+  // WO-075: eligibility (deleted / onboarding-incomplete / discovery_visible /
+  // blocked in either direction / self) is enforced entirely inside
+  // `search_veggies` via `discovery_eligible_profile_ids`. No client-side
+  // post-filtering — it would break pagination and leak candidate existence.
+  return data ?? { items: [], next_cursor: null };
 }
+
 
 export async function searchMeetups(
   query: string,
