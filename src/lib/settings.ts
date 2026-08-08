@@ -105,12 +105,20 @@ export async function updatePrivacySettings(input: { discovery_visible?: boolean
 }
 
 export interface DeletionResult {
-  status: "completed" | "blocked";
+  /**
+   * WO-074 — `completed` is the normal terminal result (data purged + Auth
+   * identity deleted in the same transaction). `already_deleted` is the
+   * idempotent repeat result. `blocked` is retained for forward compatibility;
+   * the current server flow cancels upcoming hosted Meetups instead of
+   * blocking, so it should no longer occur.
+   */
+  status: "completed" | "already_deleted" | "blocked";
   request_id: string;
   future_hosted_meetup_count: number;
   future_attendance_count: number;
   blockers?: Record<string, unknown>;
 }
+
 
 /**
  * Removes the signed-in user's own avatar objects through the Storage API.

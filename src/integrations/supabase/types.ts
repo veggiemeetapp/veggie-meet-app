@@ -2433,6 +2433,7 @@ export type Database = {
           community_guidelines_accepted_at: string | null
           created_at: string
           current_city: string | null
+          deleted_at: string | null
           dietary_identity: string | null
           discovery_visible: boolean
           display_name: string
@@ -2451,6 +2452,7 @@ export type Database = {
           community_guidelines_accepted_at?: string | null
           created_at?: string
           current_city?: string | null
+          deleted_at?: string | null
           dietary_identity?: string | null
           discovery_visible?: boolean
           display_name?: string
@@ -2469,6 +2471,7 @@ export type Database = {
           community_guidelines_accepted_at?: string | null
           created_at?: string
           current_city?: string | null
+          deleted_at?: string | null
           dietary_identity?: string | null
           discovery_visible?: boolean
           display_name?: string
@@ -3140,6 +3143,7 @@ export type Database = {
           community_guidelines_accepted_at: string | null
           created_at: string
           current_city: string | null
+          deleted_at: string | null
           dietary_identity: string | null
           discovery_visible: boolean
           display_name: string

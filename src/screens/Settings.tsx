@@ -634,8 +634,15 @@ function AccountSection({
         setTypedConfirm("");
         return;
       }
-      logOnboardingEvent("account_deletion_completed", {});
-      toast.success("Account deleted");
+      logOnboardingEvent("account_deletion_completed", {
+        already_deleted: res.status === "already_deleted",
+      });
+      toast.success(
+        res.status === "already_deleted"
+          ? "This account was already deleted"
+          : "Your account has been deleted",
+      );
+
       setConfirmOpen(false);
       setTypedConfirm("");
       await signOut();
@@ -690,8 +697,10 @@ function AccountSection({
           Danger zone
         </h2>
         <p className="text-xs text-charcoal-muted mt-1">
-          Deleting your account anonymises your profile and removes your access.
-          Verified activity you've been part of is preserved for the other Veggies.
+          Your profile and personal account data will be removed and you won't
+          be able to sign in again. Some anonymised records may be retained
+          where needed for safety and community integrity.
+
         </p>
         <button
           type="button"
@@ -734,10 +743,13 @@ function AccountSection({
           <DialogHeader>
             <DialogTitle>Delete your account?</DialogTitle>
             <DialogDescription>
-              This will anonymise your profile, sign you out, and cancel your
-              future attendance. Verified Meetup history is retained for the
-              other Veggies who were there. This can't be undone.
+              Your profile, avatar, connections, messages, invitations and
+              notifications will be permanently removed, your upcoming Meetups
+              will be cancelled, and you'll be signed out for good. Anonymised
+              records of Meetups that already happened and of any safety
+              reports are kept for the community. This can't be undone.
             </DialogDescription>
+
           </DialogHeader>
 
           <div className="space-y-2">
