@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchSuppressedProfileIds } from "@/lib/safety";
 
 export interface DMConversationRow {
   id: string;
