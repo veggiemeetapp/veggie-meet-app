@@ -230,9 +230,15 @@ export default function MeetupChat() {
               Pinned
             </div>
             <div className="mt-1 text-sm font-semibold text-charcoal">
-              See everyone {formatMeetupDate(meetup.date).toLowerCase()} at{" "}
-              {formatTime12h(meetup.start_time.slice(0, 5))}.
+              {context.post_block_reason === "cancelled"
+                ? "This Meetup was cancelled."
+                : context.post_block_reason === "completed"
+                  ? `This Meetup happened ${formatMeetupDate(meetup.date).toLowerCase()}.`
+                  : context.post_block_reason === "archived"
+                    ? `This Meetup wrapped up on ${formatMeetupDate(meetup.date)}.`
+                    : `See everyone ${formatMeetupDate(meetup.date).toLowerCase()} at ${formatTime12h(meetup.start_time.slice(0, 5))}.`}
             </div>
+
             <div className="mt-2 space-y-1.5 text-xs text-charcoal">
               <div className="flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5 text-primary" />
