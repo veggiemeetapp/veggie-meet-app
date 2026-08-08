@@ -218,6 +218,7 @@ export default function EditProfile() {
 
           <Field label="Short bio">
             <textarea
+              aria-label="Short bio"
               value={bio}
               onChange={(e) => {
                 setBio(e.target.value);
@@ -366,6 +367,7 @@ export default function EditProfile() {
       <input
         ref={fileRef}
         type="file"
+        aria-label="Upload profile photo"
         accept="image/*"
         className="hidden"
         onChange={handleUpload}
