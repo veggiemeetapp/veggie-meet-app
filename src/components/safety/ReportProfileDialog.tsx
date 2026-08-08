@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { PROFILE_REPORT_REASONS, submitProfileReport, blockProfile } from "@/lib/safety";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 
 type Step = "form" | "offer_block";
 
@@ -52,6 +54,7 @@ export function ReportProfileDialog({
         reason,
         details: details.trim() || null,
       });
+      logAnalyticsEvent("member_reported", { reason_provided: true, has_details: !!details.trim() });
       toast.success("Report received", {
         description: "Thank you. Our team will review this privately.",
       });
@@ -67,7 +70,8 @@ export function ReportProfileDialog({
     if (busy) return;
     setBusy(true);
     try {
-      await blockProfile(profileId);
+      const out = await blockProfile(profileId);
+      logAnalyticsEvent("member_blocked", { result: out.result, source: "report_flow" });
       toast.success(`${displayName} has been blocked.`);
       onBlocked?.();
       close(false);
@@ -77,6 +81,7 @@ export function ReportProfileDialog({
       setBusy(false);
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={close}>

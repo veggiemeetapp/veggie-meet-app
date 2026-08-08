@@ -2858,7 +2858,7 @@ export type Database = {
         Returns: undefined
       }
       are_connected: { Args: { _a: string; _b: string }; Returns: boolean }
-      block_profile: { Args: { _blocked_profile_id: string }; Returns: string }
+      block_profile: { Args: { _blocked_profile_id: string }; Returns: Json }
       cancel_community_place_identity_review: {
         Args: { _place_id: string }
         Returns: Json
@@ -3049,6 +3049,7 @@ export type Database = {
       get_host_meetup_summary: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_lifecycle: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
+      get_member_report_queue: { Args: { _status?: string }; Returns: Json }
       get_my_blocked_profiles: {
         Args: never
         Returns: {
@@ -3195,6 +3196,7 @@ export type Database = {
       }
       is_meetup_member: { Args: { _meetup_id: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
+      is_pair_blocked: { Args: { _other_profile_id: string }; Returns: boolean }
       issue_meetup_qr_token: {
         Args: { _meetup_id: string }
         Returns: {
@@ -3291,6 +3293,15 @@ export type Database = {
       remove_meetup_attendee: {
         Args: { _attendee_id: string; _meetup_id: string; _reason: string }
         Returns: undefined
+      }
+      report_and_block_profile: {
+        Args: {
+          _conversation_id?: string
+          _details: string
+          _reason: string
+          _reported_profile_id: string
+        }
+        Returns: Json
       }
       report_meetup: {
         Args: { _details: string; _meetup_id: string; _reason: string }
@@ -3404,6 +3415,10 @@ export type Database = {
         Returns: Json
       }
       set_home_city: { Args: { _city_id: string }; Returns: Json }
+      set_member_report_status: {
+        Args: { _report_id: string; _status: string }
+        Returns: Json
+      }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }
       shares_context_with: { Args: { _profile_id: string }; Returns: boolean }
       start_community_place_identity_review: {
@@ -3459,7 +3474,7 @@ export type Database = {
       }
       submit_profile_report: {
         Args: {
-          _conversation_id: string
+          _conversation_id?: string
           _details: string
           _reason: string
           _reported_profile_id: string
@@ -3473,10 +3488,7 @@ export type Database = {
       to_plan: { Args: { r: unknown }; Returns: Json }
       unaccent: { Args: { "": string }; Returns: string }
       unaccent_fallback: { Args: { _t: string }; Returns: string }
-      unblock_profile: {
-        Args: { _blocked_profile_id: string }
-        Returns: undefined
-      }
+      unblock_profile: { Args: { _blocked_profile_id: string }; Returns: Json }
       update_community_place_details: {
         Args: {
           _acknowledge_identity_risk?: boolean

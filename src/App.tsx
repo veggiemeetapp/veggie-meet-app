@@ -51,6 +51,8 @@ const OwnerPlaceReverify = lazy(() => import("./screens/OwnerPlaceReverify"));
 const OwnerPlaceEditDetails = lazy(() => import("./screens/OwnerPlaceEditDetails"));
 const OwnerPlaceVeganReview = lazy(() => import("./screens/OwnerPlaceVeganReview"));
 const OwnerPlaceIdentityReview = lazy(() => import("./screens/OwnerPlaceIdentityReview"));
+const OwnerMemberReports = lazy(() => import("./screens/OwnerMemberReports"));
+
 
 
 
@@ -154,7 +156,9 @@ const App = () => (
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
                 <Route path="/settings" element={gated(<Settings />)} />
                 <Route path="/owner/places" element={gated(<OwnerPlaceOperations />)} />
+                <Route path="/owner/member-reports" element={gated(<OwnerMemberReports />)} />
                 <Route
+
                   path="/owner/places/:placeId/reverify"
                   element={gated(<OwnerPlaceReverify />)}
                 />
