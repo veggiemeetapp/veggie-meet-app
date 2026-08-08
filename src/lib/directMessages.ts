@@ -231,5 +231,3 @@ export async function unreadConversationCount(meProfileId: string): Promise<numb
  * inbox suppression uses `fetchSuppressedProfileIds()`. Reading `user_blocks`
  * directly is not sufficient: RLS exposes those rows to the blocker only.
  */
-
-}
