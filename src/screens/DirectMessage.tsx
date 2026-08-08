@@ -529,6 +529,24 @@ function DMScreen({
           aria-live="polite"
         >
           <div className="min-h-full flex flex-col justify-end space-y-4">
+            {!loadingMsgs && !loadError && hasMore && (
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadOlder}
+                  disabled={loadingOlder}
+                  className="rounded-full text-xs text-charcoal-muted"
+                >
+                  {loadingOlder ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    "Load earlier messages"
+                  )}
+                </Button>
+              </div>
+            )}
             {loadingMsgs ? (
               <div className="flex items-center justify-center py-10">
                 <Loader2 className="w-5 h-5 animate-spin text-charcoal-muted" />
