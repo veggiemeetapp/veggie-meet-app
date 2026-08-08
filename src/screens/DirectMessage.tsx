@@ -37,14 +37,13 @@ import {
   fetchConversationWithOther,
   fetchMessages,
   getOrCreateConversation,
-  isBlockedByMe,
   markConversationRead,
   MESSAGE_MAX,
   sendDirectMessage,
   type DMMessage,
   type DMOther,
 } from "@/lib/directMessages";
-import { blockProfile, submitMessageReport } from "@/lib/safety";
+import { blockProfile, isPairBlocked, submitMessageReport } from "@/lib/safety";
 import {
   fetchInvitationsBundle,
   joinFromInvitation,
