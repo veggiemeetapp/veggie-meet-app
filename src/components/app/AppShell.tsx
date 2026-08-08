@@ -4,6 +4,7 @@ import { BottomNav } from "./BottomNav";
 import { AppErrorBoundary } from "./ErrorBoundary";
 import { OfflineBanner } from "./OfflineBanner";
 import { FollowUpPrompt } from "@/components/postmeetup/FollowUpPrompt";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AppShellProps {
   children: ReactNode;
@@ -14,7 +15,13 @@ const HIDDEN_NAV_PATTERNS = [/^\/meetup\//, /^\/join\//, /^\/group\//, /^\/chat\
 
 export function AppShell({ children }: AppShellProps) {
   const { pathname } = useLocation();
-  const hideNav = HIDDEN_NAV_PATTERNS.some((r) => r.test(pathname));
+  const { session, profile, loading } = useAuth();
+  // WO-073: authenticated chrome must never flash for a signed-out visitor or
+  // while auth is still resolving. The nav is shown only once we know the
+  // session belongs to a fully onboarded member.
+  const authedShell = !loading && !!session && !!profile?.onboarding_completed;
+  const hideNav = !authedShell || HIDDEN_NAV_PATTERNS.some((r) => r.test(pathname));
+
 
   return (
     <div className="min-h-dvh w-full bg-muted/40 flex justify-center">

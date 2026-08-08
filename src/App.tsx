@@ -1,11 +1,12 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/app";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { sanitizeInternalPath } from "@/lib/authRedirect";
 
 // Eagerly load the two most common landing routes so first paint after
 // auth/onboarding does not pay a code-split cost.
@@ -77,13 +78,26 @@ function LegacyPlaceCheckInRedirect() {
 
 function RequireOnboarded({ children }: { children: JSX.Element }) {
   const { session, profile, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) return null;
 
   // No session → onboarding/auth. We no longer honor the legacy
   // `veggiemeet_onboarded` localStorage flag: a stale flag on a shared or
   // signed-out device must never grant access to private routes.
-  if (!session) return <Navigate to="/onboarding" replace />;
+  // WO-073: remember the intended internal destination so a legitimate deep
+  // link resumes after sign-in. The value is a router-produced relative path
+  // and is re-sanitized before use; authorization is still enforced per route.
+  if (!session) {
+    const intended = sanitizeInternalPath(
+      location.pathname + location.search + location.hash,
+    );
+    const target =
+      intended && intended !== "/"
+        ? `/onboarding?next=${encodeURIComponent(intended)}`
+        : "/onboarding";
+    return <Navigate to={target} replace />;
+  }
 
   // Signed-in users must have completed onboarding, including required steps.
   const completed = !!profile?.onboarding_completed;

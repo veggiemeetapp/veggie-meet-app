@@ -48,6 +48,11 @@ import {
   saveOnboardingStep,
 } from "@/lib/onboarding";
 import { acceptCommunityGuidelines, updateMyProfile, type ProfileEditInput } from "@/lib/profile";
+import {
+  consumePostAuthPath,
+  sanitizeInternalPath,
+  stashPostAuthPath,
+} from "@/lib/authRedirect";
 
 
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
@@ -85,11 +90,16 @@ function actionLabel(opt: StartingPointOption): string {
 export default function Onboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const nextPath = useMemo(() => {
-    const raw = searchParams.get("next");
-    if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
-    return raw;
-  }, [searchParams]);
+  // WO-073: `?next=` is attacker-controllable, so it goes through a single
+  // strict sanitizer that only accepts rooted same-origin relative paths.
+  // A destination surviving sanitation is still authorization-gated by
+  // `RequireOnboarded` (and, for owner routes, the server-side owner check).
+  // A full-page OAuth round trip loses the query string, so a stashed
+  // per-tab copy is used as fallback.
+  const nextPath = useMemo(
+    () => sanitizeInternalPath(searchParams.get("next")) ?? consumePostAuthPath(),
+    [searchParams],
+  );
   const resumeStep = useMemo(() => {
     const raw = searchParams.get("resume") as OnboardingStep | null;
     return raw && ONBOARDING_STEP_ORDER.includes(raw) ? raw : null;
@@ -391,6 +401,7 @@ export default function Onboarding() {
         {step === "auth" && (
           <Auth
             intent={authIntent}
+            nextPath={nextPath}
             onContinue={() => setStep("identity")}
           />
         )}
@@ -549,9 +560,11 @@ function Welcome({
 function Auth({
   intent,
   onContinue,
+  nextPath,
 }: {
   intent: "signup" | "signin";
   onContinue: () => void;
+  nextPath: string | null;
 }) {
   const { session } = useAuth();
   const [mode, setMode] = useState<"choose" | "email">("choose");
@@ -559,6 +572,11 @@ function Auth({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  // Email signup with confirmation enabled returns no session: the member is
+  // NOT signed in until they click the link. We must not walk them into the
+  // profile steps, where every write would silently no-op.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
 
   useEffect(() => {
     if (session) onContinue();
@@ -573,7 +591,11 @@ function Auth({
 
   async function handleGoogle() {
     setBusy(true);
+    // The provider round trip drops our query string, so remember the intended
+    // internal destination per-tab. It is re-sanitized when consumed.
+    stashPostAuthPath(nextPath);
     const result = await lovable.auth.signInWithOAuth("google", {
+      // Must stay a public same-origin URL — never a protected route.
       redirect_uri: window.location.origin,
     });
     if (result.error) {
@@ -587,17 +609,17 @@ function Auth({
     onContinue();
   }
 
-
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || password.length < 6) {
+    const address = email.trim();
+    if (!address || password.length < 6) {
       toast.error("Please enter a valid email and a password (6+ characters).");
       return;
     }
     setBusy(true);
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
+      const { data, error } = await supabase.auth.signUp({
+        email: address,
         password,
         options: { emailRedirectTo: `${window.location.origin}/` },
       });
@@ -606,12 +628,21 @@ function Auth({
         toast.error(error.message);
         return;
       }
+      logOnboardingEvent("auth_signup_started");
+      if (!data.session) {
+        // Confirmation required — park here until the session arrives via the
+        // auth listener (clicking the link in this tab or another one).
+        stashPostAuthPath(nextPath);
+        setPendingEmail(address);
+        setPassword("");
+        return;
+      }
       logOnboardingEvent("auth_signup_success");
       toast.success("Welcome to VeggieMeet 🌱");
       onContinue();
     } else {
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: address,
         password,
       });
       setBusy(false);
@@ -624,6 +655,64 @@ function Auth({
       onContinue();
     }
   }
+
+  async function handleResend() {
+    if (!pendingEmail) return;
+    setBusy(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: pendingEmail,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setResent(true);
+    toast.success("Confirmation email sent again.");
+  }
+
+  if (pendingEmail) {
+    return (
+      <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+            Confirm your email
+          </h1>
+          <p className="mt-2 text-base text-charcoal-muted break-words">
+            We sent a confirmation link to <span className="font-semibold">{pendingEmail}</span>.
+            Open it to finish creating your account — you'll come straight back here.
+          </p>
+        </div>
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-charcoal-muted"
+        >
+          {resent
+            ? "Sent again. It can take a minute to arrive."
+            : "Waiting for confirmation. You can keep this tab open."}
+        </div>
+        <div className="mt-6 space-y-3">
+          <PrimaryButton fullWidth disabled={busy} onClick={handleResend}>
+            {busy ? "Sending…" : "Resend confirmation email"}
+          </PrimaryButton>
+          <button
+            type="button"
+            onClick={() => {
+              setPendingEmail(null);
+              setResent(false);
+            }}
+            className="w-full h-12 rounded-full border border-border bg-card font-semibold text-charcoal hover:bg-muted/40"
+          >
+            Use a different email
+          </button>
+        </div>
+      </div>
+    );
+  }
+
 
   if (mode === "email") {
     return (
