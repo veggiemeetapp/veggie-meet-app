@@ -623,7 +623,7 @@ export default function Host() {
 
         {/* Capacity */}
         <section>
-          <FieldLabel>Maximum attendees</FieldLabel>
+          <FieldLabel>Group size (including you)</FieldLabel>
           <div className="flex gap-2">
             {CAPACITIES.map((n) => (
               <button
