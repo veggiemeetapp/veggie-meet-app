@@ -34,8 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  fetchConversationWithOther,
-  fetchMessages,
+  fetchThread,
   getOrCreateConversation,
   markConversationRead,
   MESSAGE_MAX,
@@ -43,7 +42,12 @@ import {
   type DMMessage,
   type DMOther,
 } from "@/lib/directMessages";
-import { blockProfile, isPairBlocked, submitMessageReport } from "@/lib/safety";
+import {
+  blockProfile,
+  isPairBlocked,
+  submitMessageReport,
+  MESSAGE_REPORT_REASONS,
+} from "@/lib/safety";
 import {
   fetchInvitationsBundle,
   joinFromInvitation,
@@ -62,13 +66,8 @@ const STARTER_PROMPTS = [
   "What are your favorite veggie places nearby?",
 ];
 
-const REPORT_REASONS = [
-  { id: "harassment", label: "Harassment" },
-  { id: "spam", label: "Spam" },
-  { id: "inappropriate", label: "Inappropriate content" },
-  { id: "safety", label: "Safety concern" },
-  { id: "other", label: "Other" },
-];
+// Must match the server-side message report taxonomy (WO-068A validation).
+const REPORT_REASONS = MESSAGE_REPORT_REASONS;
 
 function formatDateSeparator(iso: string): string {
   const d = new Date(iso);
