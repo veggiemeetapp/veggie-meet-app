@@ -84,6 +84,8 @@ export default function VeggieProfile() {
   const showFooter = isSelf || (!isSelf && !!me);
 
 
+  // WO-072: public profile surfaces may only show real, member-owned imagery.
+  // No stock/filler images — an empty gallery renders nothing.
   const photos = useMemo(() => {
     if (!bundle) return [] as string[];
     const arr: string[] = [];
@@ -92,18 +94,9 @@ export default function VeggieProfile() {
       if (arr.length >= 3) break;
       if (m.coverImageUrl && !arr.includes(m.coverImageUrl)) arr.push(m.coverImageUrl);
     }
-    const fillers = [
-      "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=1200&q=80",
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1200&q=80",
-      "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80",
-    ];
-    let fi = 0;
-    while (arr.length < 3 && fi < fillers.length) {
-      if (!arr.includes(fillers[fi])) arr.push(fillers[fi]);
-      fi++;
-    }
     return arr.slice(0, 3);
   }, [bundle]);
+
 
   async function handleConnect() {
     if (!me || !id) return;
