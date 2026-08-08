@@ -219,3 +219,74 @@ export async function fetchMyReportDetail(subjectType: string, reportId: string)
   if (error) throw error;
   return data as MyReportDetail;
 }
+
+/* ------------- Report + block (single transaction) ------------- */
+
+export async function reportAndBlockProfile(input: {
+  reportedProfileId: string;
+  reason: string;
+  details?: string | null;
+  conversationId?: string | null;
+}): Promise<{ report_id: string; block: BlockOutcome }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("report_and_block_profile", {
+    _reported_profile_id: input.reportedProfileId,
+    _reason: input.reason,
+    _details: input.details ?? null,
+    _conversation_id: input.conversationId ?? null,
+  });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data as any;
+}
+
+/* ------------- Owner-only member report queue ------------- */
+
+export type MemberReportStatus = "submitted" | "under_review" | "resolved" | "dismissed";
+
+export type MemberReportQueueItem = {
+  report_id: string;
+  status: MemberReportStatus;
+  reason: string;
+  details: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  reporter: { profile_id: string; display_name: string };
+  reported: { profile_id: string; display_name: string };
+  has_conversation: boolean;
+  message_snapshot: string | null;
+};
+
+export type MemberReportQueue = {
+  counts: Record<MemberReportStatus | "total", number>;
+  items: MemberReportQueueItem[];
+};
+
+export async function fetchMemberReportQueue(status?: MemberReportStatus | null): Promise<MemberReportQueue> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("get_member_report_queue", {
+    _status: status ?? null,
+  });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? { counts: {}, items: [] }) as any;
+}
+
+export async function setMemberReportStatus(
+  reportId: string,
+  status: MemberReportStatus,
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)("set_member_report_status", {
+    _report_id: reportId,
+    _status: status,
+  });
+  if (error) throw error;
+}
+
+export const MEMBER_REPORT_STATUS_LABEL: Record<MemberReportStatus, string> = {
+  submitted: "Submitted",
+  under_review: "Under review",
+  resolved: "Resolved",
+  dismissed: "Dismissed",
+};
