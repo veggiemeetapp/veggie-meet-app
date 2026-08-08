@@ -37,14 +37,13 @@ import {
   fetchConversationWithOther,
   fetchMessages,
   getOrCreateConversation,
-  isBlockedByMe,
   markConversationRead,
   MESSAGE_MAX,
   sendDirectMessage,
   type DMMessage,
   type DMOther,
 } from "@/lib/directMessages";
-import { blockProfile, submitMessageReport } from "@/lib/safety";
+import { blockProfile, isPairBlocked, submitMessageReport } from "@/lib/safety";
 import {
   fetchInvitationsBundle,
   joinFromInvitation,
@@ -219,11 +218,15 @@ function DMScreen({
     };
   }, [conversationId]);
 
-  // Check block state
+  // Check block state — pair-aware so the blocked party also gets a closed
+  // composer with neutral wording instead of a failing send.
   useEffect(() => {
     if (!other) return;
-    isBlockedByMe(meProfileId, other.profileId).then(setBlockedByMe);
+    isPairBlocked(other.profileId)
+      .then(setBlockedByMe)
+      .catch(() => setBlockedByMe(false));
   }, [other, meProfileId]);
+
 
   // Mark read on open & when new incoming arrive
   useEffect(() => {

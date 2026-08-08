@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchSuppressedProfileIds } from "@/lib/safety";
 
 export interface DMConversationRow {
   id: string;
@@ -138,12 +139,20 @@ export async function fetchInbox(meProfileId: string): Promise<DMInboxItem[]> {
     .select("id, user_a_id, user_b_id, last_message_at, updated_at, created_at")
     .order("last_message_at", { ascending: false, nullsFirst: false });
   if (error) throw error;
-  const rows = (convs ?? []) as DMConversationRow[];
+  // Suppress conversations with blocked pairs in BOTH directions. The blocked
+  // party cannot read `user_blocks`, so this uses the server-side helper that
+  // never discloses which side placed the block.
+  const suppressed = await fetchSuppressedProfileIds();
+  const rows = ((convs ?? []) as DMConversationRow[]).filter((r) => {
+    const other = r.user_a_id === meProfileId ? r.user_b_id : r.user_a_id;
+    return !suppressed.has(other);
+  });
   if (rows.length === 0) return [];
 
   const otherIds = rows.map((r) =>
     r.user_a_id === meProfileId ? r.user_b_id : r.user_a_id,
   );
+
 
   const [{ data: profs }, { data: friends }] = await Promise.all([
     supabase
@@ -216,20 +225,9 @@ export async function unreadConversationCount(meProfileId: string): Promise<numb
   return inbox.filter((i) => i.unreadCount > 0).length;
 }
 
-/* -------------------- Blocks (read-only helper) --------------------
- * Writing blocks/reports goes through the canonical safety RPCs in
- * `src/lib/safety.ts` (block_profile, submit_profile_report,
- * submit_message_report, submit_safety_report). The helper below is a
- * read-only convenience for gating the DM composer; it uses the same
- * `user_blocks` table under RLS that scopes rows to the blocker.
+/* -------------------- Blocks --------------------
+ * Block reads and writes live in `src/lib/safety.ts`. Composer gating uses the
+ * pair-aware `isPairBlocked()` RPC so the blocked party is suppressed too, and
+ * inbox suppression uses `fetchSuppressedProfileIds()`. Reading `user_blocks`
+ * directly is not sufficient: RLS exposes those rows to the blocker only.
  */
-
-export async function isBlockedByMe(meProfileId: string, otherProfileId: string) {
-  const { data } = await supabase
-    .from("user_blocks")
-    .select("id")
-    .eq("blocker_profile_id", meProfileId)
-    .eq("blocked_profile_id", otherProfileId)
-    .maybeSingle();
-  return !!data;
-}
