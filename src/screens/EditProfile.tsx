@@ -203,6 +203,7 @@ export default function EditProfile() {
             error={!nameValid && dirty ? "Display name is required." : undefined}
           >
             <input
+              aria-label="Display name"
               value={displayName}
               onChange={(e) => {
                 setDisplayName(e.target.value);
@@ -212,6 +213,7 @@ export default function EditProfile() {
               placeholder="How should Veggies call you?"
               className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
+
           </Field>
 
           <Field label="Short bio">
