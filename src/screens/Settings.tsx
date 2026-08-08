@@ -697,8 +697,10 @@ function AccountSection({
           Danger zone
         </h2>
         <p className="text-xs text-charcoal-muted mt-1">
-          Deleting your account anonymises your profile and removes your access.
-          Verified activity you've been part of is preserved for the other Veggies.
+          Your profile and personal account data will be removed and you won't
+          be able to sign in again. Some anonymised records may be retained
+          where needed for safety and community integrity.
+
         </p>
         <button
           type="button"
