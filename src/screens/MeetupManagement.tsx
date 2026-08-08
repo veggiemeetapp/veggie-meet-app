@@ -1042,7 +1042,7 @@ export default function MeetupManagement() {
             onChange={(e) => setCancelReason(e.target.value)}
             rows={3}
             maxLength={300}
-            placeholder="Reason (optional)"
+            placeholder="Why is this Meetup being cancelled?"
             className="mt-2"
           />
           <div className="mt-1 text-[11px] text-charcoal-muted text-right">
@@ -1054,7 +1054,7 @@ export default function MeetupManagement() {
             </SecondaryButton>
             <PrimaryButton
               onClick={handleCancelConfirm}
-              disabled={cancelling}
+              disabled={cancelling || cancelReason.trim().length === 0}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {cancelling ? (
