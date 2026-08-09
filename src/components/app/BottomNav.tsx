@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
 import { Home, Users, PlusCircle, MessageCircle, User, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,30 +27,34 @@ interface BottomNavProps {
 
 function useUnreadConversations() {
   const { profile } = useAuth();
-  const [count, setCount] = useState(0);
+  const qc = useQueryClient();
+  // WO-086 DEF-086-03: the inbox badge used a per-mount effect, so every route
+  // change refetched the whole inbox and the result was never shared with the
+  // Chats surface. It is now an actor-scoped React Query entry with a bounded
+  // stale window; realtime only invalidates it.
+  const { data: count = 0 } = useQuery({
+    queryKey: ["dm-unread-conversations", profile?.id ?? null],
+    enabled: !!profile?.id,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const rows = await fetchInbox();
+      return rows.filter((r) => r.unreadCount > 0).length;
+    },
+  });
+
   useEffect(() => {
     if (!profile?.id) return;
-    let cancelled = false;
-    const refresh = () =>
-      fetchInbox()
-        .then((rows) => {
-          if (!cancelled) setCount(rows.filter((r) => r.unreadCount > 0).length);
-        })
-        .catch(() => {});
-    refresh();
     const channel = supabase
       .channel(`bottom-nav-unread-${profile.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "dm_messages" },
-        () => refresh(),
+      .on("postgres_changes", { event: "*", schema: "public", table: "dm_messages" }, () =>
+        qc.invalidateQueries({ queryKey: ["dm-unread-conversations"] }),
       )
       .subscribe();
     return () => {
-      cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [profile?.id]);
+  }, [profile?.id, qc]);
+
   return count;
 }
 
