@@ -286,13 +286,17 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
             <PrimaryButton
               size="sm"
               fullWidth
-              onClick={primary}
-              disabled={busy || plan.plan_type === "cancelled"}
+              onClick={plan.lifecycle_state === "cancelled" ? openMeetup : primary}
+              disabled={busy}
+              aria-label={`${
+                plan.lifecycle_state === "cancelled" ? "View details" : primaryLabel
+              } — ${plan.title}`}
             >
-              {plan.plan_type === "cancelled" ? "View details" : primaryLabel}
+              {plan.lifecycle_state === "cancelled" ? "View details" : primaryLabel}
               <ChevronRight className="w-4 h-4" />
             </PrimaryButton>
           )}
+
         </div>
       </Card>
 
