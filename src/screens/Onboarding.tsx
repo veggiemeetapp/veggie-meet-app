@@ -1492,7 +1492,7 @@ function StartingPoint({
         if (!cancelled) setOptions(data);
       })
       .catch((e: Error) => {
-        if (!cancelled) setError(e.message);
+        if (!cancelled) setError(memberSafeMessage(e));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

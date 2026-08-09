@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -405,7 +406,7 @@ function ReflectionCard({
       setEditing(false);
       onSubmitted();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(memberSafeMessage(e)),
   });
 
   if (!canSubmit) return null;

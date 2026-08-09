@@ -99,7 +99,7 @@ export default function EditProfile() {
     } catch (err) {
       toast.error(
         err instanceof Error
-          ? err.message
+          ? memberSafeMessage(err)
           : "We couldn't upload that image. Try another one.",
       );
     } finally {
