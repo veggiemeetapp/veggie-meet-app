@@ -37,6 +37,11 @@ export default function Plans() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["my-plans", profile?.id] });
 
   useEffect(() => {
+    if (profile?.id) logAnalyticsEvent("my_plans_opened", {});
+  }, [profile?.id]);
+
+
+  useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
       .channel(`plans:${profile.id}`)
