@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -51,7 +52,7 @@ export default function CommunityPlaceDetail() {
 
   if (isLoading) {
     return (
-      <PageFrame onBack={() => navigate(-1)}>
+      <PageFrame onBack={() => safeBack(navigate, "/community/places")}>
         <div className="px-5 py-10 space-y-3" role="status" aria-live="polite">
           <span className="sr-only">Loading this Community Place</span>
           <div className="h-40 rounded-2xl bg-muted animate-pulse" />
@@ -64,7 +65,7 @@ export default function CommunityPlaceDetail() {
 
   if (isError) {
     return (
-      <PageFrame onBack={() => navigate(-1)}>
+      <PageFrame onBack={() => safeBack(navigate, "/community/places")}>
         <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 text-center gap-3" role="alert">
           <p className="text-charcoal font-medium">We couldn't load this place.</p>
           <SecondaryButton onClick={() => refetch()}>Try Again</SecondaryButton>
@@ -77,7 +78,7 @@ export default function CommunityPlaceDetail() {
 
   if (!place) {
     return (
-      <PageFrame onBack={() => navigate(-1)}>
+      <PageFrame onBack={() => safeBack(navigate, "/community/places")}>
         <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 text-center gap-3">
           <p className="text-charcoal font-medium">This place isn't available.</p>
           <button
@@ -140,7 +141,7 @@ export default function CommunityPlaceDetail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-transparent to-background" />
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => safeBack(navigate, "/community/places")}
           aria-label="Back"
           className="absolute top-4 left-4 min-w-11 min-h-11 rounded-full flex items-center justify-center bg-background/90 backdrop-blur text-charcoal shadow-sm"
         >

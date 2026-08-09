@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton } from "@/components/app";
@@ -16,7 +17,7 @@ export default function MeetTheGroup() {
           title="Meet the Group"
           left={
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => safeBack(navigate, "/plans")}
               aria-label="Back"
               className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
             >
@@ -51,7 +52,7 @@ export default function MeetTheGroup() {
       <AppHeader
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/plans")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >
@@ -83,7 +84,7 @@ export default function MeetTheGroup() {
             Continue to Meetup Chat
           </PrimaryButton>
         </Link>
-        <SecondaryButton fullWidth size="sm" onClick={() => navigate(-1)}>
+        <SecondaryButton fullWidth size="sm" onClick={() => safeBack(navigate, "/plans")}>
           Back
         </SecondaryButton>
       </div>

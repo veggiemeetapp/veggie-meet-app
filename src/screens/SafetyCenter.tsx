@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -75,7 +76,7 @@ export default function SafetyCenter() {
         subtitle="Manage your safety, privacy, blocks, and reports."
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/settings")}
             aria-label="Back"
             className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted"
           >

@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Calendar, Clock, MapPin } from "lucide-react";
@@ -73,7 +74,7 @@ export default function JoinConfirmation() {
       <div className="flex flex-col min-h-dvh">
         <div className="safe-top flex items-center px-4 pt-3 pb-2">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/plans")}
             aria-label="Back"
             className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >
@@ -102,7 +103,7 @@ export default function JoinConfirmation() {
     <div className="flex flex-col min-h-dvh px-6 pt-4 pb-10">
       <div className="safe-top -mx-6 px-4 pb-2">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => safeBack(navigate, "/plans")}
           aria-label="Back"
           className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
         >

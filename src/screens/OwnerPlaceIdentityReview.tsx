@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -421,7 +422,7 @@ export default function OwnerPlaceIdentityReview() {
             size="icon"
             variant="ghost"
             aria-label="Back"
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/owner/places")}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />

@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -89,7 +90,7 @@ export default function Impact() {
         title="Community Impact"
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/you")}
             aria-label="Back"
             className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -158,7 +159,7 @@ function BackHeader({
       title={title}
       left={
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => safeBack(navigate, "/chats")}
           aria-label="Back"
           className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
         >

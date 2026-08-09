@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
@@ -7,6 +8,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/app";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { sanitizeInternalPath } from "@/lib/authRedirect";
+import { NavigationBehavior } from "@/lib/navigation";
+import { RequireValidIds } from "@/components/app/ResourceUnavailable";
+import { RequireOwner } from "@/components/app/RequireOwner";
 
 // Eagerly load the two most common landing routes so first paint after
 // auth/onboarding does not pay a code-split cost.
@@ -109,12 +113,23 @@ function RequireOnboarded({ children }: { children: JSX.Element }) {
   return children;
 }
 
-const queryClient = new QueryClient();
 
 // Helper so every private route gets the same auth+onboarding gate. Only
 // `/onboarding`, the OAuth consent page, and the NotFound catch-all are
 // intentionally public.
-const gated = (el: JSX.Element) => <RequireOnboarded>{el}</RequireOnboarded>;
+// WO-082: every gated route also validates UUID-shaped route params before
+// the screen mounts, so malformed deep links resolve to a neutral
+// unavailable state instead of a database error.
+const queryClient = new QueryClient();
+
+const gated = (el: JSX.Element) => (
+  <RequireOnboarded>
+    <RequireValidIds>{el}</RequireValidIds>
+  </RequireOnboarded>
+);
+
+// Owner-only routes: auth + onboarding + id validation + owner gate.
+const ownerGated = (el: JSX.Element) => gated(<RequireOwner>{el}</RequireOwner>);
 
 // Neutral suspense fallback while a lazy route chunk loads. Kept blank on
 // purpose: individual screens render their own skeleton immediately after
@@ -128,6 +143,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <NavigationBehavior />
           <AppShell>
             <Suspense fallback={<RouteFallback />}>
               <Routes>
@@ -169,24 +185,24 @@ const App = () => (
                 <Route path="/impact/:tab" element={gated(<Impact />)} />
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
                 <Route path="/settings" element={gated(<Settings />)} />
-                <Route path="/owner/places" element={gated(<OwnerPlaceOperations />)} />
-                <Route path="/owner/member-reports" element={gated(<OwnerMemberReports />)} />
+                <Route path="/owner/places" element={ownerGated(<OwnerPlaceOperations />)} />
+                <Route path="/owner/member-reports" element={ownerGated(<OwnerMemberReports />)} />
                 <Route
 
                   path="/owner/places/:placeId/reverify"
-                  element={gated(<OwnerPlaceReverify />)}
+                  element={ownerGated(<OwnerPlaceReverify />)}
                 />
                 <Route
                   path="/owner/places/:placeId/edit"
-                  element={gated(<OwnerPlaceEditDetails />)}
+                  element={ownerGated(<OwnerPlaceEditDetails />)}
                 />
                 <Route
                   path="/owner/places/:placeId/vegan-review"
-                  element={gated(<OwnerPlaceVeganReview />)}
+                  element={ownerGated(<OwnerPlaceVeganReview />)}
                 />
                 <Route
                   path="/owner/places/:placeId/identity-review"
-                  element={gated(<OwnerPlaceIdentityReview />)}
+                  element={ownerGated(<OwnerPlaceIdentityReview />)}
                 />
 
 

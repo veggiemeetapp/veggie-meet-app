@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -109,7 +110,7 @@ export default function CheckIn() {
   if (!meetup) {
     return (
       <div className="flex flex-col min-h-dvh">
-        <Header onBack={() => navigate(-1)} title="Meet Veggies" />
+        <Header onBack={() => safeBack(navigate, "/plans")} title="Meet Veggies" />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
           <p className="text-charcoal font-medium">This Meetup isn't available.</p>
           <button onClick={() => navigate("/")} className="mt-4 text-sm font-semibold text-primary">
@@ -123,7 +124,7 @@ export default function CheckIn() {
   return (
     <div className="flex flex-col min-h-dvh">
       <Header
-        onBack={() => (mode === "hub" ? navigate(-1) : setMode("hub"))}
+        onBack={() => (mode === "hub" ? safeBack(navigate, "/plans") : setMode("hub"))}
         title={mode === "qr" ? "Your Meetup QR" : mode === "scan" ? "Scan a Veggie" : "Meet Veggies"}
       />
 

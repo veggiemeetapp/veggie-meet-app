@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -119,7 +120,7 @@ export default function VeggieProfile() {
         title="Profile"
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/community")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >
@@ -135,7 +136,7 @@ export default function VeggieProfile() {
                 qc.invalidateQueries({ queryKey: ["veggie-profile"] });
                 qc.invalidateQueries({ queryKey: ["relationship-with"] });
                 qc.invalidateQueries({ queryKey: ["blocked-profiles"] });
-                navigate(-1);
+                safeBack(navigate, "/community");
               }}
             />
           ) : undefined

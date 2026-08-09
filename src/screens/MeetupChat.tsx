@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Send, Calendar, Clock, MapPin, Users, EyeOff } from "lucide-react";
@@ -160,7 +161,7 @@ export default function MeetupChat() {
           title="Meetup chat"
           left={
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => safeBack(navigate, "/chats")}
               aria-label="Back"
               className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
             >
@@ -214,7 +215,7 @@ export default function MeetupChat() {
         }
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/chats")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

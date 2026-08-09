@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +51,7 @@ export default function SupportedPlaces() {
         left={
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/you")}
             aria-label="Go back"
             className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
