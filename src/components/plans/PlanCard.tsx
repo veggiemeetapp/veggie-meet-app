@@ -152,8 +152,14 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
   })();
 
   const showAcceptDecline = plan.plan_type === "invitation";
-  const showLeave =
-    (plan.plan_type === "upcoming" || plan.plan_type === "active") && plan.role !== "host";
+  // WO-079: leaving is a server decision (WO-066 blocks undoing a check-in),
+  // so the CTA only appears when the server says it is possible.
+  const showLeave = plan.can_leave;
+  const showChat =
+    plan.lifecycle_state !== "cancelled" &&
+    plan.plan_type !== "invitation" &&
+    (plan.role === "host" || plan.attendance_state !== null);
+
 
   return (
     <>
