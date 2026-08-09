@@ -208,7 +208,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={openMeetup}>View Meetup</DropdownMenuItem>
-                    {plan.plan_type !== "invitation" && (
+                    {showChat && (
                       <DropdownMenuItem onClick={() => navigate(`/chat/${plan.meetup_id}`)}>
                         Open Chat
                       </DropdownMenuItem>
@@ -218,6 +218,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
                         Leave Meetup
                       </DropdownMenuItem>
                     )}
+
                     {showAcceptDecline && (
                       <DropdownMenuItem onClick={() => setConfirmDecline(true)}>
                         Decline invitation
