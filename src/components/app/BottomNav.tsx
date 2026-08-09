@@ -77,14 +77,12 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
                       : "text-charcoal-muted hover:text-charcoal",
                   )
                 }
-                // WO-085 DEF-085-05 (WCAG 4.1.2): the active tab was signalled
-                // by colour alone. aria-current exposes it programmatically,
-                // and the unread count is spoken as part of the item name
-                // rather than as a bare visual dot (see item 70).
-                aria-current={({ isActive }: { isActive: boolean }) =>
-                  (isActive ? "page" : undefined) as never
-                }
+                // WO-085 (WCAG 4.1.2): NavLink already emits aria-current="page"
+                // when active, so the active tab is exposed programmatically and
+                // not by colour alone. The unread count is spoken as part of the
+                // item name rather than as a bare visual dot (see item 70).
                 aria-label={
+
                   showBadge
                     ? `${label}, ${unread} unread ${unread === 1 ? "conversation" : "conversations"}`
                     : undefined
