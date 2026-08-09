@@ -149,22 +149,32 @@ export default function Onboarding() {
       setHydrated(true);
       return;
     }
-    // Fetch server state to resume where user left off.
+    // WO-080: a signed-in member has already cleared the pre-auth steps, so
+    // `welcome`/`auth` must never be restored — that bounced brand-new accounts
+    // (whose server step is still `welcome`) straight back to the splash after
+    // signup. Anything past auth resumes verbatim; `done` is handled above.
+    const firstPostAuthStep: OnboardingStep = "identity";
+    if (step === "welcome" || step === "auth") setStep(firstPostAuthStep);
     if (!hydrated) {
       fetchOnboardingState()
         .then((s) => {
-          if (s?.current_step) {
-            const candidate = s.current_step as OnboardingStep;
-            if (ONBOARDING_STEP_ORDER.includes(candidate) && candidate !== "done") {
-              setStep(candidate);
-            } else if (candidate === "welcome" || candidate === "auth") {
-              setStep("identity");
-            }
+          const candidate = s?.current_step as OnboardingStep | undefined;
+          if (
+            candidate &&
+            candidate !== "done" &&
+            candidate !== "welcome" &&
+            candidate !== "auth" &&
+            ONBOARDING_STEP_ORDER.includes(candidate)
+          ) {
+            setStep(candidate);
+          } else {
+            setStep(firstPostAuthStep);
           }
         })
         .catch(() => undefined)
         .finally(() => setHydrated(true));
     }
+
   }, [profile, navigate, nextPath, resumeStep, hydrated]);
 
   const stepIndex = ONBOARDING_STEP_ORDER.indexOf(step);
