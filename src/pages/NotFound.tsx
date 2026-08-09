@@ -24,10 +24,14 @@ const NotFound = () => {
     : { to: "/onboarding", label: "Go to sign in" };
 
   return (
-    <main
-      role="main"
+    // WO-085 DEF-085-02 (WCAG 1.3.1): this screen renders inside AppShell's
+    // <main>, so its own <main role="main"> produced two main landmarks and a
+    // non-top-level one. A plain section keeps the heading structure intact.
+    <section
+      aria-labelledby="notfound-title"
       className="flex min-h-dvh items-center justify-center bg-background px-6"
     >
+
       <div className="text-center max-w-sm">
         <h1 className="mb-3 text-2xl font-semibold tracking-tight text-charcoal">
           Page not found
