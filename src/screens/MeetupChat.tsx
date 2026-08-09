@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,7 +14,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
 import { useSendToken } from "@/hooks/useSendToken";
-import { memberSafeMessage } from "@/lib/errors";
 import {
   fetchMeetupChatContext,
   fetchMeetupChatThread,

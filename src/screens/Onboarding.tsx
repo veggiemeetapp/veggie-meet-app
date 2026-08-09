@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -58,7 +59,6 @@ import {
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
 import { lovable } from "@/integrations/lovable/index";
-import { memberSafeMessage } from "@/lib/errors";
 
 
 function makeAvatarUrl(seed: string) {

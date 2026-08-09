@@ -1,10 +1,10 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, Loader2, MapPin, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
-import { memberSafeMessage } from "@/lib/errors";
   useActiveCities,
   useLocationContext,
   useSetSelectedCity,

@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -51,7 +52,6 @@ import {
   updateProfileSettings,
 } from "@/lib/settings";
 import { logOnboardingEvent } from "@/lib/onboarding";
-import { memberSafeMessage } from "@/lib/errors";
 
 type Section = "hub" | "profile" | "discovery" | "notifications" | "privacy" | "account";
 

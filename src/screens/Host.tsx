@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -24,7 +25,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { memberSafeMessage } from "@/lib/errors";
 
 const CATEGORIES: { id: MeetupCategory; label: string; emoji: string }[] = [
   { id: "coffee", label: "Coffee", emoji: "☕" },

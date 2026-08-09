@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import {
@@ -14,7 +15,6 @@ import { toast } from "@/hooks/use-toast";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { fieldLabel } from "@/lib/fieldLabels";
 import {
-import { memberSafeMessage } from "@/lib/errors";
   acceptMeetupCurrentPlaceLocation,
   type MeetupPlaceContext,
 } from "@/lib/meetupPlaceContext";

@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -11,7 +12,6 @@ import {
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { blockProfile } from "@/lib/safety";
 import { logAnalyticsEvent } from "@/lib/analytics";
-import { memberSafeMessage } from "@/lib/errors";
 
 
 export function BlockProfileDialog({

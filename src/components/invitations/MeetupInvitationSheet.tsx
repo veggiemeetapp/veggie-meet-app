@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -30,7 +31,6 @@ import {
 } from "@/lib/invitations";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { memberSafeMessage } from "@/lib/errors";
 
 interface Props {
   open: boolean;

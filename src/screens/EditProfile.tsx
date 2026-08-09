@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +20,6 @@ import { toast } from "sonner";
 import { updateMyProfile } from "@/lib/profile";
 import { uploadAvatar } from "@/lib/imageUpload";
 import {
-import { memberSafeMessage } from "@/lib/errors";
   MAX_INTERESTS,
   MIN_INTERESTS,
   fetchInterestCatalogue,

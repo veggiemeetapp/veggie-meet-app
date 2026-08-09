@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -60,7 +61,6 @@ import { InvitationCard } from "@/components/invitations/InvitationCard";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSendToken } from "@/hooks/useSendToken";
-import { memberSafeMessage } from "@/lib/errors";
 
 
 const STARTER_PROMPTS = [
