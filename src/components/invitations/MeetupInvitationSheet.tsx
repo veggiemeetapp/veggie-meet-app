@@ -30,6 +30,7 @@ import {
 } from "@/lib/invitations";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { memberSafeMessage } from "@/lib/errors";
 
 interface Props {
   open: boolean;
@@ -93,7 +94,7 @@ export function MeetupInvitationSheet({
       onOpenChange(false);
     } catch (e) {
       const msg =
-        e instanceof Error ? e.message : "Couldn't send invitation.";
+        memberSafeMessage(e);
       toast.error(msg);
     } finally {
       setSending(false);

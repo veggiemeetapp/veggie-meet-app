@@ -117,7 +117,7 @@ export default function DirectMessage() {
         setResolvedId(id);
       } catch (e) {
         const msg =
-          e instanceof Error ? e.message : "Couldn't open this conversation.";
+          memberSafeMessage(e);
         setResolveError(msg);
       }
     })();
@@ -686,7 +686,7 @@ function DMScreen({
               toast.success("Report submitted. Thank you.");
               setReportMessage(null);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Couldn't submit report. Try again.");
+              toast.error(memberSafeMessage(e));
             }
           }}
         />

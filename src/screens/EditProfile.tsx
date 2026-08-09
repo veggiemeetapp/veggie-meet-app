@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { updateMyProfile } from "@/lib/profile";
 import { uploadAvatar } from "@/lib/imageUpload";
 import {
+import { memberSafeMessage } from "@/lib/errors";
   MAX_INTERESTS,
   MIN_INTERESTS,
   fetchInterestCatalogue,
@@ -137,7 +138,7 @@ export default function EditProfile() {
       navigate("/you", { replace: true });
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "We couldn't save your profile.";
+        memberSafeMessage(err);
       setSaveError(msg);
       toast.error(msg);
     } finally {

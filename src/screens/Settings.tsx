@@ -51,6 +51,7 @@ import {
   updateProfileSettings,
 } from "@/lib/settings";
 import { logOnboardingEvent } from "@/lib/onboarding";
+import { memberSafeMessage } from "@/lib/errors";
 
 type Section = "hub" | "profile" | "discovery" | "notifications" | "privacy" | "account";
 
@@ -346,7 +347,7 @@ function DiscoverySection({ data, onSaved }: { data: AccountSettings; onSaved: (
               onSaved();
             } catch (e) {
               toast.error("Couldn't update Home City", {
-                description: e instanceof Error ? e.message : undefined,
+                description: memberSafeMessage(e),
               });
             }
           }}
@@ -475,7 +476,7 @@ function NotificationsSection({
     } catch (e) {
       setPrefs({ ...prefs, [key]: prev });
       toast.error("Couldn't update", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     } finally {
       setPending(null);
@@ -575,7 +576,7 @@ function PrivacySection({
     } catch (e) {
       setVisible(prev);
       toast.error("Couldn't update", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     } finally {
       setPending(false);
@@ -732,7 +733,7 @@ function AccountSection({
       navigate("/onboarding", { replace: true });
     } catch (e) {
       toast.error("Couldn't sign out", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }

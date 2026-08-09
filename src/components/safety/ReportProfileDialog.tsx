@@ -11,6 +11,7 @@ import {
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { PROFILE_REPORT_REASONS, submitProfileReport, blockProfile } from "@/lib/safety";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { memberSafeMessage } from "@/lib/errors";
 
 
 type Step = "form" | "offer_block";
@@ -60,7 +61,7 @@ export function ReportProfileDialog({
       });
       setStep("offer_block");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Report failed");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }
@@ -76,7 +77,7 @@ export function ReportProfileDialog({
       onBlocked?.();
       close(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Block failed");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }

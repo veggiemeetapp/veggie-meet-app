@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+import { memberSafeMessage } from "@/lib/errors";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -109,7 +110,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
       toast.success("You're going!");
       onChanged?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not accept");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }
@@ -123,7 +124,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
       toast.success("Invitation declined");
       onChanged?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not decline");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
       setConfirmDecline(false);
@@ -139,7 +140,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
       toast.success("You left the Meetup");
       onChanged?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not leave");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
       setConfirmLeave(false);

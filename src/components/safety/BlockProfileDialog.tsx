@@ -11,6 +11,7 @@ import {
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { blockProfile } from "@/lib/safety";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { memberSafeMessage } from "@/lib/errors";
 
 
 export function BlockProfileDialog({
@@ -48,7 +49,7 @@ export function BlockProfileDialog({
       onBlocked?.();
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Block failed");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }

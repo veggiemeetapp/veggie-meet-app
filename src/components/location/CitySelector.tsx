@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
+import { memberSafeMessage } from "@/lib/errors";
   useActiveCities,
   useLocationContext,
   useSetSelectedCity,
@@ -79,7 +80,7 @@ export function CitySelector({
       setQuery("");
     } catch (e) {
       toast.error("Couldn't update your city", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -218,7 +219,7 @@ export function NoCityState({ onChoose }: { onChoose: () => void }) {
       toast.success(`Exploring ${home.name}`);
     } catch (e) {
       toast.error("Couldn't set your city", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }

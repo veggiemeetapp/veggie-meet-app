@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { memberSafeMessage } from "@/lib/errors";
 
 const CATEGORIES: { id: MeetupCategory; label: string; emoji: string }[] = [
   { id: "coffee", label: "Coffee", emoji: "☕" },
@@ -334,7 +335,7 @@ export default function Host() {
       }
     } catch (e) {
       toast.error("Couldn't create Meetup", {
-        description: e instanceof Error ? e.message : "Please try again.",
+        description: memberSafeMessage(e),
       });
     } finally {
       setSaving(false);

@@ -11,6 +11,7 @@ import {
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { reportMeetup } from "@/lib/postMeetup";
 import { MEETUP_REPORT_REASONS } from "@/lib/safety";
+import { memberSafeMessage } from "@/lib/errors";
 
 export function ReportMeetupDialog({
   meetupId,
@@ -36,7 +37,7 @@ export function ReportMeetupDialog({
       onOpenChange(false);
       setDetails("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Report failed");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }

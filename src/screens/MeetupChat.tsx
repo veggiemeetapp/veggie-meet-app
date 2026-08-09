@@ -76,7 +76,7 @@ export default function MeetupChat() {
       } catch (e) {
         if (!cancelled) {
           setLoadError(
-            e instanceof Error ? e.message : "This chat isn't available.",
+            memberSafeMessage(e),
           );
         }
       }

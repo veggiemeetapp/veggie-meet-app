@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { fieldLabel } from "@/lib/fieldLabels";
 import {
+import { memberSafeMessage } from "@/lib/errors";
   acceptMeetupCurrentPlaceLocation,
   type MeetupPlaceContext,
 } from "@/lib/meetupPlaceContext";
@@ -54,7 +55,7 @@ export function MeetupLocationStatus({ meetupId, context, onUpdated }: Props) {
       logAnalyticsEvent("meetup_location_update_blocked", { reason: "server_rejected" });
       toast({
         title: "Couldn't update the location",
-        description: e instanceof Error ? e.message : "Please try again.",
+        description: memberSafeMessage(e),
         variant: "destructive",
       });
     } finally {
