@@ -32,7 +32,9 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("@tanstack")) return "vendor-query";
           if (id.includes("@supabase") || id.includes("@lovable.dev")) return "vendor-supabase";
           if (id.includes("@radix-ui")) return "vendor-radix";
-          return "vendor";
+          // Everything else keeps Rollup's per-entry splitting so route-only
+          // libraries (e.g. the QR decoder) stay out of the boot path.
+          return undefined;
         },
       },
     },
