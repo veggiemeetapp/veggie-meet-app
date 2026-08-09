@@ -253,8 +253,9 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
 
   return (
     <div className="space-y-5">
-      <Field label="Display name">
+      <Field label="Display name" htmlFor="settings-display-name">
         <Input
+          id="settings-display-name"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           maxLength={40}
@@ -262,8 +263,9 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
         />
       </Field>
 
-      <Field label="Bio" hint={`${bio.length}/500`}>
+      <Field label="Bio" hint={`${bio.length}/500`} htmlFor="settings-bio">
         <Textarea
+          id="settings-bio"
           value={bio}
           onChange={(e) => setBio(e.target.value.slice(0, 500))}
           rows={4}
@@ -273,6 +275,7 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
 
       <Field label="Dietary identity">
         <ChipGroup
+          groupLabel="Dietary identity"
           options={DIETARY_OPTIONS}
           value={dietary}
           onChange={setDietary}
@@ -281,11 +284,13 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
 
       <Field label="Pronouns">
         <ChipGroup
+          groupLabel="Pronouns"
           options={PRONOUN_OPTIONS}
           value={pronouns}
           onChange={setPronouns}
         />
       </Field>
+
 
       <PrimaryButton
         fullWidth
