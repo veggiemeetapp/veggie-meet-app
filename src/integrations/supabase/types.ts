@@ -2871,6 +2871,14 @@ export type Database = {
         Args: { _meetup_id: string }
         Returns: undefined
       }
+      analytics_event_allowed: {
+        Args: { _event_name: string }
+        Returns: boolean
+      }
+      analytics_sanitize_properties: {
+        Args: { _properties: Json }
+        Returns: Json
+      }
       are_connected: { Args: { _a: string; _b: string }; Returns: boolean }
       block_profile: { Args: { _blocked_profile_id: string }; Returns: Json }
       can_post_meetup_chat: { Args: { _chat_id: string }; Returns: boolean }
