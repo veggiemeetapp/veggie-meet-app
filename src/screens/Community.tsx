@@ -241,7 +241,7 @@ function SectionHeader({
 function HScroll({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2 -mx-1"
+      className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
       style={{ scrollSnapType: "x mandatory" }}
     >
       {Array.isArray(children)

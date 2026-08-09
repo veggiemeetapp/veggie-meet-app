@@ -51,7 +51,7 @@ export default function Today() {
       <div className="px-5 mt-2 flex items-center justify-between">
         <Link
           to="/plans"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal-muted hover:text-primary transition-colors"
+          className="inline-flex min-h-11 items-center gap-1.5 py-2 text-xs font-medium text-charcoal-muted hover:text-primary transition-colors"
         >
           <CalendarClock className="w-3.5 h-3.5" />
           My Plans
@@ -60,7 +60,7 @@ export default function Today() {
         <button
           onClick={refresh}
           disabled={refetching}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal-muted hover:text-primary transition-colors disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-1.5 py-2 text-xs font-medium text-charcoal-muted hover:text-primary transition-colors disabled:opacity-50"
           aria-label="Refresh Today"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refetching ? "animate-spin" : ""}`} />

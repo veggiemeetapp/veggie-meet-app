@@ -427,7 +427,7 @@ function CommunityImpactCard({
           <button
             type="button"
             onClick={onView}
-            className="text-xs font-medium text-primary hover:underline"
+            className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs font-medium text-primary hover:underline"
             aria-label="Open Community Impact"
           >
             View
