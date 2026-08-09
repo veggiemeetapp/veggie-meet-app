@@ -111,6 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // WO-078: clear identity-scoped location/notification permission state so
       // the next member on this device starts from a recomputed location state.
       clearStoredPermissions();
+      // WO-084: reset client analytics state on explicit sign-out too.
+      resetAnalyticsIdentity();
+
 
       // (legacy `veggiemeet_onboarded` localStorage flag removed — route
       // gating derives onboarding state from the server profile only.)
