@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -334,7 +335,7 @@ export default function Host() {
       }
     } catch (e) {
       toast.error("Couldn't create Meetup", {
-        description: e instanceof Error ? e.message : "Please try again.",
+        description: memberSafeMessage(e),
       });
     } finally {
       setSaving(false);

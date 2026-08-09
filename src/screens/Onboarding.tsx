@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -241,7 +242,7 @@ export default function Onboarding() {
       await advance("identity", "dietary");
     } catch (e) {
       toast.error("Couldn't save your name", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -253,7 +254,7 @@ export default function Onboarding() {
       await advance("dietary", "home_city");
     } catch (e) {
       toast.error("Couldn't save that yet", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -273,7 +274,7 @@ export default function Onboarding() {
       await advance("home_city", "selected_city");
     } catch (e) {
       toast.error("Couldn't save your city", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -285,7 +286,7 @@ export default function Onboarding() {
       await advance("selected_city", "interests");
     } catch (e) {
       toast.error("Couldn't save your city", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -297,7 +298,7 @@ export default function Onboarding() {
       await advance("interests", "photo");
     } catch (e) {
       toast.error("Couldn't save your interests", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -308,7 +309,7 @@ export default function Onboarding() {
       await advance("photo", "guidelines", { skipped });
     } catch (e) {
       toast.error("Couldn't save your photo", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -323,7 +324,7 @@ export default function Onboarding() {
 
     } catch (e) {
       toast.error("Couldn't save that yet", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -358,7 +359,7 @@ export default function Onboarding() {
     } catch (e) {
       setSaving(false);
       toast.error("Almost there — we couldn't finalize your profile.", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -1182,7 +1183,7 @@ function Photo({
       setAvatarUrl(url);
       setSheetOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't upload that image.");
+      toast.error(memberSafeMessage(err));
     } finally {
       setUploading(false);
     }
@@ -1491,7 +1492,7 @@ function StartingPoint({
         if (!cancelled) setOptions(data);
       })
       .catch((e: Error) => {
-        if (!cancelled) setError(e.message);
+        if (!cancelled) setError(memberSafeMessage(e));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

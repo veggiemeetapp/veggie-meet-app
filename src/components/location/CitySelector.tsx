@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, Loader2, MapPin, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -79,7 +80,7 @@ export function CitySelector({
       setQuery("");
     } catch (e) {
       toast.error("Couldn't update your city", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }
@@ -218,7 +219,7 @@ export function NoCityState({ onChoose }: { onChoose: () => void }) {
       toast.success(`Exploring ${home.name}`);
     } catch (e) {
       toast.error("Couldn't set your city", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }

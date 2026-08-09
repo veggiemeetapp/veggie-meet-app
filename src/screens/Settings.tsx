@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -247,7 +248,8 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
       logOnboardingEvent("settings_profile_updated", {});
       onSaved();
     },
-    onError: (e: Error) => toast.error("Couldn't save", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error("Couldn't save", { description: memberSafeMessage(e) }),
   });
 
   const nameValid = displayName.trim().length > 0 && displayName.trim().length <= 40;
@@ -322,7 +324,8 @@ function DiscoverySection({ data, onSaved }: { data: AccountSettings; onSaved: (
       logOnboardingEvent("discovery_settings_saved", { interests_count: interests.length });
       onSaved();
     },
-    onError: (e: Error) => toast.error("Couldn't save", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error("Couldn't save", { description: memberSafeMessage(e) }),
   });
 
   const home = contextQuery.data?.home_city;
@@ -346,7 +349,7 @@ function DiscoverySection({ data, onSaved }: { data: AccountSettings; onSaved: (
               onSaved();
             } catch (e) {
               toast.error("Couldn't update Home City", {
-                description: e instanceof Error ? e.message : undefined,
+                description: memberSafeMessage(e),
               });
             }
           }}
@@ -475,7 +478,7 @@ function NotificationsSection({
     } catch (e) {
       setPrefs({ ...prefs, [key]: prev });
       toast.error("Couldn't update", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     } finally {
       setPending(null);
@@ -575,7 +578,7 @@ function PrivacySection({
     } catch (e) {
       setVisible(prev);
       toast.error("Couldn't update", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     } finally {
       setPending(false);
@@ -722,7 +725,7 @@ function AccountSection({
       await signOut();
       navigate("/onboarding", { replace: true });
     },
-    onError: (e: Error) => toast.error("Couldn't delete", { description: e.message }),
+    onError: (e: Error) => toast.error("Couldn't delete", { description: memberSafeMessage(e) }),
   });
 
   async function handleSignOut() {
@@ -732,7 +735,7 @@ function AccountSection({
       navigate("/onboarding", { replace: true });
     } catch (e) {
       toast.error("Couldn't sign out", {
-        description: e instanceof Error ? e.message : undefined,
+        description: memberSafeMessage(e),
       });
     }
   }

@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -48,7 +49,7 @@ export default function JoinConfirmation() {
         }
       })
       .catch((err: Error) => {
-        if (!cancelled) setJoinError(err.message || "We couldn't add you to this Meetup. Please try again.");
+        if (!cancelled) setJoinError(memberSafeMessage(err));
       })
       .finally(() => {
         if (!cancelled) setJoining(false);

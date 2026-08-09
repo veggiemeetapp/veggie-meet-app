@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -93,7 +94,7 @@ export function MeetupInvitationSheet({
       onOpenChange(false);
     } catch (e) {
       const msg =
-        e instanceof Error ? e.message : "Couldn't send invitation.";
+        memberSafeMessage(e);
       toast.error(msg);
     } finally {
       setSending(false);

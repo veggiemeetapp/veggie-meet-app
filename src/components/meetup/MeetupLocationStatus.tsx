@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import {
@@ -54,7 +55,7 @@ export function MeetupLocationStatus({ meetupId, context, onUpdated }: Props) {
       logAnalyticsEvent("meetup_location_update_blocked", { reason: "server_rejected" });
       toast({
         title: "Couldn't update the location",
-        description: e instanceof Error ? e.message : "Please try again.",
+        description: memberSafeMessage(e),
         variant: "destructive",
       });
     } finally {

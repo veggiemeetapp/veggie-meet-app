@@ -11,6 +11,7 @@ import { sanitizeInternalPath } from "@/lib/authRedirect";
 import { NavigationBehavior } from "@/lib/navigation";
 import { RequireValidIds } from "@/components/app/ResourceUnavailable";
 import { RequireOwner } from "@/components/app/RequireOwner";
+import { isRetryableRead } from "@/lib/errors";
 
 // Eagerly load the two most common landing routes so first paint after
 // auth/onboarding does not pay a code-split cost.
@@ -120,7 +121,32 @@ function RequireOnboarded({ children }: { children: JSX.Element }) {
 // WO-082: every gated route also validates UUID-shaped route params before
 // the screen mounts, so malformed deep links resolve to a neutral
 // unavailable state instead of a database error.
-const queryClient = new QueryClient();
+// WO-083: explicit, bounded resilience policy. Previously this was a bare
+// `new QueryClient()`, which retried every read three times — including 401s
+// and deterministic domain rejections — and revalidated on every focus.
+//
+// Reads:  bounded retry (max 2) with exponential backoff, and never for auth
+//         or deterministic 4xx/domain errors.
+// Writes: no automatic retry at all. Mutations are retried only by an explicit
+//         member action, because not every RPC is provably idempotent and a
+//         destructive write must never be replayed blindly.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      retry: (failureCount, error) => failureCount < 2 && isRetryableRead(error),
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+      refetchOnReconnect: true,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
+
 
 const gated = (el: JSX.Element) => (
   <RequireOnboarded>

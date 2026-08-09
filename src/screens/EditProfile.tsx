@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -98,7 +99,7 @@ export default function EditProfile() {
     } catch (err) {
       toast.error(
         err instanceof Error
-          ? err.message
+          ? memberSafeMessage(err)
           : "We couldn't upload that image. Try another one.",
       );
     } finally {
@@ -137,7 +138,7 @@ export default function EditProfile() {
       navigate("/you", { replace: true });
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "We couldn't save your profile.";
+        memberSafeMessage(err);
       setSaveError(msg);
       toast.error(msg);
     } finally {

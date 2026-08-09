@@ -199,25 +199,32 @@ export default function Notifications() {
     async (n: NotificationItem) => {
       if (!n.read_at) {
         // Optimistic mark read across all cached pages.
-        qc.setQueryData<{ pages: NotificationsPage[]; pageParams: unknown[] }>(
-          ["notifications", profile?.id],
-          (old) => {
-            if (!old) return old;
-            return {
-              ...old,
-              pages: old.pages.map((p) => ({
-                ...p,
-                items: p.items.map((x) =>
-                  x.id === n.id
-                    ? { ...x, read_at: new Date().toISOString() }
-                    : x,
-                ),
-              })),
-            };
-          },
-        );
-        markNotificationRead(n.id).catch(() => {});
+        const key = ["notifications", profile?.id];
+        const setReadAt = (value: string | null) =>
+          qc.setQueryData<{ pages: NotificationsPage[]; pageParams: unknown[] }>(
+            key,
+            (old) => {
+              if (!old) return old;
+              return {
+                ...old,
+                pages: old.pages.map((p) => ({
+                  ...p,
+                  items: p.items.map((x) =>
+                    x.id === n.id ? { ...x, read_at: value } : x,
+                  ),
+                })),
+              };
+            },
+          );
+        setReadAt(new Date().toISOString());
+        // WO-083 DEF-083-05: a failed write must not permanently clear the
+        // unread indicator. Roll back and let canonical server state decide.
+        markNotificationRead(n.id).catch(() => {
+          setReadAt(null);
+          qc.invalidateQueries({ queryKey: key });
+        });
       }
+
       if (PLACE_SUGGESTION_TYPES.includes(n.type)) {
         logAnalyticsEvent("place_suggestion_notification_opened", {
           notification_type: n.type,

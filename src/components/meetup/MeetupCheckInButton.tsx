@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, MapPin } from "lucide-react";
 import { toast } from "sonner";
@@ -48,7 +49,7 @@ export function MeetupCheckInButton({
       qc.invalidateQueries({ queryKey: ["meetup-lifecycle", meetupId] });
       qc.invalidateQueries({ queryKey: ["managed-attendees", meetupId] });
     },
-    onError: (e: Error) => toast.error(e.message || "Check-in didn't go through."),
+    onError: (e: Error) => toast.error(memberSafeMessage(e)),
   });
 
   if (isPending) return null;

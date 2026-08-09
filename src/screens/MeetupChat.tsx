@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -12,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
+import { useSendToken } from "@/hooks/useSendToken";
 import {
   fetchMeetupChatContext,
   fetchMeetupChatThread,
@@ -36,6 +38,8 @@ export default function MeetupChat() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  // WO-083: idempotency token so an ambiguous retry cannot duplicate a post.
+  const sendToken = useSendToken();
 
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
     setMessages((prev) => {
@@ -72,7 +76,7 @@ export default function MeetupChat() {
       } catch (e) {
         if (!cancelled) {
           setLoadError(
-            e instanceof Error ? e.message : "This chat isn't available.",
+            memberSafeMessage(e),
           );
         }
       }
@@ -138,13 +142,14 @@ export default function MeetupChat() {
     if (!body || !id || !canPost || sending) return;
     setSending(true);
     try {
-      const saved = await sendMeetupChatMessage(id, body);
+      const saved = await sendMeetupChatMessage(id, body, sendToken.tokenFor(body));
+      sendToken.clear();
       setDraft("");
       mergeMessages([saved]);
     } catch (err) {
       toast({
         title: "Message not sent",
-        description: err instanceof Error ? err.message : "Please try again.",
+        description: memberSafeMessage(err),
         variant: "destructive",
       });
       const ctx = await fetchMeetupChatContext(id).catch(() => null);

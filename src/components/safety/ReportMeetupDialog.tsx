@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -36,7 +37,7 @@ export function ReportMeetupDialog({
       onOpenChange(false);
       setDetails("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Report failed");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }

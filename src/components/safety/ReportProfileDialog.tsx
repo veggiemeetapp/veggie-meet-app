@@ -1,3 +1,4 @@
+import { memberSafeMessage } from "@/lib/errors";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -60,7 +61,7 @@ export function ReportProfileDialog({
       });
       setStep("offer_block");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Report failed");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }
@@ -76,7 +77,7 @@ export function ReportProfileDialog({
       onBlocked?.();
       close(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Block failed");
+      toast.error(memberSafeMessage(e));
     } finally {
       setBusy(false);
     }
