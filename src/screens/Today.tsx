@@ -1,6 +1,5 @@
 import { CalendarClock, ChevronRight, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
 import { useToday } from "@/hooks/useToday";
 import { TodayHeader } from "@/components/today/TodayHeader";
 import { TodaySkeleton } from "@/components/today/TodaySkeleton";
@@ -11,24 +10,19 @@ import { MeetupRecCard } from "@/components/today/MeetupRecCard";
 import { VeggieRecCard } from "@/components/today/VeggieRecCard";
 import { PlaceRecCard } from "@/components/today/PlaceRecCard";
 import { SectionHeader } from "@/components/app/SectionHeader";
-import { maybePromptForLocation } from "@/lib/locationPrompt";
 
+/**
+ * WO-078: Today never asks for device location. Ranking here is derived from
+ * the member's Selected City (server-side), so there is no product reason to
+ * prompt on render. The only location request in the product is the explicit
+ * Community Place check-in action, which explains itself in context.
+ */
 export default function Today() {
   const { data, loading, error, refresh, refetching } = useToday();
 
-  // Contextual, one-shot location prompt on a distance-using surface.
-  useEffect(() => {
-    if (loading || error || !data) return;
-    const hasDistanceSurface =
-      (data.meetup_recommendations?.length ?? 0) > 0 ||
-      (data.place_recommendations?.length ?? 0) > 0;
-    if (!hasDistanceSurface) return;
-    const t = setTimeout(() => maybePromptForLocation(), 1200);
-    return () => clearTimeout(t);
-  }, [loading, error, data]);
-
   if (loading) return <TodaySkeleton />;
   if (error || !data) return <TodayError onRetry={refresh} />;
+
 
   const {
     primary_action,

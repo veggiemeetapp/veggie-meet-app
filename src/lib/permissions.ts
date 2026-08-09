@@ -23,6 +23,24 @@ export function setStoredPermission(k: PermissionKind, r: PermissionResult) {
   }
 }
 
+/**
+ * WO-078: permission answers are application state tied to the signed-in
+ * member, not to the device. Clearing them on sign-out means the next identity
+ * on this browser never inherits the previous member's location/notification
+ * state. Browser-level OS permission is untouched (we cannot and should not
+ * change it), but the app recomputes its own state per session.
+ */
+export function clearStoredPermissions() {
+  try {
+    (["notification", "location"] as PermissionKind[]).forEach((k) =>
+      localStorage.removeItem(permKey(k)),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+
 export async function recordPermissionResult(kind: PermissionKind, result: PermissionResult) {
   setStoredPermission(kind, result);
   logOnboardingEvent(`${kind}_permission_result`, { result });

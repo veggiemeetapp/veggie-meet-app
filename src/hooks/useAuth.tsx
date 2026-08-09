@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import type { Session, User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { clearStoredPermissions } from "@/lib/permissions";
+
 
 export type Profile = {
   id: string;
@@ -102,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         /* ignore */
       }
+      // WO-078: clear identity-scoped location/notification permission state so
+      // the next member on this device starts from a recomputed location state.
+      clearStoredPermissions();
+
       // (legacy `veggiemeet_onboarded` localStorage flag removed — route
       // gating derives onboarding state from the server profile only.)
     },
