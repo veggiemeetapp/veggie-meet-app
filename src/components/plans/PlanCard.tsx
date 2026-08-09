@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 import { useNavigate } from "react-router-dom";
 import {
   Calendar,
