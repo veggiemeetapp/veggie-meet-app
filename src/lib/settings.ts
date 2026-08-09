@@ -34,10 +34,11 @@ export interface SettingsPrivacy {
 }
 
 export interface SettingsAccount {
+  /** The member's own email, from Auth. Never another member's. */
   email: string | null;
-  auth_user_id: string | null;
   community_guidelines_accepted_at: string | null;
 }
+
 
 export interface AccountSettings {
   profile: SettingsProfile;
