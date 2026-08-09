@@ -16,7 +16,10 @@ export function useToday() {
   const query = useQuery<TodayExperience>({
     // Selected City is part of the key so switching cities refetches Today.
     queryKey: [...TODAY_KEY, profile?.id ?? null, selectedCityId],
-    enabled: !!profile?.id && !authLoading,
+    // WO-086 DEF-086-06: waiting for the location context means the key no
+    // longer flips null -> cityId mid-boot, which used to fire the Today RPC
+    // twice on every cold load. On a location error the query still runs.
+    enabled: !!profile?.id && !authLoading && !location.isPending,
     queryFn: fetchTodayExperience,
     staleTime: 30_000,
     refetchOnWindowFocus: true,

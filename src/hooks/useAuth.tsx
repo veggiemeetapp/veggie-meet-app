@@ -48,17 +48,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // caches on sign-out or same-device account switches. Without this the next
   // user briefly sees the previous user's Today/Plans/DM/Notification data.
   const lastUserIdRef = useRef<string | null>(null);
+  // WO-086 DEF-086-05: `onAuthStateChange` (INITIAL_SESSION) and `getSession`
+  // both resolve on boot, and each used to fire its own `get_my_profile`.
+  // Coalesce concurrent loads per auth user so one boot = one profile call.
+  const profileFetchRef = useRef<{ userId: string; promise: Promise<void> } | null>(null);
+  const loadedUserIdRef = useRef<string | null>(null);
 
-  async function loadProfile(userId: string | undefined) {
+  async function loadProfile(userId: string | undefined, force = false) {
     if (!userId) {
+      profileFetchRef.current = null;
+      loadedUserIdRef.current = null;
       setProfile(null);
       return;
     }
-    // Uses the get_my_profile() RPC (SECURITY DEFINER) so callers don't need
-    // direct SELECT on profiles.auth_user_id — that column is now hidden from
-    // arbitrary authenticated users at the table-privilege level.
-    const { data } = await supabase.rpc("get_my_profile");
-    setProfile((data as Profile) ?? null);
+    const inFlight = profileFetchRef.current;
+    if (!force && inFlight && inFlight.userId === userId) return inFlight.promise;
+    const promise = (async () => {
+      // Uses the get_my_profile() RPC (SECURITY DEFINER) so callers don't need
+      // direct SELECT on profiles.auth_user_id — that column is now hidden from
+      // arbitrary authenticated users at the table-privilege level.
+      const { data } = await supabase.rpc("get_my_profile");
+      setProfile((data as Profile) ?? null);
+      loadedUserIdRef.current = userId;
+    })().finally(() => {
+      if (profileFetchRef.current?.promise === promise) profileFetchRef.current = null;
+    });
+    profileFetchRef.current = { userId, promise };
+    return promise;
   }
 
   useEffect(() => {
@@ -70,14 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Drop all cached queries so the next identity never sees them.
         qc.clear();
         setProfile(null);
+        profileFetchRef.current = null;
+        loadedUserIdRef.current = null;
         // WO-084: drop analytics view-dedupe state so member B's activity can
         // never be suppressed or attributed via member A's client state.
         resetAnalyticsIdentity();
       }
       lastUserIdRef.current = nextId;
       setSession(s);
-      // Defer profile fetch to avoid deadlock
-      setTimeout(() => loadProfile(s?.user.id), 0);
+      // Defer profile fetch to avoid deadlock. Token refreshes for the same
+      // identity keep the already-loaded profile instead of refetching it.
+      setTimeout(() => {
+        if (nextId && loadedUserIdRef.current === nextId) return;
+        loadProfile(s?.user.id);
+      }, 0);
     });
 
     supabase.auth.getSession().then(({ data }) => {
@@ -94,7 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     profile,
     loading,
-    refreshProfile: () => loadProfile(session?.user.id),
+    refreshProfile: async () => {
+      await loadProfile(session?.user.id, true);
+    },
     signOut: async () => {
       await supabase.auth.signOut();
       // Belt-and-suspenders: also clear here in case the auth listener races

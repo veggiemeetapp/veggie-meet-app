@@ -32,22 +32,23 @@ function useUnreadConversations() {
   // change refetched the whole inbox and the result was never shared with the
   // Chats surface. It is now an actor-scoped React Query entry with a bounded
   // stale window; realtime only invalidates it.
+  // WO-086 DEF-086-07: it shares the exact key Chats uses, so opening Chats no
+  // longer issues a second `get_my_dm_inbox` for the same data.
   const { data: count = 0 } = useQuery({
-    queryKey: ["dm-unread-conversations", profile?.id ?? null],
+    queryKey: ["dm-inbox", profile?.id],
     enabled: !!profile?.id,
     staleTime: 30_000,
-    queryFn: async () => {
-      const rows = await fetchInbox();
-      return rows.filter((r) => r.unreadCount > 0).length;
-    },
+    queryFn: () => fetchInbox(),
+    select: (rows) => rows.filter((r) => r.unreadCount > 0).length,
   });
+
 
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
       .channel(`bottom-nav-unread-${profile.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "dm_messages" }, () =>
-        qc.invalidateQueries({ queryKey: ["dm-unread-conversations"] }),
+        qc.invalidateQueries({ queryKey: ["dm-inbox", profile.id] }),
       )
       .subscribe();
     return () => {
