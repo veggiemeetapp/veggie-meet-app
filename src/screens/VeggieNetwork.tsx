@@ -628,7 +628,7 @@ function SentRow({
 }) {
   return (
     <Card padding="md" className="flex items-center gap-3">
-      <button onClick={onOpen} className="shrink-0">
+      <button onClick={onOpen} aria-label={`Open ${rel.other.displayName}'s profile`} className="shrink-0">
         <UserAvatar
           name={rel.other.displayName}
           src={rel.other.avatarUrl ?? undefined}
