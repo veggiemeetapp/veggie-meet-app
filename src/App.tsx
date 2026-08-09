@@ -113,7 +113,6 @@ function RequireOnboarded({ children }: { children: JSX.Element }) {
   return children;
 }
 
-const queryClient = new QueryClient();
 
 // Helper so every private route gets the same auth+onboarding gate. Only
 // `/onboarding`, the OAuth consent page, and the NotFound catch-all are
@@ -121,11 +120,16 @@ const queryClient = new QueryClient();
 // WO-082: every gated route also validates UUID-shaped route params before
 // the screen mounts, so malformed deep links resolve to a neutral
 // unavailable state instead of a database error.
+const queryClient = new QueryClient();
+
 const gated = (el: JSX.Element) => (
   <RequireOnboarded>
     <RequireValidIds>{el}</RequireValidIds>
   </RequireOnboarded>
 );
+
+// Owner-only routes: auth + onboarding + id validation + owner gate.
+const ownerGated = (el: JSX.Element) => gated(<RequireOwner>{el}</RequireOwner>);
 
 // Neutral suspense fallback while a lazy route chunk loads. Kept blank on
 // purpose: individual screens render their own skeleton immediately after
