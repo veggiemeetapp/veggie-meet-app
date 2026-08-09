@@ -33,7 +33,7 @@ const NotFound = () => {
     >
 
       <div className="text-center max-w-sm">
-        <h1 className="mb-3 text-2xl font-semibold tracking-tight text-charcoal">
+        <h1 id="notfound-title" className="mb-3 text-2xl font-semibold tracking-tight text-charcoal">
           Page not found
         </h1>
         <p className="mb-6 text-sm text-charcoal-muted leading-relaxed">
@@ -48,7 +48,7 @@ const NotFound = () => {
           </Link>
         )}
       </div>
-    </main>
+    </section>
   );
 };
 

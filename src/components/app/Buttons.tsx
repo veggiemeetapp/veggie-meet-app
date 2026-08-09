@@ -20,9 +20,9 @@ export const PrimaryButton = forwardRef<HTMLButtonElement, Props>(
       ref={ref}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-full font-semibold",
-        "bg-primary/90 text-primary-foreground shadow-sm",
+        "bg-primary text-primary-foreground shadow-sm",
         "active:scale-[0.98] transition-all",
-        "hover:bg-primary/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "disabled:opacity-50 disabled:pointer-events-none",
         sizeClasses[size],
         fullWidth && "w-full",
