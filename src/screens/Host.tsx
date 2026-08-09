@@ -660,6 +660,7 @@ export default function Host() {
           </div>
           {isCustomCapacity && (
             <input
+              aria-label="Custom group size"
               type="number"
               inputMode="numeric"
               min={1}

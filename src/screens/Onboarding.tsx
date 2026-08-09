@@ -885,7 +885,7 @@ function Identity({
           <label className="block text-sm font-semibold text-charcoal mb-2">
             Pronouns <span className="text-charcoal-muted font-normal">(optional)</span>
           </label>
-          <input aria-label="Display name"
+          <input aria-label="Pronouns (optional)"
             value={pronouns}
             onChange={(e) => setPronouns(e.target.value)}
             placeholder="e.g. she/her"
@@ -1232,6 +1232,7 @@ function Photo({
           Short bio <span className="text-charcoal-muted font-normal">(optional)</span>
         </label>
         <textarea
+          aria-label="Short bio (optional)"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           placeholder="One friendly line about you."

@@ -479,6 +479,7 @@ function ReflectionCard({
               <span className="text-charcoal-muted font-normal">Optional</span>
             </span>
             <textarea
+              aria-label="Note (optional)"
               value={note}
               onChange={(e) => setNote(e.target.value.slice(0, 500))}
               rows={3}

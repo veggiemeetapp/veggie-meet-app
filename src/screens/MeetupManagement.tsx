@@ -685,6 +685,7 @@ export default function MeetupManagement() {
               </span>
             </FieldLabel>
             <input
+              aria-label="Group size"
               type="number"
               min={Math.max(1, activeAttendeeCount)}
               value={capacity}
