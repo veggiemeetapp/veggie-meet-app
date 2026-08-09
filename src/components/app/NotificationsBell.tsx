@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,18 +13,19 @@ interface Props {
 
 export function NotificationsBell({ className }: Props) {
   const { profile } = useAuth();
-  const [count, setCount] = useState(0);
+  const qc = useQueryClient();
+
+  // WO-086 DEF-086-03: shared, actor-scoped cache so the bell does not refetch
+  // on every surface that renders it (Today, Community, Plans, You).
+  const { data: count = 0 } = useQuery({
+    queryKey: ["notifications-unread-count", profile?.id ?? null],
+    enabled: !!profile?.id,
+    staleTime: 30_000,
+    queryFn: fetchUnreadCount,
+  });
 
   useEffect(() => {
     if (!profile?.id) return;
-    let cancelled = false;
-    const refresh = () =>
-      fetchUnreadCount()
-        .then((n) => {
-          if (!cancelled) setCount(n);
-        })
-        .catch(() => {});
-    refresh();
     const channel = supabase
       .channel(`notif-bell-${profile.id}`)
       .on(
@@ -34,14 +36,13 @@ export function NotificationsBell({ className }: Props) {
           table: "notifications",
           filter: `recipient_id=eq.${profile.id}`,
         },
-        () => refresh(),
+        () => qc.invalidateQueries({ queryKey: ["notifications-unread-count"] }),
       )
       .subscribe();
     return () => {
-      cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [profile?.id]);
+  }, [profile?.id, qc]);
 
   const label =
     count > 0

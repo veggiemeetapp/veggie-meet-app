@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 
@@ -18,6 +19,14 @@ const sizeMap = {
 };
 
 export function UserAvatar({ name, src, size = "md", className, ring }: UserAvatarProps) {
+  // WO-086 DEF-086-04: avatars are the most repeated image in the product.
+  // They now decode off the main thread, defer offscreen fetches, and fall back
+  // to initials once (no retry storm) if the image fails.
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+  const showImage = !!src && !failed;
   return (
     <div
       className={cn(
@@ -28,8 +37,15 @@ export function UserAvatar({ name, src, size = "md", className, ring }: UserAvat
       )}
       aria-label={name}
     >
-      {src ? (
-        <img src={src} alt={name} className="w-full h-full object-cover" />
+      {showImage ? (
+        <img
+          src={src}
+          alt={name}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="w-full h-full object-cover"
+        />
       ) : (
         <span>{initials(name)}</span>
       )}

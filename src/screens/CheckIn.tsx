@@ -1,5 +1,5 @@
 import { safeBack } from "@/lib/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
@@ -11,7 +11,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { QRScanner } from "@/components/scan/QRScanner";
+// WO-086 DEF-086-01: the camera decoder (html5-qrcode) is ~330 kB minified and
+// was pulled into the CheckIn route chunk even for members who only ever show
+// their own QR. It now loads on demand, the first time Scan mode opens.
+const QRScanner = lazy(() =>
+  import("@/components/scan/QRScanner").then((m) => ({ default: m.QRScanner })),
+);
 import { useAuth } from "@/hooks/useAuth";
 import { fetchMeetupById, fetchProfileAsVeggie, isUuid } from "@/lib/backend";
 import {
@@ -137,11 +142,19 @@ export default function CheckIn() {
       )}
 
       {mode === "scan" && (
-        <QRScanner
-          onResult={handleScanResult}
-          helpText="Point your camera at their Meetup QR code."
-          fallbackAction={{ label: "Show my QR", onClick: () => setMode("qr") }}
-        />
+        <Suspense
+          fallback={
+            <p className="px-5 py-8 text-sm text-charcoal-muted" role="status">
+              Starting your camera…
+            </p>
+          }
+        >
+          <QRScanner
+            onResult={handleScanResult}
+            helpText="Point your camera at their Meetup QR code."
+            fallbackAction={{ label: "Show my QR", onClick: () => setMode("qr") }}
+          />
+        </Suspense>
       )}
 
       <Dialog open={!!success} onOpenChange={(open) => !open && setSuccess(null)}>
