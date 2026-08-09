@@ -871,16 +871,21 @@ function AccountSection({
 function Field({
   label,
   hint,
+  htmlFor,
   children,
 }: {
   label: string;
   hint?: string;
+  /** Associates the visible label with its control for screen readers. */
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <Label className="text-sm font-semibold text-charcoal">{label}</Label>
+        <Label htmlFor={htmlFor} className="text-sm font-semibold text-charcoal">
+          {label}
+        </Label>
         {hint && <span className="text-[11px] text-charcoal-muted">{hint}</span>}
       </div>
       {children}
@@ -892,11 +897,14 @@ function ChipGroup({
   options,
   value,
   onChange,
+  groupLabel,
 }: {
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
+  groupLabel?: string;
 }) {
+
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((o) => {
