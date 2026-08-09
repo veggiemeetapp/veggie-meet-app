@@ -19,6 +19,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 /** Controlled event vocabulary. Must stay in sync with analytics_event_allowed(). */
 export const ANALYTICS_EVENTS = [
+  // WO-084A DEF-084A-05: the four primary member surfaces had no view event,
+  // so the beta funnel could not be measured end to end.
+  "today_opened",
+  "community_home_opened",
+  "notifications_opened",
+  "you_opened",
   "account_deletion_blocked",
   "account_deletion_completed",
   "account_deletion_started",
