@@ -649,10 +649,10 @@ export default function MeetupManagement() {
             <div>
               <FieldLabel>
                 <span className="inline-flex items-center gap-1">
-                  <Calendar className="w-4 h-4" /> Date
+                  <Calendar className="w-4 h-4" aria-hidden="true" /> Date
                 </span>
               </FieldLabel>
-              <input aria-label="Description"
+              <input aria-label="Date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -662,10 +662,11 @@ export default function MeetupManagement() {
             <div>
               <FieldLabel>
                 <span className="inline-flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> Start time
+                  <Clock className="w-4 h-4" aria-hidden="true" /> Start time
                 </span>
               </FieldLabel>
               <input
+                aria-label="Start time"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
