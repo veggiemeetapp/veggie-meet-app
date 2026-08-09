@@ -257,7 +257,7 @@ function HScroll({ children }: { children: React.ReactNode }) {
 
 function HScrollSkeleton() {
   return (
-    <div className="flex gap-3 px-5 overflow-hidden">
+    <div className="flex gap-3 px-5 overflow-hidden min-h-52">
       {[0, 1, 2].map((i) => (
         <div key={i} className="w-64 h-52 rounded-2xl bg-muted animate-pulse shrink-0" />
       ))}
@@ -266,12 +266,19 @@ function HScrollSkeleton() {
 }
 
 function EmptyRow({ message }: { message: string }) {
+  // WO-086 DEF-086-08: the loading skeleton reserved 13rem while the resolved
+  // empty state was ~5rem tall, so every section that came back empty yanked
+  // the sections below it upward (measured CLS 0.06 on Community). Reserving
+  // the same height in both states keeps the page visually stable.
   return (
-    <div className="mx-5 rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-muted">
-      {message}
+    <div className="px-5 min-h-52 flex items-center">
+      <div className="w-full rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-muted">
+        {message}
+      </div>
     </div>
   );
 }
+
 
 /* ---------- Cards ---------- */
 
