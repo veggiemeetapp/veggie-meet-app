@@ -184,12 +184,21 @@ export default function Onboarding() {
   const showBack = step !== "welcome" && step !== "done";
 
   // Track step views (fire-and-forget)
+  //
+  // DEF-084A-04: an already-onboarded member who simply signs in mounts this
+  // screen for one frame before the redirect above runs, which emitted a bogus
+  // `onboarding_step_viewed{step:"identity"}` and inflated the first-run funnel.
+  // A step view is only real once (a) the resolved step is hydrated and (b) the
+  // member is genuinely still in onboarding.
   const lastLogged = useRef<OnboardingStep | null>(null);
+  const redirecting = !!profile && (!!nextPath || (profile.onboarding_completed && !resumeStep));
   useEffect(() => {
+    if (redirecting) return;
+    if (step !== "welcome" && step !== "auth" && !hydrated) return;
     if (lastLogged.current === step) return;
     lastLogged.current = step;
     logOnboardingEvent("onboarding_step_viewed", { step });
-  }, [step]);
+  }, [step, hydrated, redirecting]);
 
   const advance = useCallback(
     async (from: OnboardingStep, to: OnboardingStep, opts?: { skipped?: boolean }) => {

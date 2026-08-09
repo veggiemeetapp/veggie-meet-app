@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +52,11 @@ type Tab = "hosting" | "going";
 
 export default function You() {
   const navigate = useNavigate();
+
+  // WO-084A: surface view event (mount-only, deduped by the logger).
+  useEffect(() => {
+    logAnalyticsEvent("you_opened", {});
+  }, []);
   const { profile, loading, signOut, refreshProfile } = useAuth();
   const [tab, setTab] = useState<Tab>("hosting");
   const [menuOpen, setMenuOpen] = useState(false);

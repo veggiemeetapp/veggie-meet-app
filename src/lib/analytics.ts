@@ -19,6 +19,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 /** Controlled event vocabulary. Must stay in sync with analytics_event_allowed(). */
 export const ANALYTICS_EVENTS = [
+  // WO-084A DEF-084A-05: the four primary member surfaces had no view event,
+  // so the beta funnel could not be measured end to end.
+  "today_opened",
+  "community_home_opened",
+  "notifications_opened",
+  "you_opened",
   "account_deletion_blocked",
   "account_deletion_completed",
   "account_deletion_started",
@@ -124,8 +130,15 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
 const ALLOWED = new Set<string>(ANALYTICS_EVENTS);
 
 /** Sensitive property keys that must never reach telemetry. */
+// Must stay a mirror of public.analytics_sanitize_properties()'s denylist so a
+// forbidden key can never reach the DB guard and turn telemetry into an error.
+// Deliberately NOT blocking the tokens `name`, `location` or `report` as
+// prefixes/suffixes: `error_name`, `location_source` and `report_id` are all
+// approved, non-identifying dimensions. Their bare forms are blocked exactly.
 const DENY_KEY =
-  /(^|_)(e?mail|token|jwt|password|secret|auth_user_id|user_id|uid|lat|latitude|lng|lon|longitude|coord|coords|accuracy|position|body|content|bio|display_name|query|search_term|q|details_text|explanation|reason_text|note|stack|sql|raw_error)($|_)/i;
+  /(^|_)(e?mail|token|jwt|password|secret|auth_user_id|user_id|profile_id|actor_id|recipient_id|sender_id|member_id|uid|lat|latitude|lng|lon|longitude|coord|coords|coordinate|coordinates|geo|geolocation|accuracy|position|address|location_name|place_name|body|content|message|bio|display_name|full_name|first_name|last_name|query|search_term|q|details_text|explanation|reason_text|note|stack|sql|raw_error)($|_)/i;
+
+const DENY_EXACT = new Set(["report", "name", "location", "details", "text"]);
 
 const MAX_KEYS = 12;
 const MAX_STRING = 64;
@@ -139,7 +152,8 @@ export function sanitizeAnalyticsProperties(
   let n = 0;
   for (const [k, v] of Object.entries(properties)) {
     if (n >= MAX_KEYS) break;
-    if (k.length > 40 || DENY_KEY.test(k)) continue;
+    if (k.length > 40) continue;
+    if (DENY_EXACT.has(k.toLowerCase()) || DENY_KEY.test(k)) continue;
     if (v === null || v === undefined) continue;
     if (typeof v === "object") continue; // nested payloads are never logged
     if (typeof v === "function" || typeof v === "symbol") continue;
@@ -177,9 +191,23 @@ const VIEW_EVENT = /(_opened|_viewed|_result|_detected|_completed_view)$/;
 const VIEW_DEDUPE_MS = 1500;
 let recentViews = new Map<string, number>();
 
+/**
+ * DEF-084A-01 — funnel ordering.
+ *
+ * Writes are serialized through a single in-flight chain so the persisted
+ * `created_at` order always matches emission order (e.g. `auth_signup_started`
+ * can never land after `auth_signup_success`, and `*_viewed` never lands after
+ * the matching `*_completed`). Still fully non-blocking: callers never await,
+ * and a rejected link can never break the chain or surface to the product.
+ */
+let chain: Promise<void> = Promise.resolve();
+
 /** Called on sign-out / account switch so no dedupe state crosses identities. */
 export function resetAnalyticsIdentity(): void {
   recentViews = new Map();
+  // Any queued-but-unsent writes belong to the previous session; drop the
+  // chain reference so a new identity starts from a clean queue.
+  chain = Promise.resolve();
 }
 
 export function logAnalyticsEvent(
@@ -200,19 +228,30 @@ export function logAnalyticsEvent(
       if (recentViews.size > 64) recentViews = new Map([[key, now]]);
     }
 
-    (supabase.rpc as unknown as (
-      n: string,
-      a?: Record<string, unknown>,
-    ) => { then: (ok: () => void, err: () => void) => void })
-      .call(supabase, "log_analytics_event", {
-        _event_name: event,
-        _properties: props,
-      })
-      .then(
-        () => undefined,
-        () => undefined,
-      );
+    chain = chain.then(
+      () =>
+        new Promise<void>((resolve) => {
+          try {
+            (supabase.rpc as unknown as (
+              n: string,
+              a?: Record<string, unknown>,
+            ) => { then: (ok: () => void, err: () => void) => void })
+              .call(supabase, "log_analytics_event", {
+                _event_name: event,
+                _properties: props,
+              })
+              .then(
+                () => resolve(),
+                () => resolve(),
+              );
+          } catch {
+            resolve();
+          }
+        }),
+      () => undefined,
+    );
   } catch {
     /* analytics is best-effort and must never affect a product flow */
   }
 }
+

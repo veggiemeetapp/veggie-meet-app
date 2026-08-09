@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Calendar, MapPin, Search as SearchIcon, Sprout, Users, Utensils } from "lucide-react";
@@ -39,6 +40,11 @@ const placeCategoryLabel: Record<CommunityPlace["category"], string> = {
 
 export default function Community() {
   const { profile } = useAuth();
+
+  // WO-084A: surface view event (mount-only, deduped by the logger).
+  useEffect(() => {
+    logAnalyticsEvent("community_home_opened", {});
+  }, []);
   const location = useLocationContext();
   const selectedCity = location.data?.selected_city ?? null;
   const cityId = selectedCity?.id ?? null;
