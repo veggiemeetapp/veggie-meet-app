@@ -24,10 +24,13 @@ export class AppErrorBoundary extends Component<Props, State> {
       const message = error instanceof Error ? error.message : "unknown";
       console.error("[app-error-boundary]", message);
     }
-    // WO-042 §9: bounded activation signal for first-week ops. Route only
-    // (no query string), plus the error name — never the message or stack.
+    // WO-042 §9 / WO-084 §22: bounded activation signal for first-week ops.
+    // Route *template* only (no query string, no identifiers), plus the error
+    // name — never the message or stack.
     logAnalyticsEvent("error_boundary_activated", {
-      route: typeof window !== "undefined" ? window.location.pathname : "unknown",
+      route: routeTemplate(
+        typeof window !== "undefined" ? window.location.pathname : undefined,
+      ),
       error_name: error instanceof Error ? error.name : "unknown",
     });
   }
