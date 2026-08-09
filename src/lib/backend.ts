@@ -1,7 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Meetup, Message, MeetupCategory, MeetupLocationSource, MeetupStatus, MessageType, Veggie, CommunityPlace, CommunityPlaceCategory } from "@/types";
 
-const UUID_RE = /^[0-9a-f-]{36}$/i;
+// WO-082: canonical UUID shape only. The previous loose pattern accepted
+// strings like "------------------------------------", which reached the
+// database and surfaced a raw "invalid input syntax for type uuid" error.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (v?: string | null) => !!v && UUID_RE.test(v);
 
 export const FALLBACK_COVER =

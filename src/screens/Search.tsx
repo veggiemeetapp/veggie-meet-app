@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -109,7 +110,7 @@ export default function Search() {
         <div className="flex items-center gap-2 mb-3">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/community")}
             aria-label="Go back"
             className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60"
           >

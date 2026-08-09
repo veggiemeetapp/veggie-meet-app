@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
@@ -79,7 +80,7 @@ export default function Plans() {
         left={
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/")}
             aria-label="Back"
             className="min-w-11 min-h-11 w-11 h-11 -ml-2 rounded-full flex items-center justify-center text-charcoal hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >

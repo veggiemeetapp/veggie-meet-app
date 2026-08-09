@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -255,7 +256,7 @@ export default function OwnerPlaceEditDetails() {
   return (
     <div className="flex-1 flex flex-col pb-28">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
-        <Button variant="ghost" size="icon" aria-label="Back" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" aria-label="Back" onClick={() => safeBack(navigate, "/owner/places")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="min-w-0">

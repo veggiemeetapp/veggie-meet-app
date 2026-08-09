@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -138,7 +139,7 @@ export default function MeetupSummary() {
           description={summaryQuery.error instanceof Error ? summaryQuery.error.message : undefined}
           action={
             <div className="flex gap-2">
-              <SecondaryButton onClick={() => navigate(-1)}>Back</SecondaryButton>
+              <SecondaryButton onClick={() => safeBack(navigate, "/plans")}>Back</SecondaryButton>
               <PrimaryButton onClick={() => summaryQuery.refetch()}>Try again</PrimaryButton>
             </div>
           }
@@ -191,7 +192,7 @@ export default function MeetupSummary() {
         left={
           <button
             aria-label="Back"
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/plans")}
             className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >
             <ArrowLeft className="w-5 h-5" />

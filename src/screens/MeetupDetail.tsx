@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -199,7 +200,7 @@ export default function MeetupDetail() {
       <div className="flex flex-col min-h-dvh">
         <div className="safe-top flex items-center px-4 pt-3 pb-2">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/community")}
             aria-label="Back"
             className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

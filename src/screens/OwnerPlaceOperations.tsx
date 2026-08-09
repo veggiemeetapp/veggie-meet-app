@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -246,7 +247,7 @@ export default function OwnerPlaceOperations() {
     <div className="flex-1 flex flex-col pb-24">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3">
         <div className="mx-auto w-full max-w-5xl flex items-start gap-3">
-          <Button variant="ghost" size="icon" aria-label="Back" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" aria-label="Back" onClick={() => safeBack(navigate, "/you")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0">

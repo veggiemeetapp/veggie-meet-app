@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Leaf, MapPin, Trash2, UserRound } from "lucide-react";
@@ -32,7 +33,7 @@ export default function RelationshipDetail() {
       await removeConnection(relQuery.data.id);
       toast.success("Connection removed");
       await qc.invalidateQueries({ queryKey: ["veggie-network", profile?.id] });
-      navigate(-1);
+      safeBack(navigate, "/network");
     } catch {
       toast.error("Couldn't remove just now. Try again.");
     }
@@ -47,7 +48,7 @@ export default function RelationshipDetail() {
         title="Relationship"
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/network")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
@@ -266,7 +267,7 @@ export default function Notifications() {
         title="Notifications"
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center hover:bg-accent transition-colors"
           >

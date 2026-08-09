@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -86,7 +87,7 @@ export default function Settings() {
   const title = SECTION_LABELS[section];
 
   const handleBack = () => {
-    if (section === "hub") navigate(-1);
+    if (section === "hub") safeBack(navigate, "/you");
     else go("hub");
   };
 

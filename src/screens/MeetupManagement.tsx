@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -325,7 +326,7 @@ export default function MeetupManagement() {
     return (
       <div className="p-8 text-center">
         <p className="text-charcoal font-medium">Meetup not found.</p>
-        <button onClick={() => navigate(-1)} className="mt-4 text-sm text-primary">
+        <button onClick={() => safeBack(navigate, "/plans")} className="mt-4 text-sm text-primary">
           Go back
         </button>
       </div>
@@ -543,7 +544,7 @@ export default function MeetupManagement() {
         subtitle={isCancelled ? "This Meetup has been cancelled." : "Keep everyone in the loop."}
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/plans")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

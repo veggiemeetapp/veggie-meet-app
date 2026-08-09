@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
@@ -7,6 +8,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/app";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { sanitizeInternalPath } from "@/lib/authRedirect";
+import { NavigationBehavior } from "@/lib/navigation";
+import { RequireValidIds } from "@/components/app/ResourceUnavailable";
 
 // Eagerly load the two most common landing routes so first paint after
 // auth/onboarding does not pay a code-split cost.
@@ -114,7 +117,14 @@ const queryClient = new QueryClient();
 // Helper so every private route gets the same auth+onboarding gate. Only
 // `/onboarding`, the OAuth consent page, and the NotFound catch-all are
 // intentionally public.
-const gated = (el: JSX.Element) => <RequireOnboarded>{el}</RequireOnboarded>;
+// WO-082: every gated route also validates UUID-shaped route params before
+// the screen mounts, so malformed deep links resolve to a neutral
+// unavailable state instead of a database error.
+const gated = (el: JSX.Element) => (
+  <RequireOnboarded>
+    <RequireValidIds>{el}</RequireValidIds>
+  </RequireOnboarded>
+);
 
 // Neutral suspense fallback while a lazy route chunk loads. Kept blank on
 // purpose: individual screens render their own skeleton immediately after
@@ -128,6 +138,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <NavigationBehavior />
           <AppShell>
             <Suspense fallback={<RouteFallback />}>
               <Routes>

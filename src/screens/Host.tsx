@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -347,7 +348,7 @@ export default function Host() {
         subtitle="Bring Veggies together around something you enjoy."
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

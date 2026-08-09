@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -158,7 +159,7 @@ export default function EditProfile() {
       <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/60">
         <div className="flex items-center justify-between px-5 pt-3 pb-3 min-h-[3.5rem]">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/you")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -164,7 +165,7 @@ export default function VeggieNetwork() {
         subtitle="Your connections and new people to meet."
         left={
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/you")}
             aria-label="Back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >

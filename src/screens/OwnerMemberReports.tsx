@@ -1,3 +1,4 @@
+import { safeBack } from "@/lib/navigation";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ export default function OwnerMemberReports() {
         left={
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => safeBack(navigate, "/owner/places")}
             aria-label="Go back"
             className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
           >
