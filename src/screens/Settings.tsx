@@ -518,6 +518,44 @@ function PrivacySection({
 }) {
   const [visible, setVisible] = useState(data.privacy.discovery_visible);
   const [pending, setPending] = useState(false);
+  // WO-081: live browser permission state, kept strictly separate from the
+  // VeggieMeet-side record below. Reading these never triggers a prompt and
+  // never requests coordinates.
+  const [browserNotificationLabel, setBrowserNotificationLabel] =
+    useState("unsupported in this browser");
+  const [browserLocationLabel, setBrowserLocationLabel] = useState("unknown");
+
+  // Keep the switch honest if the value changes elsewhere (other tab/device).
+  useEffect(() => setVisible(data.privacy.discovery_visible), [data.privacy.discovery_visible]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const p = window.Notification.permission;
+      setBrowserNotificationLabel(
+        p === "default" ? "not decided" : p === "granted" ? "allowed" : "blocked",
+      );
+    }
+    let cancelled = false;
+    if (typeof navigator !== "undefined" && !("geolocation" in navigator)) {
+      setBrowserLocationLabel("unsupported in this browser");
+    } else if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: "geolocation" as PermissionName })
+        .then((s) => {
+          if (cancelled) return;
+          setBrowserLocationLabel(
+            s.state === "prompt" ? "not decided" : s.state === "granted" ? "allowed" : "blocked",
+          );
+        })
+        .catch(() => {
+          if (!cancelled) setBrowserLocationLabel("unknown");
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
 
   async function toggleVisibility() {
     const prev = visible;
