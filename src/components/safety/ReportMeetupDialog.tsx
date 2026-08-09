@@ -80,6 +80,7 @@ export function ReportMeetupDialog({
               <span className="text-charcoal-muted font-normal">Optional</span>
             </label>
             <textarea
+                  aria-label="What happened? (optional)"
               value={details}
               onChange={(e) => setDetails(e.target.value.slice(0, 1000))}
               rows={4}

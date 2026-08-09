@@ -450,6 +450,7 @@ function SearchBar({
     <div className="relative">
       <Search className="w-4 h-4 text-charcoal-muted absolute left-3 top-1/2 -translate-y-1/2" />
       <input
+        aria-label="Search your Veggie Network"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search by name or city"
@@ -627,7 +628,7 @@ function SentRow({
 }) {
   return (
     <Card padding="md" className="flex items-center gap-3">
-      <button onClick={onOpen} className="shrink-0">
+      <button onClick={onOpen} aria-label={`Open ${rel.other.displayName}'s profile`} className="shrink-0">
         <UserAvatar
           name={rel.other.displayName}
           src={rel.other.avatarUrl ?? undefined}

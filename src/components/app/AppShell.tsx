@@ -1,10 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { AppErrorBoundary } from "./ErrorBoundary";
 import { OfflineBanner } from "./OfflineBanner";
 import { FollowUpPrompt } from "@/components/postmeetup/FollowUpPrompt";
 import { useAuth } from "@/hooks/useAuth";
+import { titleForPath } from "@/lib/pageTitle";
 
 interface AppShellProps {
   children: ReactNode;
@@ -22,21 +23,55 @@ export function AppShell({ children }: AppShellProps) {
   const authedShell = !loading && !!session && !!profile?.onboarding_completed;
   const hideNav = !authedShell || HIDDEN_NAV_PATTERNS.some((r) => r.test(pathname));
 
+  // WO-085 DEF-085-03 (WCAG 2.4.2): route-template document titles.
+  // WO-085 DEF-085-06 (WCAG 2.4.3 / 4.1.3): on a route change, move focus to
+  // the main region and announce the new surface politely, so keyboard and
+  // screen-reader members are told the page changed instead of being left at
+  // the top of a stale tab order.
+  const mainRef = useRef<HTMLElement | null>(null);
+  const first = useRef(true);
+  const [announced, setAnnounced] = useState("");
+
+  useEffect(() => {
+    const title = titleForPath(pathname);
+    document.title = title;
+    const label = title.split(" | ")[0];
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    setAnnounced(label);
+    // Programmatic focus without a visible outline on the container itself:
+    // the next Tab continues from main, which is the predictable destination.
+    mainRef.current?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [pathname]);
 
   return (
     <div className="min-h-dvh w-full bg-muted/40 flex justify-center">
       <div className="relative w-full max-w-phone bg-background min-h-dvh shadow-float flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:left-3 focus:top-3 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
+        >
+          Skip to main content
+        </a>
         <OfflineBanner />
         <main
-          className="flex-1 flex flex-col"
+          id="main-content"
+          ref={mainRef}
+          tabIndex={-1}
+          className="flex-1 flex flex-col outline-none"
           style={{ paddingBottom: hideNav ? 0 : "calc(var(--nav-height) + env(safe-area-inset-bottom))" }}
         >
           <AppErrorBoundary>{children}</AppErrorBoundary>
         </main>
+        <p aria-live="polite" className="sr-only">
+          {announced}
+        </p>
         {!hideNav && <BottomNav />}
         <FollowUpPrompt />
       </div>
     </div>
   );
 }
-

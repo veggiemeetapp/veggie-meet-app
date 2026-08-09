@@ -20,7 +20,9 @@
     --popover-foreground: 220 15% 15%;
 
     /* Soft green primary */
-    --primary: 145 45% 42%;
+    /* WO-085 DEF-085-01: darkened from 45% 42% (3.33:1) to reach WCAG AA
+       4.5:1 against --primary-foreground for text on primary surfaces. */
+    --primary: 145 45% 34%;
     --primary-foreground: 40 33% 98%;
     --primary-soft: 140 40% 94%;
     --primary-glow: 145 50% 55%;
@@ -39,7 +41,7 @@
 
     --border: 40 15% 90%;
     --input: 40 15% 90%;
-    --ring: 145 45% 42%;
+    --ring: 145 45% 34%;
 
     --radius: 1rem;
 
@@ -48,7 +50,7 @@
     --charcoal-muted: 220 8% 46%;
     --warm-white: 40 33% 98%;
     --soft-green: 140 40% 94%;
-    --green-primary: 145 45% 42%;
+    --green-primary: 145 45% 34%;
     --card-bg: 0 0% 100%;
     --soft-border: 40 15% 90%;
     --host-badge: 35 90% 55%;
@@ -100,4 +102,23 @@
 @layer utilities {
   .safe-top { padding-top: env(safe-area-inset-top); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* WO-085 DEF-085-04 (WCAG 2.3.3 / 2.2.2): honour prefers-reduced-motion.
+   Decorative transitions, slides and pulses collapse to near-instant.
+   Progress affordances keep a slow, non-distracting spin so busy state is
+   still perceivable. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin {
+    animation: spin 1.5s linear infinite !important;
+  }
+  .animate-fade-in, .animate-enter, [data-state="open"], [data-state="closed"] {
+    animation: none !important;
+  }
 }

@@ -750,7 +750,7 @@ function Auth({
         <form onSubmit={handleEmailSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-charcoal mb-2">Email</label>
-            <input
+            <input aria-label="Email"
               type="email"
               autoComplete="email"
               value={email}
@@ -761,7 +761,7 @@ function Auth({
           </div>
           <div>
             <label className="block text-sm font-semibold text-charcoal mb-2">Password</label>
-            <input
+            <input aria-label="Password"
               type="password"
               autoComplete={isSignUp ? "new-password" : "current-password"}
               value={password}
@@ -873,7 +873,7 @@ function Identity({
           <label className="block text-sm font-semibold text-charcoal mb-2">
             Display name
           </label>
-          <input
+          <input aria-label="Display name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="e.g. Ben"
@@ -885,7 +885,7 @@ function Identity({
           <label className="block text-sm font-semibold text-charcoal mb-2">
             Pronouns <span className="text-charcoal-muted font-normal">(optional)</span>
           </label>
-          <input
+          <input aria-label="Pronouns (optional)"
             value={pronouns}
             onChange={(e) => setPronouns(e.target.value)}
             placeholder="e.g. she/her"
@@ -1232,6 +1232,7 @@ function Photo({
           Short bio <span className="text-charcoal-muted font-normal">(optional)</span>
         </label>
         <textarea
+          aria-label="Short bio (optional)"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           placeholder="One friendly line about you."

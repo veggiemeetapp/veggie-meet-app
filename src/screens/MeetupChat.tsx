@@ -361,6 +361,7 @@ export default function MeetupChat() {
           className="safe-bottom border-t border-border/60 p-3 flex items-center gap-2 bg-background"
         >
           <input
+            aria-label="Message"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             maxLength={2000}

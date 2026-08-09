@@ -626,7 +626,7 @@ export default function MeetupManagement() {
 
           <div>
             <FieldLabel>Title</FieldLabel>
-            <input
+            <input aria-label="Title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -649,10 +649,10 @@ export default function MeetupManagement() {
             <div>
               <FieldLabel>
                 <span className="inline-flex items-center gap-1">
-                  <Calendar className="w-4 h-4" /> Date
+                  <Calendar className="w-4 h-4" aria-hidden="true" /> Date
                 </span>
               </FieldLabel>
-              <input
+              <input aria-label="Date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -662,10 +662,11 @@ export default function MeetupManagement() {
             <div>
               <FieldLabel>
                 <span className="inline-flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> Start time
+                  <Clock className="w-4 h-4" aria-hidden="true" /> Start time
                 </span>
               </FieldLabel>
               <input
+                aria-label="Start time"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
@@ -685,6 +686,7 @@ export default function MeetupManagement() {
               </span>
             </FieldLabel>
             <input
+              aria-label="Group size"
               type="number"
               min={Math.max(1, activeAttendeeCount)}
               value={capacity}
@@ -809,7 +811,7 @@ export default function MeetupManagement() {
             <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
               <div>
                 <FieldLabel>Location name</FieldLabel>
-                <input
+                <input aria-label="Location name"
                   type="text"
                   value={locCustomName}
                   onChange={(e) => setLocCustomName(e.target.value)}
@@ -819,7 +821,7 @@ export default function MeetupManagement() {
               </div>
               <div>
                 <FieldLabel>Address (optional)</FieldLabel>
-                <input
+                <input aria-label="Address (optional)"
                   type="text"
                   value={locCustomAddress}
                   onChange={(e) => setLocCustomAddress(e.target.value)}
@@ -829,7 +831,7 @@ export default function MeetupManagement() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <FieldLabel>Latitude (optional)</FieldLabel>
-                  <input
+                  <input aria-label="Latitude (optional)"
                     type="text"
                     inputMode="decimal"
                     value={locCustomLat}
@@ -839,7 +841,7 @@ export default function MeetupManagement() {
                 </div>
                 <div>
                   <FieldLabel>Longitude (optional)</FieldLabel>
-                  <input
+                  <input aria-label="Longitude (optional)"
                     type="text"
                     inputMode="decimal"
                     value={locCustomLng}

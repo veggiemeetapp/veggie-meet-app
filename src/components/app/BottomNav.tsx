@@ -71,21 +71,29 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
                 className={({ isActive }) =>
                   cn(
                     "relative flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl min-h-[3.25rem] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                     isActive
                       ? "text-primary"
                       : "text-charcoal-muted hover:text-charcoal",
                   )
                 }
+                // WO-085 (WCAG 4.1.2): NavLink already emits aria-current="page"
+                // when active, so the active tab is exposed programmatically and
+                // not by colour alone. The unread count is spoken as part of the
+                // item name rather than as a bare visual dot (see item 70).
                 aria-label={
-                  showBadge ? `${label}, ${unread} unread conversations` : label
+
+                  showBadge
+                    ? `${label}, ${unread} unread ${unread === 1 ? "conversation" : "conversations"}`
+                    : undefined
                 }
               >
                 <div className="relative">
-                  <Icon className="w-6 h-6" />
+                  <Icon className="w-6 h-6" aria-hidden="true" />
                   {showBadge && (
                     <span
                       className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center"
-                      aria-hidden
+                      aria-hidden="true"
                     >
                       {unread > 9 ? "9+" : unread}
                     </span>
@@ -97,6 +105,7 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
           );
         })}
       </ul>
+
     </nav>
   );
 }
