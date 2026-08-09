@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { sanitizeInternalPath } from "@/lib/authRedirect";
 import { NavigationBehavior } from "@/lib/navigation";
 import { RequireValidIds } from "@/components/app/ResourceUnavailable";
+import { RequireOwner } from "@/components/app/RequireOwner";
 
 // Eagerly load the two most common landing routes so first paint after
 // auth/onboarding does not pay a code-split cost.
@@ -180,24 +181,24 @@ const App = () => (
                 <Route path="/impact/:tab" element={gated(<Impact />)} />
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
                 <Route path="/settings" element={gated(<Settings />)} />
-                <Route path="/owner/places" element={gated(<OwnerPlaceOperations />)} />
-                <Route path="/owner/member-reports" element={gated(<OwnerMemberReports />)} />
+                <Route path="/owner/places" element={ownerGated(<OwnerPlaceOperations />)} />
+                <Route path="/owner/member-reports" element={ownerGated(<OwnerMemberReports />)} />
                 <Route
 
                   path="/owner/places/:placeId/reverify"
-                  element={gated(<OwnerPlaceReverify />)}
+                  element={ownerGated(<OwnerPlaceReverify />)}
                 />
                 <Route
                   path="/owner/places/:placeId/edit"
-                  element={gated(<OwnerPlaceEditDetails />)}
+                  element={ownerGated(<OwnerPlaceEditDetails />)}
                 />
                 <Route
                   path="/owner/places/:placeId/vegan-review"
-                  element={gated(<OwnerPlaceVeganReview />)}
+                  element={ownerGated(<OwnerPlaceVeganReview />)}
                 />
                 <Route
                   path="/owner/places/:placeId/identity-review"
-                  element={gated(<OwnerPlaceIdentityReview />)}
+                  element={ownerGated(<OwnerPlaceIdentityReview />)}
                 />
 
 
