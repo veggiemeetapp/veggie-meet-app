@@ -1274,6 +1274,7 @@ export type Database = {
       dm_messages: {
         Row: {
           body: string
+          client_token: string | null
           conversation_id: string
           created_at: string
           id: string
@@ -1283,6 +1284,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          client_token?: string | null
           conversation_id: string
           created_at?: string
           id?: string
@@ -1292,6 +1294,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          client_token?: string | null
           conversation_id?: string
           created_at?: string
           id?: string
@@ -2022,6 +2025,7 @@ export type Database = {
         Row: {
           body: string
           chat_id: string
+          client_token: string | null
           created_at: string
           id: string
           sender_id: string | null
@@ -2030,6 +2034,7 @@ export type Database = {
         Insert: {
           body: string
           chat_id: string
+          client_token?: string | null
           created_at?: string
           id?: string
           sender_id?: string | null
@@ -2038,6 +2043,7 @@ export type Database = {
         Update: {
           body?: string
           chat_id?: string
+          client_token?: string | null
           created_at?: string
           id?: string
           sender_id?: string | null
@@ -3488,11 +3494,15 @@ export type Database = {
         Returns: Json
       }
       send_dm_message: {
-        Args: { _body: string; _conversation_id: string }
+        Args: {
+          _body: string
+          _client_token?: string
+          _conversation_id: string
+        }
         Returns: Json
       }
       send_meetup_chat_message: {
-        Args: { _body: string; _chat_id: string }
+        Args: { _body: string; _chat_id: string; _client_token?: string }
         Returns: Json
       }
       set_community_place_active: {
