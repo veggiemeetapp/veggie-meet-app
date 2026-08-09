@@ -74,6 +74,7 @@ export async function markConversationRead(conversationId: string) {
 export async function sendDirectMessage(
   conversationId: string,
   body: string,
+  clientToken?: string | null,
 ): Promise<DMMessage> {
   const trimmed = body.trim();
   if (!trimmed) throw new Error("Message can't be empty");
@@ -83,6 +84,8 @@ export async function sendDirectMessage(
   const { data, error } = await (supabase.rpc as any)("send_dm_message", {
     _conversation_id: conversationId,
     _body: trimmed,
+    // WO-083: idempotency token so an ambiguous retry cannot duplicate a message.
+    _client_token: clientToken ?? null,
   });
   if (error) throw error;
   return data as DMMessage;

@@ -83,10 +83,15 @@ export async function fetchMeetupChatThread(
 export async function sendMeetupChatMessage(
   chatId: string,
   body: string,
+  clientToken?: string | null,
 ): Promise<ChatMessage> {
+  // WO-083: `clientToken` makes a send idempotent. If the server committed the
+  // message but the response was lost, retrying with the same token returns the
+  // original row instead of posting a duplicate.
   const { data, error } = await (supabase.rpc as any)("send_meetup_chat_message", {
     _chat_id: chatId,
     _body: body,
+    _client_token: clientToken ?? null,
   });
   if (error) throw new Error(error.message);
   return data as ChatMessage;
