@@ -248,7 +248,8 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
       logOnboardingEvent("settings_profile_updated", {});
       onSaved();
     },
-    onError: (e: Error) => toast.error("Couldn't save", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error("Couldn't save", { description: memberSafeMessage(e) }),
   });
 
   const nameValid = displayName.trim().length > 0 && displayName.trim().length <= 40;
@@ -323,7 +324,8 @@ function DiscoverySection({ data, onSaved }: { data: AccountSettings; onSaved: (
       logOnboardingEvent("discovery_settings_saved", { interests_count: interests.length });
       onSaved();
     },
-    onError: (e: Error) => toast.error("Couldn't save", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error("Couldn't save", { description: memberSafeMessage(e) }),
   });
 
   const home = contextQuery.data?.home_city;
