@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { CalendarClock, ChevronRight, RefreshCw } from "lucide-react";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { Link } from "react-router-dom";
 import { useToday } from "@/hooks/useToday";
 import { TodayHeader } from "@/components/today/TodayHeader";
@@ -19,6 +21,11 @@ import { SectionHeader } from "@/components/app/SectionHeader";
  */
 export default function Today() {
   const { data, loading, error, refresh, refetching } = useToday();
+
+  // WO-084A: surface view event (mount-only, deduped by the logger).
+  useEffect(() => {
+    logAnalyticsEvent("today_opened", {});
+  }, []);
 
   if (loading) return <TodaySkeleton />;
   if (error || !data) return <TodayError onRetry={refresh} />;

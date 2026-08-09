@@ -111,6 +111,11 @@ const iconFor: Record<NotificationType, JSX.Element> = {
 
 export default function Notifications() {
   const navigate = useNavigate();
+
+  // WO-084A: surface view event (mount-only, deduped by the logger).
+  useEffect(() => {
+    logAnalyticsEvent("notifications_opened", {});
+  }, []);
   const { profile } = useAuth();
   const qc = useQueryClient();
   const [marking, setMarking] = useState(false);
