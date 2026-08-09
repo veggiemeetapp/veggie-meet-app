@@ -19,6 +19,13 @@ export type PrimaryAction =
   | "manage_meetup"
   | "view_summary";
 
+export type PlanLifecycleState =
+  | "upcoming"
+  | "in_progress"
+  | "ended"
+  | "completed"
+  | "cancelled";
+
 export interface PlanItem {
   plan_type: PlanType;
   meetup_id: string;
@@ -33,7 +40,14 @@ export interface PlanItem {
   starts_at: string;         // ISO timestamptz
   ends_at: string;
   meetup_status: "upcoming" | "full" | "in_progress" | "past" | "cancelled";
-  host: { id: string; name: string; avatar: string | null };
+  /** Canonical, timezone-aware lifecycle state decided server-side. */
+  lifecycle_state: PlanLifecycleState;
+  is_completed: boolean;
+  /** Server-decided action eligibility — never inferred from the client clock. */
+  can_check_in: boolean;
+  can_leave: boolean;
+  can_complete: boolean;
+  host: { id: string | null; name: string; avatar: string | null };
   location: {
     city: string | null;
     neighborhood: string | null;
@@ -54,6 +68,7 @@ export interface PlanItem {
   reason_code: PlanType;
   reason_label: string | null;
 }
+
 
 export interface MyPlansResponse {
   needs_attention: PlanItem[];
