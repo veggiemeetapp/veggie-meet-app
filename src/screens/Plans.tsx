@@ -10,6 +10,8 @@ import {
   SecondaryButton,
 } from "@/components/app";
 import { useAuth } from "@/hooks/useAuth";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchMyPlans,
@@ -35,6 +37,11 @@ export default function Plans() {
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["my-plans", profile?.id] });
+
+  useEffect(() => {
+    if (profile?.id) logAnalyticsEvent("my_plans_opened", {});
+  }, [profile?.id]);
+
 
   useEffect(() => {
     if (!profile?.id) return;

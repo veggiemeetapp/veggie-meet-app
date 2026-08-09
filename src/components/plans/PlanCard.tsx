@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 import { useNavigate } from "react-router-dom";
 import {
   Calendar,
@@ -65,6 +67,11 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
   const [confirmDecline, setConfirmDecline] = useState(false);
 
   const openMeetup = async () => {
+    logAnalyticsEvent("plan_opened", {
+      plan_type: plan.plan_type,
+      lifecycle_state: plan.lifecycle_state,
+      role: plan.role,
+    });
     if (plan.has_unseen_update) await acknowledgeMeetupUpdate(plan.meetup_id).catch(() => {});
     navigate(`/meetup/${plan.meetup_id}`);
     onChanged?.();
@@ -73,6 +80,9 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
   const primary = async () => {
     switch (plan.primary_action) {
       case "check_in":
+        logAnalyticsEvent("check_in_started_from_plans", {
+          lifecycle_state: plan.lifecycle_state,
+        });
         navigate(`/checkin/${plan.meetup_id}`);
         return;
       case "open_chat":
@@ -89,6 +99,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
         return;
     }
   };
+
 
   const acceptInvitation = async () => {
     if (!plan.invitation) return;
@@ -123,6 +134,8 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
     setBusy(true);
     try {
       await leaveMeetup(plan.meetup_id);
+      logAnalyticsEvent("meetup_left_from_plans", { plan_type: plan.plan_type });
+
       toast.success("You left the Meetup");
       onChanged?.();
     } catch (e) {
@@ -152,8 +165,14 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
   })();
 
   const showAcceptDecline = plan.plan_type === "invitation";
-  const showLeave =
-    (plan.plan_type === "upcoming" || plan.plan_type === "active") && plan.role !== "host";
+  // WO-079: leaving is a server decision (WO-066 blocks undoing a check-in),
+  // so the CTA only appears when the server says it is possible.
+  const showLeave = plan.can_leave;
+  const showChat =
+    plan.lifecycle_state !== "cancelled" &&
+    plan.plan_type !== "invitation" &&
+    (plan.role === "host" || plan.attendance_state !== null);
+
 
   return (
     <>
@@ -202,7 +221,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={openMeetup}>View Meetup</DropdownMenuItem>
-                    {plan.plan_type !== "invitation" && (
+                    {showChat && (
                       <DropdownMenuItem onClick={() => navigate(`/chat/${plan.meetup_id}`)}>
                         Open Chat
                       </DropdownMenuItem>
@@ -212,6 +231,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
                         Leave Meetup
                       </DropdownMenuItem>
                     )}
+
                     {showAcceptDecline && (
                       <DropdownMenuItem onClick={() => setConfirmDecline(true)}>
                         Decline invitation
@@ -279,13 +299,17 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
             <PrimaryButton
               size="sm"
               fullWidth
-              onClick={primary}
-              disabled={busy || plan.plan_type === "cancelled"}
+              onClick={plan.lifecycle_state === "cancelled" ? openMeetup : primary}
+              disabled={busy}
+              aria-label={`${
+                plan.lifecycle_state === "cancelled" ? "View details" : primaryLabel
+              } — ${plan.title}`}
             >
-              {plan.plan_type === "cancelled" ? "View details" : primaryLabel}
+              {plan.lifecycle_state === "cancelled" ? "View details" : primaryLabel}
               <ChevronRight className="w-4 h-4" />
             </PrimaryButton>
           )}
+
         </div>
       </Card>
 
