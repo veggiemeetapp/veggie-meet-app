@@ -65,6 +65,11 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
   const [confirmDecline, setConfirmDecline] = useState(false);
 
   const openMeetup = async () => {
+    logAnalyticsEvent("plan_opened", {
+      plan_type: plan.plan_type,
+      lifecycle_state: plan.lifecycle_state,
+      role: plan.role,
+    });
     if (plan.has_unseen_update) await acknowledgeMeetupUpdate(plan.meetup_id).catch(() => {});
     navigate(`/meetup/${plan.meetup_id}`);
     onChanged?.();
@@ -73,6 +78,9 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
   const primary = async () => {
     switch (plan.primary_action) {
       case "check_in":
+        logAnalyticsEvent("check_in_started_from_plans", {
+          lifecycle_state: plan.lifecycle_state,
+        });
         navigate(`/checkin/${plan.meetup_id}`);
         return;
       case "open_chat":
@@ -89,6 +97,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
         return;
     }
   };
+
 
   const acceptInvitation = async () => {
     if (!plan.invitation) return;
