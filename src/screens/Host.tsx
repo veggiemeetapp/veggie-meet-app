@@ -400,7 +400,7 @@ export default function Host() {
         {/* Title */}
         <section>
           <FieldLabel>Meetup title</FieldLabel>
-          <input
+          <input aria-label="Meetup title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -543,7 +543,7 @@ export default function Host() {
                     <div className="mt-2 space-y-3 rounded-2xl border border-border bg-muted/30 p-3">
                       <div>
                         <FieldLabel>Location name</FieldLabel>
-                        <input
+                        <input aria-label="Location name"
                           type="text"
                           value={customName}
                           onChange={(e) => setCustomName(e.target.value)}
@@ -553,7 +553,7 @@ export default function Host() {
                       </div>
                       <div>
                         <FieldLabel>Street address</FieldLabel>
-                        <input
+                        <input aria-label="Street address"
                           type="text"
                           value={customAddress}
                           onChange={(e) => setCustomAddress(e.target.value)}
@@ -564,7 +564,7 @@ export default function Host() {
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <FieldLabel>Latitude (optional)</FieldLabel>
-                          <input
+                          <input aria-label="Latitude (optional)"
                             type="text"
                             inputMode="decimal"
                             value={customLat}
@@ -575,7 +575,7 @@ export default function Host() {
                         </div>
                         <div>
                           <FieldLabel>Longitude (optional)</FieldLabel>
-                          <input
+                          <input aria-label="Longitude (optional)"
                             type="text"
                             inputMode="decimal"
                             value={customLng}
@@ -605,7 +605,7 @@ export default function Host() {
         <section className="grid grid-cols-2 gap-3">
           <div>
             <FieldLabel>Date</FieldLabel>
-            <input
+            <input aria-label="Date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -614,7 +614,7 @@ export default function Host() {
           </div>
           <div>
             <FieldLabel>Time</FieldLabel>
-            <input
+            <input aria-label="Time"
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
@@ -680,7 +680,7 @@ export default function Host() {
         {/* Description */}
         <section>
           <FieldLabel>Description</FieldLabel>
-          <textarea
+          <textarea aria-label="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Tell everyone what to expect."

@@ -626,7 +626,7 @@ export default function MeetupManagement() {
 
           <div>
             <FieldLabel>Title</FieldLabel>
-            <input
+            <input aria-label="Title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -652,7 +652,7 @@ export default function MeetupManagement() {
                   <Calendar className="w-4 h-4" /> Date
                 </span>
               </FieldLabel>
-              <input
+              <input aria-label="Description"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -809,7 +809,7 @@ export default function MeetupManagement() {
             <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
               <div>
                 <FieldLabel>Location name</FieldLabel>
-                <input
+                <input aria-label="Location name"
                   type="text"
                   value={locCustomName}
                   onChange={(e) => setLocCustomName(e.target.value)}
@@ -819,7 +819,7 @@ export default function MeetupManagement() {
               </div>
               <div>
                 <FieldLabel>Address (optional)</FieldLabel>
-                <input
+                <input aria-label="Address (optional)"
                   type="text"
                   value={locCustomAddress}
                   onChange={(e) => setLocCustomAddress(e.target.value)}
@@ -829,7 +829,7 @@ export default function MeetupManagement() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <FieldLabel>Latitude (optional)</FieldLabel>
-                  <input
+                  <input aria-label="Latitude (optional)"
                     type="text"
                     inputMode="decimal"
                     value={locCustomLat}
@@ -839,7 +839,7 @@ export default function MeetupManagement() {
                 </div>
                 <div>
                   <FieldLabel>Longitude (optional)</FieldLabel>
-                  <input
+                  <input aria-label="Longitude (optional)"
                     type="text"
                     inputMode="decimal"
                     value={locCustomLng}
