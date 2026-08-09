@@ -83,10 +83,11 @@ export async function fetchMyPlans(
   pastCursor: string | null = null,
   pastLimit = 20,
 ): Promise<MyPlansResponse> {
-  const { data, error } = await supabase.rpc("get_my_plans", {
+  const { data, error } = await (supabase.rpc as any)("get_my_plans", {
     _past_cursor: pastCursor,
     _past_limit: pastLimit,
   });
+
   if (error) throw new Error(error.message);
   return (data ?? {
     needs_attention: [],
