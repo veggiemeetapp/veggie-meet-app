@@ -74,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // never be suppressed or attributed via member A's client state.
         resetAnalyticsIdentity();
       }
+      lastUserIdRef.current = nextId;
+      setSession(s);
       // Defer profile fetch to avoid deadlock
       setTimeout(() => loadProfile(s?.user.id), 0);
     });
