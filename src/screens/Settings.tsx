@@ -725,7 +725,7 @@ function AccountSection({
       await signOut();
       navigate("/onboarding", { replace: true });
     },
-    onError: (e: Error) => toast.error("Couldn't delete", { description: e.message }),
+    onError: (e: Error) => toast.error("Couldn't delete", { description: memberSafeMessage(e) }),
   });
 
   async function handleSignOut() {
