@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { clearStoredPermissions } from "@/lib/permissions";
+import { resetAnalyticsIdentity } from "@/lib/analytics";
 
 
 export type Profile = {
@@ -69,6 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Drop all cached queries so the next identity never sees them.
         qc.clear();
         setProfile(null);
+        // WO-084: drop analytics view-dedupe state so member B's activity can
+        // never be suppressed or attributed via member A's client state.
+        resetAnalyticsIdentity();
       }
       lastUserIdRef.current = nextId;
       setSession(s);
@@ -107,6 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // WO-078: clear identity-scoped location/notification permission state so
       // the next member on this device starts from a recomputed location state.
       clearStoredPermissions();
+      // WO-084: reset client analytics state on explicit sign-out too.
+      resetAnalyticsIdentity();
+
 
       // (legacy `veggiemeet_onboarded` localStorage flag removed — route
       // gating derives onboarding state from the server profile only.)
