@@ -577,23 +577,53 @@ function PrivacySection({
         <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
       </button>
 
-      <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs text-charcoal-muted space-y-1.5">
+      <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs text-charcoal-muted space-y-3">
         <div>
-          Location permission:{" "}
-          <span className="text-charcoal font-medium">
-            {data.privacy.location_permission_result ?? "not asked"}
-          </span>
+          <div className="font-semibold text-charcoal">Browser permissions</div>
+          <p className="mt-0.5">
+            Controlled by your browser or device, not by VeggieMeet. We can ask
+            once, but only your browser can grant or revoke them.
+          </p>
+          <ul className="mt-1.5 space-y-0.5">
+            <li>
+              Location:{" "}
+              <span className="text-charcoal font-medium">
+                {browserLocationLabel}
+              </span>
+            </li>
+            <li>
+              Notifications:{" "}
+              <span className="text-charcoal font-medium">
+                {browserNotificationLabel}
+              </span>
+            </li>
+          </ul>
         </div>
         <div>
-          Notification permission:{" "}
-          <span className="text-charcoal font-medium">
-            {data.privacy.notification_permission_result ?? "not asked"}
-          </span>
-        </div>
-        <div className="pt-1">
-          Device permissions are managed in your browser or system settings.
+          <div className="font-semibold text-charcoal">
+            What you last told VeggieMeet
+          </div>
+          <ul className="mt-1.5 space-y-0.5">
+            <li>
+              Location:{" "}
+              <span className="text-charcoal font-medium">
+                {data.privacy.location_permission_result ?? "not asked yet"}
+              </span>
+            </li>
+            <li>
+              Notifications:{" "}
+              <span className="text-charcoal font-medium">
+                {data.privacy.notification_permission_result ?? "not asked yet"}
+              </span>
+            </li>
+          </ul>
+          <p className="mt-1.5">
+            This is our record of your last answer in the app. It can differ from
+            the browser state above, and it doesn't change your browser settings.
+          </p>
         </div>
       </div>
+
     </div>
   );
 }
