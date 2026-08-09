@@ -10,6 +10,8 @@ import {
   SecondaryButton,
 } from "@/components/app";
 import { useAuth } from "@/hooks/useAuth";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchMyPlans,
