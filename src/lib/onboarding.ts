@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logAnalyticsEvent } from "@/lib/analytics";
 
 // Supabase types are regenerated after migration approval; cast rpc to keep TS green.
 type RpcFn = <T>(name: string, args?: Record<string, unknown>) => Promise<{ data: T | null; error: { message: string } | null }>;
