@@ -253,8 +253,9 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
 
   return (
     <div className="space-y-5">
-      <Field label="Display name">
+      <Field label="Display name" htmlFor="settings-display-name">
         <Input
+          id="settings-display-name"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           maxLength={40}
@@ -262,8 +263,9 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
         />
       </Field>
 
-      <Field label="Bio" hint={`${bio.length}/500`}>
+      <Field label="Bio" hint={`${bio.length}/500`} htmlFor="settings-bio">
         <Textarea
+          id="settings-bio"
           value={bio}
           onChange={(e) => setBio(e.target.value.slice(0, 500))}
           rows={4}
@@ -273,6 +275,7 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
 
       <Field label="Dietary identity">
         <ChipGroup
+          groupLabel="Dietary identity"
           options={DIETARY_OPTIONS}
           value={dietary}
           onChange={setDietary}
@@ -281,11 +284,13 @@ function ProfileSection({ data, onSaved }: { data: AccountSettings; onSaved: () 
 
       <Field label="Pronouns">
         <ChipGroup
+          groupLabel="Pronouns"
           options={PRONOUN_OPTIONS}
           value={pronouns}
           onChange={setPronouns}
         />
       </Field>
+
 
       <PrimaryButton
         fullWidth
@@ -518,6 +523,44 @@ function PrivacySection({
 }) {
   const [visible, setVisible] = useState(data.privacy.discovery_visible);
   const [pending, setPending] = useState(false);
+  // WO-081: live browser permission state, kept strictly separate from the
+  // VeggieMeet-side record below. Reading these never triggers a prompt and
+  // never requests coordinates.
+  const [browserNotificationLabel, setBrowserNotificationLabel] =
+    useState("unsupported in this browser");
+  const [browserLocationLabel, setBrowserLocationLabel] = useState("unknown");
+
+  // Keep the switch honest if the value changes elsewhere (other tab/device).
+  useEffect(() => setVisible(data.privacy.discovery_visible), [data.privacy.discovery_visible]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const p = window.Notification.permission;
+      setBrowserNotificationLabel(
+        p === "default" ? "not decided" : p === "granted" ? "allowed" : "blocked",
+      );
+    }
+    let cancelled = false;
+    if (typeof navigator !== "undefined" && !("geolocation" in navigator)) {
+      setBrowserLocationLabel("unsupported in this browser");
+    } else if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: "geolocation" as PermissionName })
+        .then((s) => {
+          if (cancelled) return;
+          setBrowserLocationLabel(
+            s.state === "prompt" ? "not decided" : s.state === "granted" ? "allowed" : "blocked",
+          );
+        })
+        .catch(() => {
+          if (!cancelled) setBrowserLocationLabel("unknown");
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
 
   async function toggleVisibility() {
     const prev = visible;
@@ -577,23 +620,53 @@ function PrivacySection({
         <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
       </button>
 
-      <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs text-charcoal-muted space-y-1.5">
+      <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs text-charcoal-muted space-y-3">
         <div>
-          Location permission:{" "}
-          <span className="text-charcoal font-medium">
-            {data.privacy.location_permission_result ?? "not asked"}
-          </span>
+          <div className="font-semibold text-charcoal">Browser permissions</div>
+          <p className="mt-0.5">
+            Controlled by your browser or device, not by VeggieMeet. We can ask
+            once, but only your browser can grant or revoke them.
+          </p>
+          <ul className="mt-1.5 space-y-0.5">
+            <li>
+              Location:{" "}
+              <span className="text-charcoal font-medium">
+                {browserLocationLabel}
+              </span>
+            </li>
+            <li>
+              Notifications:{" "}
+              <span className="text-charcoal font-medium">
+                {browserNotificationLabel}
+              </span>
+            </li>
+          </ul>
         </div>
         <div>
-          Notification permission:{" "}
-          <span className="text-charcoal font-medium">
-            {data.privacy.notification_permission_result ?? "not asked"}
-          </span>
-        </div>
-        <div className="pt-1">
-          Device permissions are managed in your browser or system settings.
+          <div className="font-semibold text-charcoal">
+            What you last told VeggieMeet
+          </div>
+          <ul className="mt-1.5 space-y-0.5">
+            <li>
+              Location:{" "}
+              <span className="text-charcoal font-medium">
+                {data.privacy.location_permission_result ?? "not asked yet"}
+              </span>
+            </li>
+            <li>
+              Notifications:{" "}
+              <span className="text-charcoal font-medium">
+                {data.privacy.notification_permission_result ?? "not asked yet"}
+              </span>
+            </li>
+          </ul>
+          <p className="mt-1.5">
+            This is our record of your last answer in the app. It can differ from
+            the browser state above, and it doesn't change your browser settings.
+          </p>
         </div>
       </div>
+
     </div>
   );
 }
@@ -798,16 +871,21 @@ function AccountSection({
 function Field({
   label,
   hint,
+  htmlFor,
   children,
 }: {
   label: string;
   hint?: string;
+  /** Associates the visible label with its control for screen readers. */
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <Label className="text-sm font-semibold text-charcoal">{label}</Label>
+        <Label htmlFor={htmlFor} className="text-sm font-semibold text-charcoal">
+          {label}
+        </Label>
         {hint && <span className="text-[11px] text-charcoal-muted">{hint}</span>}
       </div>
       {children}
@@ -819,13 +897,17 @@ function ChipGroup({
   options,
   value,
   onChange,
+  groupLabel,
 }: {
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
+  groupLabel?: string;
 }) {
+
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={groupLabel}>
+
       {options.map((o) => {
         const active = value === o.value;
         return (
