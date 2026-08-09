@@ -906,7 +906,8 @@ function ChipGroup({
 }) {
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={groupLabel}>
+
       {options.map((o) => {
         const active = value === o.value;
         return (
