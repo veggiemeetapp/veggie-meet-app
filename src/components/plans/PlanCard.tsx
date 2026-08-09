@@ -134,6 +134,8 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
     setBusy(true);
     try {
       await leaveMeetup(plan.meetup_id);
+      logAnalyticsEvent("meetup_left_from_plans", { plan_type: plan.plan_type });
+
       toast.success("You left the Meetup");
       onChanged?.();
     } catch (e) {
