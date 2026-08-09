@@ -713,9 +713,10 @@ function EmptyImpactState() {
         <div className="mx-auto w-14 h-14 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
           <HeartHandshake className="w-6 h-6" />
         </div>
-        <h3 className="mt-4 text-base font-semibold text-charcoal">
+        {/* WO-085A DEF-085A-04: h2 keeps this one level below the page h1. */}
+        <h2 className="mt-4 text-base font-semibold text-charcoal">
           Your Community Impact starts here.
-        </h3>
+        </h2>
         <p className="mt-1 text-sm text-charcoal-muted max-w-xs mx-auto">
           Meet Veggies, support Community Places, or host a Meetup to begin building your
           real-world impact.

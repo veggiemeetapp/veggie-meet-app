@@ -94,7 +94,10 @@ export function CitySelector({
       <button
         type="button"
         aria-label={triggerLabel ?? (selected ? `Selected city: ${selected.name}. Change city.` : "Choose city")}
-        className="inline-flex items-center gap-1 px-3 h-9 rounded-full border border-border bg-card text-xs font-medium text-charcoal hover:bg-accent transition-colors min-h-11 min-w-11"
+        className={cn(
+          "inline-flex items-center gap-1 px-3 h-9 rounded-full border border-border bg-card text-xs font-medium text-charcoal hover:bg-accent transition-colors min-h-11 min-w-11",
+          className,
+        )}
       >
         <MapPin className="w-3.5 h-3.5 text-primary" aria-hidden />
         <span className="truncate max-w-[9rem]">{label}</span>
@@ -104,7 +107,10 @@ export function CitySelector({
       <button
         type="button"
         aria-label={triggerLabel ?? (selected ? `Selected city: ${selected.name}. Change city.` : "Choose city")}
-        className="w-full flex items-center justify-between h-12 rounded-xl border border-border bg-card px-4 text-sm font-medium text-charcoal hover:bg-accent transition-colors"
+        className={cn(
+          "w-full flex items-center justify-between h-12 rounded-xl border border-border bg-card px-4 text-sm font-medium text-charcoal hover:bg-accent transition-colors",
+          className,
+        )}
       >
         <span className="flex items-center gap-2 min-w-0">
           <MapPin className="w-4 h-4 text-primary shrink-0" aria-hidden />
@@ -116,9 +122,10 @@ export function CitySelector({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <span className={cn("inline-flex", className)}>{trigger}</span>
-      </PopoverTrigger>
+      {/* WO-085A DEF-085A-01 (WCAG 4.1.2): the trigger used to be a <span>
+          wrapper, so Radix put aria-haspopup/aria-expanded on a non-interactive
+          element. The real <button> is now the trigger itself. */}
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         align="end"
         sideOffset={8}

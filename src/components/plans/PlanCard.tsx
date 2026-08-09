@@ -51,7 +51,7 @@ interface Props {
 }
 
 const REASON_TONE: Record<string, string> = {
-  active: "bg-primary/10 text-primary",
+  active: "bg-soft-green text-primary",
   update: "bg-amber-100 text-amber-900",
   cancelled: "bg-muted text-charcoal-muted",
   invitation: "bg-purple-100 text-purple-900",

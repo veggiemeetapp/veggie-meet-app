@@ -1,6 +1,6 @@
 import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -687,6 +687,7 @@ function AccountSection({
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const deleteOpenerRef = useRef<HTMLButtonElement | null>(null);
   const [typedConfirm, setTypedConfirm] = useState("");
   const [blockedInfo, setBlockedInfo] = useState<{
     hosted: number;
@@ -781,6 +782,7 @@ function AccountSection({
         </p>
         <button
           type="button"
+          ref={deleteOpenerRef}
           onClick={() => {
             setTypedConfirm("");
             setConfirmOpen(true);
@@ -813,7 +815,13 @@ function AccountSection({
         open={confirmOpen}
         onOpenChange={(o) => {
           setConfirmOpen(o);
-          if (!o) setTypedConfirm("");
+          if (!o) {
+            setTypedConfirm("");
+            // WO-085A DEF-085A-10 (WCAG 2.4.3): the destructive dialog is
+            // controlled and its opener lives in a re-rendered panel, so Radix
+            // was restoring focus to <body>. Focus returns to the opener.
+            requestAnimationFrame(() => deleteOpenerRef.current?.focus());
+          }
         }}
       >
         <DialogContent>

@@ -301,9 +301,9 @@ function PlaceListCard({
           )}
         </div>
         <div className="p-3 flex-1 flex flex-col">
-          <h3 className="font-semibold text-charcoal text-sm leading-snug line-clamp-2 break-words min-h-[2.25rem]">
+          <h2 className="font-semibold text-charcoal text-sm leading-snug line-clamp-2 break-words min-h-[2.25rem]">
             {place.name}
-          </h3>
+          </h2>
           <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
             <span className="min-w-0 truncate">{categoryLabel[place.category]}</span>
             {(distance || area) && (

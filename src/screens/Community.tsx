@@ -213,13 +213,13 @@ function SectionHeader({
       </div>
       {ctaLabel && ctaTo && (
         ctaComingSoon ? (
-          <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted/70">
+          <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted">
             Coming soon
           </span>
         ) : ctaDisabled ? (
           <span
             aria-disabled="true"
-            className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted/70"
+            className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-charcoal-muted"
           >
             {ctaLabel}
             <ArrowRight className="w-3.5 h-3.5" aria-hidden />
@@ -241,7 +241,7 @@ function SectionHeader({
 function HScroll({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2 -mx-1"
+      className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
       style={{ scrollSnapType: "x mandatory" }}
     >
       {Array.isArray(children)
@@ -403,9 +403,9 @@ function PlaceNearbyCard({
         </div>
 
         <div className="p-3">
-          <h3 className="font-semibold text-charcoal text-sm leading-snug line-clamp-2 break-words min-h-[2.25rem]">
+          <h2 className="font-semibold text-charcoal text-sm leading-snug line-clamp-2 break-words min-h-[2.25rem]">
             {place.name}
-          </h3>
+          </h2>
           <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
             <span className="shrink-0">{placeCategoryLabel[place.category]}</span>
             {label && (

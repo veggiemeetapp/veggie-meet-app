@@ -205,6 +205,26 @@ export default function Host() {
       ? !!selectedPlace
       : customName.trim().length > 0 && customAddress.trim().length > 0 && coordsValid);
 
+  // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA used to be a
+  // plain `disabled` button, so a keyboard or screen-reader host could neither
+  // focus it nor discover what was still missing. The same requirements are now
+  // named in a polite status message that the CTA points at with
+  // aria-describedby, and the button stays focusable via aria-disabled.
+  const missingRequirements: string[] = [
+    ...(title.trim().length === 0 ? ["a Meetup title"] : []),
+    ...(categoryIdx === null ? ["a category"] : []),
+    ...(!cityId ? ["a city"] : []),
+    ...(!isCustom
+      ? !selectedPlace
+        ? ["a Community Place"]
+        : []
+      : [
+          ...(customName.trim().length === 0 ? ["a location name"] : []),
+          ...(customAddress.trim().length === 0 ? ["a location address"] : []),
+          ...(!coordsValid ? ["valid coordinates"] : []),
+        ]),
+  ];
+
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -712,11 +732,27 @@ export default function Host() {
         <div className="px-5 py-4">
           <PrimaryButton
             fullWidth
-            onClick={() => setConfirmOpen(true)}
-            disabled={!canSubmit}
+            onClick={() => {
+              if (canSubmit) setConfirmOpen(true);
+            }}
+            aria-disabled={!canSubmit}
+            aria-describedby={canSubmit ? undefined : "host-cta-requirements"}
+            className={canSubmit ? undefined : "opacity-50"}
           >
             Review & publish
           </PrimaryButton>
+          <p
+            id="host-cta-requirements"
+            role="status"
+            className={cn(
+              "mt-2 text-xs text-charcoal-muted text-center",
+              canSubmit && "sr-only",
+            )}
+          >
+            {canSubmit
+              ? "All required Meetup details are complete."
+              : `Still needed: ${missingRequirements.join(", ")}.`}
+          </p>
         </div>
       </div>
 

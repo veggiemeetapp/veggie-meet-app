@@ -31,12 +31,12 @@
     --secondary-foreground: 220 15% 20%;
 
     --muted: 40 15% 95%;
-    --muted-foreground: 220 8% 46%;
+    --muted-foreground: 220 8% 42%; /* WO-085A DEF-085A-02: AA on --muted */
 
-    --accent: 140 40% 94%;
+    --accent: 140 42% 96%;
     --accent-foreground: 145 45% 25%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 72% 45%; /* WO-085A DEF-085A-05: AA for text-destructive */
     --destructive-foreground: 0 0% 100%;
 
     --border: 40 15% 90%;
@@ -47,9 +47,9 @@
 
     /* VeggieMeet semantic tokens */
     --charcoal: 220 15% 15%;
-    --charcoal-muted: 220 8% 46%;
+    --charcoal-muted: 220 8% 42%; /* WO-085A DEF-085A-02: AA on --muted */
     --warm-white: 40 33% 98%;
-    --soft-green: 140 40% 94%;
+    --soft-green: 140 42% 96%; /* WO-085A DEF-085A-02: AA for text-primary chips */
     --green-primary: 145 45% 34%;
     --card-bg: 0 0% 100%;
     --soft-border: 40 15% 90%;

@@ -17,7 +17,9 @@ export function EmptyState({ icon, title, description, action, className }: Prop
           {icon}
         </div>
       )}
-      <h3 className="text-base font-semibold text-charcoal">{title}</h3>
+      {/* WO-085A DEF-085A-04 (WCAG 1.3.1): h2 keeps the empty-state title
+          one level below each surface h1 instead of skipping a level. */}
+      <h2 className="text-base font-semibold text-charcoal">{title}</h2>
       {description && (
         <p className="text-sm text-charcoal-muted mt-1 max-w-xs">{description}</p>
       )}

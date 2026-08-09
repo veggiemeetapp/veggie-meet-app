@@ -33,7 +33,7 @@ const STATUS_OPTIONS: CommunityPlaceMaintenanceStatus[] = [
 ];
 
 const STATUS_TONE: Record<CommunityPlaceMaintenanceStatus, string> = {
-  operational: "bg-primary/10 text-primary",
+  operational: "bg-soft-green text-primary",
   needs_reverification: "bg-amber-500/15 text-amber-700",
   temporarily_closed: "bg-amber-500/15 text-amber-700",
   permanently_closed: "bg-destructive/10 text-destructive",

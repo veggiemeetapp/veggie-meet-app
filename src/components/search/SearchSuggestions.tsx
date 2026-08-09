@@ -22,7 +22,7 @@ export function SearchSuggestions({ cityName, onPick }: Props) {
         className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted mb-2 flex items-center gap-1.5"
       >
         <Sparkles className="w-3 h-3" aria-hidden />
-        Suggested {cityName && <span className="normal-case tracking-normal font-normal text-charcoal-muted/80">in {cityName}</span>}
+        Suggested {cityName && <span className="normal-case tracking-normal font-normal text-charcoal-muted">in {cityName}</span>}
       </h2>
       <div className="flex flex-wrap gap-2">
         {BASE.map((s) => (

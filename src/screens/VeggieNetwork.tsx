@@ -431,7 +431,7 @@ function Section({
           {heading}
         </h3>
         {caption && (
-          <p className="mt-0.5 text-[11px] text-charcoal-muted/80">{caption}</p>
+          <p className="mt-0.5 text-[11px] text-charcoal-muted">{caption}</p>
         )}
       </div>
       {children}
@@ -488,7 +488,7 @@ function InterestChip({ label, shared }: { label: string; shared?: boolean }) {
       className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium capitalize",
         shared
-          ? "bg-primary/10 text-primary"
+          ? "bg-soft-green text-primary"
           : "bg-soft-green/40 text-charcoal",
       )}
     >
@@ -499,7 +499,7 @@ function InterestChip({ label, shared }: { label: string; shared?: boolean }) {
 
 function VerifiedBadge() {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-soft-green text-primary text-[10px] font-semibold">
       <Leaf className="w-3 h-3" />
       Verified Connection
     </span>

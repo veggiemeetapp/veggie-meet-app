@@ -76,7 +76,7 @@ export const HEALTH_TONE: Record<PlaceHealth, string> = {
   reverification_in_progress: "bg-sky-500/15 text-sky-700",
   reverification_due: "bg-amber-500/15 text-amber-700",
   reverification_due_soon: "bg-amber-500/15 text-amber-700",
-  healthy: "bg-primary/10 text-primary",
+  healthy: "bg-soft-green text-primary",
 };
 
 export type AttentionType =

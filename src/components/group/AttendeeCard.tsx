@@ -90,7 +90,7 @@ function ConnectButton({ otherProfileId }: { otherProfileId: string }) {
 
   if (isActive) {
     return (
-      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-soft-green text-primary">
         <Check className="w-3.5 h-3.5" />
         {status === "verified" ? (
           <>

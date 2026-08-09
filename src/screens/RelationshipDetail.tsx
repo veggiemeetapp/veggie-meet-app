@@ -83,7 +83,7 @@ export default function RelationshipDetail() {
               )}
               <div className="mt-3">
                 {isVerified ? (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-soft-green text-primary text-xs font-semibold">
                     Verified Connection <Leaf className="w-3 h-3" />
                   </span>
                 ) : (

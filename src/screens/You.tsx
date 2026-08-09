@@ -174,7 +174,9 @@ export default function You() {
             src={profile.avatar_url ?? undefined}
             size="xl"
           />
-          <h2 className="mt-3 text-xl font-semibold text-charcoal">
+          {/* WO-085A DEF-085A-11 (WCAG 1.4.10): long unbroken display names
+              must wrap instead of forcing horizontal scroll at 320 CSS px. */}
+          <h2 className="mt-3 text-xl font-semibold text-charcoal [overflow-wrap:anywhere] max-w-full">
             {profile.display_name}
           </h2>
           {profile.current_city && (
@@ -427,7 +429,7 @@ function CommunityImpactCard({
           <button
             type="button"
             onClick={onView}
-            className="text-xs font-medium text-primary hover:underline"
+            className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs font-medium text-primary hover:underline"
             aria-label="Open Community Impact"
           >
             View
