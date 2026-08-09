@@ -70,9 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Drop all cached queries so the next identity never sees them.
         qc.clear();
         setProfile(null);
+        // WO-084: drop analytics view-dedupe state so member B's activity can
+        // never be suppressed or attributed via member A's client state.
+        resetAnalyticsIdentity();
       }
-      lastUserIdRef.current = nextId;
-      setSession(s);
       // Defer profile fetch to avoid deadlock
       setTimeout(() => loadProfile(s?.user.id), 0);
     });
