@@ -152,25 +152,15 @@ export async function fetchInterestCatalogue(): Promise<InterestOption[]> {
 /**
  * Fire-and-forget analytics logger. Never throws to callers — onboarding
  * completion must never be blocked by analytics.
+ *
+ * WO-084: this is a thin alias over the single controlled logger so the event
+ * allowlist and payload sanitisation apply to onboarding/settings telemetry too.
  */
 export function logOnboardingEvent(
   event: string,
   properties?: Record<string, unknown>,
 ): void {
-  // Supabase's PostgrestBuilder is thenable but has no `.catch` method — only
-  // `.then` triggers the network call. Use `.then(ok, err)` so the request
-  // actually fires and any error is swallowed non-blockingly.
-  try {
-    rpc<void>("log_analytics_event", {
-      _event_name: event,
-      _properties: properties ?? {},
-    }).then(
-      () => undefined,
-      () => undefined,
-    );
-  } catch {
-    // ignore
-  }
+  logAnalyticsEvent(event, properties);
 }
 
 export const DIETARY_OPTIONS: Array<{
