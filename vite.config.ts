@@ -18,6 +18,25 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     mcpPlugin(),
   ].filter(Boolean),
+  build: {
+    // WO-086 DEF-086-02: stable vendor chunking. Previously every framework
+    // dependency shared one 725 kB entry chunk, so any app edit invalidated the
+    // whole download and boot had to parse it in one task.
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id))
+            return "vendor-react";
+          if (id.includes("react-router")) return "vendor-router";
+          if (id.includes("@tanstack")) return "vendor-query";
+          if (id.includes("@supabase") || id.includes("@lovable.dev")) return "vendor-supabase";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          return "vendor";
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

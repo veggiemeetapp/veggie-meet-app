@@ -1607,7 +1607,7 @@ function StartingCard({
     >
       <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
         {option.image ? (
-          <img src={option.image} alt="" className="w-full h-full object-cover" />
+          <img src={option.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <Icon className="w-5 h-5 text-charcoal-muted" aria-hidden />
         )}
