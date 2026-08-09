@@ -118,7 +118,7 @@ export const STATE_LABEL: Record<ReverificationState, string> = {
 };
 
 export const STATE_TONE: Record<ReverificationState, string> = {
-  current: "bg-primary/10 text-primary",
+  current: "bg-soft-green text-primary",
   due_soon: "bg-amber-500/15 text-amber-700",
   due: "bg-destructive/10 text-destructive",
   never_reverified: "bg-muted text-muted-foreground",

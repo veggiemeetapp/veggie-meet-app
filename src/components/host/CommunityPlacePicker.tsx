@@ -140,13 +140,16 @@ export function CommunityPlacePicker({
         </div>
       </div>
 
-      <ul className="space-y-2 list-none p-0 m-0" role="radiogroup" aria-label="Community Place">
+      {/* WO-085A DEF-085A-03: role="radiogroup" strips list semantics, so
+          <li> children were orphaned listitems. Plain divs keep the radio
+          group intact without an invalid list. */}
+      <div className="space-y-2" role="radiogroup" aria-label="Community Place">
         {filtered.map((p) => {
           const active = selectedPlaceId === p.id;
           const dietary = CLASSIFICATION_LABEL[p.veggieClassification ?? ""] ?? null;
           const category = CATEGORY_LABEL[p.category] ?? "Venue";
           return (
-            <li key={p.id} className="min-w-0">
+            <div key={p.id} className="min-w-0">
               <button
                 type="button"
                 role="radio"
@@ -208,15 +211,15 @@ export function CommunityPlacePicker({
                   View Place
                 </button>
               )}
-            </li>
+            </div>
           );
         })}
         {filtered.length === 0 && (
-          <li className="text-sm text-charcoal-muted">
+          <p className="text-sm text-charcoal-muted">
             No Community Places match “{query.trim()}”.
-          </li>
+          </p>
         )}
-      </ul>
+      </div>
     </div>
   );
 }

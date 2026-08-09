@@ -12,8 +12,8 @@ export function TodayEmptyState() {
       action={
         <div className="flex flex-wrap justify-center gap-2">
           <button onClick={() => navigate("/search")} className="rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold">Search VeggieMeet</button>
-          <button onClick={() => navigate("/network")} className="rounded-full bg-primary/10 text-primary px-3 py-1.5 text-sm font-semibold">Discover Veggies</button>
-          <button onClick={() => navigate("/community")} className="rounded-full bg-primary/10 text-primary px-3 py-1.5 text-sm font-semibold">Explore Community</button>
+          <button onClick={() => navigate("/network")} className="rounded-full bg-soft-green text-primary px-3 py-1.5 text-sm font-semibold">Discover Veggies</button>
+          <button onClick={() => navigate("/community")} className="rounded-full bg-soft-green text-primary px-3 py-1.5 text-sm font-semibold">Explore Community</button>
         </div>
       }
     />

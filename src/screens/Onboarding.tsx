@@ -1407,7 +1407,7 @@ function Guidelines({
 function GuidelineItem({ title, body }: { title: string; body: string }) {
   return (
     <li className="flex gap-3">
-      <span className="mt-0.5 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+      <span className="mt-0.5 w-6 h-6 rounded-full bg-soft-green text-primary flex items-center justify-center shrink-0">
         <Check className="w-4 h-4" aria-hidden />
       </span>
       <div>
@@ -1469,7 +1469,7 @@ function SafetyItem({
 }) {
   return (
     <li className="flex gap-3 rounded-2xl border border-border bg-card p-3.5">
-      <span className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+      <span className="w-10 h-10 rounded-xl bg-soft-green text-primary flex items-center justify-center shrink-0">
         {icon}
       </span>
       <div>

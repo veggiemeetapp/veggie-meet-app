@@ -312,7 +312,7 @@ function VerifiedSection({ summary }: { summary: MyMeetupSummary }) {
                 <span className="font-semibold text-charcoal truncate">
                   {p.display_name.split(" ")[0]}
                 </span>
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-soft-green text-primary">
                   <Leaf className="w-2.5 h-2.5" /> Verified
                 </span>
               </div>
