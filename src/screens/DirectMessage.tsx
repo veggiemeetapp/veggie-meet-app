@@ -59,6 +59,8 @@ import { MeetupInvitationSheet } from "@/components/invitations/MeetupInvitation
 import { InvitationCard } from "@/components/invitations/InvitationCard";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useSendToken } from "@/hooks/useSendToken";
+import { memberSafeMessage } from "@/lib/errors";
 
 
 const STARTER_PROMPTS = [
@@ -185,6 +187,8 @@ function DMScreen({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  // WO-083: stable idempotency token per intended message (see useSendToken).
+  const sendToken = useSendToken();
   const [blockedByMe, setBlockedByMe] = useState(false);
   const [blockDialog, setBlockDialog] = useState(false);
   const [reportMessage, setReportMessage] = useState<DMMessage | null>(null);
@@ -403,8 +407,7 @@ function DMScreen({
       setInvitations(refreshed);
       toast.success("You're going.");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Couldn't join right now.";
-      toast.error(msg);
+      toast.error(memberSafeMessage(e));
     } finally {
       setJoiningId(null);
     }
@@ -421,13 +424,20 @@ function DMScreen({
     const body = draft;
     setDraft("");
     try {
-      const msg = await sendDirectMessage(conversationId, body);
+      const msg = await sendDirectMessage(
+        conversationId,
+        body,
+        sendToken.tokenFor(body),
+      );
+      sendToken.clear();
+      // Dedupe by canonical id: an idempotent replay returns the original row.
       setMessages((prev) => (prev.some((x) => x.id === msg.id) ? prev : [...prev, msg]));
       qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
     } catch (e) {
+      // Keep the text so the member can retry; the send token is retained so a
+      // retry of the same message stays idempotent.
       setDraft(body);
-      const msg = e instanceof Error ? e.message : "Message failed to send.";
-      toast.error(msg);
+      toast.error(memberSafeMessage(e));
     } finally {
       setSending(false);
     }

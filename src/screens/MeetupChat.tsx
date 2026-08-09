@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
+import { useSendToken } from "@/hooks/useSendToken";
+import { memberSafeMessage } from "@/lib/errors";
 import {
   fetchMeetupChatContext,
   fetchMeetupChatThread,
@@ -36,6 +38,8 @@ export default function MeetupChat() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  // WO-083: idempotency token so an ambiguous retry cannot duplicate a post.
+  const sendToken = useSendToken();
 
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
     setMessages((prev) => {
@@ -138,13 +142,14 @@ export default function MeetupChat() {
     if (!body || !id || !canPost || sending) return;
     setSending(true);
     try {
-      const saved = await sendMeetupChatMessage(id, body);
+      const saved = await sendMeetupChatMessage(id, body, sendToken.tokenFor(body));
+      sendToken.clear();
       setDraft("");
       mergeMessages([saved]);
     } catch (err) {
       toast({
         title: "Message not sent",
-        description: err instanceof Error ? err.message : "Please try again.",
+        description: memberSafeMessage(err),
         variant: "destructive",
       });
       const ctx = await fetchMeetupChatContext(id).catch(() => null);
