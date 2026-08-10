@@ -84,11 +84,18 @@ export async function submitMeetupFeedback(meetupId: string, rating: FeedbackRat
 }
 
 export async function markFollowUpViewed(meetupId: string) {
-  await supabase.rpc("mark_meetup_follow_up_viewed", { _meetup_id: meetupId });
+  const { error } = await supabase.rpc("mark_meetup_follow_up_viewed", { _meetup_id: meetupId });
+  if (error) throw new Error(error.message);
 }
 
+/**
+ * WO-090 §12/§14 — dismissal is a *permanent, per-Meetup* state and the server
+ * mutation is idempotent, so a retry or a rapid double tap converges on one
+ * canonical dismissal row.
+ */
 export async function dismissFollowUp(meetupId: string) {
-  await supabase.rpc("dismiss_meetup_follow_up", { _meetup_id: meetupId });
+  const { error } = await supabase.rpc("dismiss_meetup_follow_up", { _meetup_id: meetupId });
+  if (error) throw new Error(error.message);
 }
 
 export async function reportMeetup(meetupId: string, reason: string, details: string | null) {
@@ -109,47 +116,28 @@ export interface PendingFollowUp {
   endedAt: string;
 }
 
-export async function fetchPendingFollowUp(profileId: string): Promise<PendingFollowUp | null> {
-  // Attendance rows for checked-in/attended, meetup ended, not cancelled
-  const { data: att } = await supabase
-    .from("attendance")
-    .select("meetup_id, status, meetups!inner(id, title, cover_image_url, date, start_time, end_time, status)")
-    .eq("profile_id", profileId)
-    .in("status", ["checked_in", "attended"]);
-  if (!att || att.length === 0) return null;
-
-  const now = Date.now();
-  const candidates = (att as any[])
-    .map((r) => r.meetups)
-    .filter((m) => m && m.status !== "cancelled")
-    .filter((m) => {
-      const end = new Date(`${m.date}T${(m.end_time || m.start_time)}`);
-      return end.getTime() <= now;
-    })
-    .sort((a, b) => (b.date + b.start_time).localeCompare(a.date + a.start_time));
-  if (candidates.length === 0) return null;
-
-  // Check follow-up state for these meetups
-  const ids = candidates.map((m) => m.id);
-  const { data: states } = await supabase
-    .from("meetup_follow_up_state")
-    .select("meetup_id, dismissed_at, viewed_at")
-    .eq("profile_id", profileId)
-    .in("meetup_id", ids);
-  const seen = new Set(
-    (states ?? [])
-      .filter((s: any) => s.dismissed_at || s.viewed_at)
-      .map((s: any) => s.meetup_id),
-  );
-  const next = candidates.find((m) => !seen.has(m.id));
-  if (!next) return null;
+/**
+ * WO-090 §3/§5 — eligibility is server authoritative and bounded.
+ * `get_my_pending_follow_up()` derives the actor from auth (no client-supplied
+ * profile id is trusted), only accepts genuine `checked_in`/`attended`
+ * attendance on an ended, non-cancelled Meetup inside a 30-day window, excludes
+ * already viewed/dismissed/completed follow-ups, and returns at most one row.
+ */
+export async function fetchPendingFollowUp(): Promise<PendingFollowUp | null> {
+  const { data, error } = await (supabase.rpc as any)("get_my_pending_follow_up");
+  if (error) throw new Error(error.message);
+  const row = data as
+    | { meetup_id: string; title: string; cover_image_url: string | null; ended_at: string }
+    | null;
+  if (!row?.meetup_id) return null;
   return {
-    meetupId: next.id,
-    title: next.title,
-    coverImageUrl: next.cover_image_url,
-    endedAt: `${next.date}T${next.end_time || next.start_time}`,
+    meetupId: row.meetup_id,
+    title: row.title,
+    coverImageUrl: row.cover_image_url,
+    endedAt: row.ended_at,
   };
 }
+
 
 /** Past Meetups for history (hosted or attended, ended). */
 export interface PastMeetupItem {

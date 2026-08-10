@@ -3226,6 +3226,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_my_pending_follow_up: { Args: never; Returns: Json }
       get_my_place_check_in_state: {
         Args: { _place_id: string }
         Returns: Json
