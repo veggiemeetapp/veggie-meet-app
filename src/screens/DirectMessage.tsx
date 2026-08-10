@@ -101,7 +101,12 @@ export default function DirectMessage() {
   const [resolvedId, setResolvedId] = useState<string | null>(
     conversationId ?? null,
   );
-  const [resolveError, setResolveError] = useState<string | null>(null);
+  // WO-088 DEF-088-03: opening /dm/user/:id before the two members are
+  // connected is a normal product state, not a failure. The server refuses and
+  // creates nothing; the member gets explicit copy about the actual state.
+  const [resolveError, setResolveError] = useState<
+    { kind: "ineligible" | "unavailable" | "error"; message: string } | null
+  >(null);
 
   useEffect(() => {
     if (conversationId) {
@@ -116,9 +121,29 @@ export default function DirectMessage() {
         navigate(`/dm/${id}`, { replace: true });
         setResolvedId(id);
       } catch (e) {
-        const msg =
-          memberSafeMessage(e);
-        setResolveError(msg);
+        const raw = String(
+          (e as { message?: string } | null)?.message ?? "",
+        ).toLowerCase();
+        if (raw.includes("must be connected") || raw.includes("not connected")) {
+          setResolveError({
+            kind: "ineligible",
+            message:
+              "You need to be connected before you can message this Veggie. Send a connection request from their profile — once they accept, messaging opens up here.",
+          });
+        } else if (
+          raw.includes("messaging is not available") ||
+          raw.includes("invalid recipient")
+        ) {
+          setResolveError({
+            kind: "unavailable",
+            message: "Messaging isn't available with this Veggie.",
+          });
+        } else {
+          setResolveError({
+            kind: "error",
+            message: memberSafeMessage(e),
+          });
+        }
       }
     })();
   }, [conversationId, otherProfileId, profile?.id, loading, navigate]);
@@ -127,12 +152,36 @@ export default function DirectMessage() {
     return (
       <>
         <BackHeader title="Chat" />
-        <div className="px-5 py-10 text-center text-sm text-charcoal-muted">
-          {resolveError}
-        </div>
+        <main className="px-5 py-10 flex flex-col items-center text-center gap-4">
+          <div
+            role="alert"
+            aria-live="polite"
+            className="max-w-sm text-sm text-charcoal"
+          >
+            <h1 className="text-base font-semibold text-charcoal mb-1">
+              {resolveError.kind === "ineligible"
+                ? "Not connected yet"
+                : resolveError.kind === "unavailable"
+                  ? "Messaging unavailable"
+                  : "Couldn't open this chat"}
+            </h1>
+            <p className="text-charcoal-muted">{resolveError.message}</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {resolveError.kind === "ineligible" && otherProfileId && (
+              <Button asChild>
+                <Link to={`/veggie/${otherProfileId}`}>View profile</Link>
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => safeBack(navigate, "/chats")}>
+              Back to Chats
+            </Button>
+          </div>
+        </main>
       </>
     );
   }
+
 
   if (!resolvedId || !profile) {
     return (

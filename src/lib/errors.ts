@@ -142,6 +142,12 @@ export function isDeterministicError(error: unknown): boolean {
   const status = statusOf(error);
   if (status !== null && status >= 400 && status < 500 && status !== 408 && status !== 429)
     return true;
+  // WO-088 DEF-088-03: PostgrestError carries no `status`, so a deliberately
+  // raised PL/pgSQL rule (SQLSTATE P0001, and the P0xxx family) used to fall
+  // through to the generic "Something went wrong" copy. Any `RAISE EXCEPTION`
+  // from one of our own RPCs is a domain rule and is deterministic.
+  const code = codeOf(error);
+  if (/^P0\d{3}$/.test(code)) return true;
   // Our RPCs raise plain exceptions (HTTP 400 from PostgREST) for every domain
   // rule; treat any explicitly raised message as deterministic.
   const msg = rawMessage(error).toLowerCase();
@@ -152,6 +158,9 @@ export function isDeterministicError(error: unknown): boolean {
     msg.includes("not available") ||
     msg.includes("not a participant") ||
     msg.includes("not connected") ||
+    msg.includes("must be connected") ||
+    msg.includes("only open to") ||
+    msg.includes("invalid recipient") ||
     msg.includes("too early") ||
     msg.includes("too soon") ||
     msg.includes("too late") ||
