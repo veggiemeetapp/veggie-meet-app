@@ -58,6 +58,8 @@ const OwnerPlaceEditDetails = lazy(() => import("./screens/OwnerPlaceEditDetails
 const OwnerPlaceVeganReview = lazy(() => import("./screens/OwnerPlaceVeganReview"));
 const OwnerPlaceIdentityReview = lazy(() => import("./screens/OwnerPlaceIdentityReview"));
 const OwnerMemberReports = lazy(() => import("./screens/OwnerMemberReports"));
+const OwnerBetaOperations = lazy(() => import("./screens/OwnerBetaOperations"));
+const BetaFeedback = lazy(() => import("./screens/BetaFeedback"));
 
 
 
@@ -211,8 +213,11 @@ const App = () => (
                 <Route path="/impact/:tab" element={gated(<Impact />)} />
                 <Route path="/safety" element={gated(<SafetyCenter />)} />
                 <Route path="/settings" element={gated(<Settings />)} />
+                <Route path="/settings/feedback" element={gated(<BetaFeedback />)} />
                 <Route path="/owner/places" element={ownerGated(<OwnerPlaceOperations />)} />
+                <Route path="/owner/beta" element={ownerGated(<OwnerBetaOperations />)} />
                 <Route path="/owner/member-reports" element={ownerGated(<OwnerMemberReports />)} />
+
                 <Route
 
                   path="/owner/places/:placeId/reverify"

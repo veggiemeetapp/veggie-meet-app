@@ -6,6 +6,13 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // WO-089: stable, non-secret build identifier for operational telemetry and
+  // beta feedback. UTC build timestamp only — no branch, token or internal URL.
+  define: {
+    __APP_VERSION__: JSON.stringify(
+      new Date().toISOString().replace(/[-:]/g, "").slice(0, 13) + "Z",
+    ),
+  },
   server: {
     host: "::",
     port: 8080,
