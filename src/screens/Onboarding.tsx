@@ -11,6 +11,8 @@ import {
   Shield,
   Shuffle,
   Sparkles,
+  Sprout,
+
   Trash2,
   Users,
   Utensils,
@@ -542,11 +544,14 @@ function Welcome({
   return (
     <div className="flex-1 flex flex-col page-x pb-10 pt-16 animate-fade-in">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
+        {/* DEF-092A-01: the hero previously rendered a colour emoji (🥗), which
+            falls back to a "tofu" outlined box on platforms without an emoji
+            font. Use the icon set already shipped with the app so the mark
+            renders identically everywhere. */}
         <div className="w-28 h-28 rounded-full bg-soft-green flex items-center justify-center mb-8">
-          <span className="text-6xl" aria-hidden>
-            🥗
-          </span>
+          <Sprout className="w-14 h-14 text-primary" strokeWidth={1.75} aria-hidden />
         </div>
+
         <h1 className="text-3xl font-semibold text-charcoal tracking-tight leading-tight">
           Meet Veggies near you.
         </h1>

@@ -84,6 +84,12 @@ export default function Community() {
 
   return (
     <>
+      {/* DEF-092A-04: the city selector sat in the header's right cluster, so at
+          390px and below the greeting truncated to "Good Aft…" and the subtitle
+          to "Exploring Ho …". The city control now sits under the title, which
+          is also the pattern Today already uses.
+          DEF-092A-06: the search control was a 36px box; it now uses the shared
+          44px IconButton like every other header control. */}
       <AppHeader
         title={
           <span>
@@ -92,16 +98,16 @@ export default function Community() {
         }
         subtitle={
           cityLabel
-            ? `Exploring ${cityLabel}. Change city anytime.`
+            ? `Exploring ${cityLabel}`
             : "Pick a city to see who's around."
         }
+
         right={
           <div className="flex items-center gap-1">
-            <CitySelector />
             <Link
               to="/search"
               aria-label="Search Veggies, Meetups, and Places"
-              className="w-9 h-9 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal"
+              className="w-11 h-11 shrink-0 rounded-full inline-flex items-center justify-center hover:bg-muted text-charcoal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <SearchIcon className="w-5 h-5" aria-hidden />
             </Link>
@@ -110,10 +116,15 @@ export default function Community() {
         }
       />
 
+      <div className="page-x pt-4">
+        <CitySelector />
+      </div>
+
       {!cityId ? (
         <NoCityState onChoose={() => document.querySelector<HTMLButtonElement>('[aria-label*="city"]')?.click()} />
       ) : (
         <div className="pb-12 animate-fade-in">
+
           {/* Meetups Near You */}
           <SectionHeader
             icon={Sprout}
@@ -241,9 +252,13 @@ function SectionHeader({
 function HScroll({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
-      style={{ scrollSnapType: "x mandatory" }}
+      // DEF-092A-09: scroll snapping ignored the 20px gutter, so the rail landed
+      // with its first card flush to the screen edge. scroll-padding keeps the
+      // snap positions aligned with the page gutter.
+      className="flex gap-3 page-x overflow-x-auto scrollbar-none pb-2"
+      style={{ scrollSnapType: "x mandatory", scrollPaddingLeft: "var(--page-gutter)" }}
     >
+
       {Array.isArray(children)
         ? children.map((child, i) => (
             <div key={i} style={{ scrollSnapAlign: "start" }}>

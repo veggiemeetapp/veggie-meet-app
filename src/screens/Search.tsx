@@ -119,16 +119,20 @@ export default function Search() {
             />
           </div>
         </div>
-        <div className="flex items-center justify-between gap-3">
+        {/* DEF-092A-02: at 320px the city chip and the tab rail could not both
+            fit on one line, pushing 51px of horizontal overflow. Allow the row
+            to wrap and let the tab rail shrink instead of forcing its width. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <CityScopeChip
             cityName={selectedCity?.name ?? null}
             allCities={allCities}
             onToggle={() => setAllCities((s) => !s)}
           />
-          <div className="flex-1 max-w-xs">
+          <div className="flex-1 min-w-[13rem] max-w-xs">
             <SearchTabs value={tab} onChange={setTab} />
           </div>
         </div>
+
       </div>
 
       <div className="pt-4">
