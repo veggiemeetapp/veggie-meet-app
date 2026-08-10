@@ -39,14 +39,12 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  fetchAttendingMeetups,
-  fetchHostedMeetups,
-} from "@/lib/backend";
 import { TODAY_ISO } from "@/lib/mock-data";
+import { toMeetupCardShape } from "@/lib/youSummary";
+import type { YouHistoryItem, YouMeetupCard } from "@/lib/youSummary";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Meetup } from "@/types";
+
 
 type Tab = "hosting" | "going";
 
