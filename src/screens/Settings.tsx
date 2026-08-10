@@ -12,6 +12,7 @@ import {
   Loader2,
   LogOut,
   Mail,
+  MessageSquareHeart,
   ShieldCheck,
   Trash2,
   User,
