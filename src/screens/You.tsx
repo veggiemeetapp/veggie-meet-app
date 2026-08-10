@@ -39,14 +39,12 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  fetchAttendingMeetups,
-  fetchHostedMeetups,
-} from "@/lib/backend";
 import { TODAY_ISO } from "@/lib/mock-data";
+import { toMeetupCardShape } from "@/lib/youSummary";
+import type { YouHistoryItem, YouMeetupCard } from "@/lib/youSummary";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Meetup } from "@/types";
+
 
 type Tab = "hosting" | "going";
 
@@ -61,16 +59,12 @@ export default function You() {
   const [tab, setTab] = useState<Tab>("hosting");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const hostingQuery = useQuery({
-    queryKey: ["me-hosting", profile?.id],
+  // WO-087: one bounded, self-scoped RPC replaces the previous five direct
+  // meetups/attendance reads (hosting, going, past ×3 sub-reads).
+  const summaryQuery = useQuery({
+    queryKey: ["my-you-summary", profile?.id],
     enabled: !!profile?.id,
-    queryFn: () => fetchHostedMeetups(profile!.id, TODAY_ISO),
-  });
-
-  const goingQuery = useQuery({
-    queryKey: ["me-going", profile?.id],
-    enabled: !!profile?.id,
-    queryFn: () => fetchAttendingMeetups(profile!.id, TODAY_ISO),
+    queryFn: () => import("@/lib/youSummary").then((m) => m.fetchMyYouSummary()),
   });
 
   const impactQuery = useQuery({
@@ -85,21 +79,27 @@ export default function You() {
   const qc = useQueryClient();
   useEffect(() => {
     if (!profile?.id) return;
-    const invalidate = () =>
+    // Shared invalidation: attendance / meetup lifecycle / verified connection
+    // changes refresh both Community Impact and the /you Meetup summary.
+    const invalidate = () => {
       qc.invalidateQueries({ queryKey: ["me-impact-overview", profile.id] });
+      qc.invalidateQueries({ queryKey: ["my-you-summary", profile.id] });
+    };
     const channel = supabase
       .channel(`impact:${profile.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "verified_meetup_connections" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "meetups" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meetup_completions" }, invalidate)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [profile?.id, qc]);
 
-  const hostedCount = hostingQuery.data?.length ?? 0;
+  const hostedCount = summaryQuery.data?.counts.hosting_upcoming ?? 0;
   const isActiveHost = hostedCount > 0 || profile?.is_active_host;
+
 
   const memberSince = useMemo(() => {
     const created = (profile as unknown as { created_at?: string } | null)?.created_at;
@@ -313,38 +313,54 @@ export default function You() {
             </TabButton>
           </div>
 
-          {tab === "hosting" && (
-            <MeetupList
-              loading={hostingQuery.isLoading}
-              meetups={hostingQuery.data ?? []}
-              emptyTitle="Host your first meetup"
-              emptyDescription="Bring Veggies together around something you enjoy."
-              emptyIcon={<Users className="w-6 h-6" />}
-              emptyAction={
-                <PrimaryButton onClick={() => navigate("/host")}>
-                  Host a Meetup
-                </PrimaryButton>
-              }
-            />
-          )}
-          {tab === "going" && (
-            <MeetupList
-              loading={goingQuery.isLoading}
-              meetups={goingQuery.data ?? []}
-              emptyTitle="Find your next meetup"
-              emptyDescription="Discover something happening near you."
-              emptyIcon={<Calendar className="w-6 h-6" />}
-              emptyAction={
-                <PrimaryButton onClick={() => navigate("/community")}>
-                  Explore Meetups
-                </PrimaryButton>
-              }
-            />
+          {summaryQuery.isError ? (
+            <SummaryError onRetry={() => summaryQuery.refetch()} />
+          ) : (
+            <>
+              {tab === "hosting" && (
+                <MeetupList
+                  loading={summaryQuery.isLoading}
+                  cards={summaryQuery.data?.hosting ?? []}
+                  profileId={profile.id}
+                  role="host"
+                  emptyTitle="Host your first meetup"
+                  emptyDescription="Bring Veggies together around something you enjoy."
+                  emptyIcon={<Users className="w-6 h-6" />}
+                  emptyAction={
+                    <PrimaryButton onClick={() => navigate("/host")}>
+                      Host a Meetup
+                    </PrimaryButton>
+                  }
+                />
+              )}
+              {tab === "going" && (
+                <MeetupList
+                  loading={summaryQuery.isLoading}
+                  cards={summaryQuery.data?.going ?? []}
+                  profileId={profile.id}
+                  role="attendee"
+                  emptyTitle="Find your next meetup"
+                  emptyDescription="Discover something happening near you."
+                  emptyIcon={<Calendar className="w-6 h-6" />}
+                  emptyAction={
+                    <PrimaryButton onClick={() => navigate("/community")}>
+                      Explore Meetups
+                    </PrimaryButton>
+                  }
+                />
+              )}
+            </>
           )}
         </section>
 
-        <PastMeetupsSection profileId={profile.id} />
+        <PastMeetupsSection
+          loading={summaryQuery.isLoading}
+          error={summaryQuery.isError}
+          items={summaryQuery.data?.history ?? []}
+          onRetry={() => summaryQuery.refetch()}
+        />
       </div>
+
 
 
       {/* Settings sheet */}
@@ -506,16 +522,33 @@ function TabButton({
   );
 }
 
+function SummaryError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card padding="lg" className="text-center space-y-3">
+      <p className="text-sm text-charcoal">
+        We couldn't load your Meetups just now.
+      </p>
+      <SecondaryButton size="sm" onClick={onRetry}>
+        Try again
+      </SecondaryButton>
+    </Card>
+  );
+}
+
 function MeetupList({
   loading,
-  meetups,
+  cards,
+  profileId,
+  role,
   emptyTitle,
   emptyDescription,
   emptyIcon,
   emptyAction,
 }: {
   loading: boolean;
-  meetups: Meetup[];
+  cards: YouMeetupCard[];
+  profileId: string;
+  role: "host" | "attendee";
   emptyTitle: string;
   emptyDescription: string;
   emptyIcon: React.ReactNode;
@@ -529,7 +562,7 @@ function MeetupList({
       </div>
     );
   }
-  if (meetups.length === 0) {
+  if (cards.length === 0) {
     return (
       <Card padding="none">
         <EmptyState
@@ -543,18 +576,19 @@ function MeetupList({
   }
   return (
     <div className="space-y-3">
-      {meetups.map((m) => (
-        <div key={m.id}>
+      {cards.map((c) => (
+        <div key={c.meetup_id}>
           <div className="mb-1 px-1 flex items-center gap-1 text-[11px] font-medium text-charcoal-muted">
             <Clock className="w-3 h-3" />
-            {formatShortDate(m.date)}
+            {formatShortDate(c.date)}
           </div>
-          <MeetupCard meetup={m} />
+          <MeetupCard meetup={toMeetupCardShape(c, profileId)} role={role} />
         </div>
       ))}
     </div>
   );
 }
+
 
 function formatShortDate(iso: string) {
   if (iso === TODAY_ISO) return "Today";
@@ -602,19 +636,26 @@ function SheetRow({
   );
 }
 
-function PastMeetupsSection({ profileId }: { profileId: string }) {
+function PastMeetupsSection({
+  loading,
+  error,
+  items,
+  onRetry,
+}: {
+  loading: boolean;
+  error: boolean;
+  items: YouHistoryItem[];
+  onRetry: () => void;
+}) {
   const navigate = useNavigate();
-  const query = useQuery({
-    queryKey: ["past-meetups", profileId],
-    queryFn: () => import("@/lib/postMeetup").then((m) => m.fetchPastMeetups(profileId)),
-  });
-  const items = query.data ?? [];
   return (
     <section>
       <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
         Past Meetups
       </h3>
-      {query.isLoading ? (
+      {error ? (
+        <SummaryError onRetry={onRetry} />
+      ) : loading ? (
         <Card className="h-24 animate-pulse" />
       ) : items.length === 0 ? (
         <Card padding="lg" className="text-center text-sm text-charcoal-muted">
@@ -623,10 +664,10 @@ function PastMeetupsSection({ profileId }: { profileId: string }) {
       ) : (
         <Card padding="none">
           <ul className="divide-y divide-border/60">
-            {items.slice(0, 8).map((m) => (
-              <li key={m.id}>
+            {items.map((m) => (
+              <li key={m.meetup_id}>
                 <button
-                  onClick={() => navigate(`/meetup/${m.id}/summary`)}
+                  onClick={() => navigate(`/meetup/${m.meetup_id}/summary`)}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60"
                 >
                   <div className="flex-1 min-w-0">
@@ -639,12 +680,12 @@ function PastMeetupsSection({ profileId }: { profileId: string }) {
                           Cancelled
                         </span>
                       )}
-                      {m.isHost && !m.cancelled && (
+                      {m.is_host && !m.cancelled && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/15 text-host-badge">
                           Hosted
                         </span>
                       )}
-                      {!m.isHost && (m.attendanceStatus === "checked_in" || m.attendanceStatus === "attended") && (
+                      {!m.is_host && (m.attendance_status === "checked_in" || m.attendance_status === "attended") && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-soft-green text-primary">
                           Checked in
                         </span>
@@ -663,6 +704,7 @@ function PastMeetupsSection({ profileId }: { profileId: string }) {
           </ul>
         </Card>
       )}
+
     </section>
   );
 }

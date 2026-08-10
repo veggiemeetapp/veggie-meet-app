@@ -4,15 +4,23 @@ import type { Meetup } from "@/types";
 import { getPlace, getVeggie, veggies } from "@/lib/mock-data";
 import { formatTime12h } from "@/lib/format";
 import { useMeetupMembership } from "@/hooks/useMeetupMembership";
+import type { MeetupRole } from "@/lib/backend";
 import { Card } from "./Card";
 import { AvatarGroup } from "./UserAvatar";
 
 interface Props {
   meetup: Meetup;
+  /**
+   * WO-087: when the surface already knows the viewer's role from a
+   * server-authoritative read (e.g. `/you`), pass it in to skip the per-card
+   * membership query and realtime channel.
+   */
+  role?: MeetupRole;
 }
 
-export function MeetupCard({ meetup }: Props) {
-  const { role } = useMeetupMembership(meetup);
+export function MeetupCard({ meetup, role: roleOverride }: Props) {
+  const membership = useMeetupMembership(roleOverride ? null : meetup);
+  const role = roleOverride ?? membership.role;
   const host = getVeggie(meetup.hostId);
   const place = getPlace(meetup.communityPlaceId);
   const placeLabel = meetup.location?.locationName ?? meetup.customLocation?.name ?? place?.name;
