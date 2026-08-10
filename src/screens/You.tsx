@@ -61,16 +61,12 @@ export default function You() {
   const [tab, setTab] = useState<Tab>("hosting");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const hostingQuery = useQuery({
-    queryKey: ["me-hosting", profile?.id],
+  // WO-087: one bounded, self-scoped RPC replaces the previous five direct
+  // meetups/attendance reads (hosting, going, past ×3 sub-reads).
+  const summaryQuery = useQuery({
+    queryKey: ["my-you-summary", profile?.id],
     enabled: !!profile?.id,
-    queryFn: () => fetchHostedMeetups(profile!.id, TODAY_ISO),
-  });
-
-  const goingQuery = useQuery({
-    queryKey: ["me-going", profile?.id],
-    enabled: !!profile?.id,
-    queryFn: () => fetchAttendingMeetups(profile!.id, TODAY_ISO),
+    queryFn: () => import("@/lib/youSummary").then((m) => m.fetchMyYouSummary()),
   });
 
   const impactQuery = useQuery({
@@ -85,21 +81,27 @@ export default function You() {
   const qc = useQueryClient();
   useEffect(() => {
     if (!profile?.id) return;
-    const invalidate = () =>
+    // Shared invalidation: attendance / meetup lifecycle / verified connection
+    // changes refresh both Community Impact and the /you Meetup summary.
+    const invalidate = () => {
       qc.invalidateQueries({ queryKey: ["me-impact-overview", profile.id] });
+      qc.invalidateQueries({ queryKey: ["my-you-summary", profile.id] });
+    };
     const channel = supabase
       .channel(`impact:${profile.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "verified_meetup_connections" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "meetups" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meetup_completions" }, invalidate)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [profile?.id, qc]);
 
-  const hostedCount = hostingQuery.data?.length ?? 0;
+  const hostedCount = summaryQuery.data?.counts.hosting_upcoming ?? 0;
   const isActiveHost = hostedCount > 0 || profile?.is_active_host;
+
 
   const memberSince = useMemo(() => {
     const created = (profile as unknown as { created_at?: string } | null)?.created_at;
