@@ -524,16 +524,33 @@ function TabButton({
   );
 }
 
+function SummaryError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card padding="lg" className="text-center space-y-3">
+      <p className="text-sm text-charcoal">
+        We couldn't load your Meetups just now.
+      </p>
+      <SecondaryButton size="sm" onClick={onRetry}>
+        Try again
+      </SecondaryButton>
+    </Card>
+  );
+}
+
 function MeetupList({
   loading,
-  meetups,
+  cards,
+  profileId,
+  role,
   emptyTitle,
   emptyDescription,
   emptyIcon,
   emptyAction,
 }: {
   loading: boolean;
-  meetups: Meetup[];
+  cards: YouMeetupCard[];
+  profileId: string;
+  role: "host" | "attendee";
   emptyTitle: string;
   emptyDescription: string;
   emptyIcon: React.ReactNode;
@@ -547,7 +564,7 @@ function MeetupList({
       </div>
     );
   }
-  if (meetups.length === 0) {
+  if (cards.length === 0) {
     return (
       <Card padding="none">
         <EmptyState
@@ -561,18 +578,19 @@ function MeetupList({
   }
   return (
     <div className="space-y-3">
-      {meetups.map((m) => (
-        <div key={m.id}>
+      {cards.map((c) => (
+        <div key={c.meetup_id}>
           <div className="mb-1 px-1 flex items-center gap-1 text-[11px] font-medium text-charcoal-muted">
             <Clock className="w-3 h-3" />
-            {formatShortDate(m.date)}
+            {formatShortDate(c.date)}
           </div>
-          <MeetupCard meetup={m} />
+          <MeetupCard meetup={toMeetupCardShape(c, profileId)} role={role} />
         </div>
       ))}
     </div>
   );
 }
+
 
 function formatShortDate(iso: string) {
   if (iso === TODAY_ISO) return "Today";
