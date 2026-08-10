@@ -172,8 +172,13 @@ export default function OwnerBetaOperations() {
                 label="Active places"
                 value={health.data?.community_places_active ?? "—"}
               />
+              <Stat
+                label="Latest app version"
+                value={health.data?.latest_app_version ?? "—"}
+              />
             </div>
           )}
+
         </section>
 
         <section aria-labelledby="beta-failures-h">
