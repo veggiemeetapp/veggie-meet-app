@@ -1,4 +1,4 @@
-import { memberSafeMessage, normalizeError } from "@/lib/errors";
+import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -121,7 +121,6 @@ export default function DirectMessage() {
         navigate(`/dm/${id}`, { replace: true });
         setResolvedId(id);
       } catch (e) {
-        const normalized = normalizeError(e);
         const raw = String(
           (e as { message?: string } | null)?.message ?? "",
         ).toLowerCase();
