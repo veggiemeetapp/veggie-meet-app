@@ -175,7 +175,10 @@
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   textarea,
   select {
-    font-size: max(16px, 1rem);
+    /* `!important` is required, not stylistic: Tailwind's `text-sm` on the
+       shared Input/Textarea primitives is a class selector and would otherwise
+       win over this element selector, leaving 14px controls that still zoom. */
+    font-size: max(16px, 1rem) !important;
   }
 }
 
