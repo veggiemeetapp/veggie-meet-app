@@ -76,7 +76,7 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
                 end={to === "/"}
                 className={({ isActive }) =>
                   cn(
-                    "relative flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-control min-h-[3.25rem] transition-colors duration-150",
+                    "relative flex flex-col items-center justify-center gap-[3px] py-2 px-1 rounded-control min-h-[3.25rem] transition-colors duration-150",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                     isActive
                       ? "text-primary font-semibold"
