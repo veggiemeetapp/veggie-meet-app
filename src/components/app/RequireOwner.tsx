@@ -22,7 +22,7 @@ export function RequireOwner({ children }: { children: JSX.Element }) {
 
   if (ownerQ.data !== true) {
     return (
-      <main role="main" className="flex min-h-dvh items-center justify-center px-6">
+      <main role="main" className="flex min-h-dvh items-center justify-center page-x">
         <div className="text-center max-w-sm">
           <h1 className="text-lg font-semibold text-charcoal">Permission denied</h1>
           <p className="mt-2 text-sm text-charcoal-muted">

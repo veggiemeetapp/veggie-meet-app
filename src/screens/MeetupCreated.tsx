@@ -28,7 +28,7 @@ export default function MeetupCreated() {
   const placeAddr = meetup?.location?.address ?? meetup?.customLocation?.address ?? place?.address;
 
   return (
-    <div className="flex flex-col min-h-dvh px-6 pt-16 pb-10">
+    <div className="flex flex-col min-h-dvh page-x pt-16 pb-10">
       <div className="flex flex-col items-center text-center">
         <div className="w-20 h-20 rounded-full bg-soft-green flex items-center justify-center">
           <Sparkles className="w-9 h-9 text-primary" strokeWidth={2} />

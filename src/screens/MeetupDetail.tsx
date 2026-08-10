@@ -198,7 +198,7 @@ export default function MeetupDetail() {
   if (!meetup) {
     return (
       <div className="flex flex-col min-h-dvh">
-        <div className="safe-top flex items-center px-4 pt-3 pb-2">
+        <div className="safe-top flex items-center page-x pt-3 pb-2">
           <BackButton fallback="/community" />
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">

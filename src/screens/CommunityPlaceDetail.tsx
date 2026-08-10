@@ -462,7 +462,7 @@ function PageFrame({
 }) {
   return (
     <div className="flex flex-col min-h-dvh">
-      <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
+      <div className="safe-top flex items-center gap-2 page-x pt-3 pb-2">
         <BackButton onClick={() => { onBack(); }} />
         <h1 className="text-base font-semibold text-charcoal">Community Place</h1>
       </div>

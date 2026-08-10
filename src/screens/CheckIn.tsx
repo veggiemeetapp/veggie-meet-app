@@ -196,7 +196,7 @@ export default function CheckIn() {
 
 function Header({ onBack, title }: { onBack: () => void; title: string }) {
   return (
-    <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
+    <div className="safe-top flex items-center gap-2 page-x pt-3 pb-2">
       <BackButton onClick={() => { onBack(); }} />
       <h1 className="text-base font-semibold text-charcoal">{title}</h1>
     </div>
@@ -300,7 +300,7 @@ function QRView({
   }, [state, now]);
 
   return (
-    <div className="flex-1 flex flex-col items-center px-6 pt-4 pb-10 gap-5">
+    <div className="flex-1 flex flex-col items-center page-x pt-4 pb-10 gap-5">
       <p className="text-sm text-charcoal-muted text-center max-w-xs">
         Have a connected attendee scan this code. It expires quickly for your safety.
       </p>

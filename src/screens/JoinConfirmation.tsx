@@ -73,7 +73,7 @@ export default function JoinConfirmation() {
   if (!meetup) {
     return (
       <div className="flex flex-col min-h-dvh">
-        <div className="safe-top flex items-center px-4 pt-3 pb-2">
+        <div className="safe-top flex items-center page-x pt-3 pb-2">
           <BackButton fallback="/plans" />
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
@@ -95,8 +95,8 @@ export default function JoinConfirmation() {
   const isHost = profile?.id && profile.id === meetup.hostId;
 
   return (
-    <div className="flex flex-col min-h-dvh px-6 pt-4 pb-10">
-      <div className="safe-top -mx-6 px-4 pb-2">
+    <div className="flex flex-col min-h-dvh page-x pt-4 pb-10">
+      <div className="safe-top -mx-5 page-x pb-2">
         <BackButton fallback="/plans" />
       </div>
       {joinError ? (
