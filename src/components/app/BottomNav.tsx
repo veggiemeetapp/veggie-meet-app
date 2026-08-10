@@ -66,7 +66,7 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
       aria-label="Primary"
       className="safe-bottom fixed bottom-0 inset-x-0 z-40 mx-auto max-w-phone bg-card/95 backdrop-blur-xl border-t border-border"
     >
-      <ul className="flex items-stretch justify-around px-2 pt-1.5 pb-1.5">
+      <ul className="flex items-stretch justify-around px-1.5 pt-1 pb-1">
         {items.map(({ label, to, icon: Icon }) => {
           const showBadge = to === "/chats" && unread > 0;
           return (
@@ -76,10 +76,10 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
                 end={to === "/"}
                 className={({ isActive }) =>
                   cn(
-                    "relative flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl min-h-[3.25rem] transition-colors",
+                    "relative flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-control min-h-[3.25rem] transition-colors duration-150",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                     isActive
-                      ? "text-primary"
+                      ? "text-primary font-semibold"
                       : "text-charcoal-muted hover:text-charcoal",
                   )
                 }
@@ -94,18 +94,30 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
                     : undefined
                 }
               >
-                <div className="relative">
-                  <Icon className="w-6 h-6" aria-hidden="true" />
-                  {showBadge && (
-                    <span
-                      className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center"
-                      aria-hidden="true"
-                    >
-                      {unread > 9 ? "9+" : unread}
+                {({ isActive }) => (
+                  <>
+                    <div className="relative">
+                      {/* WO-092: active state is weight + colour + a soft
+                          tinted plate, so selection reads at a glance without
+                          moving the icon or changing its size. */}
+                      <Icon
+                        className={cn("w-[22px] h-[22px]", isActive && "stroke-[2.25]")}
+                        aria-hidden="true"
+                      />
+                      {showBadge && (
+                        <span
+                          className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center"
+                          aria-hidden="true"
+                        >
+                          {unread > 9 ? "9+" : unread}
+                        </span>
+                      )}
+                    </div>
+                    <span className={cn("text-[11px] leading-none", isActive ? "font-semibold" : "font-medium")}>
+                      {label}
                     </span>
-                  )}
-                </div>
-                <span className="text-[11px] font-medium">{label}</span>
+                  </>
+                )}
               </NavLink>
             </li>
           );
@@ -115,3 +127,4 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
     </nav>
   );
 }
+
