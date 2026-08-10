@@ -3116,6 +3116,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_meetup_group: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_lifecycle: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
       get_member_report_queue: { Args: { _status?: string }; Returns: Json }
