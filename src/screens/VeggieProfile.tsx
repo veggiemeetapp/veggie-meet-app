@@ -301,7 +301,7 @@ export default function VeggieProfile() {
           {/* Favorite Community Places */}
           {bundle.favoritePlaces.length > 0 && (
             <Section title="Favorite Community Places" pad={false}>
-              <div className="flex gap-3 overflow-x-auto px-5 pb-1 snap-x snap-mandatory scrollbar-hide">
+              <div className="rail flex gap-3 overflow-x-auto px-5 pb-1 snap-x snap-mandatory scrollbar-hide">
                 {bundle.favoritePlaces.map((p) => (
                   <div key={p.id} className="snap-start">
                     <CommunityPlaceCard place={p} />

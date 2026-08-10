@@ -498,8 +498,15 @@ function DMScreen({
   }
 
   return (
-    <>
+    // WO-093 DEF-093-03 (iOS Safari / Android Chrome): the conversation owns its
+    // own scroll region inside a dynamic-viewport shell. Previously the whole
+    // page grew with the message list, so on a real phone the composer and Send
+    // were pushed below the fold once the virtual keyboard opened. `app-viewport`
+    // pins the shell to 100dvh (which tracks the Safari address bar), leaving the
+    // message log as the only scroller and the composer permanently on screen.
+    <div className="app-viewport flex flex-col">
       <BackHeader
+
         title={
           other ? (
             <Link
@@ -749,7 +756,8 @@ function DMScreen({
           }}
         />
       )}
-    </>
+    </div>
+
   );
 }
 

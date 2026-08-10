@@ -13,7 +13,7 @@ export function CommunityPlacesSection({ places }: Props) {
         subtitle="Where Veggies love to gather"
       />
       <div
-        className="flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
+        className="rail flex gap-3 px-5 overflow-x-auto scrollbar-none pb-2"
         style={{ scrollSnapType: "x mandatory" }}
       >
         {places.map((p) => (

@@ -204,7 +204,10 @@ export default function MeetupChat() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-muted/20">
+    // WO-093 DEF-093-03: dynamic-viewport shell so the group composer stays
+    // reachable while the virtual keyboard is open (see DirectMessage).
+    <div className="app-viewport flex flex-col bg-muted/20">
+
       <AppHeader
         title={meetup?.title ?? "Meetup chat"}
         subtitle={
@@ -269,7 +272,7 @@ export default function MeetupChat() {
         </div>
       )}
 
-      <div className="flex-1 page-x py-4 space-y-3 overflow-y-auto">
+      <div className="flex-1 min-h-0 page-x py-4 space-y-3 overflow-y-auto">
         {hasMore && (
           <div className="flex justify-center">
             <button

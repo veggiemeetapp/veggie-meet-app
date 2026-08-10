@@ -79,6 +79,30 @@ export function QRScanner({ onResult, helpText, fallbackAction }: Props) {
     };
   }, [start, attempt]);
 
+  // WO-093 DEF-093-05 (iOS Safari / Android Chrome): backgrounding the browser
+  // or switching tabs does not unmount this route, so the camera track stayed
+  // live and the OS camera indicator remained on while VeggieMeet was not
+  // visible. We stop the track when the document is hidden and restart it on
+  // return, so the camera is only ever active on a visible scanner.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    function onVisibility() {
+      const s = scannerRef.current;
+      if (document.visibilityState === "hidden") {
+        if (s?.isScanning) s.stop().catch(() => {});
+        return;
+      }
+      // Visible again: only resume if we were the ones who stopped it and the
+      // scan has not already produced a result.
+      if (!handledRef.current && s && !s.isScanning) {
+        setAttempt((n) => n + 1);
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+
   return (
     <div className="flex-1 flex flex-col items-center px-6 pt-4 pb-10 gap-4">
       {helpText && (

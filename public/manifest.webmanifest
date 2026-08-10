@@ -1,0 +1,31 @@
+{
+  "name": "VeggieMeet — Meetups for veggie people",
+  "short_name": "VeggieMeet",
+  "description": "Discover and join local meetups for vegans, vegetarians, and plant-curious people.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#f8f7f2",
+  "background_color": "#f8f7f2",
+  "icons": [
+    {
+      "src": "/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

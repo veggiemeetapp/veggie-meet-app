@@ -89,7 +89,7 @@ export default function Today() {
       {veggie_recommendations.length > 0 && (
         <section className="mt-4" aria-label="Veggie recommendations">
           <SectionHeader title="People to Meet" subtitle="Fellow Veggies to connect with" />
-          <div className="flex gap-3 overflow-x-auto px-5 pb-2 no-scrollbar">
+          <div className="rail flex gap-3 overflow-x-auto px-5 pb-2 no-scrollbar">
             {veggie_recommendations.map((v) => (
               <VeggieRecCard key={v.entity_id} veggie={v} />
             ))}
@@ -100,7 +100,7 @@ export default function Today() {
       {place_recommendations.length > 0 && (
         <section className="mt-4" aria-label="Community places">
           <SectionHeader title="Community Places" subtitle="Veggie-friendly spots" />
-          <div className="flex gap-3 overflow-x-auto px-5 pb-2 no-scrollbar">
+          <div className="rail flex gap-3 overflow-x-auto px-5 pb-2 no-scrollbar">
             {place_recommendations.map((p) => (
               <PlaceRecCard key={p.entity_id} place={p} />
             ))}
