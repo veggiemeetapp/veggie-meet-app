@@ -48,10 +48,13 @@
     --ring: 145 45% 34%;
 
     --radius: 1rem;
-    /* WO-092 radius hierarchy: controls < cards < dialogs */
+    /* WO-092 radius hierarchy: controls < cards < dialogs. Three steps only,
+       so nesting always reads correctly (a control inside a card inside a
+       sheet gets progressively tighter corners). */
     --radius-control: 0.75rem;
-    --radius-card: 1rem;
-    --radius-dialog: 1.25rem;
+    --radius-card: 1.25rem;
+    --radius-dialog: 1.5rem;
+
 
     /* VeggieMeet semantic tokens */
     --charcoal: 220 15% 15%;
