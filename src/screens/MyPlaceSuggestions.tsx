@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Clock, Leaf } from "lucide-react";
-import { AppHeader, Card } from "@/components/app";
+import { AppHeader, Card, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -54,14 +54,7 @@ export default function MyPlaceSuggestions() {
     <>
       <AppHeader
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden />
-          </button>
+          <BackButton fallback="/you" />
         }
         title="My place suggestions"
       />

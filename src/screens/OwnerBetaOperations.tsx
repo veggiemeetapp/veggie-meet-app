@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Activity, AlertTriangle, RefreshCw } from "lucide-react";
-import { AppHeader, Card } from "@/components/app";
+import { AppHeader, Card, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { safeBack } from "@/lib/navigation";
 import { logAnalyticsEvent } from "@/lib/analytics";
@@ -111,14 +111,7 @@ export default function OwnerBetaOperations() {
         title="Beta operations"
         subtitle="Owner only"
         left={
-          <button
-            type="button"
-            aria-label="Back"
-            onClick={() => safeBack(navigate, "/settings")}
-            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center hover:bg-accent/40"
-          >
-            <ArrowLeft className="w-5 h-5 text-charcoal" />
-          </button>
+          <BackButton fallback="/settings" />
         }
         right={
           <button

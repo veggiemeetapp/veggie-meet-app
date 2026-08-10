@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, Leaf, MapPin, Store } from "lucide-react";
-import { AppHeader, Card, PrimaryButton, SecondaryButton } from "@/components/app";
+import { AppHeader, Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { useAuth } from "@/hooks/useAuth";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -49,14 +49,7 @@ export default function SupportedPlaces() {
     <>
       <AppHeader
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden />
-          </button>
+          <BackButton fallback="/you" />
         }
         title="Places You’ve Supported"
       />

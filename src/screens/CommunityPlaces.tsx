@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Leaf, MapPin, Utensils } from "lucide-react";
-import { AppHeader, Card } from "@/components/app";
+import { AppHeader, Card, BackButton } from "@/components/app";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
@@ -99,14 +99,7 @@ export default function CommunityPlaces() {
     <>
       <AppHeader
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/community")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden />
-          </button>
+          <BackButton fallback="/community" />
         }
         title="Community Places"
         subtitle={cityLabel ? `Exploring ${cityLabel}` : undefined}

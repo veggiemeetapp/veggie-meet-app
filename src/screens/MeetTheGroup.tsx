@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, MessageCircle } from "lucide-react";
-import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
+import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
@@ -65,13 +65,7 @@ export default function MeetTheGroup() {
     <AppHeader
       title="Meet the Group"
       left={
-        <button
-          onClick={() => safeBack(navigate, "/plans")}
-          aria-label="Back"
-          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton fallback="/plans" />
       }
     />
   );

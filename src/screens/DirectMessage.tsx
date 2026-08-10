@@ -14,7 +14,7 @@ import {
   Send,
   User as UserIcon,
 } from "lucide-react";
-import { AppHeader, Card, UserAvatar } from "@/components/app";
+import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   Dialog,
   DialogContent,
@@ -209,13 +209,7 @@ function BackHeader({
     <AppHeader
       title={title}
       left={
-        <button
-          onClick={() => safeBack(navigate, "/chats")}
-          aria-label="Back"
-          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton fallback="/chats" />
       }
       right={right}
     />

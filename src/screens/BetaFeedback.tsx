@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, MessageSquareHeart } from "lucide-react";
-import { AppHeader, Card, PrimaryButton } from "@/components/app";
+import { AppHeader, Card, PrimaryButton, BackButton } from "@/components/app";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { safeBack } from "@/lib/navigation";
@@ -79,14 +79,7 @@ export default function BetaFeedback() {
       <AppHeader
         title="Send beta feedback"
         left={
-          <button
-            type="button"
-            aria-label="Back"
-            onClick={() => safeBack(navigate, "/settings")}
-            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center hover:bg-accent/40"
-          >
-            <ArrowLeft className="w-5 h-5 text-charcoal" />
-          </button>
+          <BackButton fallback="/settings" />
         }
       />
 

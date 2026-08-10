@@ -1,4 +1,5 @@
 import { memberSafeMessage } from "@/lib/errors";
+import { BackButton } from "@/components/app";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -103,13 +104,7 @@ export default function Settings() {
       <AppHeader
         title={title}
         left={
-          <button
-            onClick={handleBack}
-            aria-label="Back"
-            className="w-11 h-11 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton onClick={() => { handleBack(); }} />
         }
       />
       <div className="px-5 mt-2 pb-16">

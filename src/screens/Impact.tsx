@@ -16,7 +16,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { AppHeader, Card, EmptyState, LoadingSkeleton, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
+import { AppHeader, Card, EmptyState, LoadingSkeleton, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -89,13 +89,7 @@ export default function Impact() {
       <AppHeader
         title="Community Impact"
         left={
-          <button
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Back"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/you" />
         }
       />
       <div className="px-5 pt-2 pb-10 space-y-6">

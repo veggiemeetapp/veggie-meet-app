@@ -3,7 +3,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Calendar, Clock, MapPin } from "lucide-react";
-import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
+import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { getMeetup, getPlace } from "@/lib/mock-data";
 import { formatMeetupDate, formatTimeRange } from "@/lib/format";
 import { fetchMeetupById, isUuid, joinMeetup } from "@/lib/backend";
@@ -74,13 +74,7 @@ export default function JoinConfirmation() {
     return (
       <div className="flex flex-col min-h-dvh">
         <div className="safe-top flex items-center px-4 pt-3 pb-2">
-          <button
-            onClick={() => safeBack(navigate, "/plans")}
-            aria-label="Back"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/plans" />
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
           <p className="text-charcoal font-medium">We couldn't find this meetup.</p>
@@ -103,13 +97,7 @@ export default function JoinConfirmation() {
   return (
     <div className="flex flex-col min-h-dvh px-6 pt-4 pb-10">
       <div className="safe-top -mx-6 px-4 pb-2">
-        <button
-          onClick={() => safeBack(navigate, "/plans")}
-          aria-label="Back"
-          className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton fallback="/plans" />
       </div>
       {joinError ? (
         <div className="flex flex-col items-center text-center pt-8">

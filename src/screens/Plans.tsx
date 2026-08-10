@@ -1,4 +1,5 @@
 import { safeBack } from "@/lib/navigation";
+import { BackButton } from "@/components/app";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
@@ -78,14 +79,7 @@ export default function Plans() {
       <AppHeader
         title="My Plans"
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/")}
-            aria-label="Back"
-            className="min-w-11 min-h-11 w-11 h-11 -ml-2 rounded-full flex items-center justify-center text-charcoal hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/" />
         }
       />
 

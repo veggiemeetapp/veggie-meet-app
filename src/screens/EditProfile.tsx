@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Camera, ImagePlus, Shuffle, Trash2 } from "lucide-react";
-import { PrimaryButton, UserAvatar } from "@/components/app";
+import { PrimaryButton, UserAvatar, BackButton } from "@/components/app";
 import {
   Sheet,
   SheetContent,
@@ -159,13 +159,7 @@ export default function EditProfile() {
     <div className="flex flex-col min-h-dvh bg-background">
       <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/60">
         <div className="flex items-center justify-between px-5 pt-3 pb-3 min-h-[3.5rem]">
-          <button
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/you" />
           <h1 className="text-base font-semibold text-charcoal">Edit Profile</h1>
           <div className="w-9" />
         </div>

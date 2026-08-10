@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
-import { PrimaryButton, SecondaryButton, Card, UserAvatar } from "@/components/app";
+import { PrimaryButton, SecondaryButton, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   Dialog,
   DialogContent,
@@ -197,13 +197,7 @@ export default function CheckIn() {
 function Header({ onBack, title }: { onBack: () => void; title: string }) {
   return (
     <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
-      <button
-        onClick={onBack}
-        aria-label="Back"
-        className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-      >
-        <ArrowLeft className="w-5 h-5" />
-      </button>
+      <BackButton onClick={() => { onBack(); }} />
       <h1 className="text-base font-semibold text-charcoal">{title}</h1>
     </div>
   );

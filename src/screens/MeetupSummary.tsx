@@ -1,4 +1,5 @@
 import { memberSafeMessage } from "@/lib/errors";
+import { BackButton } from "@/components/app";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -191,13 +192,7 @@ export default function MeetupSummary() {
       <AppHeader
         title="Meetup Summary"
         left={
-          <button
-            aria-label="Back"
-            onClick={() => safeBack(navigate, "/plans")}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/plans" />
         }
       />
     );

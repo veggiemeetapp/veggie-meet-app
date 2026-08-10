@@ -16,7 +16,7 @@ import {
   CheckCircle2,
 
 } from "lucide-react";
-import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
+import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
 import {
   Dialog,
   DialogContent,
@@ -543,13 +543,7 @@ export default function MeetupManagement() {
         title="Manage Meetup"
         subtitle={isCancelled ? "This Meetup has been cancelled." : "Keep everyone in the loop."}
         left={
-          <button
-            onClick={() => safeBack(navigate, "/plans")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/plans" />
         }
       />
 

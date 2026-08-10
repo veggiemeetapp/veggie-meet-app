@@ -17,7 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { logAnalyticsEvent } from "@/lib/analytics";
-import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
+import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { placeStatusBanner } from "@/lib/placeMaintenance";
 import type { CommunityPlaceMaintenanceStatus } from "@/types";
@@ -140,13 +140,7 @@ export default function CommunityPlaceDetail() {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-transparent to-background" />
-        <button
-          onClick={() => safeBack(navigate, "/community/places")}
-          aria-label="Back"
-          className="absolute top-4 left-4 min-w-11 min-h-11 rounded-full flex items-center justify-center bg-background/90 backdrop-blur text-charcoal shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5" aria-hidden />
-        </button>
+        <BackButton fallback="/community/places" />
       </div>
 
       <div className="px-5 -mt-6 relative space-y-2.5 min-w-0">
@@ -470,13 +464,7 @@ function PageFrame({
   return (
     <div className="flex flex-col min-h-dvh">
       <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="min-w-11 min-h-11 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" aria-hidden />
-        </button>
+        <BackButton onClick={() => { onBack(); }} />
         <h1 className="text-base font-semibold text-charcoal">Community Place</h1>
       </div>
       {children}

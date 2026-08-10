@@ -1,4 +1,5 @@
 import { safeBack } from "@/lib/navigation";
+import { BackButton } from "@/components/app";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -119,13 +120,7 @@ export default function VeggieProfile() {
       <AppHeader
         title="Profile"
         left={
-          <button
-            onClick={() => safeBack(navigate, "/community")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/community" />
         }
         right={
           bundle && !isSelf && me ? (

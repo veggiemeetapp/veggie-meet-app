@@ -16,7 +16,7 @@ import {
   Users,
   Utensils,
 } from "lucide-react";
-import { PrimaryButton } from "@/components/app";
+import { PrimaryButton, BackButton } from "@/components/app";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { CitySelector } from "@/components/location/CitySelector";
 import { cn } from "@/lib/utils";
@@ -378,13 +378,7 @@ export default function Onboarding() {
       {showBack && (
         <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-md">
           <div className="flex items-center justify-between px-5 pt-3 pb-2 min-h-[3.5rem]">
-            <button
-              onClick={goBack}
-              aria-label="Back"
-              className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+            <BackButton onClick={() => { goBack(); }} />
             {showProgress ? (
               <span className="text-xs font-medium text-charcoal-muted tabular-nums">
                 Step {progressIndex + 1} of {ONBOARDING_PROGRESS_STEPS.length}

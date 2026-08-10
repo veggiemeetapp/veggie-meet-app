@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Camera, X, MapPin, Loader2, AlertTriangle } from "lucide-react";
-import { AppHeader, PrimaryButton, SecondaryButton } from "@/components/app";
+import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { cn } from "@/lib/utils";
@@ -368,13 +368,7 @@ export default function Host() {
         title="Host a Meetup"
         subtitle="Bring Veggies together around something you enjoy."
         left={
-          <button
-            onClick={() => safeBack(navigate, "/")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/" />
         }
       />
 
