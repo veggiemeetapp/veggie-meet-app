@@ -218,7 +218,7 @@ export default function MeetupChat() {
       />
 
       {meetup && (
-        <div className="px-4 pt-3">
+        <div className="page-x pt-3">
           <Card padding="md" className="bg-soft-green/40 border-primary/20">
             <div className="text-[11px] font-semibold text-primary uppercase tracking-wider">
               Pinned
@@ -269,7 +269,7 @@ export default function MeetupChat() {
         </div>
       )}
 
-      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto">
+      <div className="flex-1 page-x py-4 space-y-3 overflow-y-auto">
         {hasMore && (
           <div className="flex justify-center">
             <button
@@ -282,7 +282,7 @@ export default function MeetupChat() {
           </div>
         )}
         {messages.length === 0 && (
-          <div className="flex flex-col items-center text-center px-6 py-12">
+          <div className="flex flex-col items-center text-center page-x py-12">
             <p className="text-sm font-medium text-charcoal">
               Be the first to say hello 👋
             </p>

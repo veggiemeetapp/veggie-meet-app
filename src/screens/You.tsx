@@ -366,7 +366,7 @@ export default function You() {
       {/* Settings sheet */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="bottom" className="rounded-t-3xl border-t border-border p-0">
-          <SheetHeader className="px-6 pt-6 pb-2 text-left">
+          <SheetHeader className="page-x pt-6 pb-2 text-left">
             <SheetTitle className="text-lg font-semibold text-charcoal">
               Settings
             </SheetTitle>
@@ -374,7 +374,7 @@ export default function You() {
               A full settings experience is coming soon.
             </SheetDescription>
           </SheetHeader>
-          <div className="px-4 pt-3 space-y-1">
+          <div className="page-x pt-3 space-y-1">
             <SheetRow
               icon={<Pencil className="w-5 h-5" />}
               label="Edit Profile"
@@ -400,7 +400,7 @@ export default function You() {
               }}
             />
           </div>
-          <div className="mt-4 border-t border-border px-4 pt-3 pb-6">
+          <div className="mt-4 border-t border-border page-x pt-3 pb-6">
             <SheetRow
               icon={<LogOut className="w-5 h-5" />}
               label="Sign Out"

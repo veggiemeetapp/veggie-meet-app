@@ -165,7 +165,7 @@ export default function EditProfile() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-4 pb-28">
+      <main className="flex-1 page-x pt-4 pb-28">
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
           <button
@@ -314,7 +314,7 @@ export default function EditProfile() {
       {/* Avatar sheet */}
       <Sheet open={avatarSheet} onOpenChange={setAvatarSheet}>
         <SheetContent side="bottom" className="rounded-t-3xl border-t border-border p-0">
-          <SheetHeader className="px-6 pt-6 pb-2 text-left">
+          <SheetHeader className="page-x pt-6 pb-2 text-left">
             <SheetTitle className="text-lg font-semibold text-charcoal">
               Profile photo
             </SheetTitle>
@@ -322,7 +322,7 @@ export default function EditProfile() {
               You can always change this later.
             </SheetDescription>
           </SheetHeader>
-          <div className="px-4 pb-6 pt-3 space-y-1">
+          <div className="page-x pb-6 pt-3 space-y-1">
             <SheetRow
               icon={<Shuffle className="w-5 h-5" />}
               label="Choose sample avatar"

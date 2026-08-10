@@ -540,7 +540,7 @@ function Welcome({
   onSignIn: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pb-10 pt-16 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pb-10 pt-16 animate-fade-in">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <div className="w-28 h-28 rounded-full bg-soft-green flex items-center justify-center mb-8">
           <span className="text-6xl" aria-hidden>
@@ -688,7 +688,7 @@ function Auth({
 
   if (pendingEmail) {
     return (
-      <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+      <div className="flex-1 flex flex-col page-x pt-8 pb-10 animate-fade-in">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
             Confirm your email
@@ -729,7 +729,7 @@ function Auth({
 
   if (mode === "email") {
     return (
-      <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+      <div className="flex-1 flex flex-col page-x pt-8 pb-10 animate-fade-in">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
             {isSignUp ? "Create your account" : "Welcome back"}
@@ -788,7 +788,7 @@ function Auth({
   }
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-8 pb-10 animate-fade-in">
       <div className="mb-10">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Join VeggieMeet
@@ -852,7 +852,7 @@ function Identity({
 }) {
   const canContinue = displayName.trim().length > 0;
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           What should Veggies call you?
@@ -909,7 +909,7 @@ function Dietary({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           How would you describe yourself?
@@ -976,7 +976,7 @@ function HomeCity({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Where do you call home?
@@ -1026,7 +1026,7 @@ function SelectedCity({
 }) {
   const differs = cityId && homeCityId && cityId !== homeCityId;
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Where are you exploring today?
@@ -1087,7 +1087,7 @@ function Interests({
   const atMax = selected.length >= MAX_INTERESTS;
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           What are you into?
@@ -1192,7 +1192,7 @@ function Photo({
   }
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Put a friendly face to your name
@@ -1262,7 +1262,7 @@ function Photo({
           side="bottom"
           className="rounded-t-3xl border-t border-border p-0"
         >
-          <SheetHeader className="px-6 pt-6 pb-2 text-left">
+          <SheetHeader className="page-x pt-6 pb-2 text-left">
             <SheetTitle className="text-lg font-semibold text-charcoal">
               Profile photo
             </SheetTitle>
@@ -1270,7 +1270,7 @@ function Photo({
               You can always change this later.
             </SheetDescription>
           </SheetHeader>
-          <div className="px-4 pb-6 pt-3 space-y-1">
+          <div className="page-x pb-6 pt-3 space-y-1">
             <SheetAction
               icon={<Shuffle className="w-5 h-5" />}
               label="Choose sample avatar"
@@ -1353,7 +1353,7 @@ function Guidelines({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
           <Heart className="w-6 h-6 text-primary" aria-hidden />
@@ -1413,7 +1413,7 @@ function GuidelineItem({ title, body }: { title: string; body: string }) {
 
 function Safety({ onContinue }: { onContinue: () => void }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
           <Shield className="w-6 h-6 text-primary" aria-hidden />
@@ -1515,7 +1515,7 @@ function StartingPoint({
   const firstName = name.trim().split(/\s+/)[0] || "";
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
           <Sparkles className="w-6 h-6 text-primary" aria-hidden />
