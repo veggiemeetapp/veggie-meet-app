@@ -87,7 +87,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
         navigate(`/checkin/${plan.meetup_id}`);
         return;
       case "open_chat":
-        navigate(`/chat/${plan.meetup_id}`);
+        navigate(`/meetup/${plan.meetup_id}`);
         return;
       case "manage_meetup":
         navigate(`/meetup/${plan.meetup_id}/manage`);
@@ -223,7 +223,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={openMeetup}>View Meetup</DropdownMenuItem>
                     {showChat && (
-                      <DropdownMenuItem onClick={() => navigate(`/chat/${plan.meetup_id}`)}>
+                      <DropdownMenuItem onClick={() => navigate(`/meetup/${plan.meetup_id}`)}>
                         Open Chat
                       </DropdownMenuItem>
                     )}
