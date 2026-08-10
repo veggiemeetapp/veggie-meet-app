@@ -1,6 +1,18 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * WO-092 button hierarchy.
+ *
+ * Height scale is fixed so controls line up across surfaces, and no size drops
+ * below the 44px accessible target established in WO-085.
+ *
+ *  Primary     — filled green. One dominant action per surface.
+ *  Secondary   — tinted surface with a strong border. Clearly subordinate.
+ *  Tertiary    — text-only. Lightest weight, for low-stakes navigation.
+ *  Destructive — destructive text on a quiet tinted surface, so it reads as
+ *                dangerous without shouting louder than the primary action.
+ */
 type Size = "sm" | "md" | "lg";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -9,51 +21,55 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const sizeClasses: Record<Size, string> = {
-  sm: "min-h-11 h-11 px-5 text-sm",
-  md: "min-h-11 h-11 px-6 text-base",
-  lg: "min-h-12 h-12 px-8 text-base",
+  sm: "min-h-11 h-11 px-4 text-sm",
+  md: "min-h-11 h-11 px-5 text-[15px]",
+  lg: "min-h-12 h-12 px-6 text-base",
 };
 
-export const PrimaryButton = forwardRef<HTMLButtonElement, Props>(
-  ({ size = "lg", fullWidth, className, children, ...rest }, ref) => (
-    <button
-      ref={ref}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-semibold",
-        "bg-primary text-primary-foreground shadow-sm",
-        "active:scale-[0.98] transition-all",
-        "hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        "disabled:opacity-50 disabled:pointer-events-none",
-        sizeClasses[size],
-        fullWidth && "w-full",
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </button>
-  )
-);
-PrimaryButton.displayName = "PrimaryButton";
+const base =
+  "inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap " +
+  "transition-[transform,background-color,box-shadow,color] duration-150 active:scale-[0.98] " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
+  "disabled:opacity-50 disabled:pointer-events-none";
 
-export const SecondaryButton = forwardRef<HTMLButtonElement, Props>(
-  ({ size = "lg", fullWidth, className, children, ...rest }, ref) => (
-    <button
-      ref={ref}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-semibold",
-        "bg-secondary text-charcoal border border-border",
-        "active:scale-[0.98] transition-all",
-        "hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "disabled:opacity-50 disabled:pointer-events-none",
-        sizeClasses[size],
-        fullWidth && "w-full",
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </button>
-  )
+function make(
+  displayName: string,
+  tone: string,
+  defaultSize: Size = "lg",
+) {
+  const Component = forwardRef<HTMLButtonElement, Props>(
+    ({ size = defaultSize, fullWidth, className, children, type = "button", ...rest }, ref) => (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(base, tone, sizeClasses[size], fullWidth && "w-full", className)}
+        {...rest}
+      >
+        {children}
+      </button>
+    ),
+  );
+  Component.displayName = displayName;
+  return Component;
+}
+
+export const PrimaryButton = make(
+  "PrimaryButton",
+  "bg-primary text-primary-foreground shadow-soft hover:bg-primary/90",
 );
-SecondaryButton.displayName = "SecondaryButton";
+
+export const SecondaryButton = make(
+  "SecondaryButton",
+  "bg-secondary text-charcoal border border-border-strong hover:bg-accent",
+);
+
+export const TertiaryButton = make(
+  "TertiaryButton",
+  "bg-transparent text-charcoal-muted font-medium hover:text-charcoal hover:bg-muted",
+  "md",
+);
+
+export const DestructiveButton = make(
+  "DestructiveButton",
+  "bg-destructive/10 text-destructive border border-destructive/25 hover:bg-destructive/15",
+);
