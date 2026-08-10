@@ -4,7 +4,7 @@ interface Props {
 
 export function ReasonPill({ label }: Props) {
   return (
-    <span className="inline-flex items-center rounded-full bg-soft-green px-2 py-0.5 text-[10px] font-semibold text-primary">
+    <span className="inline-flex max-w-full items-center truncate rounded-full bg-soft-green px-2 py-0.5 text-[10px] font-semibold text-primary">
       {label}
     </span>
   );
