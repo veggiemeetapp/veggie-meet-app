@@ -638,19 +638,26 @@ function SheetRow({
   );
 }
 
-function PastMeetupsSection({ profileId }: { profileId: string }) {
+function PastMeetupsSection({
+  loading,
+  error,
+  items,
+  onRetry,
+}: {
+  loading: boolean;
+  error: boolean;
+  items: YouHistoryItem[];
+  onRetry: () => void;
+}) {
   const navigate = useNavigate();
-  const query = useQuery({
-    queryKey: ["past-meetups", profileId],
-    queryFn: () => import("@/lib/postMeetup").then((m) => m.fetchPastMeetups(profileId)),
-  });
-  const items = query.data ?? [];
   return (
     <section>
       <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
         Past Meetups
       </h3>
-      {query.isLoading ? (
+      {error ? (
+        <SummaryError onRetry={onRetry} />
+      ) : loading ? (
         <Card className="h-24 animate-pulse" />
       ) : items.length === 0 ? (
         <Card padding="lg" className="text-center text-sm text-charcoal-muted">
@@ -659,10 +666,10 @@ function PastMeetupsSection({ profileId }: { profileId: string }) {
       ) : (
         <Card padding="none">
           <ul className="divide-y divide-border/60">
-            {items.slice(0, 8).map((m) => (
-              <li key={m.id}>
+            {items.map((m) => (
+              <li key={m.meetup_id}>
                 <button
-                  onClick={() => navigate(`/meetup/${m.id}/summary`)}
+                  onClick={() => navigate(`/meetup/${m.meetup_id}/summary`)}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60"
                 >
                   <div className="flex-1 min-w-0">
@@ -675,12 +682,12 @@ function PastMeetupsSection({ profileId }: { profileId: string }) {
                           Cancelled
                         </span>
                       )}
-                      {m.isHost && !m.cancelled && (
+                      {m.is_host && !m.cancelled && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/15 text-host-badge">
                           Hosted
                         </span>
                       )}
-                      {!m.isHost && (m.attendanceStatus === "checked_in" || m.attendanceStatus === "attended") && (
+                      {!m.is_host && (m.attendance_status === "checked_in" || m.attendance_status === "attended") && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-soft-green text-primary">
                           Checked in
                         </span>
@@ -699,6 +706,7 @@ function PastMeetupsSection({ profileId }: { profileId: string }) {
           </ul>
         </Card>
       )}
+
     </section>
   );
 }
