@@ -315,38 +315,54 @@ export default function You() {
             </TabButton>
           </div>
 
-          {tab === "hosting" && (
-            <MeetupList
-              loading={hostingQuery.isLoading}
-              meetups={hostingQuery.data ?? []}
-              emptyTitle="Host your first meetup"
-              emptyDescription="Bring Veggies together around something you enjoy."
-              emptyIcon={<Users className="w-6 h-6" />}
-              emptyAction={
-                <PrimaryButton onClick={() => navigate("/host")}>
-                  Host a Meetup
-                </PrimaryButton>
-              }
-            />
-          )}
-          {tab === "going" && (
-            <MeetupList
-              loading={goingQuery.isLoading}
-              meetups={goingQuery.data ?? []}
-              emptyTitle="Find your next meetup"
-              emptyDescription="Discover something happening near you."
-              emptyIcon={<Calendar className="w-6 h-6" />}
-              emptyAction={
-                <PrimaryButton onClick={() => navigate("/community")}>
-                  Explore Meetups
-                </PrimaryButton>
-              }
-            />
+          {summaryQuery.isError ? (
+            <SummaryError onRetry={() => summaryQuery.refetch()} />
+          ) : (
+            <>
+              {tab === "hosting" && (
+                <MeetupList
+                  loading={summaryQuery.isLoading}
+                  cards={summaryQuery.data?.hosting ?? []}
+                  profileId={profile.id}
+                  role="host"
+                  emptyTitle="Host your first meetup"
+                  emptyDescription="Bring Veggies together around something you enjoy."
+                  emptyIcon={<Users className="w-6 h-6" />}
+                  emptyAction={
+                    <PrimaryButton onClick={() => navigate("/host")}>
+                      Host a Meetup
+                    </PrimaryButton>
+                  }
+                />
+              )}
+              {tab === "going" && (
+                <MeetupList
+                  loading={summaryQuery.isLoading}
+                  cards={summaryQuery.data?.going ?? []}
+                  profileId={profile.id}
+                  role="attendee"
+                  emptyTitle="Find your next meetup"
+                  emptyDescription="Discover something happening near you."
+                  emptyIcon={<Calendar className="w-6 h-6" />}
+                  emptyAction={
+                    <PrimaryButton onClick={() => navigate("/community")}>
+                      Explore Meetups
+                    </PrimaryButton>
+                  }
+                />
+              )}
+            </>
           )}
         </section>
 
-        <PastMeetupsSection profileId={profile.id} />
+        <PastMeetupsSection
+          loading={summaryQuery.isLoading}
+          error={summaryQuery.isError}
+          items={summaryQuery.data?.history ?? []}
+          onRetry={() => summaryQuery.refetch()}
+        />
       </div>
+
 
 
       {/* Settings sheet */}
