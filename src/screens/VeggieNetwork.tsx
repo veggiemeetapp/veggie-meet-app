@@ -1,10 +1,10 @@
 import { safeBack } from "@/lib/navigation";
+import { BackButton } from "@/components/app";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ArrowLeft,
   Leaf,
   MapPin,
   Search,
@@ -164,13 +164,7 @@ export default function VeggieNetwork() {
         title="Veggie Network"
         subtitle="Your connections and new people to meet."
         left={
-          <button
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/you" />
         }
       />
 
@@ -332,8 +326,8 @@ export default function VeggieNetwork() {
             </p>
             {meetNextQuery.isLoading ? (
               <div className="space-y-2" aria-busy="true">
-                <LoadingSkeleton className="h-24 w-full rounded-2xl" />
-                <LoadingSkeleton className="h-24 w-full rounded-2xl" />
+                <LoadingSkeleton className="h-24 w-full rounded-card" />
+                <LoadingSkeleton className="h-24 w-full rounded-card" />
               </div>
             ) : meetNextQuery.isError ? (
               <EmptyState
@@ -470,7 +464,7 @@ function SummaryStat({
   hint: string;
 }) {
   return (
-    <div className="rounded-2xl bg-soft-green/50 p-4">
+    <div className="rounded-card bg-soft-green/50 p-4">
       <div className="text-3xl font-bold text-charcoal leading-none tabular-nums">
         {value}
       </div>

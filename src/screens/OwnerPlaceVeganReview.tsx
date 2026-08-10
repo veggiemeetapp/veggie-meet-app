@@ -75,7 +75,7 @@ function CheckGroup({
   onToggle: (id: string, next: boolean) => void;
 }) {
   return (
-    <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+    <fieldset className="rounded-control border p-3 space-y-2 min-w-0">
       <legend className="px-1 text-xs font-semibold">{legend}</legend>
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
       <div className="space-y-2">
@@ -420,7 +420,7 @@ export default function OwnerPlaceVeganReview() {
               <h2 className="text-sm font-semibold [overflow-wrap:anywhere] min-w-0">
                 {place.name}
               </h2>
-              <dl className="rounded-lg border p-3 text-xs space-y-1 min-w-0">
+              <dl className="rounded-control border p-3 text-xs space-y-1 min-w-0">
                 <Row label="Address">{place.address || "—"}</Row>
                 <Row label="Area">{place.neighborhood || "—"}</Row>
                 <Row label="Category">{place.category ?? "—"}</Row>
@@ -482,7 +482,7 @@ export default function OwnerPlaceVeganReview() {
 
             {/* Related member report — context only, never proof. */}
             {wsQ.data?.related_report && (
-              <section className="rounded-lg border p-3 space-y-1.5 min-w-0">
+              <section className="rounded-control border p-3 space-y-1.5 min-w-0">
                 <h2 className="text-xs font-semibold">Linked member report</h2>
                 <p className="text-[11px] text-muted-foreground">
                   A member report can trigger a review but is never treated as proof. Completing
@@ -515,7 +515,7 @@ export default function OwnerPlaceVeganReview() {
 
             {/* Related reverification — immutable, unchanged by this review. */}
             {wsQ.data?.related_reverification && (
-              <section className="rounded-lg border p-3 space-y-1.5 min-w-0">
+              <section className="rounded-control border p-3 space-y-1.5 min-w-0">
                 <h2 className="text-xs font-semibold">Linked reverification</h2>
                 <p className="text-[11px] text-muted-foreground">
                   This vegan review is linked to that completed reverification for the record. The
@@ -542,7 +542,7 @@ export default function OwnerPlaceVeganReview() {
 
             {/* Other open vegan-status reports for this place. */}
             {(wsQ.data?.open_vegan_reports.length ?? 0) > 0 && (
-              <section className="rounded-lg border p-3 space-y-1.5 min-w-0">
+              <section className="rounded-control border p-3 space-y-1.5 min-w-0">
                 <h2 className="text-xs font-semibold">
                   Open vegan-status reports ({wsQ.data?.open_vegan_reports.length})
                 </h2>
@@ -557,7 +557,7 @@ export default function OwnerPlaceVeganReview() {
             )}
 
             {/* Evidence standard */}
-            <section className="rounded-lg border p-3 space-y-2 min-w-0">
+            <section className="rounded-control border p-3 space-y-2 min-w-0">
               <h2 className="text-xs font-semibold">Evidence standard</h2>
               <p className="text-[11px] text-muted-foreground">
                 A place can be confirmed fully vegan only from a current first-party source:
@@ -625,7 +625,7 @@ export default function OwnerPlaceVeganReview() {
                   onToggle={(id, v) => setIdentityChecks((s) => ({ ...s, [id]: v }))}
                 />
 
-                <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+                <fieldset className="rounded-control border p-3 space-y-2 min-w-0">
                   <legend className="px-1 text-xs font-semibold">D. Evidence confidence</legend>
                   {CONFIDENCE_OPTIONS.map((o) => (
                     <div key={o.value} className="flex items-start gap-2 min-w-0">
@@ -706,7 +706,7 @@ export default function OwnerPlaceVeganReview() {
                   </div>
                 </section>
 
-                <fieldset className="rounded-lg border p-3 space-y-3 min-w-0">
+                <fieldset className="rounded-control border p-3 space-y-3 min-w-0">
                   <legend className="px-1 text-xs font-semibold">Review result</legend>
                   {RESULT_ORDER.map((r) => (
                     <div key={r} className="space-y-1 min-w-0">
@@ -742,7 +742,7 @@ export default function OwnerPlaceVeganReview() {
                 </fieldset>
 
                 {result === "insufficient_evidence" && (
-                  <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+                  <fieldset className="rounded-control border p-3 space-y-2 min-w-0">
                     <legend className="px-1 text-xs font-semibold">
                       What should happen publicly?
                     </legend>
@@ -785,7 +785,7 @@ export default function OwnerPlaceVeganReview() {
 
                 {/* WO-058A — restore visibility after a reconfirmation. */}
                 {result === "confirmed_fully_vegan" && isRevoked && (
-                  <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+                  <fieldset className="rounded-control border p-3 space-y-2 min-w-0">
                     <legend className="px-1 text-xs font-semibold">
                       What should happen publicly?
                     </legend>
@@ -887,7 +887,7 @@ export default function OwnerPlaceVeganReview() {
                 <h2 className="text-sm font-semibold">Vegan review history</h2>
                 <ul className="space-y-2">
                   {wsQ.data?.history.map((h) => (
-                    <li key={h.id} className="rounded-lg border p-3 text-xs space-y-1 min-w-0">
+                    <li key={h.id} className="rounded-control border p-3 text-xs space-y-1 min-w-0">
                       <Row label="Result">{h.result ?? "—"}</Row>
                       <Row label="Completed">{formatDate(h.completed_at)}</Row>
                       <Row label="Classification">

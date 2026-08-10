@@ -2,8 +2,8 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Leaf, MapPin, Utensils } from "lucide-react";
-import { AppHeader, Card } from "@/components/app";
+import { Leaf, MapPin, Utensils } from "lucide-react";
+import { AppHeader, Card, BackButton } from "@/components/app";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
@@ -99,14 +99,7 @@ export default function CommunityPlaces() {
     <>
       <AppHeader
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/community")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden />
-          </button>
+          <BackButton fallback="/community" />
         }
         title="Community Places"
         subtitle={cityLabel ? `Exploring ${cityLabel}` : undefined}
@@ -165,7 +158,7 @@ export default function CommunityPlaces() {
         {placesQuery.isPending ? (
           <div className="mt-5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
+              <div key={i} className="h-44 rounded-card bg-muted animate-pulse" />
             ))}
           </div>
 
@@ -207,7 +200,7 @@ export default function CommunityPlaces() {
             published results so it never competes with discovery. */}
         <section
           aria-labelledby="suggest-place-heading"
-          className="mt-8 rounded-2xl border border-border/70 bg-card p-5"
+          className="mt-8 rounded-card border border-border/70 bg-card p-5"
         >
           <h2 id="suggest-place-heading" className="text-base font-semibold text-charcoal">
             Know a vegan place?
@@ -243,7 +236,7 @@ function EmptyBlock({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mt-6 rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
+    <div className="mt-6 rounded-card border border-dashed border-border/70 px-5 py-10 text-center">
       <h2 className="text-base font-semibold text-charcoal">{title}</h2>
       <p className="mt-1 text-sm text-charcoal-muted max-w-sm mx-auto">{body}</p>
       {action && <div className="mt-5">{action}</div>}
@@ -283,7 +276,7 @@ function PlaceListCard({
           position,
         })
       }
-      className="block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="block h-full rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <Card padding="none" interactive className="h-full overflow-hidden flex flex-col">
         <div className="h-32 shrink-0">

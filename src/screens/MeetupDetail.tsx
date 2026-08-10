@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Flag, MessageCircle, MoreVertical, QrCode, Settings } from "lucide-react";
+import { Check, Flag, MessageCircle, MoreVertical, QrCode, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ReportMeetupDialog } from "@/components/safety/ReportMeetupDialog";
-import { PrimaryButton, SecondaryButton } from "@/components/app";
+import { PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import {
   MeetupHero,
   MeetupInfo,
@@ -57,7 +57,7 @@ function RemovedBanner({ meetupId }: { meetupId: string }) {
     staleTime: 0,
   });
   return (
-    <div className="rounded-2xl border border-border bg-muted p-4 text-center">
+    <div className="rounded-card border border-border bg-muted p-4 text-center">
       <p className="text-sm font-semibold text-charcoal">
         You're no longer attending this Meetup.
       </p>
@@ -198,14 +198,8 @@ export default function MeetupDetail() {
   if (!meetup) {
     return (
       <div className="flex flex-col min-h-dvh">
-        <div className="safe-top flex items-center px-4 pt-3 pb-2">
-          <button
-            onClick={() => safeBack(navigate, "/community")}
-            aria-label="Back"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+        <div className="safe-top flex items-center page-x pt-3 pb-2">
+          <BackButton fallback="/community" />
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
           <p className="text-charcoal font-medium">This meetup isn't available.</p>
@@ -262,7 +256,7 @@ export default function MeetupDetail() {
 
       <div className="px-5 pt-5 space-y-8">
         {isHistorical ? null : meetup.location?.locationSource === "unknown" ? (
-          <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4">
+          <div className="rounded-card border border-warning/40 bg-warning/10 p-4">
             <p className="text-sm font-semibold text-charcoal">Location not set yet.</p>
             <p className="mt-1 text-xs text-charcoal-muted">
               The host hasn't confirmed a place. Joining is paused until the location is set —
@@ -270,7 +264,7 @@ export default function MeetupDetail() {
             </p>
           </div>
         ) : meetup.location?.isInferred ? (
-          <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4">
+          <div className="rounded-card border border-warning/40 bg-warning/10 p-4">
             <p className="text-sm font-semibold text-charcoal">Location is approximate.</p>
             <p className="mt-1 text-xs text-charcoal-muted">
               The host set the city but hasn't confirmed the exact place yet. Details may change

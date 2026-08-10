@@ -33,7 +33,7 @@ export function RecentSearches({ items, onPick, onRemove, onClear }: Props) {
             <button
               type="button"
               onClick={() => onPick(term)}
-              className="flex-1 text-left h-9 px-3 rounded-lg text-sm text-charcoal hover:bg-muted/50"
+              className="flex-1 text-left h-9 px-3 rounded-control text-sm text-charcoal hover:bg-muted/50"
             >
               {term}
             </button>

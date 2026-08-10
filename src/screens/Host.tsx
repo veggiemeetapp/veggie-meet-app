@@ -3,8 +3,8 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Camera, X, MapPin, Loader2, AlertTriangle } from "lucide-react";
-import { AppHeader, PrimaryButton, SecondaryButton } from "@/components/app";
+import { Camera, X, MapPin, Loader2, AlertTriangle } from "lucide-react";
+import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { cn } from "@/lib/utils";
@@ -368,13 +368,7 @@ export default function Host() {
         title="Host a Meetup"
         subtitle="Bring Veggies together around something you enjoy."
         left={
-          <button
-            onClick={() => safeBack(navigate, "/")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/" />
         }
       />
 
@@ -383,7 +377,7 @@ export default function Host() {
         <section>
           <FieldLabel>Meetup cover</FieldLabel>
           {cover ? (
-            <div className="relative rounded-2xl overflow-hidden">
+            <div className="relative rounded-card overflow-hidden">
               <img src={cover} alt="Meetup cover" className="w-full h-44 object-cover" />
               <button
                 type="button"
@@ -397,7 +391,7 @@ export default function Host() {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="w-full h-40 rounded-2xl border-2 border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2 text-charcoal-muted hover:bg-accent/40 transition"
+              className="w-full h-40 rounded-card border-2 border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2 text-charcoal-muted hover:bg-accent/40 transition"
             >
               <Camera className="w-6 h-6" />
               <span className="text-sm font-medium">Add a photo (optional)</span>
@@ -425,7 +419,7 @@ export default function Host() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Saturday Coffee Meetup"
-            className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </section>
 
@@ -450,7 +444,7 @@ export default function Host() {
             </span>
           </FieldLabel>
 
-          <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+          <div className="rounded-card border border-border bg-card p-4 space-y-4">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5">
                 City
@@ -501,7 +495,7 @@ export default function Host() {
                       aria-checked={active}
                       onClick={() => selectMode(opt.mode)}
                       className={cn(
-                        "h-11 px-3 rounded-xl border text-sm font-semibold transition-all",
+                        "h-11 px-3 rounded-control border text-sm font-semibold transition-all",
                         active
                           ? "bg-primary text-primary-foreground border-primary shadow-sm"
                           : "bg-card text-charcoal border-border hover:bg-accent/50",
@@ -560,7 +554,7 @@ export default function Host() {
 
 
                   {isCustom && (
-                    <div className="mt-2 space-y-3 rounded-2xl border border-border bg-muted/30 p-3">
+                    <div className="mt-2 space-y-3 rounded-card border border-border bg-muted/30 p-3">
                       <div>
                         <FieldLabel>Location name</FieldLabel>
                         <input aria-label="Location name"
@@ -568,7 +562,7 @@ export default function Host() {
                           value={customName}
                           onChange={(e) => setCustomName(e.target.value)}
                           placeholder="e.g. Riverside Park pavilion"
-                          className="w-full h-11 rounded-xl border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
                       <div>
@@ -578,7 +572,7 @@ export default function Host() {
                           value={customAddress}
                           onChange={(e) => setCustomAddress(e.target.value)}
                           placeholder="Street, District, City"
-                          className="w-full h-11 rounded-xl border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
@@ -590,7 +584,7 @@ export default function Host() {
                             value={customLat}
                             onChange={(e) => setCustomLat(e.target.value)}
                             placeholder="10.7769"
-                            className="w-full h-11 rounded-xl border border-border bg-card px-3 text-base text-charcoal"
+                            className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal"
                           />
                         </div>
                         <div>
@@ -601,7 +595,7 @@ export default function Host() {
                             value={customLng}
                             onChange={(e) => setCustomLng(e.target.value)}
                             placeholder="106.7009"
-                            className="w-full h-11 rounded-xl border border-border bg-card px-3 text-base text-charcoal"
+                            className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal"
                           />
                         </div>
                       </div>
@@ -629,7 +623,7 @@ export default function Host() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full h-12 rounded-xl border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
@@ -638,7 +632,7 @@ export default function Host() {
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full h-12 rounded-xl border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </section>
@@ -656,7 +650,7 @@ export default function Host() {
                   setIsCustomCapacity(false);
                 }}
                 className={cn(
-                  "flex-1 h-11 rounded-xl border font-semibold transition-all",
+                  "flex-1 h-11 rounded-control border font-semibold transition-all",
                   !isCustomCapacity && capacity === n
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-card text-charcoal border-border hover:bg-accent/50",
@@ -669,7 +663,7 @@ export default function Host() {
               type="button"
               onClick={() => setIsCustomCapacity(true)}
               className={cn(
-                "flex-1 h-11 rounded-xl border font-semibold transition-all",
+                "flex-1 h-11 rounded-control border font-semibold transition-all",
                 isCustomCapacity
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
                   : "bg-card text-charcoal border-border hover:bg-accent/50",
@@ -693,7 +687,7 @@ export default function Host() {
                 if (!Number.isNaN(n) && n > 0 && n <= 500) setCapacity(n);
               }}
               placeholder="Enter a number"
-              className="mt-3 w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-3 w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           )}
         </section>
@@ -706,7 +700,7 @@ export default function Host() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Tell everyone what to expect."
             rows={4}
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            className="w-full rounded-control border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
         </section>
 
@@ -765,7 +759,7 @@ export default function Host() {
               Please confirm the details below. Attendees will see this exact location.
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-2 space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-sm">
+          <div className="mt-2 space-y-2 rounded-control border border-border bg-muted/40 p-3 text-sm">
             <div className="font-semibold text-charcoal [overflow-wrap:anywhere]">
               {title || "Untitled Meetup"}
             </div>
@@ -821,7 +815,7 @@ export default function Host() {
           </div>
 
           {resolved && !resolved.timezone && (
-            <div className="mt-2 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+            <div className="mt-2 flex items-start gap-2 text-xs text-warning bg-warning-soft border border-warning-border rounded-control p-2">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               This city has no timezone on file — display times may be off.
             </div>

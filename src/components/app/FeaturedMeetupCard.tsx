@@ -23,7 +23,7 @@ export function FeaturedMeetupCard({ meetup }: Props) {
   const attendeeCount = meetup.attendeeIds.length;
 
   return (
-    <article className="rounded-3xl overflow-hidden shadow-card border border-border/60 bg-card">
+    <article className="rounded-dialog overflow-hidden shadow-card border border-border/60 bg-card">
       <Link to={`/meetup/${meetup.id}`} className="block group">
         <div className="relative h-56 overflow-hidden">
           <img
@@ -45,7 +45,7 @@ export function FeaturedMeetupCard({ meetup }: Props) {
               ✨ Featured
             </span>
           </div>
-          <div className="absolute bottom-4 left-4 right-4 text-white">
+          <div className="absolute bottom-4 left-4 right-4 text-warm-white">
             <div className="text-[11px] font-medium uppercase tracking-wider opacity-90 mb-1">
               {meetup.category}
             </div>

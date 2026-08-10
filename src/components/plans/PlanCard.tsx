@@ -52,7 +52,7 @@ interface Props {
 
 const REASON_TONE: Record<string, string> = {
   active: "bg-soft-green text-primary",
-  update: "bg-amber-100 text-amber-900",
+  update: "bg-warning-soft text-warning-foreground",
   cancelled: "bg-muted text-charcoal-muted",
   invitation: "bg-purple-100 text-purple-900",
   hosting: "bg-emerald-100 text-emerald-900",
@@ -183,11 +183,11 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
             <img
               src={fallbackCover(plan.image)}
               alt=""
-              className="w-16 h-16 rounded-xl object-cover flex-none"
+              className="w-16 h-16 rounded-control object-cover flex-none"
               loading="lazy"
             />
           ) : (
-            <div className="w-16 h-16 rounded-xl bg-muted flex-none" />
+            <div className="w-16 h-16 rounded-control bg-muted flex-none" />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">

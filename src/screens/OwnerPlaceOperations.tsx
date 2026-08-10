@@ -94,7 +94,7 @@ function activitySummary(a: ActivityItem): string {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border bg-card p-3">
+    <div className="rounded-control border bg-card p-3">
       <p className="text-xs text-muted-foreground leading-snug">{label}</p>
       <p className="text-xl font-semibold tabular-nums">{value}</p>
     </div>
@@ -283,7 +283,7 @@ export default function OwnerPlaceOperations() {
               <div
                 role="alert"
                 aria-live="polite"
-                className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 space-y-2"
+                className="rounded-control border border-destructive/40 bg-destructive/5 p-4 space-y-2"
               >
                 <p className="text-sm font-medium">We couldn't load the operations overview.</p>
                 <p className="text-xs text-muted-foreground">
@@ -303,7 +303,7 @@ export default function OwnerPlaceOperations() {
               {dashQ.isLoading ? (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {Array.from({ length: 8 }).map((_, i) => (
-                    <Skeleton key={i} className="h-[68px] rounded-xl" />
+                    <Skeleton key={i} className="h-[68px] rounded-control" />
                   ))}
                 </div>
               ) : s ? (
@@ -449,11 +449,11 @@ export default function OwnerPlaceOperations() {
               </h2>
               {dashQ.isLoading ? (
                 <div className="space-y-2">
-                  <Skeleton className="h-24 rounded-xl" />
-                  <Skeleton className="h-24 rounded-xl" />
+                  <Skeleton className="h-24 rounded-control" />
+                  <Skeleton className="h-24 rounded-control" />
                 </div>
               ) : attention.length === 0 ? (
-                <div className="rounded-xl border bg-card p-4">
+                <div className="rounded-control border bg-card p-4">
                   <p className="text-sm font-medium">
                     {filtersActive ? "No matching attention items" : "Everything is up to date"}
                   </p>
@@ -471,7 +471,7 @@ export default function OwnerPlaceOperations() {
                     return (
                       <li
                         key={`${i.entity_kind}-${i.entity_id}`}
-                        className="rounded-xl border bg-card p-3 space-y-2"
+                        className="rounded-control border bg-card p-3 space-y-2"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -546,8 +546,8 @@ export default function OwnerPlaceOperations() {
               </h2>
               {dashQ.isLoading ? (
                 <div className="space-y-2">
-                  <Skeleton className="h-32 rounded-xl" />
-                  <Skeleton className="h-32 rounded-xl" />
+                  <Skeleton className="h-32 rounded-control" />
+                  <Skeleton className="h-32 rounded-control" />
                 </div>
               ) : places.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
@@ -556,7 +556,7 @@ export default function OwnerPlaceOperations() {
               ) : (
                 <ul className="grid gap-2 lg:grid-cols-2">
                   {places.map((p) => (
-                    <li key={p.id} className="rounded-xl border bg-card p-3 space-y-2">
+                    <li key={p.id} className="rounded-control border bg-card p-3 space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <h3 className="text-sm font-semibold break-words">{p.name}</h3>
@@ -665,7 +665,7 @@ export default function OwnerPlaceOperations() {
                       ["Candidates", q.candidates, "candidates"],
                     ] as Array<[string, Record<string, number>, TabValue | undefined]>
                   ).map(([label, counts, target]) => (
-                    <div key={label} className="rounded-xl border bg-card p-3 space-y-1">
+                    <div key={label} className="rounded-control border bg-card p-3 space-y-1">
                       <p className="text-xs font-medium">{label}</p>
                       {Object.keys(counts).length === 0 ? (
                         <p className="text-[11px] text-muted-foreground">Nothing recorded yet</p>
@@ -699,11 +699,11 @@ export default function OwnerPlaceOperations() {
               </h2>
               {activityQ.isLoading ? (
                 <div className="space-y-2">
-                  <Skeleton className="h-14 rounded-xl" />
-                  <Skeleton className="h-14 rounded-xl" />
+                  <Skeleton className="h-14 rounded-control" />
+                  <Skeleton className="h-14 rounded-control" />
                 </div>
               ) : activityQ.isError ? (
-                <div role="alert" aria-live="polite" className="rounded-xl border p-3 space-y-2">
+                <div role="alert" aria-live="polite" className="rounded-control border p-3 space-y-2">
                   <p className="text-sm">We couldn't load recent activity.</p>
                   <Button size="sm" variant="outline" onClick={() => activityQ.refetch()}>
                     Try again
@@ -715,7 +715,7 @@ export default function OwnerPlaceOperations() {
                 <>
                   <ol className="space-y-2">
                     {activityItems.map((a) => (
-                      <li key={`${a.source}-${a.id}`} className="rounded-xl border bg-card p-3">
+                      <li key={`${a.source}-${a.id}`} className="rounded-control border bg-card p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-sm font-medium break-words">

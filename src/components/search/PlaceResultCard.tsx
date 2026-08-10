@@ -14,7 +14,7 @@ export function PlaceResultCard({ result }: Props) {
   return (
     <Link
       to={`/place/${result.entity_id}`}
-      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-2xl"
+      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-card"
     >
       <Card interactive padding="none" className="overflow-hidden">
         <div className="flex gap-3">

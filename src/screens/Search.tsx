@@ -1,4 +1,5 @@
 import { safeBack } from "@/lib/navigation";
+import { BackButton } from "@/components/app";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -106,16 +107,9 @@ export default function Search() {
     <div className="pb-16 animate-fade-in">
       <h1 className="sr-only">Search Veggies, Meetups, and Places</h1>
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border/50 px-4 pt-3 pb-3">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border page-x pt-3 pb-3">
         <div className="flex items-center gap-2 mb-3">
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/community")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60"
-          >
-            <ArrowLeft className="w-5 h-5 text-charcoal" aria-hidden />
-          </button>
+          <BackButton fallback="/community" />
           <div className="flex-1">
             <SearchInput
               value={query}
@@ -360,7 +354,7 @@ function ListPanel<T extends { entity_id: string }>({
 
 function ErrorRow() {
   return (
-    <div className="mx-5 rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-muted">
+    <div className="mx-5 rounded-card border border-dashed border-border px-4 py-6 text-center text-sm text-charcoal-muted">
       Search is unavailable right now. Please try again.
     </div>
   );

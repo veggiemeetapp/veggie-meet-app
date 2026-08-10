@@ -36,7 +36,7 @@ export function MeetupCard({ meetup, role: roleOverride }: Props) {
           <img
             src={meetup.coverImageUrl}
             alt=""
-            className="w-24 h-24 rounded-xl object-cover shrink-0 bg-muted"
+            className="w-24 h-24 rounded-control object-cover shrink-0 bg-muted"
             loading="lazy"
             onError={(e) => {
               const img = e.currentTarget;

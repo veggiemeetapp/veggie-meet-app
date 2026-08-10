@@ -73,7 +73,7 @@ export function MeetupLocationStatus({ meetupId, context, onUpdated }: Props) {
       </h2>
 
       <div
-        className={`mt-2 rounded-2xl border p-4 min-w-0 ${
+        className={`mt-2 rounded-card border p-4 min-w-0 ${
           attention ? "border-warning/40 bg-warning/10" : "border-border bg-card"
         }`}
       >
@@ -102,7 +102,7 @@ export function MeetupLocationStatus({ meetupId, context, onUpdated }: Props) {
 
         {attention && (
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-3 min-w-0">
+            <div className="rounded-control border border-border bg-card p-3 min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
                 Meetup location
               </p>
@@ -116,7 +116,7 @@ export function MeetupLocationStatus({ meetupId, context, onUpdated }: Props) {
                 </span>
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-3 min-w-0">
+            <div className="rounded-control border border-border bg-card p-3 min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
                 Current Community Place
               </p>
@@ -144,7 +144,7 @@ export function MeetupLocationStatus({ meetupId, context, onUpdated }: Props) {
                   });
                   setConfirmOpen(true);
                 }}
-                className="h-11 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+                className="h-11 px-4 rounded-control bg-primary text-primary-foreground text-sm font-semibold"
               >
                 Update Meetup to current location
               </button>

@@ -16,7 +16,7 @@ export function WhatToExpect() {
         {items.map(({ icon: Icon, label }) => (
           <li
             key={label}
-            className="flex items-center gap-3 bg-card border border-border/70 rounded-xl px-4 py-3"
+            className="flex items-center gap-3 bg-card border border-border/70 rounded-control px-4 py-3"
           >
             <div className="w-8 h-8 rounded-full bg-soft-green flex items-center justify-center text-primary shrink-0">
               <Icon className="w-4 h-4" />

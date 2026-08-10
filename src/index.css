@@ -39,11 +39,22 @@
     --destructive: 0 72% 45%; /* WO-085A DEF-085A-05: AA for text-destructive */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 90%;
-    --input: 40 15% 90%;
+    /* WO-092 border hierarchy.
+       --border          quiet hairline for static containers, rows, dividers
+       --border-strong   interactive/actionable outlines (buttons, tappable cards) */
+    --border: 40 14% 91%;
+    --border-strong: 40 12% 82%;
+    --input: 40 12% 86%;
     --ring: 145 45% 34%;
 
     --radius: 1rem;
+    /* WO-092 radius hierarchy: controls < cards < dialogs. Three steps only,
+       so nesting always reads correctly (a control inside a card inside a
+       sheet gets progressively tighter corners). */
+    --radius-control: 0.75rem;
+    --radius-card: 1.25rem;
+    --radius-dialog: 1.5rem;
+
 
     /* VeggieMeet semantic tokens */
     --charcoal: 220 15% 15%;
@@ -52,19 +63,27 @@
     --soft-green: 140 42% 96%; /* WO-085A DEF-085A-02: AA for text-primary chips */
     --green-primary: 145 45% 34%;
     --card-bg: 0 0% 100%;
-    --soft-border: 40 15% 90%;
+    --soft-border: 40 14% 91%;
     --host-badge: 35 90% 55%;
 
-    /* Shadows — subtle, layered */
+    /* WO-092: warning surface token (offline / caution), replaces hardcoded amber */
+    --warning: 35 80% 40%;
+    --warning-foreground: 30 40% 18%;
+    --warning-soft: 40 90% 95%;
+    --warning-border: 38 70% 84%;
+
+    /* Shadows — subtle, layered. Used sparingly: elevation signals
+       interactivity or overlay, never decoration. */
     --shadow-xs: 0 1px 2px 0 hsl(220 15% 15% / 0.04);
-    --shadow-sm: 0 2px 8px -2px hsl(220 15% 15% / 0.06);
-    --shadow-md: 0 8px 24px -6px hsl(220 15% 15% / 0.08);
+    --shadow-sm: 0 1px 2px 0 hsl(220 15% 15% / 0.04);
+    --shadow-md: 0 6px 18px -8px hsl(220 15% 15% / 0.10);
     --shadow-lg: 0 20px 40px -12px hsl(220 15% 15% / 0.12);
     --shadow-green: 0 8px 24px -6px hsl(145 45% 42% / 0.25);
 
     /* Layout */
     --phone-max-width: 28rem; /* 448px, iPhone-friendly */
     --nav-height: 4.5rem;
+    --page-gutter: 1.25rem; /* 20px, the single horizontal page padding */
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -102,7 +121,25 @@
 @layer utilities {
   .safe-top { padding-top: env(safe-area-inset-top); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* WO-092 spacing system — one horizontal gutter for every member surface. */
+  .page-x { padding-left: var(--page-gutter); padding-right: var(--page-gutter); }
+  /* Vertical rhythm between top-level sections of a surface. */
+  .section-gap > * + * { margin-top: 1.5rem; }
+  /* Long-form copy: bios, descriptions, dialog and empty-state body text. */
+  .copy { line-height: 1.6; }
+  /* Colour-independent focus ring that matches the design system. */
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
 }
+
 
 /* WO-085 DEF-085-04 (WCAG 2.3.3 / 2.2.2): honour prefers-reduced-motion.
    Decorative transitions, slides and pulses collapse to near-instant.

@@ -84,7 +84,7 @@ export class AppErrorBoundary extends Component<Props, State> {
     return (
       <main
         role="main"
-        className="min-h-dvh flex items-center justify-center px-6 py-10 bg-background"
+        className="min-h-dvh flex items-center justify-center page-x py-10 bg-background"
       >
         <div className="max-w-sm w-full text-center">
           <h1

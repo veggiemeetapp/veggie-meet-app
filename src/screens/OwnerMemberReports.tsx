@@ -3,8 +3,8 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldAlert } from "lucide-react";
-import { AppHeader, Card } from "@/components/app";
+import { ShieldAlert } from "lucide-react";
+import { AppHeader, Card, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -58,14 +58,7 @@ export default function OwnerMemberReports() {
     <>
       <AppHeader
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/owner/places")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/owner/places" />
         }
         title="Member reports"
       />
@@ -127,7 +120,7 @@ export default function OwnerMemberReports() {
                     <p className="text-sm text-charcoal whitespace-pre-wrap break-words">{r.details}</p>
                   ) : null}
                   {r.message_snapshot ? (
-                    <p className="rounded-xl bg-muted p-2.5 text-xs text-charcoal-muted whitespace-pre-wrap break-words">
+                    <p className="rounded-control bg-muted p-2.5 text-xs text-charcoal-muted whitespace-pre-wrap break-words">
                       “{r.message_snapshot}”
                     </p>
                   ) : null}

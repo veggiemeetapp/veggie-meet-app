@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   MapPin,
   Leaf,
   Navigation,
@@ -17,7 +16,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { logAnalyticsEvent } from "@/lib/analytics";
-import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
+import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { placeStatusBanner } from "@/lib/placeMaintenance";
 import type { CommunityPlaceMaintenanceStatus } from "@/types";
@@ -55,7 +54,7 @@ export default function CommunityPlaceDetail() {
       <PageFrame onBack={() => safeBack(navigate, "/community/places")}>
         <div className="px-5 py-10 space-y-3" role="status" aria-live="polite">
           <span className="sr-only">Loading this Community Place</span>
-          <div className="h-40 rounded-2xl bg-muted animate-pulse" />
+          <div className="h-40 rounded-card bg-muted animate-pulse" />
           <div className="h-5 w-2/3 rounded bg-muted animate-pulse" />
           <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
         </div>
@@ -140,13 +139,7 @@ export default function CommunityPlaceDetail() {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-transparent to-background" />
-        <button
-          onClick={() => safeBack(navigate, "/community/places")}
-          aria-label="Back"
-          className="absolute top-4 left-4 min-w-11 min-h-11 rounded-full flex items-center justify-center bg-background/90 backdrop-blur text-charcoal shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5" aria-hidden />
-        </button>
+        <BackButton fallback="/community/places" />
       </div>
 
       <div className="px-5 -mt-6 relative space-y-2.5 min-w-0">
@@ -179,10 +172,10 @@ export default function CommunityPlaceDetail() {
         <div className="px-5 mt-4">
           <div
             role="status"
-            className={`rounded-2xl border p-3.5 min-w-0 ${
+            className={`rounded-card border p-3.5 min-w-0 ${
               statusBanner.tone === "closed"
                 ? "border-destructive/40 bg-destructive/5"
-                : "border-amber-500/40 bg-amber-500/10"
+                : "border-warning-border bg-warning-soft"
             }`}
           >
             <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
@@ -352,7 +345,7 @@ export default function CommunityPlaceDetail() {
               href={place.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-sm font-semibold text-charcoal min-h-11"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-control bg-muted text-sm font-semibold text-charcoal min-h-11"
             >
               <Globe className="w-4 h-4" aria-hidden />
               Visit official website (opens in a new tab)
@@ -366,7 +359,7 @@ export default function CommunityPlaceDetail() {
               onClick={() =>
                 logAnalyticsEvent("community_place_directions_opened", { source: "maps_link" })
               }
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-sm font-semibold text-charcoal min-h-11"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-control bg-muted text-sm font-semibold text-charcoal min-h-11"
             >
               <ExternalLink className="w-4 h-4" aria-hidden />
               Open this place on Google Maps
@@ -469,14 +462,8 @@ function PageFrame({
 }) {
   return (
     <div className="flex flex-col min-h-dvh">
-      <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="min-w-11 min-h-11 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" aria-hidden />
-        </button>
+      <div className="safe-top flex items-center gap-2 page-x pt-3 pb-2">
+        <BackButton onClick={() => { onBack(); }} />
         <h1 className="text-base font-semibold text-charcoal">Community Place</h1>
       </div>
       {children}

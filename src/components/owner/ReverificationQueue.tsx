@@ -105,7 +105,7 @@ export function ReverificationQueue() {
           const baseline = p.last_reverified_at ?? p.verified_at;
           const age = daysSince(baseline);
           return (
-            <li key={p.id} className="rounded-lg border p-3 min-w-0">
+            <li key={p.id} className="rounded-control border p-3 min-w-0">
               <div className="flex items-start justify-between gap-2 min-w-0">
                 <div className="min-w-0">
                   <p className="text-sm font-medium line-clamp-2 [overflow-wrap:anywhere]">

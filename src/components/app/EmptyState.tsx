@@ -9,11 +9,15 @@ interface Props {
   className?: string;
 }
 
+/**
+ * WO-092 empty-state treatment: one icon scale (48px tinted tile, 20px glyph),
+ * one heading level, relaxed supporting copy, action last.
+ */
 export function EmptyState({ icon, title, description, action, className }: Props) {
   return (
-    <div className={cn("flex flex-col items-center text-center px-6 py-12", className)}>
+    <div className={cn("flex flex-col items-center text-center page-x py-10", className)}>
       {icon && (
-        <div className="w-14 h-14 rounded-2xl bg-soft-green text-primary flex items-center justify-center mb-4">
+        <div className="w-12 h-12 rounded-control bg-soft-green text-primary flex items-center justify-center mb-4 [&_svg]:w-5 [&_svg]:h-5">
           {icon}
         </div>
       )}
@@ -21,7 +25,7 @@ export function EmptyState({ icon, title, description, action, className }: Prop
           one level below each surface h1 instead of skipping a level. */}
       <h2 className="text-base font-semibold text-charcoal">{title}</h2>
       {description && (
-        <p className="text-sm text-charcoal-muted mt-1 max-w-xs">{description}</p>
+        <p className="text-sm text-charcoal-muted copy mt-1.5 max-w-[17rem]">{description}</p>
       )}
       {action && <div className="mt-5">{action}</div>}
     </div>

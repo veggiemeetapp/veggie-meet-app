@@ -2,8 +2,8 @@ import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Send, Calendar, Clock, MapPin, Users, EyeOff } from "lucide-react";
-import { AppHeader, Card, UserAvatar } from "@/components/app";
+import { Send, Calendar, Clock, MapPin, Users, EyeOff } from "lucide-react";
+import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   formatMeetupDate,
   formatTime12h,
@@ -165,13 +165,7 @@ export default function MeetupChat() {
         <AppHeader
           title="Meetup chat"
           left={
-            <button
-              onClick={() => safeBack(navigate, "/chats")}
-              aria-label="Back"
-              className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+            <BackButton fallback="/chats" />
           }
         />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
@@ -219,18 +213,12 @@ export default function MeetupChat() {
             : undefined
         }
         left={
-          <button
-            onClick={() => safeBack(navigate, "/chats")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/chats" />
         }
       />
 
       {meetup && (
-        <div className="px-4 pt-3">
+        <div className="page-x pt-3">
           <Card padding="md" className="bg-soft-green/40 border-primary/20">
             <div className="text-[11px] font-semibold text-primary uppercase tracking-wider">
               Pinned
@@ -281,7 +269,7 @@ export default function MeetupChat() {
         </div>
       )}
 
-      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto">
+      <div className="flex-1 page-x py-4 space-y-3 overflow-y-auto">
         {hasMore && (
           <div className="flex justify-center">
             <button
@@ -294,7 +282,7 @@ export default function MeetupChat() {
           </div>
         )}
         {messages.length === 0 && (
-          <div className="flex flex-col items-center text-center px-6 py-12">
+          <div className="flex flex-col items-center text-center page-x py-12">
             <p className="text-sm font-medium text-charcoal">
               Be the first to say hello 👋
             </p>
@@ -336,7 +324,7 @@ export default function MeetupChat() {
                 />
               )}
               <div
-                className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm leading-snug ${
+                className={`max-w-[75%] rounded-card px-3.5 py-2 text-sm leading-snug ${
                   isMe
                     ? "bg-primary text-primary-foreground rounded-br-md"
                     : "bg-card text-charcoal border border-border/60 rounded-bl-md"

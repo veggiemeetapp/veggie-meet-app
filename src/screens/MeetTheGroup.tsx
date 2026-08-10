@@ -1,8 +1,8 @@
 import { safeBack } from "@/lib/navigation";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, MessageCircle } from "lucide-react";
-import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
+import { MessageCircle } from "lucide-react";
+import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
@@ -65,13 +65,7 @@ export default function MeetTheGroup() {
     <AppHeader
       title="Meet the Group"
       left={
-        <button
-          onClick={() => safeBack(navigate, "/plans")}
-          aria-label="Back"
-          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton fallback="/plans" />
       }
     />
   );
@@ -82,7 +76,7 @@ export default function MeetTheGroup() {
         {header}
         <div className="px-5 py-6 space-y-3" aria-busy>
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-20 rounded-2xl bg-muted/60 animate-pulse" />
+            <div key={i} className="h-20 rounded-card bg-muted/60 animate-pulse" />
           ))}
         </div>
       </div>
@@ -131,7 +125,7 @@ export default function MeetTheGroup() {
       {header}
 
       <div className="px-5 pt-4 pb-28 space-y-6">
-        <section className="rounded-2xl border border-border bg-card p-4">
+        <section className="rounded-card border border-border bg-card p-4">
           <h2 className="font-semibold text-charcoal [overflow-wrap:anywhere]">{meetup.title}</h2>
           <p className="mt-1 text-sm text-charcoal-muted">
             {formatMeetupDate(meetup.date)} ·{" "}
@@ -194,7 +188,7 @@ export default function MeetTheGroup() {
 
 function MemberRow({ member }: { member: GroupMember }) {
   const body = (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5">
+    <div className="flex items-center gap-3 rounded-card border border-border bg-card p-3.5">
       <UserAvatar name={member.display_name} src={member.avatar_url ?? undefined} />
       <div className="min-w-0 flex-1">
         <div className="font-semibold text-charcoal [overflow-wrap:anywhere]">

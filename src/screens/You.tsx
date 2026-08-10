@@ -233,7 +233,7 @@ export default function You() {
           onClick={() => navigate("/network")}
           className="flex items-center gap-3"
         >
-          <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
             <Users className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
@@ -254,7 +254,7 @@ export default function You() {
           onClick={() => navigate("/plans")}
           className="flex items-center gap-3"
         >
-          <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
             <Calendar className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
@@ -366,7 +366,7 @@ export default function You() {
       {/* Settings sheet */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="bottom" className="rounded-t-3xl border-t border-border p-0">
-          <SheetHeader className="px-6 pt-6 pb-2 text-left">
+          <SheetHeader className="page-x pt-6 pb-2 text-left">
             <SheetTitle className="text-lg font-semibold text-charcoal">
               Settings
             </SheetTitle>
@@ -374,7 +374,7 @@ export default function You() {
               A full settings experience is coming soon.
             </SheetDescription>
           </SheetHeader>
-          <div className="px-4 pt-3 space-y-1">
+          <div className="page-x pt-3 space-y-1">
             <SheetRow
               icon={<Pencil className="w-5 h-5" />}
               label="Edit Profile"
@@ -400,7 +400,7 @@ export default function You() {
               }}
             />
           </div>
-          <div className="mt-4 border-t border-border px-4 pt-3 pb-6">
+          <div className="mt-4 border-t border-border page-x pt-3 pb-6">
             <SheetRow
               icon={<LogOut className="w-5 h-5" />}
               label="Sign Out"
@@ -486,7 +486,7 @@ function ImpactMetric({
   value: number | string;
 }) {
   return (
-    <div className="rounded-2xl bg-soft-green/60 p-5">
+    <div className="rounded-card bg-soft-green/60 p-5">
       <div className="text-3xl font-bold text-charcoal tabular-nums leading-none">
         {value}
       </div>
@@ -618,13 +618,13 @@ function SheetRow({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent/40 active:scale-[0.99] transition text-left",
+        "w-full flex items-center gap-3 p-3.5 rounded-card hover:bg-accent/40 active:scale-[0.99] transition text-left",
         destructive ? "text-destructive" : "text-charcoal"
       )}
     >
       <span
         className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+          "w-10 h-10 rounded-control flex items-center justify-center shrink-0",
           destructive ? "bg-destructive/10" : "bg-muted"
         )}
       >

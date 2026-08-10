@@ -114,7 +114,7 @@ export function ReportQueue() {
       </div>
 
       {q.isPending ? (
-        <div className="h-20 rounded-lg bg-muted animate-pulse" />
+        <div className="h-20 rounded-control bg-muted animate-pulse" />
       ) : q.isError ? (
         <p className="text-xs text-destructive">Couldn't load the report queue.</p>
       ) : rows.length === 0 ? (
@@ -122,7 +122,7 @@ export function ReportQueue() {
       ) : (
         <ul className="min-w-0 space-y-2">
           {rows.map((r) => (
-            <li key={r.id} className="min-w-0 overflow-hidden rounded-lg border p-3">
+            <li key={r.id} className="min-w-0 overflow-hidden rounded-control border p-3">
               <button
                 type="button"
                 className="block w-full min-w-0 text-left"
@@ -155,7 +155,7 @@ export function ReportQueue() {
                   ] ?? r.place_maintenance_status}
                 </p>
                 {r.open_same_reason_count > 1 && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+                  <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-warning">
                     <AlertTriangle className="h-3 w-3" aria-hidden />
                     {r.open_same_reason_count} open reports for this issue
                   </p>

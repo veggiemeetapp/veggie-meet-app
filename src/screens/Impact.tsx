@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Building2,
   Calendar,
   ChevronRight,
@@ -16,7 +15,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { AppHeader, Card, EmptyState, LoadingSkeleton, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
+import { AppHeader, Card, EmptyState, LoadingSkeleton, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -89,13 +88,7 @@ export default function Impact() {
       <AppHeader
         title="Community Impact"
         left={
-          <button
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Back"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/you" />
         }
       />
       <div className="px-5 pt-2 pb-10 space-y-6">
@@ -310,12 +303,12 @@ function MetricCard({
         type="button"
         onClick={onView}
         aria-label={viewLabel ?? `View ${title} details`}
-        className="w-full text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="w-full text-left rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <div className="flex items-start gap-3">
           <div
             aria-hidden
-            className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0"
           >
             {icon}
           </div>
@@ -627,7 +620,7 @@ function ActivityRow({
         primaryLabel={`View ${place?.name ?? "Community Place"}`}
         disabled={!available}
         icon={
-          <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
             <Building2 className="w-5 h-5" />
           </div>
         }
@@ -675,7 +668,7 @@ function ActivityRow({
       primaryLabel={`View ${meetup?.title ?? "Meetup"} summary`}
       disabled={!available}
       icon={
-        <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+        <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
           <Calendar className="w-5 h-5" />
         </div>
       }
@@ -710,7 +703,7 @@ function EmptyImpactState() {
   return (
     <Card padding="lg">
       <div className="text-center">
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+        <div className="mx-auto w-14 h-14 rounded-card bg-soft-green text-primary flex items-center justify-center">
           <HeartHandshake className="w-6 h-6" />
         </div>
         {/* WO-085A DEF-085A-04: h2 keeps this one level below the page h1. */}
@@ -743,7 +736,7 @@ function HowItWorks() {
   return (
     <Card padding="lg">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-2xl bg-soft-green text-primary flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0">
           <Info className="w-4 h-4" />
         </div>
         <div>

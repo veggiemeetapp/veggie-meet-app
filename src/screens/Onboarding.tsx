@@ -2,7 +2,6 @@ import { memberSafeMessage } from "@/lib/errors";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Camera,
   Check,
   Heart,
@@ -16,7 +15,7 @@ import {
   Users,
   Utensils,
 } from "lucide-react";
-import { PrimaryButton } from "@/components/app";
+import { PrimaryButton, BackButton } from "@/components/app";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { CitySelector } from "@/components/location/CitySelector";
 import { cn } from "@/lib/utils";
@@ -378,13 +377,7 @@ export default function Onboarding() {
       {showBack && (
         <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-md">
           <div className="flex items-center justify-between px-5 pt-3 pb-2 min-h-[3.5rem]">
-            <button
-              onClick={goBack}
-              aria-label="Back"
-              className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+            <BackButton onClick={() => { goBack(); }} />
             {showProgress ? (
               <span className="text-xs font-medium text-charcoal-muted tabular-nums">
                 Step {progressIndex + 1} of {ONBOARDING_PROGRESS_STEPS.length}
@@ -547,7 +540,7 @@ function Welcome({
   onSignIn: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pb-10 pt-16 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pb-10 pt-16 animate-fade-in">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <div className="w-28 h-28 rounded-full bg-soft-green flex items-center justify-center mb-8">
           <span className="text-6xl" aria-hidden>
@@ -695,7 +688,7 @@ function Auth({
 
   if (pendingEmail) {
     return (
-      <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+      <div className="flex-1 flex flex-col page-x pt-8 pb-10 animate-fade-in">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
             Confirm your email
@@ -708,7 +701,7 @@ function Auth({
         <div
           role="status"
           aria-live="polite"
-          className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-charcoal-muted"
+          className="rounded-control border border-border bg-card px-4 py-3 text-sm text-charcoal-muted"
         >
           {resent
             ? "Sent again. It can take a minute to arrive."
@@ -736,7 +729,7 @@ function Auth({
 
   if (mode === "email") {
     return (
-      <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+      <div className="flex-1 flex flex-col page-x pt-8 pb-10 animate-fade-in">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
             {isSignUp ? "Create your account" : "Welcome back"}
@@ -756,7 +749,7 @@ function Auth({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
@@ -767,7 +760,7 @@ function Auth({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 6 characters"
-              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <PrimaryButton fullWidth disabled={busy}>
@@ -795,7 +788,7 @@ function Auth({
   }
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-8 pb-10 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-8 pb-10 animate-fade-in">
       <div className="mb-10">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Join VeggieMeet
@@ -859,7 +852,7 @@ function Identity({
 }) {
   const canContinue = displayName.trim().length > 0;
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           What should Veggies call you?
@@ -878,7 +871,7 @@ function Identity({
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="e.g. Ben"
             maxLength={40}
-            className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <div>
@@ -890,7 +883,7 @@ function Identity({
             onChange={(e) => setPronouns(e.target.value)}
             placeholder="e.g. she/her"
             maxLength={24}
-            className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
       </div>
@@ -916,7 +909,7 @@ function Dietary({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           How would you describe yourself?
@@ -935,7 +928,7 @@ function Dietary({
               onClick={() => setValue(o.id)}
               aria-pressed={active}
               className={cn(
-                "w-full flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left",
+                "w-full flex items-center gap-3 p-3.5 rounded-card border transition-all text-left",
                 active
                   ? "border-primary bg-accent/40 shadow-sm"
                   : "border-border bg-card hover:bg-accent/30",
@@ -943,7 +936,7 @@ function Dietary({
             >
               <div
                 className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg",
+                  "w-10 h-10 rounded-control flex items-center justify-center shrink-0 text-lg",
                   active ? "bg-primary/15" : "bg-muted",
                 )}
                 aria-hidden
@@ -983,7 +976,7 @@ function HomeCity({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Where do you call home?
@@ -1033,7 +1026,7 @@ function SelectedCity({
 }) {
   const differs = cityId && homeCityId && cityId !== homeCityId;
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Where are you exploring today?
@@ -1094,7 +1087,7 @@ function Interests({
   const atMax = selected.length >= MAX_INTERESTS;
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           What are you into?
@@ -1199,7 +1192,7 @@ function Photo({
   }
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Put a friendly face to your name
@@ -1238,7 +1231,7 @@ function Photo({
           placeholder="One friendly line about you."
           rows={3}
           maxLength={160}
-          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          className="w-full rounded-control border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
         />
         <p className="text-xs text-charcoal-muted text-right">{bio.length}/160</p>
       </div>
@@ -1269,7 +1262,7 @@ function Photo({
           side="bottom"
           className="rounded-t-3xl border-t border-border p-0"
         >
-          <SheetHeader className="px-6 pt-6 pb-2 text-left">
+          <SheetHeader className="page-x pt-6 pb-2 text-left">
             <SheetTitle className="text-lg font-semibold text-charcoal">
               Profile photo
             </SheetTitle>
@@ -1277,7 +1270,7 @@ function Photo({
               You can always change this later.
             </SheetDescription>
           </SheetHeader>
-          <div className="px-4 pb-6 pt-3 space-y-1">
+          <div className="page-x pb-6 pt-3 space-y-1">
             <SheetAction
               icon={<Shuffle className="w-5 h-5" />}
               label="Choose sample avatar"
@@ -1303,7 +1296,7 @@ function Photo({
             <button
               type="button"
               onClick={() => setSheetOpen(false)}
-              className="w-full mt-2 h-12 rounded-2xl bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+              className="w-full mt-2 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
             >
               Cancel
             </button>
@@ -1332,13 +1325,13 @@ function SheetAction({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent/40 active:scale-[0.99] transition text-left",
+        "w-full flex items-center gap-3 p-3.5 rounded-card hover:bg-accent/40 active:scale-[0.99] transition text-left",
         destructive ? "text-destructive" : "text-charcoal",
       )}
     >
       <span
         className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+          "w-10 h-10 rounded-control flex items-center justify-center shrink-0",
           destructive ? "bg-destructive/10" : "bg-muted",
         )}
       >
@@ -1360,9 +1353,9 @@ function Guidelines({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <div className="w-14 h-14 rounded-card bg-primary/10 flex items-center justify-center mb-4">
           <Heart className="w-6 h-6 text-primary" aria-hidden />
         </div>
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
@@ -1380,7 +1373,7 @@ function Guidelines({
         <GuidelineItem title="Speak up safely" body="If something feels off, use Report or Block. We take every signal seriously." />
       </ul>
 
-      <label className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-card p-3.5 cursor-pointer select-none">
+      <label className="mt-4 flex items-start gap-3 rounded-card border border-border bg-card p-3.5 cursor-pointer select-none">
         <input
           type="checkbox"
           checked={accepted}
@@ -1420,9 +1413,9 @@ function GuidelineItem({ title, body }: { title: string; body: string }) {
 
 function Safety({ onContinue }: { onContinue: () => void }) {
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <div className="w-14 h-14 rounded-card bg-primary/10 flex items-center justify-center mb-4">
           <Shield className="w-6 h-6 text-primary" aria-hidden />
         </div>
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
@@ -1468,8 +1461,8 @@ function SafetyItem({
   body: string;
 }) {
   return (
-    <li className="flex gap-3 rounded-2xl border border-border bg-card p-3.5">
-      <span className="w-10 h-10 rounded-xl bg-soft-green text-primary flex items-center justify-center shrink-0">
+    <li className="flex gap-3 rounded-card border border-border bg-card p-3.5">
+      <span className="w-10 h-10 rounded-control bg-soft-green text-primary flex items-center justify-center shrink-0">
         {icon}
       </span>
       <div>
@@ -1522,9 +1515,9 @@ function StartingPoint({
   const firstName = name.trim().split(/\s+/)[0] || "";
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-4 pb-8 animate-fade-in">
+    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <div className="w-14 h-14 rounded-card bg-primary/10 flex items-center justify-center mb-4">
           <Sparkles className="w-6 h-6 text-primary" aria-hidden />
         </div>
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
@@ -1544,12 +1537,12 @@ function StartingPoint({
           </>
         )}
         {!loading && error && (
-          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-charcoal-muted">
+          <div className="rounded-card border border-border bg-card p-4 text-sm text-charcoal-muted">
             We couldn't load suggestions right now — you can explore from the home screen instead.
           </div>
         )}
         {!loading && !error && list.length === 0 && (
-          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-charcoal-muted">
+          <div className="rounded-card border border-border bg-card p-4 text-sm text-charcoal-muted">
             No suggestions yet in your city. Jump into the community to explore what's nearby.
           </div>
         )}
@@ -1570,8 +1563,8 @@ function StartingPoint({
 
 function StartingSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3.5 flex items-center gap-3 animate-pulse">
-      <div className="w-14 h-14 rounded-xl bg-muted" />
+    <div className="rounded-card border border-border bg-card p-3.5 flex items-center gap-3 animate-pulse">
+      <div className="w-14 h-14 rounded-control bg-muted" />
       <div className="flex-1 space-y-2">
         <div className="h-4 w-2/3 bg-muted rounded" />
         <div className="h-3 w-1/2 bg-muted rounded" />
@@ -1603,9 +1596,9 @@ function StartingCard({
       type="button"
       onClick={() => onChoose(option)}
       disabled={disabled}
-      className="w-full text-left rounded-2xl border border-border bg-card p-3.5 flex items-center gap-3 hover:bg-accent/30 active:scale-[0.99] transition disabled:opacity-60"
+      className="w-full text-left rounded-card border border-border bg-card p-3.5 flex items-center gap-3 hover:bg-accent/30 active:scale-[0.99] transition disabled:opacity-60"
     >
-      <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+      <div className="w-14 h-14 rounded-control bg-muted overflow-hidden shrink-0 flex items-center justify-center">
         {option.image ? (
           <img src={option.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (

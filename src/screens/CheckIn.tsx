@@ -2,8 +2,8 @@ import { safeBack } from "@/lib/navigation";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
-import { PrimaryButton, SecondaryButton, Card, UserAvatar } from "@/components/app";
+import { QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
+import { PrimaryButton, SecondaryButton, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   Dialog,
   DialogContent,
@@ -158,7 +158,7 @@ export default function CheckIn() {
       )}
 
       <Dialog open={!!success} onOpenChange={(open) => !open && setSuccess(null)}>
-        <DialogContent className="rounded-3xl border-0 sm:max-w-sm animate-in fade-in-0 zoom-in-95 duration-200">
+        <DialogContent className="rounded-dialog border-0 sm:max-w-sm animate-in fade-in-0 zoom-in-95 duration-200">
           <DialogHeader>
             <div className="mx-auto mb-2 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <ShieldCheck className="w-8 h-8" />
@@ -196,14 +196,8 @@ export default function CheckIn() {
 
 function Header({ onBack, title }: { onBack: () => void; title: string }) {
   return (
-    <div className="safe-top flex items-center gap-2 px-4 pt-3 pb-2">
-      <button
-        onClick={onBack}
-        aria-label="Back"
-        className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-      >
-        <ArrowLeft className="w-5 h-5" />
-      </button>
+    <div className="safe-top flex items-center gap-2 page-x pt-3 pb-2">
+      <BackButton onClick={() => { onBack(); }} />
       <h1 className="text-base font-semibold text-charcoal">{title}</h1>
     </div>
   );
@@ -223,7 +217,7 @@ function HubView({ meetup, onShowQR, onScan }: { meetup: Meetup; onShowQR: () =>
 
       <div className="grid grid-cols-1 gap-3">
         <Card interactive onClick={onScan} className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+          <div className="w-12 h-12 rounded-card bg-primary/10 flex items-center justify-center text-primary">
             <ScanLine className="w-6 h-6" />
           </div>
           <div className="flex-1">
@@ -232,7 +226,7 @@ function HubView({ meetup, onShowQR, onScan }: { meetup: Meetup; onShowQR: () =>
           </div>
         </Card>
         <Card interactive onClick={onShowQR} className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-accent flex items-center justify-center text-charcoal">
+          <div className="w-12 h-12 rounded-card bg-accent flex items-center justify-center text-charcoal">
             <QrCode className="w-6 h-6" />
           </div>
           <div className="flex-1">
@@ -306,11 +300,11 @@ function QRView({
   }, [state, now]);
 
   return (
-    <div className="flex-1 flex flex-col items-center px-6 pt-4 pb-10 gap-5">
+    <div className="flex-1 flex flex-col items-center page-x pt-4 pb-10 gap-5">
       <p className="text-sm text-charcoal-muted text-center max-w-xs">
         Have a connected attendee scan this code. It expires quickly for your safety.
       </p>
-      <div className="bg-white p-6 rounded-3xl shadow-card relative">
+      <div className="bg-card p-6 rounded-dialog shadow-card relative">
         {state.status === "ready" && state.token ? (
           <QRCodeSVG value={encodeVerifyPayload(state.token.token)} size={240} level="M" includeMargin={false} />
         ) : (
@@ -324,7 +318,7 @@ function QRView({
           </div>
         )}
         {state.status === "expired" && (
-          <div className="absolute inset-0 rounded-3xl bg-white/70 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-dialog bg-card/70 flex items-center justify-center">
             <p className="text-sm font-semibold text-charcoal">Expired</p>
           </div>
         )}

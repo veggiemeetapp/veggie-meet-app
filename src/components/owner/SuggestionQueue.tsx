@@ -90,7 +90,7 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
       <ul className="min-w-0 space-y-2">
 
         {rows.map((s) => (
-          <li key={s.id} className="min-w-0 overflow-hidden rounded-lg border p-3">
+          <li key={s.id} className="min-w-0 overflow-hidden rounded-control border p-3">
             <button
               type="button"
               className="block w-full min-w-0 text-left"
@@ -117,7 +117,7 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                 {s.city_name ?? "—"} · {new Date(s.submitted_at).toLocaleDateString()}
               </p>
               {s.possible_duplicate && (
-                <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+                <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-warning">
                   <AlertTriangle className="h-3 w-3" aria-hidden /> Possible duplicate
                 </p>
               )}

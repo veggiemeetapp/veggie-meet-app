@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Calendar,
   Clock,
   Loader2,
@@ -16,7 +15,7 @@ import {
   CheckCircle2,
 
 } from "lucide-react";
-import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
+import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
 import {
   Dialog,
   DialogContent,
@@ -543,23 +542,17 @@ export default function MeetupManagement() {
         title="Manage Meetup"
         subtitle={isCancelled ? "This Meetup has been cancelled." : "Keep everyone in the loop."}
         left={
-          <button
-            onClick={() => safeBack(navigate, "/plans")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/plans" />
         }
       />
 
       <div className="px-5 py-6 pb-32 space-y-8">
         {/* Summary */}
-        <section className="rounded-2xl border border-border bg-card p-4 flex gap-4">
+        <section className="rounded-card border border-border bg-card p-4 flex gap-4">
           <img
             src={meetup.coverImageUrl}
             alt=""
-            className="w-20 h-20 rounded-xl object-cover shrink-0"
+            className="w-20 h-20 rounded-control object-cover shrink-0"
           />
           <div className="min-w-0 flex-1">
             <div className="font-semibold text-charcoal truncate">{meetup.title}</div>
@@ -582,7 +575,7 @@ export default function MeetupManagement() {
         {/* Edit form (disabled if cancelled) */}
         {/* WO-063 — completion state / Finish Meetup */}
         {isCompleted ? (
-          <section className="rounded-2xl border border-primary/25 bg-primary/5 p-4">
+          <section className="rounded-card border border-primary/25 bg-primary/5 p-4">
             <h2 className="font-semibold text-charcoal flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
               Meetup completed
@@ -593,7 +586,7 @@ export default function MeetupManagement() {
             </p>
           </section>
         ) : lifecycle?.is_host && lifecycle.has_ended && !isCancelled ? (
-          <section className="rounded-2xl border border-border bg-card p-4">
+          <section className="rounded-card border border-border bg-card p-4">
             <h2 className="font-semibold text-charcoal">Finish this Meetup</h2>
             <p className="mt-1 text-xs text-charcoal-muted">
               {canComplete
@@ -630,7 +623,7 @@ export default function MeetupManagement() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -640,7 +633,7 @@ export default function MeetupManagement() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-charcoal"
+              className="w-full rounded-control border border-border bg-card px-4 py-3 text-base text-charcoal"
               placeholder="What should attendees know?"
             />
           </div>
@@ -656,7 +649,7 @@ export default function MeetupManagement() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full h-12 rounded-xl border border-border bg-card px-3 text-base text-charcoal"
+                className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal"
               />
             </div>
             <div>
@@ -670,7 +663,7 @@ export default function MeetupManagement() {
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full h-12 rounded-xl border border-border bg-card px-3 text-base text-charcoal"
+                className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal"
               />
             </div>
           </div>
@@ -691,7 +684,7 @@ export default function MeetupManagement() {
               min={Math.max(1, activeAttendeeCount)}
               value={capacity}
               onChange={(e) => setCapacity(Math.max(1, Number(e.target.value) || 0))}
-              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal"
+              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal"
             />
             <p className="mt-1.5 text-xs text-charcoal-muted">
               Minimum {Math.max(1, activeAttendeeCount)} — matches people already attending.
@@ -739,7 +732,7 @@ export default function MeetupManagement() {
           {linkedPlaceUnavailable && (
             <div
               role="status"
-              className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs text-charcoal min-w-0 [overflow-wrap:anywhere]"
+              className="rounded-control border border-warning/50 bg-warning/10 p-3 text-xs text-charcoal min-w-0 [overflow-wrap:anywhere]"
             >
               <span className="font-semibold block">Location needs attention</span>
               {linkedPlaceQuery.data?.name} is no longer available as a Community Place. This
@@ -749,7 +742,7 @@ export default function MeetupManagement() {
           )}
 
           {meetup.location?.isInferred && (
-            <div className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs text-charcoal">
+            <div className="rounded-control border border-warning/40 bg-warning/10 p-3 text-xs text-charcoal">
               This Meetup's location was inferred from the city. Confirm a real place or custom
               location so people know exactly where to go.
             </div>
@@ -794,7 +787,7 @@ export default function MeetupManagement() {
                 type="button"
                 onClick={() => setLocPlaceId(CUSTOM_PLACE_ID)}
                 className={cn(
-                  "mt-2 w-full text-left rounded-xl border px-3 py-2.5 flex items-center gap-2",
+                  "mt-2 w-full text-left rounded-control border px-3 py-2.5 flex items-center gap-2",
                   locIsCustom
                     ? "border-primary bg-primary/5"
                     : "border-dashed border-border bg-card hover:bg-muted/40",
@@ -808,7 +801,7 @@ export default function MeetupManagement() {
 
 
           {locIsCustom && (
-            <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
+            <div className="space-y-3 rounded-control border border-border bg-muted/20 p-3">
               <div>
                 <FieldLabel>Location name</FieldLabel>
                 <input aria-label="Location name"
@@ -816,7 +809,7 @@ export default function MeetupManagement() {
                   value={locCustomName}
                   onChange={(e) => setLocCustomName(e.target.value)}
                   placeholder="Where will you meet?"
-                  className="w-full h-11 rounded-lg border border-border bg-card px-3 text-sm text-charcoal"
+                  className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
                 />
               </div>
               <div>
@@ -825,7 +818,7 @@ export default function MeetupManagement() {
                   type="text"
                   value={locCustomAddress}
                   onChange={(e) => setLocCustomAddress(e.target.value)}
-                  className="w-full h-11 rounded-lg border border-border bg-card px-3 text-sm text-charcoal"
+                  className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -836,7 +829,7 @@ export default function MeetupManagement() {
                     inputMode="decimal"
                     value={locCustomLat}
                     onChange={(e) => setLocCustomLat(e.target.value)}
-                    className="w-full h-11 rounded-lg border border-border bg-card px-3 text-sm text-charcoal"
+                    className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
                   />
                 </div>
                 <div>
@@ -846,7 +839,7 @@ export default function MeetupManagement() {
                     inputMode="decimal"
                     value={locCustomLng}
                     onChange={(e) => setLocCustomLng(e.target.value)}
-                    className="w-full h-11 rounded-lg border border-border bg-card px-3 text-sm text-charcoal"
+                    className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
                   />
                 </div>
               </div>
@@ -893,7 +886,7 @@ export default function MeetupManagement() {
                 return (
                   <li
                     key={a.attendanceId}
-                    className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card"
+                    className="flex items-center gap-3 p-3 rounded-card border border-border bg-card"
                   >
                     <UserAvatar name={a.displayName} src={a.avatarUrl ?? undefined} size="md" />
                     <div className="min-w-0 flex-1">
@@ -910,7 +903,7 @@ export default function MeetupManagement() {
                           setRemoveTarget(a);
                           setRemoveReason("");
                         }}
-                        className="text-xs font-semibold text-destructive inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-destructive/10"
+                        className="text-xs font-semibold text-destructive inline-flex items-center gap-1 px-2 py-1 rounded-control hover:bg-destructive/10"
                       >
                         <UserMinus className="w-3.5 h-3.5" /> Remove
                       </button>
@@ -924,7 +917,7 @@ export default function MeetupManagement() {
 
         {/* Danger zone */}
         {!locked && (
-          <section className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+          <section className="rounded-card border border-destructive/30 bg-destructive/5 p-4">
             <h3 className="font-semibold text-charcoal flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-destructive" />
               Cancel this Meetup

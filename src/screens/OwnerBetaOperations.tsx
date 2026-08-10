@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Activity, AlertTriangle, RefreshCw } from "lucide-react";
-import { AppHeader, Card } from "@/components/app";
+import { Activity, AlertTriangle, RefreshCw } from "lucide-react";
+import { AppHeader, Card, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { safeBack } from "@/lib/navigation";
 import { logAnalyticsEvent } from "@/lib/analytics";
@@ -40,7 +40,7 @@ const NEXT: FeedbackStatus[] = ["reviewing", "planned", "resolved", "wont_fix"];
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="p-3 rounded-2xl bg-card border border-border">
+    <div className="p-3 rounded-card bg-card border border-border">
       <div className="text-xs text-charcoal-muted">{label}</div>
       <div className="text-lg font-semibold text-charcoal">{value}</div>
     </div>
@@ -111,14 +111,7 @@ export default function OwnerBetaOperations() {
         title="Beta operations"
         subtitle="Owner only"
         left={
-          <button
-            type="button"
-            aria-label="Back"
-            onClick={() => safeBack(navigate, "/settings")}
-            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center hover:bg-accent/40"
-          >
-            <ArrowLeft className="w-5 h-5 text-charcoal" />
-          </button>
+          <BackButton fallback="/settings" />
         }
         right={
           <button
@@ -197,7 +190,7 @@ export default function OwnerBetaOperations() {
               (failures.data ?? []).map((f) => (
                 <div
                   key={`${f.event_name}-${f.fingerprint}`}
-                  className="p-3 rounded-2xl bg-card border border-border"
+                  className="p-3 rounded-card bg-card border border-border"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-charcoal truncate">
@@ -237,7 +230,7 @@ export default function OwnerBetaOperations() {
               .map(([k, v]) => (
                 <div
                   key={k}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-card border border-border text-xs"
+                  className="flex items-center justify-between p-2.5 rounded-control bg-card border border-border text-xs"
                 >
                   <span className="text-charcoal">{k.replace(/_/g, " ")}</span>
                   <span className="font-semibold text-charcoal">{String(v)}</span>

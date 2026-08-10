@@ -2,8 +2,8 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
-import { AppHeader } from "@/components/app";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { AppHeader, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -193,14 +193,7 @@ export default function SuggestPlace() {
     <>
       <AppHeader
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/community/places")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden />
-          </button>
+          <BackButton fallback="/community/places" />
         }
         title="Suggest a Community Place"
       />
@@ -347,7 +340,7 @@ export default function SuggestPlace() {
 
             <div aria-live="polite">
               {formError && (
-                <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                <div className="rounded-control border border-destructive/30 bg-destructive/5 p-3">
                   <p className="text-sm font-semibold text-charcoal">{formError.title}</p>
                   <p className="mt-0.5 text-sm text-charcoal-muted">{formError.body}</p>
                 </div>

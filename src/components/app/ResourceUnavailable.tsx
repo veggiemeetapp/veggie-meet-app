@@ -20,7 +20,7 @@ export function ResourceUnavailable({
   return (
     <main
       role="main"
-      className="flex min-h-dvh items-center justify-center bg-background px-6"
+      className="flex min-h-dvh items-center justify-center bg-background page-x"
     >
       <div className="text-center max-w-sm">
         <h1 className="mb-3 text-2xl font-semibold tracking-tight text-charcoal">

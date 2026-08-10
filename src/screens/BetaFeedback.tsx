@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, MessageSquareHeart } from "lucide-react";
-import { AppHeader, Card, PrimaryButton } from "@/components/app";
+import { MessageSquareHeart } from "lucide-react";
+import { AppHeader, Card, PrimaryButton, BackButton } from "@/components/app";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { safeBack } from "@/lib/navigation";
@@ -79,21 +79,14 @@ export default function BetaFeedback() {
       <AppHeader
         title="Send beta feedback"
         left={
-          <button
-            type="button"
-            aria-label="Back"
-            onClick={() => safeBack(navigate, "/settings")}
-            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center hover:bg-accent/40"
-          >
-            <ArrowLeft className="w-5 h-5 text-charcoal" />
-          </button>
+          <BackButton fallback="/settings" />
         }
       />
 
       <div className="flex-1 px-5 py-4 space-y-4">
         {sent ? (
           <Card className="p-5 text-center">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto rounded-card bg-soft-green text-primary flex items-center justify-center">
               <MessageSquareHeart className="w-6 h-6" />
             </div>
             <h2 className="mt-3 text-base font-semibold text-charcoal">
@@ -126,7 +119,7 @@ export default function BetaFeedback() {
               the VeggieMeet team — never to other members.
             </p>
 
-            <div className="p-3 rounded-2xl bg-muted/40 border border-border text-xs text-charcoal-muted">
+            <div className="p-3 rounded-card bg-muted/40 border border-border text-xs text-charcoal-muted">
               Something unsafe, or about a person? Use the{" "}
               <button
                 type="button"
@@ -172,7 +165,7 @@ export default function BetaFeedback() {
                 id="feedback-surface"
                 value={surface}
                 onChange={(e) => setSurface(e.target.value as FeedbackSurface)}
-                className="mt-2 w-full min-h-12 rounded-2xl bg-card border border-border px-3 text-sm text-charcoal"
+                className="mt-2 w-full min-h-12 rounded-card bg-card border border-border px-3 text-sm text-charcoal"
               >
                 {FEEDBACK_SURFACES.map((s) => (
                   <option key={s.id} value={s.id}>

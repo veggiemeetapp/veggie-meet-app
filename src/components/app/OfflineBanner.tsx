@@ -59,13 +59,14 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-0 z-40 bg-amber-50 text-amber-900 border-b border-amber-200 px-4 py-2 text-xs text-center"
+      className="sticky top-0 z-40 bg-warning-soft text-warning-foreground border-b border-warning-border page-x py-2 text-xs text-center"
     >
       {/* Icon + text, never colour alone, so the state is perceivable without colour. */}
       <span className="inline-flex items-center gap-1.5">
-        <WifiOff className="w-3.5 h-3.5" aria-hidden />
+        <WifiOff className="w-3.5 h-3.5 shrink-0" aria-hidden />
         You're offline. Some actions will be available when you reconnect.
       </span>
     </div>
   );
 }
+

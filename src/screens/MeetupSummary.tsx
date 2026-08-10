@@ -1,11 +1,11 @@
 import { memberSafeMessage } from "@/lib/errors";
+import { BackButton } from "@/components/app";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ArrowLeft,
   Calendar,
   CheckCircle2,
   Clock,
@@ -191,13 +191,7 @@ export default function MeetupSummary() {
       <AppHeader
         title="Meetup Summary"
         left={
-          <button
-            aria-label="Back"
-            onClick={() => safeBack(navigate, "/plans")}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/plans" />
         }
       />
     );
@@ -281,7 +275,7 @@ function VerifiedSection({ summary }: { summary: MyMeetupSummary }) {
   if (list.length === 0) {
     return (
       <Card padding="lg" className="text-center">
-        <div className="mx-auto w-12 h-12 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+        <div className="mx-auto w-12 h-12 rounded-card bg-soft-green text-primary flex items-center justify-center">
           <Leaf className="w-5 h-5" />
         </div>
         <h3 className="mt-3 font-semibold text-charcoal">
@@ -442,7 +436,7 @@ function ReflectionCard({
                 onClick={() => setRating(opt.value)}
                 aria-pressed={rating === opt.value}
                 className={cn(
-                  "w-full text-left rounded-2xl border p-3 transition-colors",
+                  "w-full text-left rounded-card border p-3 transition-colors",
                   rating === opt.value
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted/60",
@@ -484,7 +478,7 @@ function ReflectionCard({
               onChange={(e) => setNote(e.target.value.slice(0, 500))}
               rows={3}
               placeholder="Private note to the VeggieMeet team"
-              className="mt-1 w-full rounded-2xl border border-border p-3 text-sm text-charcoal bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+              className="mt-1 w-full rounded-card border border-border p-3 text-sm text-charcoal bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
             />
             <div className="mt-1 text-[11px] text-charcoal-muted text-right">
               {note.length}/500

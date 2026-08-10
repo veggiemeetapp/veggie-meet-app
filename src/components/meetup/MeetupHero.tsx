@@ -1,5 +1,6 @@
 import { safeBack } from "@/lib/navigation";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { BackButton } from "@/components/app";
+import { Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -41,9 +42,7 @@ export function MeetupHero({ imageUrl, title, extraAction }: Props) {
         </>
       )}
       <div className="safe-top absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-3">
-        <button onClick={() => safeBack(navigate, "/community")} aria-label="Back" className={roundBtn}>
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton fallback="/community" />
         <div className="flex items-center gap-2">
           <button aria-label="Share" className={roundBtn}>
             <Share2 className="w-4 h-4" />

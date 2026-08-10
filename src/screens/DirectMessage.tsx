@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Ban,
   CalendarPlus,
   Flag,
@@ -14,7 +13,7 @@ import {
   Send,
   User as UserIcon,
 } from "lucide-react";
-import { AppHeader, Card, UserAvatar } from "@/components/app";
+import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   Dialog,
   DialogContent,
@@ -209,13 +208,7 @@ function BackHeader({
     <AppHeader
       title={title}
       left={
-        <button
-          onClick={() => safeBack(navigate, "/chats")}
-          aria-label="Back"
-          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton fallback="/chats" />
       }
       right={right}
     />
@@ -584,7 +577,7 @@ function DMScreen({
 
       <div className="flex-1 flex flex-col min-h-0">
         <div
-          className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
+          className="flex-1 overflow-y-auto page-x pt-3 pb-4"
           role="log"
           aria-live="polite"
         >
@@ -768,7 +761,7 @@ function EmptyConversation({
   onPrompt: (text: string) => void;
 }) {
   return (
-    <div className="flex flex-col items-center text-center pt-10 pb-4 px-4">
+    <div className="flex flex-col items-center text-center pt-10 pb-4 page-x">
       <UserAvatar
         name={other.displayName}
         src={other.avatarUrl ?? undefined}
@@ -786,7 +779,7 @@ function EmptyConversation({
             key={p}
             type="button"
             onClick={() => onPrompt(p)}
-            className="w-full text-left rounded-2xl border border-border/70 bg-card px-4 py-2.5 text-sm text-charcoal hover:bg-muted/60 transition-colors"
+            className="w-full text-left rounded-card border border-border/70 bg-card px-4 py-2.5 text-sm text-charcoal hover:bg-muted/60 transition-colors"
           >
             {p}
           </button>
@@ -875,7 +868,7 @@ function MessageGroup({
             <div key={m.id} className="group/msg relative flex items-start gap-1.5">
               <div
                 className={cn(
-                  "px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap",
+                  "px-3.5 py-2 rounded-card text-sm break-words whitespace-pre-wrap",
                   isMe
                     ? "bg-soft-green text-charcoal rounded-br-md self-end"
                     : "bg-muted text-charcoal rounded-bl-md self-start",
@@ -956,7 +949,7 @@ function ReportDialog({
           </DialogDescription>
         </DialogHeader>
         {messagePreview && (
-          <div className="rounded-2xl bg-muted p-3 text-sm text-charcoal">
+          <div className="rounded-card bg-muted p-3 text-sm text-charcoal">
             <p className="text-[11px] text-charcoal-muted mb-1">
               Reporting this message
               {messageTimestamp ? ` · ${formatTime(messageTimestamp)}` : ""}
@@ -971,7 +964,7 @@ function ReportDialog({
             <Label
               key={r.id}
               htmlFor={`report-${r.id}`}
-              className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
+              className="flex items-center gap-3 rounded-control border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
             >
               <RadioGroupItem id={`report-${r.id}`} value={r.id} />
               <span className="text-sm">{r.label}</span>

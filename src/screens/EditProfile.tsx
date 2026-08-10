@@ -3,8 +3,8 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Camera, ImagePlus, Shuffle, Trash2 } from "lucide-react";
-import { PrimaryButton, UserAvatar } from "@/components/app";
+import { Camera, ImagePlus, Shuffle, Trash2 } from "lucide-react";
+import { PrimaryButton, UserAvatar, BackButton } from "@/components/app";
 import {
   Sheet,
   SheetContent,
@@ -159,19 +159,13 @@ export default function EditProfile() {
     <div className="flex flex-col min-h-dvh bg-background">
       <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/60">
         <div className="flex items-center justify-between px-5 pt-3 pb-3 min-h-[3.5rem]">
-          <button
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/you" />
           <h1 className="text-base font-semibold text-charcoal">Edit Profile</h1>
           <div className="w-9" />
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-4 pb-28">
+      <main className="flex-1 page-x pt-4 pb-28">
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
           <button
@@ -213,7 +207,7 @@ export default function EditProfile() {
               }}
               maxLength={40}
               placeholder="How should Veggies call you?"
-              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
 
           </Field>
@@ -229,7 +223,7 @@ export default function EditProfile() {
               rows={4}
               maxLength={160}
               placeholder="Tell Veggies a little about yourself."
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              className="w-full rounded-control border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
             <p className="mt-1.5 text-xs text-charcoal-muted text-right">
               {bio.length}/160
@@ -241,7 +235,7 @@ export default function EditProfile() {
             required
             error={!cityValid && dirty ? "Please pick your Home City." : undefined}
           >
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+            <div className="flex items-center justify-between gap-3 rounded-control border border-border bg-card px-4 py-3">
               <div className="min-w-0">
                 <div className="text-base font-medium text-charcoal truncate">
                   {homeCity?.name ?? "Not set"}
@@ -320,7 +314,7 @@ export default function EditProfile() {
       {/* Avatar sheet */}
       <Sheet open={avatarSheet} onOpenChange={setAvatarSheet}>
         <SheetContent side="bottom" className="rounded-t-3xl border-t border-border p-0">
-          <SheetHeader className="px-6 pt-6 pb-2 text-left">
+          <SheetHeader className="page-x pt-6 pb-2 text-left">
             <SheetTitle className="text-lg font-semibold text-charcoal">
               Profile photo
             </SheetTitle>
@@ -328,7 +322,7 @@ export default function EditProfile() {
               You can always change this later.
             </SheetDescription>
           </SheetHeader>
-          <div className="px-4 pb-6 pt-3 space-y-1">
+          <div className="page-x pb-6 pt-3 space-y-1">
             <SheetRow
               icon={<Shuffle className="w-5 h-5" />}
               label="Choose sample avatar"
@@ -358,7 +352,7 @@ export default function EditProfile() {
             <button
               type="button"
               onClick={() => setAvatarSheet(false)}
-              className="w-full mt-2 h-12 rounded-2xl bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+              className="w-full mt-2 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
             >
               Cancel
             </button>
@@ -419,13 +413,13 @@ function SheetRow({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent/40 active:scale-[0.99] transition text-left",
+        "w-full flex items-center gap-3 p-3.5 rounded-card hover:bg-accent/40 active:scale-[0.99] transition text-left",
         destructive ? "text-destructive" : "text-charcoal",
       )}
     >
       <span
         className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+          "w-10 h-10 rounded-control flex items-center justify-center shrink-0",
           destructive ? "bg-destructive/10" : "bg-muted",
         )}
       >

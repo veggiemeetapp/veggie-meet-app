@@ -108,7 +108,7 @@ export function CitySelector({
         type="button"
         aria-label={triggerLabel ?? (selected ? `Selected city: ${selected.name}. Change city.` : "Choose city")}
         className={cn(
-          "w-full flex items-center justify-between h-12 rounded-xl border border-border bg-card px-4 text-sm font-medium text-charcoal hover:bg-accent transition-colors",
+          "w-full flex items-center justify-between h-12 rounded-control border border-border bg-card px-4 text-sm font-medium text-charcoal hover:bg-accent transition-colors",
           className,
         )}
       >
@@ -129,7 +129,7 @@ export function CitySelector({
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-72 p-0 rounded-2xl overflow-hidden"
+        className="w-72 p-0 rounded-card overflow-hidden"
       >
         {title && (
           <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-charcoal-muted">
@@ -140,7 +140,7 @@ export function CitySelector({
           <label className="sr-only" htmlFor="city-selector-search">
             Search cities
           </label>
-          <div className="flex items-center gap-2 h-10 px-3 rounded-xl bg-muted">
+          <div className="flex items-center gap-2 h-10 px-3 rounded-control bg-muted">
             <Search className="w-4 h-4 text-charcoal-muted" aria-hidden />
             <input
               id="city-selector-search"
@@ -232,7 +232,7 @@ export function NoCityState({ onChoose }: { onChoose: () => void }) {
   }
 
   return (
-    <div className="mx-5 mt-4 rounded-2xl border border-dashed border-border p-5 text-center">
+    <div className="mx-5 mt-4 rounded-card border border-dashed border-border p-5 text-center">
       <MapPin className="w-6 h-6 mx-auto text-primary" aria-hidden />
       <h2 className="mt-2 text-base font-semibold text-charcoal">
         Choose a city to explore.
@@ -244,7 +244,7 @@ export function NoCityState({ onChoose }: { onChoose: () => void }) {
         <button
           type="button"
           onClick={onChoose}
-          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-95"
+          className="w-full h-11 rounded-control bg-primary text-primary-foreground font-semibold hover:opacity-95"
         >
           Choose City
         </button>
@@ -253,7 +253,7 @@ export function NoCityState({ onChoose }: { onChoose: () => void }) {
             type="button"
             onClick={useHome}
             disabled={setSelected.isPending}
-            className="w-full h-11 rounded-xl border border-border bg-card text-sm font-semibold text-charcoal hover:bg-accent/40 disabled:opacity-60"
+            className="w-full h-11 rounded-control border border-border bg-card text-sm font-semibold text-charcoal hover:bg-accent/40 disabled:opacity-60"
           >
             Use Home City · {home.name}
           </button>

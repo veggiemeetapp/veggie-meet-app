@@ -2,8 +2,8 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Clock, Leaf } from "lucide-react";
-import { AppHeader, Card } from "@/components/app";
+import { Clock, Leaf } from "lucide-react";
+import { AppHeader, Card, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -54,14 +54,7 @@ export default function MyPlaceSuggestions() {
     <>
       <AppHeader
         left={
-          <button
-            type="button"
-            onClick={() => safeBack(navigate, "/you")}
-            aria-label="Go back"
-            className="w-9 h-9 -ml-1 rounded-full inline-flex items-center justify-center hover:bg-muted/60 text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden />
-          </button>
+          <BackButton fallback="/you" />
         }
         title="My place suggestions"
       />
@@ -75,11 +68,11 @@ export default function MyPlaceSuggestions() {
           {q.isPending ? (
             <div className="mt-5 space-y-3">
               {[0, 1].map((i) => (
-                <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
+                <div key={i} className="h-24 rounded-card bg-muted animate-pulse" />
               ))}
             </div>
           ) : rows.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
+            <div className="mt-6 rounded-card border border-dashed border-border/70 px-5 py-10 text-center">
               <Leaf className="mx-auto h-7 w-7 text-primary/70" aria-hidden />
               <h2 className="mt-3 text-base font-semibold text-charcoal">No suggestions yet</h2>
               <p className="mt-1 text-sm text-charcoal-muted">
@@ -99,7 +92,7 @@ export default function MyPlaceSuggestions() {
                     ref={focused ? focusRef : undefined}
                     tabIndex={focused ? -1 : undefined}
                     aria-current={focused ? "true" : undefined}
-                    className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <Card className={focused ? "ring-2 ring-primary/40" : undefined}>
                       <div className="flex items-start justify-between gap-3">

@@ -2,13 +2,15 @@ export { AppHeader } from "./AppHeader";
 export { AppShell } from "./AppShell";
 export { BottomNav, defaultNavItems } from "./BottomNav";
 export type { BottomNavItem } from "./BottomNav";
-export { PrimaryButton, SecondaryButton } from "./Buttons";
+export { PrimaryButton, SecondaryButton, TertiaryButton, DestructiveButton } from "./Buttons";
+export { IconButton, BackButton } from "./IconButton";
 export { Card } from "./Card";
 export { MeetupCard } from "./MeetupCard";
 export { FeaturedMeetupCard } from "./FeaturedMeetupCard";
 export { CommunityPlaceCard } from "./CommunityPlaceCard";
 export { UserAvatar, AvatarGroup } from "./UserAvatar";
-export { HostBadge, ActiveHostBadge } from "./Badges";
+export { HostBadge, ActiveHostBadge, StatusBadge } from "./Badges";
+
 export { SectionHeader } from "./SectionHeader";
 export { EmptyState } from "./EmptyState";
 export { LoadingSkeleton, MeetupCardSkeleton } from "./LoadingSkeleton";

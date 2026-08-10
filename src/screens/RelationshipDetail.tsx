@@ -1,7 +1,8 @@
 import { safeBack } from "@/lib/navigation";
+import { BackButton } from "@/components/app";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Leaf, MapPin, Trash2, UserRound } from "lucide-react";
+import { Leaf, MapPin, Trash2, UserRound } from "lucide-react";
 import {
   AppHeader,
   Card,
@@ -47,13 +48,7 @@ export default function RelationshipDetail() {
       <AppHeader
         title="Relationship"
         left={
-          <button
-            onClick={() => safeBack(navigate, "/network")}
-            aria-label="Back"
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton fallback="/network" />
         }
       />
       <div className="px-5 pt-2 pb-8">

@@ -445,7 +445,7 @@ export default function OwnerPlaceIdentityReview() {
 
         {place && (
           <>
-            <section className="rounded-lg border p-3 space-y-1 min-w-0">
+            <section className="rounded-control border p-3 space-y-1 min-w-0">
               <h2 className="text-sm font-semibold [overflow-wrap:anywhere]">{place.name}</h2>
               <dl className="text-xs space-y-0.5">
                 <Row label="Address">{place.address ?? "—"}</Row>
@@ -484,7 +484,7 @@ export default function OwnerPlaceIdentityReview() {
             </section>
 
             {statusMsg && (
-              <p className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-xs [overflow-wrap:anywhere]">
+              <p className="rounded-control border border-primary/40 bg-primary/5 p-3 text-xs [overflow-wrap:anywhere]">
                 {statusMsg}
               </p>
             )}
@@ -494,14 +494,14 @@ export default function OwnerPlaceIdentityReview() {
                 ref={blockRef}
                 tabIndex={-1}
                 role="alert"
-                className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive [overflow-wrap:anywhere]"
+                className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive [overflow-wrap:anywhere]"
               >
                 {blockMsg}
               </p>
             )}
 
             {wsQ.data?.related_report && (
-              <section className="rounded-lg border p-3 text-xs space-y-1 min-w-0">
+              <section className="rounded-control border p-3 text-xs space-y-1 min-w-0">
                 <h2 className="text-sm font-semibold">Linked member report</h2>
                 <Row label="Reason">
                   {REPORT_REASON_LABEL[
@@ -520,7 +520,7 @@ export default function OwnerPlaceIdentityReview() {
             )}
 
             {(wsQ.data?.open_identity_reports.length ?? 0) > 0 && (
-              <section className="rounded-lg border p-3 text-xs space-y-1 min-w-0">
+              <section className="rounded-control border p-3 text-xs space-y-1 min-w-0">
                 <h2 className="text-sm font-semibold">
                   Open identity-related reports ({wsQ.data?.open_identity_reports.length})
                 </h2>
@@ -535,7 +535,7 @@ export default function OwnerPlaceIdentityReview() {
               </section>
             )}
 
-            <section className="rounded-lg border p-3 text-xs space-y-2 min-w-0">
+            <section className="rounded-control border p-3 text-xs space-y-2 min-w-0">
               <h2 className="text-sm font-semibold">What counts as evidence</h2>
               <ul className="list-disc pl-4 space-y-0.5">
                 {ACCEPTABLE_EVIDENCE.map((e) => (
@@ -575,7 +575,7 @@ export default function OwnerPlaceIdentityReview() {
                           setResult("");
                           setAckMove(false);
                         }}
-                        className={`w-full text-left rounded-lg border p-3 text-xs transition-colors min-w-0 ${
+                        className={`w-full text-left rounded-control border p-3 text-xs transition-colors min-w-0 ${
                           caseType === c.value ? "border-primary bg-primary/5" : "hover:bg-muted/50"
                         }`}
                       >
@@ -603,7 +603,7 @@ export default function OwnerPlaceIdentityReview() {
                             setResult(r);
                             setAckMove(false);
                           }}
-                          className={`w-full text-left rounded-lg border p-3 text-xs transition-colors min-w-0 ${
+                          className={`w-full text-left rounded-control border p-3 text-xs transition-colors min-w-0 ${
                             result === r ? "border-primary bg-primary/5" : "hover:bg-muted/50"
                           }`}
                         >
@@ -616,7 +616,7 @@ export default function OwnerPlaceIdentityReview() {
                     </div>
                     {(caseType === "different_branch" ||
                       caseType === "different_business_or_unclear") && (
-                      <p className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs [overflow-wrap:anywhere]">
+                      <p className="rounded-control border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
                         A different branch or a different business can never take over this
                         published place. Replacing its identity is unavailable for this case.
                       </p>
@@ -711,7 +711,7 @@ export default function OwnerPlaceIdentityReview() {
                       {webError && <p className="text-[11px] text-destructive">{webError}</p>}
                     </div>
 
-                    <div className="rounded-lg border p-3 space-y-1.5 min-w-0">
+                    <div className="rounded-control border p-3 space-y-1.5 min-w-0">
                       <p className="text-xs font-medium">Current → proposed</p>
                       <Compare label="Name" current={place.name} proposed={pname} />
                       <Compare label="Address" current={place.address} proposed={paddress} />
@@ -731,7 +731,7 @@ export default function OwnerPlaceIdentityReview() {
                     {showNearby && (
                       <div
                         role="note"
-                        className="rounded-lg border p-3 text-xs space-y-1 [overflow-wrap:anywhere]"
+                        className="rounded-control border p-3 text-xs space-y-1 [overflow-wrap:anywhere]"
                       >
                         <p className="font-medium">Nearby relocation — {formatDistance(dist)} away</p>
                         <p className="text-muted-foreground">
@@ -744,7 +744,7 @@ export default function OwnerPlaceIdentityReview() {
                     )}
 
                     {largeMove && (
-                      <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-xs space-y-2 [overflow-wrap:anywhere]">
+                      <div className="rounded-control border border-destructive/50 bg-destructive/5 p-3 text-xs space-y-2 [overflow-wrap:anywhere]">
                         <p className="font-medium text-destructive">
                           {tier === "exceptional"
                             ? `Exceptional distance — ${formatDistance(dist)} away`
@@ -818,7 +818,7 @@ export default function OwnerPlaceIdentityReview() {
                       {noteError && <p className="text-[11px] text-destructive">{noteError}</p>}
                     </div>
 
-                    <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+                    <fieldset className="rounded-control border p-3 space-y-2 min-w-0">
                       <legend className="px-1 text-xs font-semibold">Identity safety</legend>
                       <div className="flex items-start gap-2">
                         <Checkbox
@@ -858,7 +858,7 @@ export default function OwnerPlaceIdentityReview() {
                     </fieldset>
 
                     {needsPublicChange && (
-                      <fieldset className="rounded-lg border p-3 space-y-2 min-w-0">
+                      <fieldset className="rounded-control border p-3 space-y-2 min-w-0">
                         <legend className="px-1 text-xs font-semibold">
                           What should be updated
                         </legend>
@@ -917,7 +917,7 @@ export default function OwnerPlaceIdentityReview() {
                     )}
 
                     {result === "new_branch_required" && (
-                      <div className="rounded-lg border p-3 space-y-2 text-xs min-w-0">
+                      <div className="rounded-control border p-3 space-y-2 text-xs min-w-0">
                         <div className="flex items-start gap-2">
                           <Checkbox
                             id="a-cand"
@@ -969,7 +969,7 @@ export default function OwnerPlaceIdentityReview() {
                 <h2 className="text-sm font-semibold">Applied identity changes</h2>
                 <ul className="space-y-1.5 list-none p-0 m-0">
                   {wsQ.data?.identity_history.map((h) => (
-                    <li key={h.id} className="rounded-lg border p-3 text-xs space-y-0.5 min-w-0">
+                    <li key={h.id} className="rounded-control border p-3 text-xs space-y-0.5 min-w-0">
                       <p className="font-medium">
                         {formatIdentityDate(h.changed_at)} —{" "}
                         {IDENTITY_ACTION_LABEL[h.action] ?? h.action}
@@ -992,7 +992,7 @@ export default function OwnerPlaceIdentityReview() {
                 <h2 className="text-sm font-semibold">Identity review history</h2>
                 <ul className="space-y-1.5 list-none p-0 m-0">
                   {wsQ.data?.history.map((h) => (
-                    <li key={h.id} className="rounded-lg border p-3 text-xs space-y-0.5 min-w-0">
+                    <li key={h.id} className="rounded-control border p-3 text-xs space-y-0.5 min-w-0">
                       <p className="font-medium">
                         {formatIdentityDate(h.completed_at ?? h.started_at)} —{" "}
                         {IDENTITY_RESULT_LABEL[h.result ?? ""] ?? h.result ?? h.status}
