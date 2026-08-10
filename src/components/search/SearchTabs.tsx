@@ -25,11 +25,15 @@ export function SearchTabs({ value, onChange }: Props) {
             aria-selected={active}
             onClick={() => onChange(t.id)}
             className={
-              "flex-1 h-8 px-3 rounded-full text-xs font-medium transition-colors " +
+              // DEF-092A-07: without min-w-0 the labels set a floor width and the
+              // last tab spilled ~2px past the rail, producing a hairline
+              // horizontal scroll at 430px.
+              "flex-1 min-w-0 h-8 px-2.5 rounded-full text-xs font-medium truncate transition-colors " +
               (active
                 ? "bg-background text-charcoal shadow-sm"
                 : "text-charcoal-muted hover:text-charcoal")
             }
+
           >
             {t.label}
           </button>

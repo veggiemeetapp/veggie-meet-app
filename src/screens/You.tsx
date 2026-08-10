@@ -490,10 +490,14 @@ function ImpactMetric({
       <div className="text-3xl font-bold text-charcoal tabular-nums leading-none">
         {value}
       </div>
-      <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-primary leading-tight">
-        {icon}
-        {label}
+      {/* DEF-092A-10: in the 3-up grid the flex row squeezed the 16px icons to a
+          1-2px sliver, which read as a broken glyph. The icon keeps its size and
+          the label wraps instead. */}
+      <div className="mt-2.5 flex items-start gap-1.5 text-[11px] font-semibold text-primary leading-tight">
+        <span className="shrink-0 [&_svg]:w-4 [&_svg]:h-4">{icon}</span>
+        <span className="min-w-0">{label}</span>
       </div>
+
     </div>
   );
 }

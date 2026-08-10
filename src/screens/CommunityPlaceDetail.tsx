@@ -139,7 +139,13 @@ export default function CommunityPlaceDetail() {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-transparent to-background" />
-        <BackButton fallback="/community/places" />
+        {/* DEF-092A-08: the back control sat in the hero's normal flow, so it was
+            pushed below the image and collided with the place title. It now sits
+            pinned at the hero's top-left like every other hero surface. */}
+        <div className="safe-top absolute top-0 left-0 z-10 p-1.5">
+          <BackButton fallback="/community/places" className="ml-0" />
+        </div>
+
       </div>
 
       <div className="px-5 -mt-6 relative space-y-2.5 min-w-0">

@@ -1,4 +1,6 @@
+import { Sprout } from "lucide-react";
 import { NotificationsBell, UserAvatar } from "@/components/app";
+
 import { CitySelector } from "@/components/location/CitySelector";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -10,13 +12,14 @@ export function TodayHeader() {
     <header className="safe-top px-5 pt-4 pb-3 bg-background">
       <div className="flex items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-          <span className="text-lg" aria-hidden>
-            🌱
-          </span>
+          {/* DEF-092A-01: the wordmark used a colour emoji, which falls back to
+              an empty outlined box wherever no emoji font is installed. */}
+          <Sprout className="w-5 h-5 text-primary shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span className="font-semibold tracking-tight text-charcoal">
             VeggieMeet
           </span>
         </div>
+
 
         <div className="flex items-center gap-1 shrink-0">
           <NotificationsBell />
@@ -40,8 +43,9 @@ export function TodayHeader() {
 
       <div className="mt-4 min-w-0">
         <h1 className="text-[24px] leading-tight font-semibold tracking-tight text-charcoal break-words">
-          Welcome back, {name} <span aria-hidden>🌱</span>
+          Welcome back, {name}
         </h1>
+
         <p className="mt-1 text-sm text-charcoal-muted">
           Ready to see what's happening today?
         </p>

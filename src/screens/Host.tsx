@@ -3,7 +3,25 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, X, MapPin, Loader2, AlertTriangle } from "lucide-react";
+import {
+  Camera,
+  X,
+  MapPin,
+  Loader2,
+  AlertTriangle,
+  Coffee,
+  Salad,
+  EggFried,
+  Footprints,
+  Dices,
+  Mountain,
+  CookingPot,
+  ShoppingBasket,
+  Leaf,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+
 import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
@@ -26,18 +44,25 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-const CATEGORIES: { id: MeetupCategory; label: string; emoji: string }[] = [
-  { id: "coffee", label: "Coffee", emoji: "☕" },
-  { id: "dinner", label: "Dinner", emoji: "🥗" },
-  { id: "brunch", label: "Brunch", emoji: "🍳" },
-  { id: "walk", label: "Walking", emoji: "🚶" },
-  { id: "other", label: "Board Games", emoji: "🎲" },
-  { id: "walk", label: "Hiking", emoji: "🥾" },
-  { id: "cooking", label: "Cooking", emoji: "🍽️" },
-  { id: "other", label: "Farmers Market", emoji: "🧺" },
-  { id: "other", label: "Volunteering", emoji: "🌿" },
-  { id: "other", label: "Other", emoji: "✨" },
+/**
+ * DEF-092A-03: the category chips rendered colour emoji, which fall back to an
+ * empty outlined box on any platform without an emoji font (the whole rail read
+ * as broken glyphs). They now use the icon set the rest of the app already
+ * ships, at the shared 16px chip-icon size.
+ */
+const CATEGORIES: { id: MeetupCategory; label: string; icon: LucideIcon }[] = [
+  { id: "coffee", label: "Coffee", icon: Coffee },
+  { id: "dinner", label: "Dinner", icon: Salad },
+  { id: "brunch", label: "Brunch", icon: EggFried },
+  { id: "walk", label: "Walking", icon: Footprints },
+  { id: "other", label: "Board Games", icon: Dices },
+  { id: "walk", label: "Hiking", icon: Mountain },
+  { id: "cooking", label: "Cooking", icon: CookingPot },
+  { id: "other", label: "Farmers Market", icon: ShoppingBasket },
+  { id: "other", label: "Volunteering", icon: Leaf },
+  { id: "other", label: "Other", icon: Sparkles },
 ];
+
 
 const EXPECTATIONS = [
   "Casual Conversation",
@@ -68,11 +93,12 @@ function Chip({
       type="button"
       onClick={onClick}
       className={cn(
-        "px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-[0.97]",
+        "inline-flex items-center px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-[0.97]",
         active
           ? "bg-primary text-primary-foreground border-primary shadow-sm"
           : "bg-card text-charcoal border-border hover:bg-accent/60",
       )}
+
     >
       {children}
     </button>
@@ -429,10 +455,11 @@ export default function Host() {
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c, i) => (
               <Chip key={i} active={categoryIdx === i} onClick={() => setCategoryIdx(i)}>
-                <span className="mr-1">{c.emoji}</span>
+                <c.icon className="w-4 h-4 mr-1.5 shrink-0" aria-hidden="true" />
                 {c.label}
               </Chip>
             ))}
+
           </div>
         </section>
 
