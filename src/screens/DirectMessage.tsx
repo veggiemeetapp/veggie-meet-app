@@ -1,4 +1,4 @@
-import { memberSafeMessage } from "@/lib/errors";
+import { memberSafeMessage, normalizeError } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
