@@ -118,7 +118,25 @@
 @layer utilities {
   .safe-top { padding-top: env(safe-area-inset-top); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* WO-092 spacing system — one horizontal gutter for every member surface. */
+  .page-x { padding-left: var(--page-gutter); padding-right: var(--page-gutter); }
+  /* Vertical rhythm between top-level sections of a surface. */
+  .section-gap > * + * { margin-top: 1.5rem; }
+  /* Long-form copy: bios, descriptions, dialog and empty-state body text. */
+  .copy { line-height: 1.6; }
+  /* Colour-independent focus ring that matches the design system. */
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
 }
+
 
 /* WO-085 DEF-085-04 (WCAG 2.3.3 / 2.2.2): honour prefers-reduced-motion.
    Decorative transitions, slides and pulses collapse to near-instant.
