@@ -415,7 +415,7 @@ export default function OwnerPlaceIdentityReview() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="flex items-center gap-2 p-3 min-w-0">
           <Button

@@ -113,7 +113,10 @@ export default function CommunityPlaceDetail() {
       url,
     };
     try {
-      if (navigator.share) {
+      // WO-093: capability detection, never UA sniffing. iOS Safari and Android
+      // Chrome both expose Web Share; desktop and locked-down browsers fall
+      // back to the clipboard.
+      if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share(shareData);
         logAnalyticsEvent("community_place_shared", { method: "web_share" });
         return;
@@ -122,9 +125,19 @@ export default function CommunityPlaceDetail() {
       logAnalyticsEvent("community_place_shared", { method: "copy_link" });
       setShareMessage("Link copied");
       window.setTimeout(() => setShareMessage(""), 2500);
-    } catch {
-      /* user dismissed the share sheet — nothing to report */
+    } catch (e) {
+      // A dismissed share sheet is a normal outcome and must stay silent.
+      // WO-093 DEF-093-06: a *failed* clipboard write (Safari denies it outside
+      // a user gesture, and it is unavailable in some private modes) previously
+      // also stayed silent, so Share looked broken. Give member-safe feedback
+      // without surfacing the raw browser error.
+      const name = (e as { name?: string } | null)?.name ?? "";
+      if (name === "AbortError") return;
+      setShareMessage("Couldn't share — copy the link from your address bar.");
+      window.setTimeout(() => setShareMessage(""), 4000);
     }
+
+
   }
 
   return (

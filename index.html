@@ -8,6 +8,19 @@
     <meta name="author" content="VeggieMeet" />
     <meta name="theme-color" content="#f8f7f2" />
 
+    <!-- WO-093: manifest-only installability. No service worker: VeggieMeet has
+         no offline requirement, and an app-shell worker would risk stale
+         protected surfaces (see WO-083). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="VeggieMeet" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+
+
     
     
     <meta property="og:type" content="website" />

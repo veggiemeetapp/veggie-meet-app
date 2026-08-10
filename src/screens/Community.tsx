@@ -255,7 +255,7 @@ function HScroll({ children }: { children: React.ReactNode }) {
       // DEF-092A-09: scroll snapping ignored the 20px gutter, so the rail landed
       // with its first card flush to the screen edge. scroll-padding keeps the
       // snap positions aligned with the page gutter.
-      className="flex gap-3 page-x overflow-x-auto scrollbar-none pb-2"
+      className="rail flex gap-3 page-x overflow-x-auto scrollbar-none pb-2"
       style={{ scrollSnapType: "x mandatory", scrollPaddingLeft: "var(--page-gutter)" }}
     >
 

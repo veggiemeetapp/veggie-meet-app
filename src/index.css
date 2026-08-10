@@ -159,3 +159,77 @@
     animation: none !important;
   }
 }
+
+/* ==========================================================================
+   WO-093 — real-device mobile browser hardening.
+   Every rule below is capability-scoped (coarse pointer / hover-less), never
+   user-agent sniffed, and none of them disables user zoom (WO-085).
+   ========================================================================== */
+
+/* DEF-093-01 (iOS Safari): Safari auto-zooms the page when a focused form
+   control renders below 16px, which strands the CTA offscreen and leaves the
+   viewport zoomed after blur. We raise the *computed* control font size on
+   touch devices only — the visual type scale on pointer devices is untouched,
+   and page zoom stays enabled. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    /* `!important` is required, not stylistic: Tailwind's `text-sm` on the
+       shared Input/Textarea primitives is a class selector and would otherwise
+       win over this element selector, leaving 14px controls that still zoom. */
+    font-size: max(16px, 1rem) !important;
+  }
+}
+
+/* Sideways page drag: horizontal rails and the document itself must not
+   rubber-band the whole page left/right (iOS) or trigger back-navigation
+   gestures from an inner rail (Android Chrome). */
+html {
+  overscroll-behavior-x: none;
+}
+
+@layer utilities {
+  /* Horizontal carousels: keep momentum scrolling, contain the overscroll so a
+     rail never chains into a page-level horizontal drag, and never swallow the
+     vertical page scroll that starts on top of a card. */
+  .rail {
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+
+  /* Full-height app surfaces that own their own internal scrolling (chat,
+     scanner). `100dvh` follows the iOS Safari address bar, so the composer and
+     the primary CTA stay on screen while the bar expands/collapses. */
+  .app-viewport {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+/* Touch feedback and tap behaviour. `manipulation` removes the 300ms
+   double-tap-to-zoom delay on controls without disabling page zoom, so rapid
+   taps activate exactly once instead of queueing a second synthetic click. */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  label,
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: hsl(145 45% 34% / 0.12);
+  }
+
+  /* Control labels are affordances, not content: long-press should not start a
+     text selection over a nav item. Body copy stays selectable. */
+  nav a,
+  nav button,
+  [role="tab"],
+  button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
