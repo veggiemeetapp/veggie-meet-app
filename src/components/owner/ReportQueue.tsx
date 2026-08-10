@@ -114,7 +114,7 @@ export function ReportQueue() {
       </div>
 
       {q.isPending ? (
-        <div className="h-20 rounded-lg bg-muted animate-pulse" />
+        <div className="h-20 rounded-control bg-muted animate-pulse" />
       ) : q.isError ? (
         <p className="text-xs text-destructive">Couldn't load the report queue.</p>
       ) : rows.length === 0 ? (
@@ -122,7 +122,7 @@ export function ReportQueue() {
       ) : (
         <ul className="min-w-0 space-y-2">
           {rows.map((r) => (
-            <li key={r.id} className="min-w-0 overflow-hidden rounded-lg border p-3">
+            <li key={r.id} className="min-w-0 overflow-hidden rounded-control border p-3">
               <button
                 type="button"
                 className="block w-full min-w-0 text-left"

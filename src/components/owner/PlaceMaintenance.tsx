@@ -187,7 +187,7 @@ export function PlaceMaintenance() {
         {(placesQ.data ?? []).map((p) => {
           const open = p.id === openId;
           return (
-            <li key={p.id} className="min-w-0 rounded-lg border">
+            <li key={p.id} className="min-w-0 rounded-control border">
               <button
                 type="button"
                 aria-expanded={open}
@@ -261,7 +261,7 @@ export function PlaceMaintenance() {
                   </div>
 
                   {p.upcoming_meetups_here > 0 && (
-                    <div className="rounded-lg border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
+                    <div className="rounded-control border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
                       <AlertTriangle className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden />
                       {p.upcoming_meetups_here} upcoming Meetup
                       {p.upcoming_meetups_here === 1 ? " is" : "s are"} scheduled here.
@@ -330,7 +330,7 @@ export function PlaceMaintenance() {
 
 
 
-                  <div className="rounded-lg border p-3 space-y-2">
+                  <div className="rounded-control border p-3 space-y-2">
                     <p className="text-xs font-medium">Restore through reverification</p>
                     <p className="text-[11px] text-muted-foreground">
                       A place can only return to operational here — a casual status toggle back is

@@ -120,7 +120,7 @@ export default function OwnerMemberReports() {
                     <p className="text-sm text-charcoal whitespace-pre-wrap break-words">{r.details}</p>
                   ) : null}
                   {r.message_snapshot ? (
-                    <p className="rounded-xl bg-muted p-2.5 text-xs text-charcoal-muted whitespace-pre-wrap break-words">
+                    <p className="rounded-control bg-muted p-2.5 text-xs text-charcoal-muted whitespace-pre-wrap break-words">
                       “{r.message_snapshot}”
                     </p>
                   ) : null}

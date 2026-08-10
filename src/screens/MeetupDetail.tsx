@@ -57,7 +57,7 @@ function RemovedBanner({ meetupId }: { meetupId: string }) {
     staleTime: 0,
   });
   return (
-    <div className="rounded-2xl border border-border bg-muted p-4 text-center">
+    <div className="rounded-card border border-border bg-muted p-4 text-center">
       <p className="text-sm font-semibold text-charcoal">
         You're no longer attending this Meetup.
       </p>
@@ -256,7 +256,7 @@ export default function MeetupDetail() {
 
       <div className="px-5 pt-5 space-y-8">
         {isHistorical ? null : meetup.location?.locationSource === "unknown" ? (
-          <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4">
+          <div className="rounded-card border border-warning/40 bg-warning/10 p-4">
             <p className="text-sm font-semibold text-charcoal">Location not set yet.</p>
             <p className="mt-1 text-xs text-charcoal-muted">
               The host hasn't confirmed a place. Joining is paused until the location is set —
@@ -264,7 +264,7 @@ export default function MeetupDetail() {
             </p>
           </div>
         ) : meetup.location?.isInferred ? (
-          <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4">
+          <div className="rounded-card border border-warning/40 bg-warning/10 p-4">
             <p className="text-sm font-semibold text-charcoal">Location is approximate.</p>
             <p className="mt-1 text-xs text-charcoal-muted">
               The host set the city but hasn't confirmed the exact place yet. Details may change

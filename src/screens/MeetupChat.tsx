@@ -324,7 +324,7 @@ export default function MeetupChat() {
                 />
               )}
               <div
-                className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm leading-snug ${
+                className={`max-w-[75%] rounded-card px-3.5 py-2 text-sm leading-snug ${
                   isMe
                     ? "bg-primary text-primary-foreground rounded-br-md"
                     : "bg-card text-charcoal border border-border/60 rounded-bl-md"

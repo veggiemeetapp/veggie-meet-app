@@ -30,7 +30,7 @@ export function MeetupRecCard({ meetup }: Props) {
           <img
             src={meetup.cover_image_url ?? "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=800&q=80"}
             alt=""
-            className="w-24 h-24 rounded-xl object-cover bg-muted"
+            className="w-24 h-24 rounded-control object-cover bg-muted"
             loading="lazy"
           />
         </button>

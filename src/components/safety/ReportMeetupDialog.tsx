@@ -59,7 +59,7 @@ export function ReportMeetupDialog({
               {MEETUP_REPORT_REASONS.map((r) => (
                 <label
                   key={r.id}
-                  className="flex items-center gap-2 rounded-xl border border-border p-2.5 text-sm cursor-pointer hover:bg-muted"
+                  className="flex items-center gap-2 rounded-control border border-border p-2.5 text-sm cursor-pointer hover:bg-muted"
                 >
                   <input
                     type="radio"
@@ -84,7 +84,7 @@ export function ReportMeetupDialog({
               value={details}
               onChange={(e) => setDetails(e.target.value.slice(0, 1000))}
               rows={4}
-              className="mt-1 w-full rounded-2xl border border-border p-3 text-sm bg-background resize-none"
+              className="mt-1 w-full rounded-card border border-border p-3 text-sm bg-background resize-none"
               placeholder="Share anything that will help our team review this."
             />
             <p className="mt-1 text-[11px] text-charcoal-muted">

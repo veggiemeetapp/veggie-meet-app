@@ -310,7 +310,7 @@ export default function OwnerPlaceReverify() {
                   {STATE_LABEL[openReview ? "under_review" : place.freshness]}
                 </span>
               </div>
-              <dl className="rounded-lg border p-3 text-xs space-y-1 min-w-0">
+              <dl className="rounded-control border p-3 text-xs space-y-1 min-w-0">
                 <Row label="Address">{place.address || "—"}</Row>
                 <Row label="Coordinates">
                   {place.latitude != null && place.longitude != null
@@ -371,7 +371,7 @@ export default function OwnerPlaceReverify() {
                   (h) => h.result === "needs_place_update",
                 )?.id;
                 return (
-                  <div className="rounded-lg border p-3 space-y-1.5 min-w-0">
+                  <div className="rounded-control border p-3 space-y-1.5 min-w-0">
                     <p className="text-xs font-medium">
                       {needsUpdateId
                         ? "This place was flagged Needs place update"
@@ -406,7 +406,7 @@ export default function OwnerPlaceReverify() {
                   (h) => h.result === "needs_vegan_review",
                 )?.id;
                 return (
-                  <div className="rounded-lg border p-3 space-y-1.5 min-w-0">
+                  <div className="rounded-control border p-3 space-y-1.5 min-w-0">
                     <p className="text-xs font-medium">
                       {veganFlagId
                         ? "This place was flagged Needs vegan review"
@@ -447,7 +447,7 @@ export default function OwnerPlaceReverify() {
               ) : (
                 <ul className="space-y-2">
                   {wsQ.data?.open_reports.map((r) => (
-                    <li key={r.id} className="rounded-lg border p-3 text-xs space-y-1 min-w-0">
+                    <li key={r.id} className="rounded-control border p-3 text-xs space-y-1 min-w-0">
                       <p className="font-medium [overflow-wrap:anywhere]">
                         {REPORT_REASON_LABEL[r.reason_code as PlaceReportReason] ?? r.reason_code}
                       </p>
@@ -511,7 +511,7 @@ export default function OwnerPlaceReverify() {
                     {googleM.isPending ? "Checking…" : "Check Google Place ID"}
                   </Button>
                   {googleM.data && (
-                    <dl className="rounded-lg bg-muted/50 p-3 text-xs space-y-1 min-w-0">
+                    <dl className="rounded-control bg-muted/50 p-3 text-xs space-y-1 min-w-0">
                       <Row label="Name">{googleM.data.display_name ?? "—"}</Row>
                       <Row label="Address">{googleM.data.formatted_address ?? "—"}</Row>
                       <Row label="Business status">{googleM.data.business_status ?? "—"}</Row>
@@ -630,7 +630,7 @@ export default function OwnerPlaceReverify() {
                   />
 
                   {result !== "" && (
-                    <p className="rounded-lg border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
+                    <p className="rounded-control border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
                       {RESULT_CONSEQUENCE[result as ReverificationResult]}
                     </p>
                   )}
@@ -704,7 +704,7 @@ export default function OwnerPlaceReverify() {
                 </h2>
                 <ul className="space-y-2">
                   {wsQ.data?.history.map((h) => (
-                    <li key={h.id} className="rounded-lg border p-3 text-xs space-y-0.5 min-w-0">
+                    <li key={h.id} className="rounded-control border p-3 text-xs space-y-0.5 min-w-0">
                       <p className="font-medium">
                         {h.result ? RESULT_LABEL[h.result] : "Cancelled"} ·{" "}
                         {formatDate(h.completed_at)}

@@ -8,7 +8,7 @@ export function TodaySkeleton() {
         <LoadingSkeleton className="h-4 w-1/2" />
       </div>
       <div className="px-5">
-        <LoadingSkeleton className="h-72 w-full rounded-3xl" />
+        <LoadingSkeleton className="h-72 w-full rounded-dialog" />
       </div>
       <div className="px-5 mt-8 space-y-3">
         <LoadingSkeleton className="h-5 w-1/3" />

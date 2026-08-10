@@ -66,7 +66,7 @@ export function CommunityPlacePicker({
 
   if (errored) {
     return (
-      <div className="rounded-2xl border border-border bg-muted/30 p-4 text-center">
+      <div className="rounded-card border border-border bg-muted/30 p-4 text-center">
         <p className="text-sm font-semibold text-charcoal">
           We couldn’t load Community Places
         </p>
@@ -84,7 +84,7 @@ export function CommunityPlacePicker({
 
   if (places.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-muted/30 p-4 text-center">
+      <div className="rounded-card border border-border bg-muted/30 p-4 text-center">
         <p className="text-sm font-semibold text-charcoal">
           No Community Places available yet
         </p>
@@ -95,14 +95,14 @@ export function CommunityPlacePicker({
           <button
             type="button"
             onClick={onUseCustom}
-            className="h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold text-charcoal"
+            className="h-10 px-4 rounded-control border border-border bg-card text-sm font-semibold text-charcoal"
           >
             Use a Custom Location
           </button>
           <button
             type="button"
             onClick={onSuggestPlace}
-            className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+            className="h-10 px-4 rounded-control bg-primary text-primary-foreground text-sm font-semibold"
           >
             Suggest a Place
           </button>
@@ -135,7 +135,7 @@ export function CommunityPlacePicker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name"
-            className="w-full h-11 rounded-xl border border-border bg-card pl-9 pr-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-11 rounded-control border border-border bg-card pl-9 pr-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
       </div>
@@ -156,7 +156,7 @@ export function CommunityPlacePicker({
                 aria-checked={active}
                 onClick={() => onSelect(p)}
                 className={cn(
-                  "w-full flex items-start gap-3 p-3 rounded-2xl border text-left transition-all overflow-hidden",
+                  "w-full flex items-start gap-3 p-3 rounded-card border text-left transition-all overflow-hidden",
                   active
                     ? "border-primary bg-accent/40 shadow-sm"
                     : "border-border bg-card hover:bg-accent/30",
@@ -167,10 +167,10 @@ export function CommunityPlacePicker({
                     src={p.coverImageUrl}
                     alt=""
                     loading="lazy"
-                    className="w-14 h-14 rounded-xl object-cover shrink-0 bg-muted"
+                    className="w-14 h-14 rounded-control object-cover shrink-0 bg-muted"
                   />
                 ) : (
-                  <span className="w-14 h-14 rounded-xl bg-soft-green flex items-center justify-center shrink-0">
+                  <span className="w-14 h-14 rounded-control bg-soft-green flex items-center justify-center shrink-0">
                     <Leaf className="w-5 h-5 text-primary/70" aria-hidden />
                   </span>
                 )}

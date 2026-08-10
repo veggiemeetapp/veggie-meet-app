@@ -19,7 +19,7 @@ export function VeggieResultCard({ result }: Props) {
   return (
     <Link
       to={`/veggie/${result.entity_id}`}
-      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-2xl"
+      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-card"
     >
       <Card interactive padding="md" className="flex gap-3 items-start">
         <UserAvatar name={result.display_name} src={result.avatar_url ?? undefined} size="md" />

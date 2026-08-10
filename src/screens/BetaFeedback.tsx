@@ -86,7 +86,7 @@ export default function BetaFeedback() {
       <div className="flex-1 px-5 py-4 space-y-4">
         {sent ? (
           <Card className="p-5 text-center">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto rounded-card bg-soft-green text-primary flex items-center justify-center">
               <MessageSquareHeart className="w-6 h-6" />
             </div>
             <h2 className="mt-3 text-base font-semibold text-charcoal">
@@ -119,7 +119,7 @@ export default function BetaFeedback() {
               the VeggieMeet team — never to other members.
             </p>
 
-            <div className="p-3 rounded-2xl bg-muted/40 border border-border text-xs text-charcoal-muted">
+            <div className="p-3 rounded-card bg-muted/40 border border-border text-xs text-charcoal-muted">
               Something unsafe, or about a person? Use the{" "}
               <button
                 type="button"
@@ -165,7 +165,7 @@ export default function BetaFeedback() {
                 id="feedback-surface"
                 value={surface}
                 onChange={(e) => setSurface(e.target.value as FeedbackSurface)}
-                className="mt-2 w-full min-h-12 rounded-2xl bg-card border border-border px-3 text-sm text-charcoal"
+                className="mt-2 w-full min-h-12 rounded-card bg-card border border-border px-3 text-sm text-charcoal"
               >
                 {FEEDBACK_SURFACES.map((s) => (
                   <option key={s.id} value={s.id}>

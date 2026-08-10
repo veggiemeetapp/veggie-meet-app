@@ -273,7 +273,7 @@ export default function OwnerPlaceEditDetails() {
 
       {wsQ.isPending && (
         <div className="p-4">
-          <div className="h-40 animate-pulse rounded-lg bg-muted" />
+          <div className="h-40 animate-pulse rounded-control bg-muted" />
         </div>
       )}
       {wsQ.isError && (
@@ -283,7 +283,7 @@ export default function OwnerPlaceEditDetails() {
       {place && form && (
         <div className="mx-auto w-full max-w-3xl min-w-0 space-y-5 p-4">
           {/* ---- Place identity summary ---- */}
-          <section className="min-w-0 space-y-2 rounded-lg border p-3">
+          <section className="min-w-0 space-y-2 rounded-control border p-3">
             <h2 className="text-sm font-semibold [overflow-wrap:anywhere]">{place.name}</h2>
             <dl className="grid gap-1 text-xs sm:grid-cols-2">
               <Meta label="Visibility">{place.is_active ? "Active" : "Archived"}</Meta>
@@ -325,7 +325,7 @@ export default function OwnerPlaceEditDetails() {
           </section>
 
           {successMsg && (
-            <p className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-xs [overflow-wrap:anywhere]">
+            <p className="rounded-control border border-primary/40 bg-primary/5 p-3 text-xs [overflow-wrap:anywhere]">
               {successMsg}
               {relatedReportId && (
                 <>
@@ -348,7 +348,7 @@ export default function OwnerPlaceEditDetails() {
               ref={errorRef}
               tabIndex={-1}
               role="alert"
-              className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive [overflow-wrap:anywhere]"
+              className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive [overflow-wrap:anywhere]"
             >
               {errorMsg}
             </div>
@@ -356,7 +356,7 @@ export default function OwnerPlaceEditDetails() {
 
           {/* ---- Related context ---- */}
           {wsQ.data && wsQ.data.open_reports.length > 0 && (
-            <section className="min-w-0 space-y-1 rounded-lg border p-3">
+            <section className="min-w-0 space-y-1 rounded-control border p-3">
               <h2 className="text-sm font-semibold">Open member reports</h2>
               <ul className="m-0 list-none space-y-1 p-0">
                 {wsQ.data.open_reports.map((r) => (
@@ -653,7 +653,7 @@ export default function OwnerPlaceEditDetails() {
           </Group>
 
           {/* ---- Changed summary ---- */}
-          <section className="min-w-0 space-y-1 rounded-lg border p-3">
+          <section className="min-w-0 space-y-1 rounded-control border p-3">
             <h2 className="text-sm font-semibold">
               Changed fields ({changed.length})
             </h2>
@@ -706,7 +706,7 @@ export default function OwnerPlaceEditDetails() {
 
           {/* ---- Detail change history ---- */}
           {wsQ.data && wsQ.data.history.length > 0 && (
-            <section className="min-w-0 space-y-1 rounded-lg border p-3">
+            <section className="min-w-0 space-y-1 rounded-control border p-3">
               <h2 className="text-sm font-semibold">Detail change history (private)</h2>
               <ul className="m-0 list-none space-y-1 p-0 text-xs text-muted-foreground">
                 {wsQ.data.history.map((h) => (
@@ -788,7 +788,7 @@ export default function OwnerPlaceEditDetails() {
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="min-w-0 space-y-3 rounded-lg border p-3">
+    <section className="min-w-0 space-y-3 rounded-control border p-3">
       <h2 className="text-sm font-semibold">{title}</h2>
       {children}
     </section>

@@ -90,7 +90,7 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
       <ul className="min-w-0 space-y-2">
 
         {rows.map((s) => (
-          <li key={s.id} className="min-w-0 overflow-hidden rounded-lg border p-3">
+          <li key={s.id} className="min-w-0 overflow-hidden rounded-control border p-3">
             <button
               type="button"
               className="block w-full min-w-0 text-left"

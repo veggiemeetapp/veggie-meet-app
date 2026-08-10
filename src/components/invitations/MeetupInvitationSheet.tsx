@@ -143,7 +143,7 @@ export function MeetupInvitationSheet({
                       disabled={!m.eligible}
                       onClick={() => setSelectedId(m.id)}
                       className={cn(
-                        "w-full text-left rounded-2xl border p-3 flex gap-3 transition-colors",
+                        "w-full text-left rounded-card border p-3 flex gap-3 transition-colors",
                         selectedId === m.id
                           ? "border-primary bg-soft-green/70"
                           : "border-border/70 bg-card",
@@ -155,7 +155,7 @@ export function MeetupInvitationSheet({
                       <img
                         src={m.coverImageUrl}
                         alt=""
-                        className="w-16 h-16 rounded-xl object-cover bg-muted shrink-0"
+                        className="w-16 h-16 rounded-control object-cover bg-muted shrink-0"
                         loading="lazy"
                       />
                       <div className="min-w-0 flex-1">
@@ -201,11 +201,11 @@ export function MeetupInvitationSheet({
 
         {step === "review" && selected && (
           <div className="px-5 py-4 space-y-4">
-            <div className="rounded-2xl border border-border/70 bg-card p-3 flex gap-3">
+            <div className="rounded-card border border-border/70 bg-card p-3 flex gap-3">
               <img
                 src={selected.coverImageUrl}
                 alt=""
-                className="w-16 h-16 rounded-xl object-cover bg-muted"
+                className="w-16 h-16 rounded-control object-cover bg-muted"
               />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold text-charcoal text-sm">

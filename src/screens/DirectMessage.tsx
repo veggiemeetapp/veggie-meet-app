@@ -779,7 +779,7 @@ function EmptyConversation({
             key={p}
             type="button"
             onClick={() => onPrompt(p)}
-            className="w-full text-left rounded-2xl border border-border/70 bg-card px-4 py-2.5 text-sm text-charcoal hover:bg-muted/60 transition-colors"
+            className="w-full text-left rounded-card border border-border/70 bg-card px-4 py-2.5 text-sm text-charcoal hover:bg-muted/60 transition-colors"
           >
             {p}
           </button>
@@ -868,7 +868,7 @@ function MessageGroup({
             <div key={m.id} className="group/msg relative flex items-start gap-1.5">
               <div
                 className={cn(
-                  "px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap",
+                  "px-3.5 py-2 rounded-card text-sm break-words whitespace-pre-wrap",
                   isMe
                     ? "bg-soft-green text-charcoal rounded-br-md self-end"
                     : "bg-muted text-charcoal rounded-bl-md self-start",
@@ -949,7 +949,7 @@ function ReportDialog({
           </DialogDescription>
         </DialogHeader>
         {messagePreview && (
-          <div className="rounded-2xl bg-muted p-3 text-sm text-charcoal">
+          <div className="rounded-card bg-muted p-3 text-sm text-charcoal">
             <p className="text-[11px] text-charcoal-muted mb-1">
               Reporting this message
               {messageTimestamp ? ` · ${formatTime(messageTimestamp)}` : ""}
@@ -964,7 +964,7 @@ function ReportDialog({
             <Label
               key={r.id}
               htmlFor={`report-${r.id}`}
-              className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
+              className="flex items-center gap-3 rounded-control border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
             >
               <RadioGroupItem id={`report-${r.id}`} value={r.id} />
               <span className="text-sm">{r.label}</span>

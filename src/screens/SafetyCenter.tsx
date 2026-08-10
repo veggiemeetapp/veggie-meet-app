@@ -163,7 +163,7 @@ export default function SafetyCenter() {
                     >
                       <div
                         className={cn(
-                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                          "w-9 h-9 rounded-control flex items-center justify-center shrink-0",
                           "bg-soft-green text-primary",
                         )}
                       >
@@ -209,7 +209,7 @@ export default function SafetyCenter() {
         <Section title="If you need immediate help">
           <Card padding="lg" className="border-destructive/20 bg-destructive/5">
             <div className="flex gap-3">
-              <div className="w-9 h-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-control bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                 <LifeBuoy className="w-5 h-5" />
               </div>
               <div className="text-sm text-charcoal leading-relaxed">
@@ -417,7 +417,7 @@ function SafetyConcernDialog({
             <Label
               key={r.id}
               htmlFor={`safety-${r.id}`}
-              className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
+              className="flex items-center gap-3 rounded-control border border-border/70 px-3 py-2 cursor-pointer hover:bg-muted/50"
             >
               <RadioGroupItem id={`safety-${r.id}`} value={r.id} />
               <span className="text-sm">{r.label}</span>

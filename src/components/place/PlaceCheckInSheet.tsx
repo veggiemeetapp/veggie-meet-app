@@ -160,7 +160,7 @@ export function PlaceCheckInSheet({
 
   return (
     <Dialog open={open} onOpenChange={(o) => phase !== "checking" && onOpenChange(o)}>
-      <DialogContent className="rounded-3xl border-0 sm:max-w-sm max-h-[90dvh] overflow-y-auto">
+      <DialogContent className="rounded-dialog border-0 sm:max-w-sm max-h-[90dvh] overflow-y-auto">
         {phase === "explain" && (
           <>
             <DialogHeader>

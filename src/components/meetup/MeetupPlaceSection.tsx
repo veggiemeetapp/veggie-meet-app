@@ -59,7 +59,7 @@ export function MeetupPlaceSection({ meetupId }: Props) {
   return (
     <section
       aria-labelledby="meetup-place-heading"
-      className="rounded-2xl border border-border bg-card p-4 min-w-0"
+      className="rounded-card border border-border bg-card p-4 min-w-0"
     >
       <h2
         id="meetup-place-heading"
@@ -95,7 +95,7 @@ export function MeetupPlaceSection({ meetupId }: Props) {
       {warning && !data.isHistorical && (
         <p
           role="status"
-          className="mt-3 flex items-start gap-1.5 rounded-xl border border-warning/40 bg-warning/10 p-2.5 text-xs text-charcoal"
+          className="mt-3 flex items-start gap-1.5 rounded-control border border-warning/40 bg-warning/10 p-2.5 text-xs text-charcoal"
         >
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden />
           <span className="[overflow-wrap:anywhere]">{warning}</span>
@@ -119,7 +119,7 @@ export function MeetupPlaceSection({ meetupId }: Props) {
               navigate(place.publicPlaceRoute!);
             }}
             aria-label={`View Community Place ${place.publicName}`}
-            className="h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold text-charcoal"
+            className="h-10 px-4 rounded-control border border-border bg-card text-sm font-semibold text-charcoal"
           >
             View Place
           </button>
@@ -132,13 +132,13 @@ export function MeetupPlaceSection({ meetupId }: Props) {
             aria-label={`Get directions to the Meetup location, ${
               data.snapshot?.locationName ?? place.publicName
             }`}
-            className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5"
+            className="h-10 px-4 rounded-control bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5"
           >
             <Navigation className="w-4 h-4" aria-hidden />
             Get Directions
           </a>
         ) : (
-          <span className="h-10 px-4 rounded-xl border border-border bg-muted text-sm font-semibold text-charcoal-muted inline-flex items-center">
+          <span className="h-10 px-4 rounded-control border border-border bg-muted text-sm font-semibold text-charcoal-muted inline-flex items-center">
             Directions unavailable — location is being reviewed
           </span>
         )}

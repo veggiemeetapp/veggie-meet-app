@@ -303,12 +303,12 @@ function MetricCard({
         type="button"
         onClick={onView}
         aria-label={viewLabel ?? `View ${title} details`}
-        className="w-full text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="w-full text-left rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <div className="flex items-start gap-3">
           <div
             aria-hidden
-            className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0"
           >
             {icon}
           </div>
@@ -620,7 +620,7 @@ function ActivityRow({
         primaryLabel={`View ${place?.name ?? "Community Place"}`}
         disabled={!available}
         icon={
-          <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
             <Building2 className="w-5 h-5" />
           </div>
         }
@@ -668,7 +668,7 @@ function ActivityRow({
       primaryLabel={`View ${meetup?.title ?? "Meetup"} summary`}
       disabled={!available}
       icon={
-        <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+        <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
           <Calendar className="w-5 h-5" />
         </div>
       }
@@ -703,7 +703,7 @@ function EmptyImpactState() {
   return (
     <Card padding="lg">
       <div className="text-center">
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+        <div className="mx-auto w-14 h-14 rounded-card bg-soft-green text-primary flex items-center justify-center">
           <HeartHandshake className="w-6 h-6" />
         </div>
         {/* WO-085A DEF-085A-04: h2 keeps this one level below the page h1. */}
@@ -736,7 +736,7 @@ function HowItWorks() {
   return (
     <Card padding="lg">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-2xl bg-soft-green text-primary flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0">
           <Info className="w-4 h-4" />
         </div>
         <div>

@@ -172,7 +172,7 @@ export default function OwnerPlaceVerification() {
                     setGoogleResults(null);
                     setQuery(c.display_name);
                   }}
-                  className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                  className={`w-full text-left rounded-control border p-3 transition-colors ${
                     c.id === selectedId ? "border-primary bg-primary/5" : "hover:bg-muted/50"
                   }`}
                 >
@@ -213,7 +213,7 @@ export default function OwnerPlaceVerification() {
                 Reviews, ratings and photos are never requested or stored.
               </p>
               {googleResults?.map((g) => (
-                <div key={g.place_id} className="rounded-lg border p-3 space-y-1">
+                <div key={g.place_id} className="rounded-control border p-3 space-y-1">
                   <p className="text-sm font-medium">{g.display_name}</p>
                   <p className="text-xs text-muted-foreground">{g.formatted_address}</p>
                   <p className="text-xs text-muted-foreground">
@@ -337,7 +337,7 @@ export default function OwnerPlaceVerification() {
                 />
               </div>
 
-              <div className="rounded-lg bg-muted/50 p-3 text-xs space-y-1">
+              <div className="rounded-control bg-muted/50 p-3 text-xs space-y-1">
                 <p className="font-medium">Verified Google fields</p>
                 <p>Place ID: {merged.google_place_id ?? "—"}</p>
                 <p>Address: {merged.google_formatted_address ?? "—"}</p>
@@ -364,7 +364,7 @@ export default function OwnerPlaceVerification() {
               </div>
 
               {publishBlockers(merged).length > 0 && (
-                <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-1">
+                <div className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-1">
                   <p className="font-medium text-destructive">Not publishable yet</p>
                   <ul className="list-disc pl-4 text-muted-foreground">
                     {publishBlockers(merged).map((b) => <li key={b}>{b}</li>)}

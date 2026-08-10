@@ -224,7 +224,7 @@ export default function VeggieProfile() {
                     type="button"
                     onClick={() => setPhotoOpen(photos[0])}
                     className={cn(
-                      "relative rounded-2xl overflow-hidden bg-muted",
+                      "relative rounded-card overflow-hidden bg-muted",
                       photos.length === 1
                         ? "col-span-2 aspect-[16/10]"
                         : "col-span-2 aspect-[16/10]",
@@ -242,7 +242,7 @@ export default function VeggieProfile() {
                       key={i}
                       type="button"
                       onClick={() => setPhotoOpen(src)}
-                      className="relative rounded-2xl overflow-hidden aspect-square bg-muted"
+                      className="relative rounded-card overflow-hidden aspect-square bg-muted"
                     >
                       <img
                         src={src}
@@ -423,7 +423,7 @@ export default function VeggieProfile() {
             <img
               src={photoOpen}
               alt=""
-              className="w-full h-auto rounded-2xl object-contain"
+              className="w-full h-auto rounded-card object-contain"
             />
           )}
         </DialogContent>
@@ -515,7 +515,7 @@ function ActivityStat({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl bg-soft-green/60 p-4">
+    <div className="rounded-card bg-soft-green/60 p-4">
       <div className="text-2xl font-bold text-charcoal tabular-nums leading-none">
         {value}
       </div>
@@ -538,7 +538,7 @@ function VerifyRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-xl bg-soft-green/60 text-primary flex items-center justify-center">
+      <div className="w-8 h-8 rounded-control bg-soft-green/60 text-primary flex items-center justify-center">
         {icon}
       </div>
       <div className="flex-1 text-sm text-charcoal">{label}</div>

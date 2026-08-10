@@ -340,7 +340,7 @@ export default function SuggestPlace() {
 
             <div aria-live="polite">
               {formError && (
-                <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                <div className="rounded-control border border-destructive/30 bg-destructive/5 p-3">
                   <p className="text-sm font-semibold text-charcoal">{formError.title}</p>
                   <p className="mt-0.5 text-sm text-charcoal-muted">{formError.body}</p>
                 </div>

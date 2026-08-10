@@ -45,7 +45,7 @@ export function InvitationCard({
   return (
     <div
       className={cn(
-        "w-full max-w-[86%] rounded-2xl border border-border/70 bg-card overflow-hidden shadow-soft",
+        "w-full max-w-[86%] rounded-card border border-border/70 bg-card overflow-hidden shadow-soft",
         className,
       )}
       role="group"
@@ -64,7 +64,7 @@ export function InvitationCard({
         <img
           src={meetup.coverImageUrl}
           alt=""
-          className="w-full h-32 rounded-xl object-cover bg-muted"
+          className="w-full h-32 rounded-control object-cover bg-muted"
           loading="lazy"
         />
       </div>

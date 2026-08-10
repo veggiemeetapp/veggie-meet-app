@@ -188,9 +188,9 @@ function Hub({ data, go }: { data: AccountSettings; go: (s: Section) => void }) 
           key={r.key}
           type="button"
           onClick={() => go(r.key)}
-          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-card border border-border hover:bg-accent/40 transition-colors text-left min-h-14"
+          className="w-full flex items-center gap-3 p-4 rounded-card bg-card border border-border hover:bg-accent/40 transition-colors text-left min-h-14"
         >
-          <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
             {r.icon}
           </div>
           <div className="flex-1 min-w-0">
@@ -485,7 +485,7 @@ function NotificationsSection({
       {NOTIFICATION_CATEGORIES.map((cat) => (
         <div
           key={cat.key}
-          className="flex items-start gap-3 p-4 rounded-2xl bg-card border border-border min-h-14"
+          className="flex items-start gap-3 p-4 rounded-card bg-card border border-border min-h-14"
         >
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-charcoal">{cat.title}</div>
@@ -582,7 +582,7 @@ function PrivacySection({
 
   return (
     <div className="space-y-4">
-      <div className="p-4 rounded-2xl bg-card border border-border flex items-start gap-3">
+      <div className="p-4 rounded-card bg-card border border-border flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-charcoal">
             Show me in Discovery
@@ -603,9 +603,9 @@ function PrivacySection({
       <button
         type="button"
         onClick={() => navigate("/safety")}
-        className="w-full flex items-center gap-3 p-4 rounded-2xl bg-card border border-border hover:bg-accent/40 text-left min-h-14"
+        className="w-full flex items-center gap-3 p-4 rounded-card bg-card border border-border hover:bg-accent/40 text-left min-h-14"
       >
-        <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+        <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
@@ -623,9 +623,9 @@ function PrivacySection({
       <button
         type="button"
         onClick={() => navigate("/settings/feedback?surface=settings")}
-        className="w-full flex items-center gap-3 p-4 rounded-2xl bg-card border border-border hover:bg-accent/40 text-left min-h-14"
+        className="w-full flex items-center gap-3 p-4 rounded-card bg-card border border-border hover:bg-accent/40 text-left min-h-14"
       >
-        <div className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center">
+        <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
           <MessageSquareHeart className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
@@ -639,7 +639,7 @@ function PrivacySection({
         <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
       </button>
 
-      <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs text-charcoal-muted space-y-3">
+      <div className="p-4 rounded-card bg-muted/40 border border-border text-xs text-charcoal-muted space-y-3">
         <div>
           <div className="font-semibold text-charcoal">Browser permissions</div>
           <p className="mt-0.5">
@@ -802,13 +802,13 @@ function AccountSection({
             setTypedConfirm("");
             setConfirmOpen(true);
           }}
-          className="mt-3 w-full flex items-center justify-center gap-2 h-12 rounded-xl border border-destructive/40 bg-destructive/5 text-destructive font-semibold hover:bg-destructive/10"
+          className="mt-3 w-full flex items-center justify-center gap-2 h-12 rounded-control border border-destructive/40 bg-destructive/5 text-destructive font-semibold hover:bg-destructive/10"
         >
           <Trash2 className="w-4 h-4" /> Delete my account
         </button>
 
         {blockedInfo && (
-          <div className="mt-3 p-4 rounded-xl border border-warning-border bg-warning-soft text-xs text-warning-foreground space-y-3">
+          <div className="mt-3 p-4 rounded-control border border-warning-border bg-warning-soft text-xs text-warning-foreground space-y-3">
             <div>
               You still have <strong>{blockedInfo.hosted}</strong> future{" "}
               {blockedInfo.hosted === 1 ? "Meetup" : "Meetups"} to host. Cancel
@@ -818,7 +818,7 @@ function AccountSection({
             <button
               type="button"
               onClick={() => navigate("/plans?tab=hosted")}
-              className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-warning text-primary-foreground font-semibold hover:opacity-95"
+              className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-control bg-warning text-primary-foreground font-semibold hover:opacity-95"
             >
               Manage my Meetups
             </button>
@@ -882,7 +882,7 @@ function AccountSection({
               disabled={del.isPending || !confirmMatches}
               onClick={() => del.mutate()}
               aria-label="Delete permanently"
-              className="h-11 min-w-11 px-4 rounded-xl bg-destructive text-destructive-foreground font-semibold hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-11 min-w-11 px-4 rounded-control bg-destructive text-destructive-foreground font-semibold hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {del.isPending ? "Deleting…" : "Delete permanently"}
             </button>

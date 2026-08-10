@@ -158,7 +158,7 @@ export default function CommunityPlaces() {
         {placesQuery.isPending ? (
           <div className="mt-5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
+              <div key={i} className="h-44 rounded-card bg-muted animate-pulse" />
             ))}
           </div>
 
@@ -200,7 +200,7 @@ export default function CommunityPlaces() {
             published results so it never competes with discovery. */}
         <section
           aria-labelledby="suggest-place-heading"
-          className="mt-8 rounded-2xl border border-border/70 bg-card p-5"
+          className="mt-8 rounded-card border border-border/70 bg-card p-5"
         >
           <h2 id="suggest-place-heading" className="text-base font-semibold text-charcoal">
             Know a vegan place?
@@ -236,7 +236,7 @@ function EmptyBlock({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mt-6 rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
+    <div className="mt-6 rounded-card border border-dashed border-border/70 px-5 py-10 text-center">
       <h2 className="text-base font-semibold text-charcoal">{title}</h2>
       <p className="mt-1 text-sm text-charcoal-muted max-w-sm mx-auto">{body}</p>
       {action && <div className="mt-5">{action}</div>}
@@ -276,7 +276,7 @@ function PlaceListCard({
           position,
         })
       }
-      className="block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="block h-full rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <Card padding="none" interactive className="h-full overflow-hidden flex flex-col">
         <div className="h-32 shrink-0">

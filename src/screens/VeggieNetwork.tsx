@@ -326,8 +326,8 @@ export default function VeggieNetwork() {
             </p>
             {meetNextQuery.isLoading ? (
               <div className="space-y-2" aria-busy="true">
-                <LoadingSkeleton className="h-24 w-full rounded-2xl" />
-                <LoadingSkeleton className="h-24 w-full rounded-2xl" />
+                <LoadingSkeleton className="h-24 w-full rounded-card" />
+                <LoadingSkeleton className="h-24 w-full rounded-card" />
               </div>
             ) : meetNextQuery.isError ? (
               <EmptyState
@@ -464,7 +464,7 @@ function SummaryStat({
   hint: string;
 }) {
   return (
-    <div className="rounded-2xl bg-soft-green/50 p-4">
+    <div className="rounded-card bg-soft-green/50 p-4">
       <div className="text-3xl font-bold text-charcoal leading-none tabular-nums">
         {value}
       </div>

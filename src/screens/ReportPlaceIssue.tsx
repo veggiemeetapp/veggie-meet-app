@@ -195,7 +195,7 @@ export default function ReportPlaceIssue() {
           {formError && (
             <div
               role="alert"
-              className="rounded-2xl border border-warning-border bg-warning-soft p-3.5 min-w-0"
+              className="rounded-card border border-warning-border bg-warning-soft p-3.5 min-w-0"
             >
               <p className="text-sm font-semibold text-charcoal">{formError.title}</p>
               <p className="mt-1 text-xs text-charcoal-muted [overflow-wrap:anywhere]">

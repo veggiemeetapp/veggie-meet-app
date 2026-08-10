@@ -61,10 +61,10 @@ export default function SupportedPlaces() {
 
         {query.isPending ? (
           <div className="mt-5 space-y-3">
-            <div className="h-28 rounded-2xl bg-muted animate-pulse" />
+            <div className="h-28 rounded-card bg-muted animate-pulse" />
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
               {[0, 1].map((i) => (
-                <div key={i} className="h-36 rounded-2xl bg-muted animate-pulse" />
+                <div key={i} className="h-36 rounded-card bg-muted animate-pulse" />
               ))}
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function SupportedPlaces() {
               <div className="flex items-start gap-3">
                 <div
                   aria-hidden
-                  className="w-10 h-10 rounded-2xl bg-soft-green text-primary flex items-center justify-center shrink-0"
+                  className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0"
                 >
                   <Leaf className="w-5 h-5" />
                 </div>
@@ -114,7 +114,7 @@ export default function SupportedPlaces() {
             </Card>
 
             {places.length === 0 ? (
-              <div className="mt-6 rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
+              <div className="mt-6 rounded-card border border-dashed border-border/70 px-5 py-10 text-center">
                 <h2 className="text-base font-semibold text-charcoal">
                   No supported places yet
                 </h2>
@@ -205,7 +205,7 @@ function SupportedPlaceCard({
       }, ${sourceLabel}${date ? `, latest activity ${date}` : ""}${
         repeat ? `, ${place.direct_visit_count} verified visits` : ""
       }${statusLabel ? `, ${statusLabel}` : ""}`}
-      className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <Card interactive padding="none" className="overflow-hidden h-full">
         <div className="h-28 bg-soft-green flex items-center justify-center overflow-hidden">

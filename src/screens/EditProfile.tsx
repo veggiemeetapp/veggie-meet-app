@@ -207,7 +207,7 @@ export default function EditProfile() {
               }}
               maxLength={40}
               placeholder="How should Veggies call you?"
-              className="w-full h-12 rounded-xl border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
 
           </Field>
@@ -223,7 +223,7 @@ export default function EditProfile() {
               rows={4}
               maxLength={160}
               placeholder="Tell Veggies a little about yourself."
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              className="w-full rounded-control border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
             <p className="mt-1.5 text-xs text-charcoal-muted text-right">
               {bio.length}/160
@@ -235,7 +235,7 @@ export default function EditProfile() {
             required
             error={!cityValid && dirty ? "Please pick your Home City." : undefined}
           >
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+            <div className="flex items-center justify-between gap-3 rounded-control border border-border bg-card px-4 py-3">
               <div className="min-w-0">
                 <div className="text-base font-medium text-charcoal truncate">
                   {homeCity?.name ?? "Not set"}
@@ -352,7 +352,7 @@ export default function EditProfile() {
             <button
               type="button"
               onClick={() => setAvatarSheet(false)}
-              className="w-full mt-2 h-12 rounded-2xl bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+              className="w-full mt-2 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
             >
               Cancel
             </button>
@@ -413,13 +413,13 @@ function SheetRow({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent/40 active:scale-[0.99] transition text-left",
+        "w-full flex items-center gap-3 p-3.5 rounded-card hover:bg-accent/40 active:scale-[0.99] transition text-left",
         destructive ? "text-destructive" : "text-charcoal",
       )}
     >
       <span
         className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+          "w-10 h-10 rounded-control flex items-center justify-center shrink-0",
           destructive ? "bg-destructive/10" : "bg-muted",
         )}
       >

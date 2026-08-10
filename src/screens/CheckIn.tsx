@@ -158,7 +158,7 @@ export default function CheckIn() {
       )}
 
       <Dialog open={!!success} onOpenChange={(open) => !open && setSuccess(null)}>
-        <DialogContent className="rounded-3xl border-0 sm:max-w-sm animate-in fade-in-0 zoom-in-95 duration-200">
+        <DialogContent className="rounded-dialog border-0 sm:max-w-sm animate-in fade-in-0 zoom-in-95 duration-200">
           <DialogHeader>
             <div className="mx-auto mb-2 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <ShieldCheck className="w-8 h-8" />
@@ -217,7 +217,7 @@ function HubView({ meetup, onShowQR, onScan }: { meetup: Meetup; onShowQR: () =>
 
       <div className="grid grid-cols-1 gap-3">
         <Card interactive onClick={onScan} className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+          <div className="w-12 h-12 rounded-card bg-primary/10 flex items-center justify-center text-primary">
             <ScanLine className="w-6 h-6" />
           </div>
           <div className="flex-1">
@@ -226,7 +226,7 @@ function HubView({ meetup, onShowQR, onScan }: { meetup: Meetup; onShowQR: () =>
           </div>
         </Card>
         <Card interactive onClick={onShowQR} className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-accent flex items-center justify-center text-charcoal">
+          <div className="w-12 h-12 rounded-card bg-accent flex items-center justify-center text-charcoal">
             <QrCode className="w-6 h-6" />
           </div>
           <div className="flex-1">

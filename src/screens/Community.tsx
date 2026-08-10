@@ -259,7 +259,7 @@ function HScrollSkeleton() {
   return (
     <div className="flex gap-3 px-5 overflow-hidden min-h-52">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="w-64 h-52 rounded-2xl bg-muted animate-pulse shrink-0" />
+        <div key={i} className="w-64 h-52 rounded-card bg-muted animate-pulse shrink-0" />
       ))}
     </div>
   );
@@ -272,7 +272,7 @@ function EmptyRow({ message }: { message: string }) {
   // the same height in both states keeps the page visually stable.
   return (
     <div className="px-5 min-h-52 flex items-center">
-      <div className="w-full rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-muted">
+      <div className="w-full rounded-card border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-muted">
         {message}
       </div>
     </div>
