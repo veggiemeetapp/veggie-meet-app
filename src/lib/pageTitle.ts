@@ -27,6 +27,7 @@ const EXACT: Record<string, string> = {
   "/plans": "My Plans",
   "/notifications": "Notifications",
   "/settings": "Settings",
+  "/settings/feedback": "Send beta feedback",
   "/safety": "Safety & Trust",
   "/impact": "Community Impact",
   "/network": "Veggie Network",

@@ -1,6 +1,8 @@
 import { Component, ReactNode, createRef } from "react";
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { logAnalyticsEvent, routeTemplate } from "@/lib/analytics";
+import { logOperationalFailure } from "@/lib/opsTelemetry";
+
 
 
 interface Props {
@@ -32,6 +34,13 @@ export class AppErrorBoundary extends Component<Props, State> {
         typeof window !== "undefined" ? window.location.pathname : undefined,
       ),
       error_name: error instanceof Error ? error.name : "unknown",
+    });
+    // WO-089: same event as an operational incident signal, with a bounded
+    // fingerprint so the owner dashboard can group repeats and spot a storm.
+    logOperationalFailure("boot", {
+      operation: "render_boundary",
+      error,
+      surface: "app_shell",
     });
   }
 
