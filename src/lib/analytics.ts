@@ -123,6 +123,19 @@ export const ANALYTICS_EVENTS = [
   "supported_place_card_opened",
   "supported_places_explore_clicked",
   "supported_places_opened",
+  // WO-089 — operational failure vocabulary (bounded, content-free).
+  "op_read_failed",
+  "op_mutation_failed",
+  "op_auth_failed",
+  "op_realtime_failed",
+  "op_deeplink_failed",
+  "op_app_boot_failed",
+  // WO-089 — private beta feedback + owner beta operations.
+  "beta_feedback_opened",
+  "beta_feedback_submitted",
+  "beta_feedback_failed",
+  "owner_beta_operations_opened",
+  "owner_beta_feedback_status_updated",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];

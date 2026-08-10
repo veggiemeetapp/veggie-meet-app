@@ -151,6 +151,59 @@ export type Database = {
           },
         ]
       }
+      beta_feedback: {
+        Row: {
+          app_version: string | null
+          category: string
+          client_token: string | null
+          created_at: string
+          id: string
+          internal_note: string | null
+          message: string
+          profile_id: string | null
+          route_template: string | null
+          status: string
+          surface: string
+          updated_at: string
+        }
+        Insert: {
+          app_version?: string | null
+          category: string
+          client_token?: string | null
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          message: string
+          profile_id?: string | null
+          route_template?: string | null
+          status?: string
+          surface: string
+          updated_at?: string
+        }
+        Update: {
+          app_version?: string | null
+          category?: string
+          client_token?: string | null
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          message?: string
+          profile_id?: string | null
+          route_template?: string | null
+          status?: string
+          surface?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_feedback_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_participants: {
         Row: {
           chat_id: string
@@ -3056,6 +3109,14 @@ export type Database = {
           timezone: string
         }[]
       }
+      get_beta_feedback_queue: {
+        Args: { _limit?: number; _offset?: number; _status?: string }
+        Returns: Json
+      }
+      get_beta_operational_failures: {
+        Args: { _hours?: number; _limit?: number }
+        Returns: Json
+      }
       get_community_place_activity: {
         Args: { _before_at?: string; _before_id?: string; _limit?: number }
         Returns: Json
@@ -3242,6 +3303,8 @@ export type Database = {
         Returns: Json
       }
       get_place_suggestion_queue: { Args: never; Returns: Json }
+      get_private_beta_health: { Args: never; Returns: Json }
+      get_private_beta_integrity_health: { Args: never; Returns: Json }
       get_profile_connection_summary: {
         Args: { _target_profile_id: string }
         Returns: Json
@@ -3539,6 +3602,17 @@ export type Database = {
         Returns: Json
       }
       start_place_reverification: { Args: { _place_id: string }; Returns: Json }
+      submit_beta_feedback: {
+        Args: {
+          _app_version?: string
+          _category: string
+          _client_token?: string
+          _message: string
+          _route_template?: string
+          _surface: string
+        }
+        Returns: string
+      }
       submit_community_place_report: {
         Args: {
           _additional_details?: string
@@ -3598,6 +3672,10 @@ export type Database = {
       unaccent: { Args: { "": string }; Returns: string }
       unaccent_fallback: { Args: { _t: string }; Returns: string }
       unblock_profile: { Args: { _blocked_profile_id: string }; Returns: Json }
+      update_beta_feedback_status: {
+        Args: { _feedback_id: string; _internal_note?: string; _status: string }
+        Returns: Json
+      }
       update_community_place_details: {
         Args: {
           _acknowledge_identity_risk?: boolean
