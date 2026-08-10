@@ -84,17 +84,17 @@ export function QRScanner({ onResult, helpText, fallbackAction }: Props) {
       {helpText && (
         <p className="text-sm text-charcoal-muted text-center max-w-xs">{helpText}</p>
       )}
-      <div className="w-full aspect-square rounded-3xl overflow-hidden bg-black/90 relative">
+      <div className="w-full aspect-square rounded-dialog overflow-hidden bg-charcoal relative">
         <div id={elementId} className="w-full h-full" />
         {status === "starting" && (
-          <div className="absolute inset-0 flex items-center justify-center text-white/80 text-sm">
+          <div className="absolute inset-0 flex items-center justify-center text-warm-white/80 text-sm">
             Starting camera…
           </div>
         )}
         {status === "error" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-charcoal/90 text-white px-6 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-charcoal/95 text-warm-white page-x text-center">
             <p className="text-base font-semibold">Camera unavailable</p>
-            <p className="text-sm text-white/80">{errorMsg}</p>
+            <p className="text-sm text-warm-white/80">{errorMsg}</p>
           </div>
         )}
       </div>

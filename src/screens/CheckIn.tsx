@@ -304,7 +304,7 @@ function QRView({
       <p className="text-sm text-charcoal-muted text-center max-w-xs">
         Have a connected attendee scan this code. It expires quickly for your safety.
       </p>
-      <div className="bg-white p-6 rounded-3xl shadow-card relative">
+      <div className="bg-card p-6 rounded-dialog shadow-card relative">
         {state.status === "ready" && state.token ? (
           <QRCodeSVG value={encodeVerifyPayload(state.token.token)} size={240} level="M" includeMargin={false} />
         ) : (
@@ -318,7 +318,7 @@ function QRView({
           </div>
         )}
         {state.status === "expired" && (
-          <div className="absolute inset-0 rounded-3xl bg-white/70 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-dialog bg-card/70 flex items-center justify-center">
             <p className="text-sm font-semibold text-charcoal">Expired</p>
           </div>
         )}

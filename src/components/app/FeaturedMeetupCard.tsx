@@ -45,7 +45,7 @@ export function FeaturedMeetupCard({ meetup }: Props) {
               ✨ Featured
             </span>
           </div>
-          <div className="absolute bottom-4 left-4 right-4 text-white">
+          <div className="absolute bottom-4 left-4 right-4 text-warm-white">
             <div className="text-[11px] font-medium uppercase tracking-wider opacity-90 mb-1">
               {meetup.category}
             </div>

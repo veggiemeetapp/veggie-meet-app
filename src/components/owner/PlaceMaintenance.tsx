@@ -34,8 +34,8 @@ const STATUS_OPTIONS: CommunityPlaceMaintenanceStatus[] = [
 
 const STATUS_TONE: Record<CommunityPlaceMaintenanceStatus, string> = {
   operational: "bg-soft-green text-primary",
-  needs_reverification: "bg-amber-500/15 text-warning",
-  temporarily_closed: "bg-amber-500/15 text-warning",
+  needs_reverification: "bg-warning-soft text-warning",
+  temporarily_closed: "bg-warning-soft text-warning",
   permanently_closed: "bg-destructive/10 text-destructive",
 };
 
