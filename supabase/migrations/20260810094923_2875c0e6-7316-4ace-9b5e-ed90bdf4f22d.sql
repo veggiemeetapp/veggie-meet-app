@@ -1,0 +1,1 @@
+DELETE FROM public.analytics_events WHERE created_at >= '2026-08-10 09:48:30+00';
