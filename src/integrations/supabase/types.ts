@@ -3231,6 +3231,7 @@ export type Database = {
       get_my_supported_places: { Args: never; Returns: Json }
       get_my_suppressed_profile_ids: { Args: never; Returns: string[] }
       get_my_today_experience: { Args: never; Returns: Json }
+      get_my_you_summary: { Args: { _history_limit?: number }; Returns: Json }
       get_onboarding_starting_options: { Args: never; Returns: Json }
       get_or_create_dm: { Args: { _other_profile_id: string }; Returns: string }
       get_place_report_queue: { Args: never; Returns: Json }
