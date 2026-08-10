@@ -34,8 +34,8 @@ const STATUS_OPTIONS: CommunityPlaceMaintenanceStatus[] = [
 
 const STATUS_TONE: Record<CommunityPlaceMaintenanceStatus, string> = {
   operational: "bg-soft-green text-primary",
-  needs_reverification: "bg-amber-500/15 text-amber-700",
-  temporarily_closed: "bg-amber-500/15 text-amber-700",
+  needs_reverification: "bg-amber-500/15 text-warning",
+  temporarily_closed: "bg-amber-500/15 text-warning",
   permanently_closed: "bg-destructive/10 text-destructive",
 };
 
@@ -261,7 +261,7 @@ export function PlaceMaintenance() {
                   </div>
 
                   {p.upcoming_meetups_here > 0 && (
-                    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs [overflow-wrap:anywhere]">
+                    <div className="rounded-lg border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
                       <AlertTriangle className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden />
                       {p.upcoming_meetups_here} upcoming Meetup
                       {p.upcoming_meetups_here === 1 ? " is" : "s are"} scheduled here.

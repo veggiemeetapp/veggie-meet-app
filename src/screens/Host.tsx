@@ -815,7 +815,7 @@ export default function Host() {
           </div>
 
           {resolved && !resolved.timezone && (
-            <div className="mt-2 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+            <div className="mt-2 flex items-start gap-2 text-xs text-warning bg-warning-soft border border-warning-border rounded-lg p-2">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               This city has no timezone on file — display times may be off.
             </div>

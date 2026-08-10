@@ -317,7 +317,7 @@ export default function OwnerPlaceEditDetails() {
               <Meta label="Verified">{formatDate(place.verified_at)}</Meta>
               <Meta label="Last reverified">{formatDate(place.last_reverified_at)}</Meta>
             </dl>
-            <p className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-xs [overflow-wrap:anywhere]">
+            <p className="rounded-md border border-warning-border bg-warning-soft/60 p-2 text-xs [overflow-wrap:anywhere]">
               <AlertTriangle className="mr-1 inline h-3.5 w-3.5 align-[-2px]" aria-hidden />
               This updates the existing public place. It does not create a new place or change its
               vegan or operational status.
@@ -445,7 +445,7 @@ export default function OwnerPlaceEditDetails() {
               </Field>
             </div>
             {moved != null && (
-              <p className="text-xs text-amber-700 [overflow-wrap:anywhere]">
+              <p className="text-xs text-warning [overflow-wrap:anywhere]">
                 <AlertTriangle className="mr-1 inline h-3.5 w-3.5 align-[-2px]" aria-hidden />
                 Coordinates move approximately {moved} m. Moves over 1 km are blocked as a possible
                 different business.
@@ -816,7 +816,7 @@ function Field({
       <div className="flex flex-wrap items-center gap-2">
         <Label htmlFor={id}>{label}</Label>
         {changedNow && (
-          <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+          <span className="rounded-full border border-warning-border bg-warning-soft px-2 py-0.5 text-[11px] font-medium text-warning">
             Changed
           </span>
         )}

@@ -52,7 +52,7 @@ interface Props {
 
 const REASON_TONE: Record<string, string> = {
   active: "bg-soft-green text-primary",
-  update: "bg-amber-100 text-amber-900",
+  update: "bg-warning-soft text-warning-foreground",
   cancelled: "bg-muted text-charcoal-muted",
   invitation: "bg-purple-100 text-purple-900",
   hosting: "bg-emerald-100 text-emerald-900",

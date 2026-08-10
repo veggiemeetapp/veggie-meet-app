@@ -117,7 +117,7 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                 {s.city_name ?? "—"} · {new Date(s.submitted_at).toLocaleDateString()}
               </p>
               {s.possible_duplicate && (
-                <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+                <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-warning">
                   <AlertTriangle className="h-3 w-3" aria-hidden /> Possible duplicate
                 </p>
               )}

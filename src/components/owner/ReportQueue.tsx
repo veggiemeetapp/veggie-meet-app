@@ -155,7 +155,7 @@ export function ReportQueue() {
                   ] ?? r.place_maintenance_status}
                 </p>
                 {r.open_same_reason_count > 1 && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+                  <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-warning">
                     <AlertTriangle className="h-3 w-3" aria-hidden />
                     {r.open_same_reason_count} open reports for this issue
                   </p>

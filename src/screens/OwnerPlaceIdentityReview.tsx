@@ -616,7 +616,7 @@ export default function OwnerPlaceIdentityReview() {
                     </div>
                     {(caseType === "different_branch" ||
                       caseType === "different_business_or_unclear") && (
-                      <p className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs [overflow-wrap:anywhere]">
+                      <p className="rounded-lg border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
                         A different branch or a different business can never take over this
                         published place. Replacing its identity is unavailable for this case.
                       </p>

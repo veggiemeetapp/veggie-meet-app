@@ -808,7 +808,7 @@ function AccountSection({
         </button>
 
         {blockedInfo && (
-          <div className="mt-3 p-4 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-900 space-y-3">
+          <div className="mt-3 p-4 rounded-xl border border-warning-border bg-warning-soft text-xs text-warning-foreground space-y-3">
             <div>
               You still have <strong>{blockedInfo.hosted}</strong> future{" "}
               {blockedInfo.hosted === 1 ? "Meetup" : "Meetups"} to host. Cancel
@@ -818,7 +818,7 @@ function AccountSection({
             <button
               type="button"
               onClick={() => navigate("/plans?tab=hosted")}
-              className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-amber-900 text-amber-50 font-semibold hover:opacity-95"
+              className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-warning text-primary-foreground font-semibold hover:opacity-95"
             >
               Manage my Meetups
             </button>

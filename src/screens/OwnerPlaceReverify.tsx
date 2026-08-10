@@ -630,7 +630,7 @@ export default function OwnerPlaceReverify() {
                   />
 
                   {result !== "" && (
-                    <p className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs [overflow-wrap:anywhere]">
+                    <p className="rounded-lg border border-warning-border bg-warning-soft/60 p-3 text-xs [overflow-wrap:anywhere]">
                       {RESULT_CONSEQUENCE[result as ReverificationResult]}
                     </p>
                   )}

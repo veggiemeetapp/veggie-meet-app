@@ -175,7 +175,7 @@ export default function CommunityPlaceDetail() {
             className={`rounded-2xl border p-3.5 min-w-0 ${
               statusBanner.tone === "closed"
                 ? "border-destructive/40 bg-destructive/5"
-                : "border-amber-500/40 bg-amber-500/10"
+                : "border-warning-border bg-warning-soft"
             }`}
           >
             <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
