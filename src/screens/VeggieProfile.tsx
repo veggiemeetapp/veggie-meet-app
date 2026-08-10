@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProfileSafetyMenu } from "@/components/safety/ProfileSafetyMenu";
 import {
-  ArrowLeft,
   CalendarPlus,
   Calendar,
   Check,

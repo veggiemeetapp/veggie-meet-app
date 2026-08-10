@@ -3,7 +3,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Camera, ImagePlus, Shuffle, Trash2 } from "lucide-react";
+import { Camera, ImagePlus, Shuffle, Trash2 } from "lucide-react";
 import { PrimaryButton, UserAvatar, BackButton } from "@/components/app";
 import {
   Sheet,

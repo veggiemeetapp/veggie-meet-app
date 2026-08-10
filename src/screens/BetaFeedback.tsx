@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, MessageSquareHeart } from "lucide-react";
+import { MessageSquareHeart } from "lucide-react";
 import { AppHeader, Card, PrimaryButton, BackButton } from "@/components/app";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";

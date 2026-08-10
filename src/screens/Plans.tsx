@@ -3,7 +3,7 @@ import { BackButton } from "@/components/app";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, Compass } from "lucide-react";
+import { CalendarClock, Compass } from "lucide-react";
 import {
   AppHeader,
   Card,

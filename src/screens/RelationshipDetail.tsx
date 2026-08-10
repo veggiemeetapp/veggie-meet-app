@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { BackButton } from "@/components/app";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Leaf, MapPin, Trash2, UserRound } from "lucide-react";
+import { Leaf, MapPin, Trash2, UserRound } from "lucide-react";
 import {
   AppHeader,
   Card,

@@ -1,6 +1,6 @@
 import { safeBack } from "@/lib/navigation";
 import { BackButton } from "@/components/app";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";

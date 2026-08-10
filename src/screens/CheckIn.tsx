@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
+import { QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
 import { PrimaryButton, SecondaryButton, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   Dialog,

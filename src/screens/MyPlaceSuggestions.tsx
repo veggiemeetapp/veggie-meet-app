@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Clock, Leaf } from "lucide-react";
+import { Clock, Leaf } from "lucide-react";
 import { AppHeader, Card, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { logAnalyticsEvent } from "@/lib/analytics";

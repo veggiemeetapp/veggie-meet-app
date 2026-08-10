@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Activity, AlertTriangle, RefreshCw } from "lucide-react";
+import { Activity, AlertTriangle, RefreshCw } from "lucide-react";
 import { AppHeader, Card, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { safeBack } from "@/lib/navigation";

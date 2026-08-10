@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Flag, MessageCircle, MoreVertical, QrCode, Settings } from "lucide-react";
+import { Check, Flag, MessageCircle, MoreVertical, QrCode, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

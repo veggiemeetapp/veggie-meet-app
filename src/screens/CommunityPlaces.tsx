@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Leaf, MapPin, Utensils } from "lucide-react";
+import { Leaf, MapPin, Utensils } from "lucide-react";
 import { AppHeader, Card, BackButton } from "@/components/app";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";

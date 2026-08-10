@@ -2,7 +2,7 @@ import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Send, Calendar, Clock, MapPin, Users, EyeOff } from "lucide-react";
+import { Send, Calendar, Clock, MapPin, Users, EyeOff } from "lucide-react";
 import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   formatMeetupDate,
