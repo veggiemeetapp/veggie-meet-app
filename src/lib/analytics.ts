@@ -136,6 +136,10 @@ export const ANALYTICS_EVENTS = [
   "beta_feedback_failed",
   "owner_beta_operations_opened",
   "owner_beta_feedback_status_updated",
+  // WO-090 — post-Meetup follow-up prompt (one event per logical action).
+  "follow_up_prompt_shown",
+  "follow_up_opened",
+  "follow_up_dismissed",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
