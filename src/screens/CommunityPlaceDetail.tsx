@@ -132,11 +132,11 @@ export default function CommunityPlaceDetail() {
       // also stayed silent, so Share looked broken. Give member-safe feedback
       // without surfacing the raw browser error.
       const name = (e as { name?: string } | null)?.name ?? "";
-      if (name === "AbortError" || name === "NotAllowedError" && !navigator.clipboard) return;
       if (name === "AbortError") return;
       setShareMessage("Couldn't share — copy the link from your address bar.");
       window.setTimeout(() => setShareMessage(""), 4000);
     }
+
 
   }
 
