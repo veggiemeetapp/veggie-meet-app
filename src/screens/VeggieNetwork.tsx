@@ -214,8 +214,10 @@ export default function VeggieNetwork() {
                 title="No connections yet"
                 description="Connections form after you meet someone at a Meetup — that’s what makes them real."
                 action={
+                  /* WO-095A DEF-095A-02: standard CTA vocabulary — the action
+                     is "Meet Veggies", not the name of the tab it opens. */
                   <PrimaryButton onClick={() => setTab("meet-next")}>
-                    Meet Next
+                    Meet Veggies
                   </PrimaryButton>
                 }
               />

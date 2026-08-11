@@ -128,7 +128,10 @@ export default function Search() {
             allCities={allCities}
             onToggle={() => setAllCities((s) => !s)}
           />
-          <div className="flex-1 min-w-[13rem] max-w-xs">
+          {/* WO-095A DEF-095A-06: a 13rem floor on the tab rail overflowed the
+              320px viewport once the zero-state row wrapped. Let it shrink. */}
+          <div className="flex-1 min-w-0 max-w-xs">
+
             <SearchTabs value={tab} onChange={setTab} />
           </div>
         </div>

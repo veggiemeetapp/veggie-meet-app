@@ -25,7 +25,12 @@ export function EmptyState({ icon, title, description, action, className }: Prop
           one level below each surface h1 instead of skipping a level. */}
       <h2 className="text-base font-semibold text-charcoal">{title}</h2>
       {description && (
-        <p className="text-sm text-charcoal-muted copy mt-1.5 max-w-[17rem]">{description}</p>
+        /* WO-095A DEF-095A-05: the measure was a bare rem max-width, so at
+           enlarged root font sizes 17rem exceeded the viewport and pushed
+           horizontal overflow. Clamp it to the available width. */
+        <p className="text-sm text-charcoal-muted copy mt-1.5 max-w-[min(17rem,100%)]">
+          {description}
+        </p>
       )}
       {action && <div className="mt-5">{action}</div>}
     </div>

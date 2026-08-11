@@ -698,35 +698,25 @@ function ShieldVerifiedIcon() {
 
 /* ------------------------------ Empty state ------------------------------ */
 
+/**
+ * WO-095A DEF-095A-01: this state used to stack three buttons (two of which
+ * routed to the same place), which reads as indecision at exactly the moment a
+ * first user needs one obvious step. Now the shared WO-092 EmptyState with a
+ * single action; the canonical rules stay in the "How Impact works" card.
+ */
 function EmptyImpactState() {
   const navigate = useNavigate();
   return (
-    <Card padding="lg">
-      <div className="text-center">
-        <div className="mx-auto w-14 h-14 rounded-card bg-soft-green text-primary flex items-center justify-center">
-          <HeartHandshake className="w-6 h-6" />
-        </div>
-        {/* WO-085A DEF-085A-04: h2 keeps this one level below the page h1. */}
-        <h2 className="mt-4 text-base font-semibold text-charcoal">
-          Your Community Impact starts here.
-        </h2>
-        <p className="mt-1 text-sm text-charcoal-muted max-w-xs mx-auto">
-          Meet Veggies, support Community Places, or host a Meetup to begin building your
-          real-world impact.
-        </p>
-      </div>
-      <div className="mt-5 grid grid-cols-1 gap-2">
-        <PrimaryButton size="sm" onClick={() => navigate("/community")}>
-          <UserPlus className="w-4 h-4" /> Discover Veggies
+    <EmptyState
+      icon={<HeartHandshake aria-hidden />}
+      title="Your impact starts here"
+      description="Meet Veggies in person, support Community Places, or host a Meetup to begin."
+      action={
+        <PrimaryButton size="sm" onClick={() => navigate("/community/places")}>
+          Explore Community Places
         </PrimaryButton>
-        <SecondaryButton size="sm" onClick={() => navigate("/community")}>
-          <Leaf className="w-4 h-4" /> Explore Places
-        </SecondaryButton>
-        <SecondaryButton size="sm" onClick={() => navigate("/")}>
-          <Calendar className="w-4 h-4" /> Find a Meetup
-        </SecondaryButton>
-      </div>
-    </Card>
+      }
+    />
   );
 }
 
