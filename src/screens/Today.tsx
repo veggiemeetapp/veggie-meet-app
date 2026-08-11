@@ -75,31 +75,57 @@ export default function Today() {
         </section>
       )}
 
-      {meetup_recommendations.length > 0 && (
-        <section className="mt-6" aria-label="Meetup recommendations">
-          <SectionHeader title="Upcoming Meetups" subtitle="Handpicked for you" />
+      {/* WO-095 §5: an empty Meetup feed is a constructive state, not an error.
+          One action only — hosting is the single useful next step here. */}
+      <section className="mt-6" aria-label="Meetup recommendations">
+        <SectionHeader
+          title="Upcoming Meetups"
+          subtitle={meetup_recommendations.length > 0 ? "Handpicked for you" : "Small tables. Real people."}
+        />
+        {meetup_recommendations.length > 0 ? (
           <div className="px-5 space-y-3">
             {meetup_recommendations.map((m) => (
               <MeetupRecCard key={m.entity_id} meetup={m} />
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <EmptyState
+            icon={<CalendarPlus aria-hidden />}
+            title="No Meetups yet"
+            description="Be the first to get something going in your city."
+            action={
+              <Link
+                to="/host"
+                className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+              >
+                Host a Meetup
+              </Link>
+            }
+          />
+        )}
+      </section>
 
-      {veggie_recommendations.length > 0 && (
-        <section className="mt-4" aria-label="Veggie recommendations">
-          <SectionHeader title="People to Meet" subtitle="Fellow Veggies to connect with" />
+      {/* WO-095 §4: no fake rail and no "people near you" claim when the
+          network is still thin — truthful growth copy, no competing CTA. */}
+      <section className="mt-4" aria-label="Veggie recommendations">
+        <SectionHeader title="People to Meet" subtitle="Fellow Veggies to connect with" />
+        {veggie_recommendations.length > 0 ? (
           <div className="rail flex gap-3 overflow-x-auto px-5 pb-2 no-scrollbar">
             {veggie_recommendations.map((v) => (
               <VeggieRecCard key={v.entity_id} veggie={v} />
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="page-x text-sm text-charcoal-muted copy">
+            More veggie people are joining soon. We’ll show them here as VeggieMeet grows in your
+            area.
+          </p>
+        )}
+      </section>
 
       {place_recommendations.length > 0 && (
-        <section className="mt-4" aria-label="Community places">
-          <SectionHeader title="Community Places" subtitle="Veggie-friendly spots" />
+        <section className="mt-6" aria-label="Community places">
+          <SectionHeader title="Community Places" subtitle="Verified vegan spots to support" />
           <div className="rail flex gap-3 overflow-x-auto px-5 pb-2 no-scrollbar">
             {place_recommendations.map((p) => (
               <PlaceRecCard key={p.entity_id} place={p} />
@@ -113,6 +139,7 @@ export default function Today() {
           <TodayEmptyState />
         </div>
       )}
+
     </div>
   );
 }
