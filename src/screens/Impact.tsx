@@ -116,7 +116,7 @@ export default function Impact() {
             profileId={profile?.id}
             type="verified_connection"
             title="Veggies Met"
-            emptyText="No Veggies met yet."
+            emptyText="Veggies you meet in person at a Meetup are counted here."
             countLabel={(n) => (n === 1 ? "1 Veggie met in real life" : `${n} Veggies met in real life`)}
             total={overview.data?.veggies_met}
           />
@@ -126,7 +126,7 @@ export default function Impact() {
             profileId={profile?.id}
             type="place_supported"
             title="Community Places Supported"
-            emptyText="No Community Places supported yet."
+            emptyText="Check in at a verified vegan place and it will be counted here."
             countLabel={(n) => (n === 1 ? "1 Community Place supported" : `${n} Community Places supported`)}
             total={overview.data?.community_places_supported}
           />
@@ -136,7 +136,7 @@ export default function Impact() {
             profileId={profile?.id}
             type="meetup_hosted"
             title="Meetups Hosted"
-            emptyText="No completed Meetups hosted yet."
+            emptyText="Meetups you host and complete are counted here."
             countLabel={(n) => (n === 1 ? "1 completed Meetup hosted" : `${n} completed Meetups hosted`)}
             total={overview.data?.meetups_hosted}
           />
@@ -462,7 +462,7 @@ function HistorySection({
   if (items.length === 0) {
     return (
       <Card padding="lg" className="text-center">
-        <p className="text-sm text-charcoal-muted">{emptyText ?? "Nothing here yet."}</p>
+        <p className="text-sm text-charcoal-muted">{/* WO-095 §9: a zero state explains how impact is earned. */ emptyText ?? "Your impact starts with your first Meetup — joining, meeting people and supporting vegan places all count."}</p>
       </Card>
     );
   }
