@@ -39,7 +39,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
-import { TODAY_ISO } from "@/lib/mock-data";
+import { todayISO } from "@/lib/todayDate";
 import { toMeetupCardShape } from "@/lib/youSummary";
 import type { YouHistoryItem, YouMeetupCard } from "@/lib/youSummary";
 import { cn } from "@/lib/utils";
@@ -468,9 +468,14 @@ function CommunityImpactCard({
             value={loading ? "—" : meetupsHosted}
           />
         </div>
+        {/* WO-095 §9: at zero, bare zeros read as failure — explain how impact
+            is earned instead. */}
         <p className="text-[11px] text-charcoal-muted leading-relaxed">
-          See the people, places, and Meetups you've supported.
+          {!loading && veggiesMet === 0 && placesSupported === 0 && meetupsHosted === 0
+            ? "Your impact grows as you meet Veggies in person, check in at verified vegan places, and host Meetups."
+            : "See the people, places, and Meetups you've supported."}
         </p>
+
       </Card>
     </section>
   );
@@ -595,7 +600,7 @@ function MeetupList({
 
 
 function formatShortDate(iso: string) {
-  if (iso === TODAY_ISO) return "Today";
+  if (iso === todayISO()) return "Today";
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString(undefined, {
     weekday: "short",

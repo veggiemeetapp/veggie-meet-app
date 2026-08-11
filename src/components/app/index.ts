@@ -6,7 +6,7 @@ export { PrimaryButton, SecondaryButton, TertiaryButton, DestructiveButton } fro
 export { IconButton, BackButton } from "./IconButton";
 export { Card } from "./Card";
 export { MeetupCard } from "./MeetupCard";
-export { FeaturedMeetupCard } from "./FeaturedMeetupCard";
+
 export { CommunityPlaceCard } from "./CommunityPlaceCard";
 export { UserAvatar, AvatarGroup } from "./UserAvatar";
 export { HostBadge, ActiveHostBadge, StatusBadge } from "./Badges";

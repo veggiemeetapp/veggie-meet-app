@@ -111,8 +111,8 @@ export default function Chats() {
       ) : items.length === 0 ? (
         <EmptyState
           icon={<MessageCircle className="w-6 h-6" />}
-          title="No conversations yet."
-          description="Connect with Veggies through Meetups or the Community to start a conversation."
+          title="No conversations yet"
+          description="Join a Meetup and your group chat appears here, with the details you need."
           action={
             <PrimaryButton onClick={() => navigate("/community")}>
               Explore Community

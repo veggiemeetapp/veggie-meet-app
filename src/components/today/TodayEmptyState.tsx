@@ -1,20 +1,27 @@
 import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sprout } from "lucide-react";
 import { EmptyState } from "@/components/app/EmptyState";
 
+/**
+ * WO-095 §32: this state used to offer three competing buttons. A first-session
+ * member gets exactly one next step — exploring verified Community Places is
+ * the action that works even with zero social activity.
+ */
 export function TodayEmptyState() {
   const navigate = useNavigate();
   return (
     <EmptyState
-      icon={<Sparkles className="w-6 h-6" />}
-      title="You’re all caught up."
-      description="Explore Veggies, Community Places, or Meetups when you’re ready."
+      icon={<Sprout aria-hidden />}
+      title="Your VeggieMeet starts here"
+      description="VeggieMeet is growing in your area. Start with a verified vegan place near you."
       action={
-        <div className="flex flex-wrap justify-center gap-2">
-          <button onClick={() => navigate("/search")} className="rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold">Search VeggieMeet</button>
-          <button onClick={() => navigate("/network")} className="rounded-full bg-soft-green text-primary px-3 py-1.5 text-sm font-semibold">Discover Veggies</button>
-          <button onClick={() => navigate("/community")} className="rounded-full bg-soft-green text-primary px-3 py-1.5 text-sm font-semibold">Explore Community</button>
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate("/community/places")}
+          className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+        >
+          Explore Community Places
+        </button>
       }
     />
   );

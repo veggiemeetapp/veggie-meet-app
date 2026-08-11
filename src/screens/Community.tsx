@@ -13,7 +13,7 @@ import {
   fetchUpcomingMeetupsByCity,
   type NearbyVeggie,
 } from "@/lib/backend";
-import { TODAY_ISO } from "@/lib/mock-data";
+import { todayISO } from "@/lib/todayDate";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { formatDistanceBetween, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import type { CommunityPlace, Meetup } from "@/types";
@@ -52,7 +52,7 @@ export default function Community() {
   const meetupsQuery = useQuery<Meetup[]>({
     queryKey: ["community-feed", "meetups", cityId],
     enabled: !!cityId,
-    queryFn: () => fetchUpcomingMeetupsByCity(cityId!, TODAY_ISO),
+    queryFn: () => fetchUpcomingMeetupsByCity(cityId!, todayISO()),
     staleTime: 60_000,
   });
 
@@ -139,8 +139,11 @@ export default function Community() {
             <EmptyRow message="We couldn't load Meetups just now. Pull to retry." />
           ) : (meetupsQuery.data ?? []).length === 0 ? (
             <EmptyRow
-              message={`No upcoming Meetups in ${cityLabel} yet. Check back soon or host one.`}
+              message={`VeggieMeet is just getting started in ${cityLabel}. You could host the first Meetup here.`}
+              actionLabel="Host a Meetup"
+              actionTo="/host"
             />
+
           ) : (
             <HScroll>
               {meetupsQuery.data!.map((m) => (
@@ -159,7 +162,10 @@ export default function Community() {
           {veggiesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (veggiesQuery.data ?? []).length === 0 ? (
-            <EmptyRow message={`No Veggies with ${cityLabel} as their Home City yet.`} />
+            <EmptyRow
+              message={`Veggies are still joining in ${cityLabel}. We’ll show them here as the community grows.`}
+            />
+
           ) : (
             <HScroll>
               {veggiesQuery.data!.map((v) => (
@@ -178,7 +184,12 @@ export default function Community() {
           {placesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (placesQuery.data ?? []).length === 0 ? (
-            <EmptyRow message={`No Community Places listed in ${cityLabel} yet.`} />
+            <EmptyRow
+              message={`No verified vegan places in ${cityLabel} yet. Suggest one you love and we’ll verify it.`}
+              actionLabel="Suggest a place"
+              actionTo="/community/places/suggest"
+            />
+
           ) : (
             <HScroll>
               {placesQuery.data!.map((p) => (
@@ -280,19 +291,37 @@ function HScrollSkeleton() {
   );
 }
 
-function EmptyRow({ message }: { message: string }) {
+function EmptyRow({
+  message,
+  actionLabel,
+  actionTo,
+}: {
+  message: string;
+  actionLabel?: string;
+  actionTo?: string;
+}) {
   // WO-086 DEF-086-08: the loading skeleton reserved 13rem while the resolved
   // empty state was ~5rem tall, so every section that came back empty yanked
   // the sections below it upward (measured CLS 0.06 on Community). Reserving
   // the same height in both states keeps the page visually stable.
   return (
     <div className="px-5 min-h-52 flex items-center">
-      <div className="w-full rounded-card border border-dashed border-border/70 px-4 py-6 text-center text-sm text-charcoal-muted">
-        {message}
+      <div className="w-full rounded-card border border-dashed border-border/70 px-4 py-6 text-center">
+        <p className="text-sm text-charcoal-muted copy">{message}</p>
+        {/* WO-095 §5: at most one action per empty row. */}
+        {actionLabel && actionTo && (
+          <Link
+            to={actionTo}
+            className="mt-4 inline-flex min-h-11 items-center rounded-full bg-soft-green px-4 text-sm font-semibold text-primary"
+          >
+            {actionLabel}
+          </Link>
+        )}
       </div>
     </div>
   );
 }
+
 
 
 /* ---------- Cards ---------- */

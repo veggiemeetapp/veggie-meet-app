@@ -97,23 +97,17 @@ export default function Plans() {
           />
         ) : !hasAny ? (
           <EmptyState
-            title="You don't have any upcoming plans."
-            description="Explore Meetups and find something that feels right."
-            icon={<CalendarClock className="w-6 h-6" aria-hidden />}
+            title="Nothing planned yet"
+            description="Meetups you join or host will show up here, with everything you need on the day."
+            icon={<CalendarClock aria-hidden />}
             action={
-              <div className="flex flex-col gap-2 w-full">
-                <PrimaryButton fullWidth onClick={() => navigate("/community")}>
-                  <Compass className="w-4 h-4" /> Explore Community
-                </PrimaryButton>
-                <SecondaryButton fullWidth onClick={() => navigate("/search")}>
-                  Search Meetups
-                </SecondaryButton>
-                <SecondaryButton fullWidth onClick={() => navigate("/host")}>
-                  Host a Meetup
-                </SecondaryButton>
-              </div>
+              /* WO-095 §5: one primary next step instead of three competing buttons. */
+              <PrimaryButton onClick={() => navigate("/community")}>
+                <Compass className="w-4 h-4" /> Explore Community
+              </PrimaryButton>
             }
           />
+
         ) : (
           <>
             {needs.length > 0 && (

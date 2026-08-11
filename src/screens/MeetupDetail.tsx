@@ -22,7 +22,7 @@ import {
 } from "@/components/meetup";
 import { MeetupCheckInButton } from "@/components/meetup/MeetupCheckInButton";
 
-import { getMeetup, getPlace, getVeggie, veggies } from "@/lib/mock-data";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   resolveMeetupChatId,
@@ -39,14 +39,10 @@ import type { Meetup, Veggie } from "@/types";
 
 
 
-function mockDistance(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 1000;
-  return 0.3 + (h % 45) / 10;
-}
-
-const friendlyDescription = (title: string) =>
-  `Come as you are. ${title} is a low-key gathering built around great plant-based food and easy conversation. Whether you're brand new to plant-based living or a lifelong veggie, you'll find kind people, a warm welcome, and a table that feels like home.\n\nWe'll keep the group small so everyone gets a chance to connect. No pressure, no performance — just a good evening out with your kind of people.`;
+// WO-095 DEF-095-02: this file used to synthesise a distance from a hash of the
+// meetup id and render it as "N km away", and DEF-095-03: it appended canned
+// marketing prose to every host's description. Both fabricated content, so both
+// are gone — the screen now shows only what the host and the server provide.
 
 type MembershipResult = { meetup: Meetup | null; role: MeetupRole };
 
@@ -151,12 +147,12 @@ export default function MeetupDetail() {
     };
   }, [id, isRealMeetup, queryClient]);
 
-  // Mock (non-uuid) meetups: resolve synchronously.
-  const mockMeetup = !isRealMeetup && id ? getMeetup(id) ?? null : null;
-
+  // WO-095: only server-backed (uuid) Meetups render. The screen used to fall
+  // back to the mock-data fixture for non-uuid ids, which rendered fixture
+  // people and places as if they were real.
   const meetup: Meetup | null | undefined = isRealMeetup
     ? membershipQuery.data?.meetup
-    : mockMeetup;
+    : null;
   const role: MeetupRole = isRealMeetup
     ? membershipQuery.data?.role ?? "visitor"
     : "visitor";
@@ -217,14 +213,11 @@ export default function MeetupDetail() {
     );
   }
 
-  const host = getVeggie(meetup.hostId) ?? dbHost ?? undefined;
-  const place = getPlace(meetup.communityPlaceId);
-  const attendeeList = meetup.attendeeIds
-    .map((i) => veggies.find((v) => v.id === i))
-    .filter((v): v is NonNullable<typeof v> => Boolean(v));
+  const host = dbHost ?? undefined;
+  const attendeeList: never[] = [];
   const description = meetup.description?.trim().length
-    ? `${meetup.description}\n\n${friendlyDescription(meetup.title)}`
-    : friendlyDescription(meetup.title);
+    ? meetup.description.trim()
+    : "The host hasn’t added a description yet.";
 
   return (
     <div className="pb-32">
@@ -273,7 +266,7 @@ export default function MeetupDetail() {
           </div>
         ) : null}
 
-        <MeetupInfo meetup={meetup} place={place} distanceKm={mockDistance(meetup.id)} />
+        <MeetupInfo meetup={meetup} />
 
         {isRealMeetup && <MeetupPlaceSection meetupId={meetup.id} />}
 

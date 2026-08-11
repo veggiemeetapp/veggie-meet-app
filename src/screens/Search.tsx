@@ -166,6 +166,7 @@ export default function Search() {
             onLoadMore={() => vQ.fetchNextPage()}
             renderItem={(v) => <VeggieResultCard key={v.entity_id} result={v} />}
             emptyLabel="No Veggies found"
+            scope="veggies"
             cityName={selectedCity?.name ?? null}
             allCities={allCities}
             onExpand={() => setAllCities(true)}
@@ -180,6 +181,7 @@ export default function Search() {
             onLoadMore={() => mQ.fetchNextPage()}
             renderItem={(m) => <MeetupResultCard key={m.entity_id} result={m} />}
             emptyLabel="No Meetups found"
+            scope="meetups"
             cityName={selectedCity?.name ?? null}
             allCities={allCities}
             onExpand={() => setAllCities(true)}
@@ -194,6 +196,7 @@ export default function Search() {
             onLoadMore={() => pQ.fetchNextPage()}
             renderItem={(p) => <PlaceResultCard key={p.entity_id} result={p} />}
             emptyLabel="No Places found"
+            scope="places"
             cityName={selectedCity?.name ?? null}
             allCities={allCities}
             onExpand={() => setAllCities(true)}
@@ -235,7 +238,17 @@ function AllPanel({
     !data ||
     (data.veggies.length === 0 && data.meetups.length === 0 && data.places.length === 0);
   if (empty) {
-    return <SearchEmptyState cityName={cityName} allCities={allCities} onExpand={onExpand} />;
+    // WO-095 §7: once the search is already scoped to every city, a zero-result
+    // query in a young market is a growth state, not a failed match.
+    return (
+      <SearchEmptyState
+        cityName={cityName}
+        allCities={allCities}
+        onExpand={onExpand}
+        sparse={allCities}
+        scope="all"
+      />
+    );
   }
   return (
     <div className="space-y-6 px-5">
@@ -307,6 +320,7 @@ function ListPanel<T extends { entity_id: string }>({
   onLoadMore,
   renderItem,
   emptyLabel,
+  scope,
   cityName,
   allCities,
   onExpand,
@@ -319,6 +333,7 @@ function ListPanel<T extends { entity_id: string }>({
   onLoadMore: () => void;
   renderItem: (item: T) => React.ReactNode;
   emptyLabel: string;
+  scope: "veggies" | "meetups" | "places";
   cityName: string | null;
   allCities: boolean;
   onExpand: () => void;
@@ -333,7 +348,13 @@ function ListPanel<T extends { entity_id: string }>({
   if (error) return <ErrorRow />;
   if (items.length === 0) {
     return (
-      <SearchEmptyState cityName={cityName} allCities={allCities} onExpand={onExpand} />
+      <SearchEmptyState
+        cityName={cityName}
+        allCities={allCities}
+        onExpand={onExpand}
+        sparse={allCities}
+        scope={scope}
+      />
     );
   }
   return (

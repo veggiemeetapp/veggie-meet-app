@@ -3,16 +3,14 @@ import { Link, useParams } from "react-router-dom";
 import { Sparkles, Calendar, Clock, MapPin, Share2, MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
-import { getMeetup, getPlace } from "@/lib/mock-data";
+
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { fetchMeetupById, isUuid } from "@/lib/backend";
 import type { Meetup } from "@/types";
 
 export default function MeetupCreated() {
   const { id } = useParams();
-  const [meetup, setMeetup] = useState<Meetup | null | undefined>(() =>
-    id ? getMeetup(id) ?? undefined : undefined,
-  );
+  const [meetup, setMeetup] = useState<Meetup | null | undefined>(undefined);
 
   useEffect(() => {
     if (!id || meetup) return;
@@ -23,9 +21,8 @@ export default function MeetupCreated() {
     fetchMeetupById(id).then((m) => setMeetup(m));
   }, [id, meetup]);
 
-  const place = meetup ? getPlace(meetup.communityPlaceId) : undefined;
-  const placeLabel = meetup?.location?.locationName ?? meetup?.customLocation?.name ?? place?.name;
-  const placeAddr = meetup?.location?.address ?? meetup?.customLocation?.address ?? place?.address;
+  const placeLabel = meetup?.location?.locationName ?? meetup?.customLocation?.name;
+  const placeAddr = meetup?.location?.address ?? meetup?.customLocation?.address;
 
   return (
     <div className="flex flex-col min-h-dvh page-x pt-16 pb-10">

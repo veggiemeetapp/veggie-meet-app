@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Calendar, Clock, MapPin } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
-import { getMeetup, getPlace } from "@/lib/mock-data";
+
 import { formatMeetupDate, formatTimeRange } from "@/lib/format";
 import { fetchMeetupById, isUuid, joinMeetup } from "@/lib/backend";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,9 +14,7 @@ export default function JoinConfirmation() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const [meetup, setMeetup] = useState<Meetup | null | undefined>(() =>
-    id ? getMeetup(id) ?? undefined : undefined,
-  );
+  const [meetup, setMeetup] = useState<Meetup | null | undefined>(undefined);
   const [joining, setJoining] = useState<boolean>(!!id && isUuid(id));
   const [joinError, setJoinError] = useState<string | null>(null);
 
@@ -89,9 +87,8 @@ export default function JoinConfirmation() {
     );
   }
 
-  const place = getPlace(meetup.communityPlaceId);
-  const placeLabel = meetup.location?.locationName ?? meetup.customLocation?.name ?? place?.name;
-  const placeAddr = meetup.location?.address ?? meetup.customLocation?.address ?? place?.address;
+  const placeLabel = meetup.location?.locationName ?? meetup.customLocation?.name;
+  const placeAddr = meetup.location?.address ?? meetup.customLocation?.address;
   const isHost = profile?.id && profile.id === meetup.hostId;
 
   return (
