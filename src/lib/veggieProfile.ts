@@ -7,7 +7,7 @@ import {
 import { todayISO } from "@/lib/todayDate";
 import type { CommunityPlace, Meetup } from "@/types";
 
-export type Dietary = "vegan" | "vegetarian" | "curious";
+export type Dietary = "vegan" | "vegetarian" | "plant_based" | "curious";
 
 export interface VeggieProfile {
   id: string;
@@ -42,6 +42,12 @@ export interface VeggieProfileBundle {
   }[];
 }
 
+/**
+ * DEF-096A-02 — the profile badge used to be *derived* from interests, so a
+ * member who chose "Vegan" in onboarding was shown as "Plant Curious". The
+ * stored onboarding identity is authoritative; interests are only a fallback
+ * for legacy profiles that never recorded one.
+ */
 function deriveDietary(interests: string[]): Dietary {
   const set = new Set(interests.map((i) => i.toLowerCase()));
   if (set.has("vegan")) return "vegan";
@@ -49,11 +55,31 @@ function deriveDietary(interests: string[]): Dietary {
   return "curious";
 }
 
+function resolveDietary(
+  identity: string | null | undefined,
+  interests: string[],
+): Dietary {
+  switch (identity) {
+    case "vegan":
+      return "vegan";
+    case "vegetarian":
+      return "vegetarian";
+    case "plant_based":
+      return "plant_based";
+    case "veg_curious":
+      return "curious";
+    default:
+      return deriveDietary(interests);
+  }
+}
+
 export const DIETARY_LABEL: Record<Dietary, string> = {
   vegan: "Vegan",
   vegetarian: "Vegetarian",
+  plant_based: "Plant-based",
   curious: "Plant Curious",
 };
+
 
 
 export async function fetchVeggieProfileBundle(
@@ -171,7 +197,7 @@ export async function fetchVeggieProfileBundle(
       hostedCount: hostedTotal ?? 0,
       attendedCount: joinedTotal ?? 0,
       memberSince: (prof as any).created_at ?? null,
-      dietary: deriveDietary(interests),
+      dietary: resolveDietary((prof as any).dietary_identity, interests),
     },
     upcoming,
     favoritePlaces,
