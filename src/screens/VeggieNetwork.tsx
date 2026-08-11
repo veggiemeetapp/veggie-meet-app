@@ -67,7 +67,12 @@ export default function VeggieNetwork() {
       p.set("tab", tab);
       setParams(p, { replace: true });
     }
+    // WO-096 DEF-096-01: discovery intent is level 1 of the activation model.
+    logAnalyticsEvent(tab === "meet-next" ? "meet_next_opened" : "network_opened", {
+      tab,
+    });
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const networkQuery = useQuery({
     queryKey: ["veggie-network", profile?.id],
