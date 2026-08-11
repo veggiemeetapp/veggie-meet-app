@@ -407,6 +407,23 @@ export default function Host() {
       />
 
       <div className="px-5 py-6 space-y-7 pb-32">
+        {/* WO-096 DEF-096-04: first-time hosts had no expectation setting —
+            nothing said who can see a published Meetup, or that a small,
+            simple plan is enough. */}
+        <section
+          aria-label="What hosting involves"
+          className="rounded-card border border-border bg-muted/40 p-4"
+        >
+          <p className="text-sm text-charcoal copy">
+            Keep it simple — a time, a place, and a few Veggies is enough.
+          </p>
+          <p className="mt-1.5 text-xs text-charcoal-muted copy">
+            Once published, your Meetup is visible to Veggies in the city you choose, and they
+            can join until it’s full. You can edit or cancel it any time from My Plans.
+          </p>
+        </section>
+
+
         {/* Cover */}
         <section>
           <FieldLabel>Meetup cover</FieldLabel>
