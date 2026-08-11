@@ -170,9 +170,11 @@ export function PlaceCheckInSheet({
               <DialogTitle className="text-center text-xl">
                 Check in to this place?
               </DialogTitle>
+              {/* WO-095A DEF-095A-04: the sheet explained the location use but
+                  never what Check In is *for* — supporting the place. */}
               <DialogDescription className="text-center">
-                VeggieMeet uses your location once to confirm you're here. Your exact
-                location is not saved.
+                Checking in records your support for this place. VeggieMeet uses your
+                location once to confirm you're here, and never saves it.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex-col gap-2 sm:flex-col">
