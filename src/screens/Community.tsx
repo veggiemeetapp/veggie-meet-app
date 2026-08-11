@@ -125,10 +125,12 @@ export default function Community() {
       ) : (
         <div className="pb-12 animate-fade-in">
 
-          {/* Meetups Near You */}
+          {/* WO-096 DEF-096-05: "Near You"/"Nearby" implied device proximity,
+              but every list here is ranked by the member's chosen city — the app
+              never uses device location for discovery. Titles now say so. */}
           <SectionHeader
             icon={Sprout}
-            title="Meetups Near You"
+            title={`Meetups in ${cityLabel}`}
             ctaLabel="View all"
             ctaTo="/community/meetups"
             ctaComingSoon
@@ -152,10 +154,9 @@ export default function Community() {
             </HScroll>
           )}
 
-          {/* Veggies Nearby */}
           <SectionHeader
             icon={Users}
-            title="Veggies Nearby"
+            title={`Veggies in ${cityLabel}`}
             ctaLabel="Discover"
             ctaTo="/network?tab=meet-next"
           />
@@ -177,7 +178,7 @@ export default function Community() {
           {/* Community Places */}
           <SectionHeader
             icon={Utensils}
-            title="Community Places"
+            title={`Community Places in ${cityLabel}`}
             ctaLabel="Explore"
             ctaTo="/community/places"
           />
