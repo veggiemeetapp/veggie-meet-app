@@ -95,15 +95,15 @@ export default function ResetPassword() {
 
   if (ready === "checking") {
     return (
-      <main className="min-h-dvh flex items-center justify-center page-x bg-background">
+      <div className="min-h-dvh flex items-center justify-center page-x bg-background">
         <p className="text-sm text-charcoal-muted">Checking your link…</p>
-      </main>
+      </div>
     );
   }
 
   if (ready === "invalid") {
     return (
-      <main className="min-h-dvh flex flex-col justify-center page-x py-10 bg-background">
+      <div className="min-h-dvh flex flex-col justify-center page-x py-10 bg-background">
         <div className="w-full max-w-sm mx-auto">
           <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
             This reset link has expired
@@ -118,13 +118,13 @@ export default function ResetPassword() {
             </PrimaryButton>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (done) {
     return (
-      <main className="min-h-dvh flex flex-col justify-center page-x py-10 bg-background">
+      <div className="min-h-dvh flex flex-col justify-center page-x py-10 bg-background">
         <div className="w-full max-w-sm mx-auto">
           <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
             Password updated
@@ -138,12 +138,12 @@ export default function ResetPassword() {
             </PrimaryButton>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-dvh flex flex-col justify-center page-x py-10 bg-background">
+    <div className="min-h-dvh flex flex-col justify-center page-x py-10 bg-background">
       <div className="w-full max-w-sm mx-auto">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Choose a new password
@@ -198,6 +198,6 @@ export default function ResetPassword() {
           </PrimaryButton>
         </form>
       </div>
-    </main>
+    </div>
   );
 }
