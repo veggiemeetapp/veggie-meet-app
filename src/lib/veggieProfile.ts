@@ -129,7 +129,7 @@ export async function fetchVeggieProfileBundle(
     .map(([id]) => id);
   let favoritePlaces: CommunityPlace[] = [];
   if (topPlaceIds.length > 0) {
-    const published = await fetchPublishedCommunityPlaces();
+    const published = await fetchPublishedCommunityPlaces(null);
     favoritePlaces = topPlaceIds
       .map((id) => published.find((p) => p.id === id))
       .filter((p): p is CommunityPlace => !!p);
