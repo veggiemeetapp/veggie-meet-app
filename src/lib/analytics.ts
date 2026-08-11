@@ -140,7 +140,18 @@ export const ANALYTICS_EVENTS = [
   "follow_up_prompt_shown",
   "follow_up_opened",
   "follow_up_dismissed",
+  // WO-096 DEF-096-01 — first-member activation funnel. Levels 1 and 2 of the
+  // activation model had no telemetry, so cohort activation could not be
+  // measured: hosting intent, discovery intent, and the connection/join
+  // outcomes that actually constitute an activated member.
+  "host_opened",
+  "meet_next_opened",
+  "network_opened",
+  "connection_request_sent",
+  "connection_request_accepted",
+  "meetup_joined",
 ] as const;
+
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
 
