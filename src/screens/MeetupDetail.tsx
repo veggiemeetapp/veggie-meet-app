@@ -39,14 +39,10 @@ import type { Meetup, Veggie } from "@/types";
 
 
 
-function mockDistance(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 1000;
-  return 0.3 + (h % 45) / 10;
-}
-
-const friendlyDescription = (title: string) =>
-  `Come as you are. ${title} is a low-key gathering built around great plant-based food and easy conversation. Whether you're brand new to plant-based living or a lifelong veggie, you'll find kind people, a warm welcome, and a table that feels like home.\n\nWe'll keep the group small so everyone gets a chance to connect. No pressure, no performance — just a good evening out with your kind of people.`;
+// WO-095 DEF-095-02: this file used to synthesise a distance from a hash of the
+// meetup id and render it as "N km away", and DEF-095-03: it appended canned
+// marketing prose to every host's description. Both fabricated content, so both
+// are gone — the screen now shows only what the host and the server provide.
 
 type MembershipResult = { meetup: Meetup | null; role: MeetupRole };
 
