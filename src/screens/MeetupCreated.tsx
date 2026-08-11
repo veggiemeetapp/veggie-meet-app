@@ -21,9 +21,8 @@ export default function MeetupCreated() {
     fetchMeetupById(id).then((m) => setMeetup(m));
   }, [id, meetup]);
 
-  const place = meetup ? getPlace(meetup.communityPlaceId) : undefined;
-  const placeLabel = meetup?.location?.locationName ?? meetup?.customLocation?.name ?? place?.name;
-  const placeAddr = meetup?.location?.address ?? meetup?.customLocation?.address ?? place?.address;
+  const placeLabel = meetup?.location?.locationName ?? meetup?.customLocation?.name;
+  const placeAddr = meetup?.location?.address ?? meetup?.customLocation?.address;
 
   return (
     <div className="flex flex-col min-h-dvh page-x pt-16 pb-10">
