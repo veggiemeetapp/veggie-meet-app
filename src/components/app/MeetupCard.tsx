@@ -21,12 +21,11 @@ interface Props {
 export function MeetupCard({ meetup, role: roleOverride }: Props) {
   const membership = useMeetupMembership(roleOverride ? null : meetup);
   const role = roleOverride ?? membership.role;
-  const host = getVeggie(meetup.hostId);
-  const place = getPlace(meetup.communityPlaceId);
-  const placeLabel = meetup.location?.locationName ?? meetup.customLocation?.name ?? place?.name;
-  const attendeeUsers = meetup.attendeeIds
-    .map((id) => veggies.find((v) => v.id === id))
-    .filter((v): v is NonNullable<typeof v> => Boolean(v));
+  // WO-095: host / place / attendee identities are server-authoritative. This
+  // card used to fall back to the mock-data fixture, which could render
+  // fixture people as if they were real members.
+  const placeLabel = meetup.location?.locationName ?? meetup.customLocation?.name;
+  const attendeeUsers: { displayName: string; avatarUrl?: string }[] = [];
   const attendeeCount = meetup.attendeeIds.length;
 
   return (
