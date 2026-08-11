@@ -112,7 +112,7 @@ export default function Chats() {
         <EmptyState
           icon={<MessageCircle className="w-6 h-6" />}
           title="No conversations yet"
-          description="Join a Meetup and your group chat appears here, with the details you need."
+          description="Meetup group chats and messages with your connections both appear here."
           action={
             <PrimaryButton onClick={() => navigate("/community")}>
               Explore Community

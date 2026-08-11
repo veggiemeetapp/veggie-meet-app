@@ -312,15 +312,12 @@ export default function Notifications() {
           }
         />
       ) : items.length === 0 ? (
+        /* WO-095A DEF-095A-03: an inbox at zero is a calm state, not an
+           activation surface — no CTA competes with the reassurance here. */
         <EmptyState
           icon={<Bell className="w-6 h-6" />}
-          title="You're all caught up."
+          title="You're all caught up"
           description="Connection requests, Meetup invitations, and important Meetup updates will appear here."
-          action={
-            <SecondaryButton onClick={() => navigate("/community")}>
-              Explore Community
-            </SecondaryButton>
-          }
         />
       ) : (
         <div className="px-5 pt-3 pb-8 space-y-6">
