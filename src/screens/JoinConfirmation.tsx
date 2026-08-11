@@ -1,4 +1,5 @@
 import { memberSafeMessage } from "@/lib/errors";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";

@@ -1,4 +1,5 @@
 import { safeBack } from "@/lib/navigation";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { BackButton } from "@/components/app";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
