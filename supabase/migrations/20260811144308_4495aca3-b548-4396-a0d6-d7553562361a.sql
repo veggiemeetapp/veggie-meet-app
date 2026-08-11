@@ -1,0 +1,1 @@
+DELETE FROM public.analytics_events WHERE id = '2be2c667-9afa-42ab-b5f3-5f4dfb9f189e';
