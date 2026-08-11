@@ -764,7 +764,10 @@ function Auth({
               className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
-          <PrimaryButton fullWidth disabled={busy}>
+          {/* DEF-096A-01: the shared button primitive defaults to
+              type="button", so clicking this control never submitted the form —
+              email signup and sign-in were only reachable via the Enter key. */}
+          <PrimaryButton type="submit" fullWidth disabled={busy}>
             {busy ? "Just a moment…" : isSignUp ? "Create account" : "Sign in"}
           </PrimaryButton>
         </form>
