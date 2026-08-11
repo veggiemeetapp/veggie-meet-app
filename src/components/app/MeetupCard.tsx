@@ -77,9 +77,6 @@ export function MeetupCard({ meetup, role: roleOverride }: Props) {
                 </div>
               )}
             </div>
-            {host && (
-              <div className="sr-only">Hosted by {host.displayName}</div>
-            )}
           </div>
         </div>
       </Card>
