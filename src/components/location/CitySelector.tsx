@@ -95,13 +95,16 @@ export function CitySelector({
         type="button"
         aria-label={triggerLabel ?? (selected ? `Selected city: ${selected.name}. Change city.` : "Choose city")}
         className={cn(
-          "inline-flex items-center gap-1 px-3 h-9 rounded-full border border-border bg-card text-xs font-medium text-charcoal hover:bg-accent transition-colors min-h-11 min-w-11",
+          // WO-095B DEF-095A-05: `max-w-full` + `min-w-0` keep the chip inside
+          // its container at enlarged text; the city name truncates instead of
+          // widening the header. Height is a minimum so the label is never cut.
+          "inline-flex items-center gap-1 px-3 rounded-full border border-border bg-card text-xs font-medium text-charcoal hover:bg-accent transition-colors min-h-11 min-w-11 max-w-full",
           className,
         )}
       >
-        <MapPin className="w-3.5 h-3.5 text-primary" aria-hidden />
-        <span className="truncate max-w-[9rem]">{label}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-charcoal-muted" aria-hidden />
+        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
+        <span className="truncate min-w-0">{label}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-charcoal-muted shrink-0" aria-hidden />
       </button>
     ) : (
       <button

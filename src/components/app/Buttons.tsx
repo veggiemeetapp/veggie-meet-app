@@ -20,17 +20,24 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
+/* WO-095B DEF-095A-05: heights are minimums, not fixed values. At enlarged root
+   font sizes a fixed `h-11`/`h-12` clipped the label vertically while the
+   nowrap label pushed the document sideways. Padding keeps the 44px target. */
 const sizeClasses: Record<Size, string> = {
-  sm: "min-h-11 h-11 px-4 text-sm",
-  md: "min-h-11 h-11 px-5 text-[15px]",
-  lg: "min-h-12 h-12 px-6 text-base",
+  sm: "min-h-11 px-4 py-2 text-sm",
+  md: "min-h-11 px-5 py-2 text-[15px]",
+  lg: "min-h-12 px-6 py-2.5 text-base",
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap " +
+  // `max-w-full` + wrapping labels: a long label wraps inside the control
+  // instead of overflowing the page at 200%+ text.
+  "inline-flex items-center justify-center gap-2 rounded-full font-semibold text-center " +
+  "max-w-full whitespace-normal break-words " +
   "transition-[transform,background-color,box-shadow,color] duration-150 active:scale-[0.98] " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
   "disabled:opacity-50 disabled:pointer-events-none";
+
 
 function make(
   displayName: string,

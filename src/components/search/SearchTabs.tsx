@@ -14,7 +14,9 @@ interface Props {
 
 export function SearchTabs({ value, onChange }: Props) {
   return (
-    <div role="tablist" aria-label="Search result types" className="flex gap-1 px-1 py-1 rounded-full bg-muted/60 border border-border/60">
+    // WO-095B DEF-095A-06: the tab rail scrolls internally as a last resort at
+    // very large text sizes, so the page itself never gains horizontal scroll.
+    <div role="tablist" aria-label="Search result types" className="rail flex gap-1 overflow-x-auto px-1 py-1 rounded-full bg-muted/60 border border-border/60">
       {tabs.map((t) => {
         const active = t.id === value;
         return (

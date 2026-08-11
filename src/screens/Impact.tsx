@@ -158,8 +158,11 @@ function TabBar({ current, onChange }: { current: Tab; onChange: (t: Tab) => voi
     { key: "meetups", label: "Hosted" },
     { key: "history", label: "History" },
   ];
+  // WO-095B DEF-095A-05: the negative `-mx-1` made this intentional rail wider
+  // than its container, so the page itself gained ~10px of horizontal scroll at
+  // 200% text. The rail still scrolls internally.
   return (
-    <div className="flex gap-1 overflow-x-auto -mx-1 px-1 pb-1" role="tablist">
+    <div className="rail flex gap-1 overflow-x-auto px-1 pb-1" role="tablist">
       {items.map((it) => {
         const active = current === it.key;
         return (
@@ -729,16 +732,19 @@ function HowItWorks() {
         <div className="w-9 h-9 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0">
           <Info className="w-4 h-4" />
         </div>
-        <div>
-          <h3 className="text-sm font-semibold text-charcoal">How Impact works</h3>
-          <p className="mt-1 text-sm text-charcoal-muted leading-relaxed">
+        {/* WO-095B DEF-095A-05: without min-w-0 this flex child kept its
+            content width and pushed the card past the viewport at 200% text. */}
+        <div className="min-w-0 break-words">
+          <h3 className="text-sm font-semibold text-charcoal break-words">How Impact works</h3>
+          <p className="mt-1 text-sm text-charcoal-muted leading-relaxed break-words">
             Community Impact reflects real activity: meeting Veggies in person, supporting
             Community Places, and hosting completed Meetups. Repeated scans and invalid activity
             do not increase your totals.
           </p>
-          <p className="mt-2 text-xs text-charcoal-muted">
+          <p className="mt-2 text-xs text-charcoal-muted break-words">
             Your detailed activity history is private to you.
           </p>
+
         </div>
       </div>
     </Card>

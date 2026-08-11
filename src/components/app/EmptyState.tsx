@@ -32,7 +32,7 @@ export function EmptyState({ icon, title, description, action, className }: Prop
           {description}
         </p>
       )}
-      {action && <div className="mt-5">{action}</div>}
+      {action && <div className="mt-5 max-w-full min-w-0">{action}</div>}
     </div>
   );
 }

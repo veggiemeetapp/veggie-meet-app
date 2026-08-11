@@ -388,7 +388,9 @@ function TabButton({
     <button
       onClick={onClick}
       className={cn(
-        "flex-1 py-2 rounded-full text-sm font-medium transition-colors inline-flex items-center justify-center gap-1.5",
+        // WO-095B DEF-095A-05: `min-w-0` lets the label wrap instead of setting
+        // a content-width floor that pushed the tab row past the viewport.
+        "flex-1 min-w-0 px-2 py-2 rounded-full text-sm font-medium text-center transition-colors inline-flex flex-wrap items-center justify-center gap-1.5",
         active
           ? "bg-background text-charcoal shadow-sm"
           : "text-charcoal-muted",
