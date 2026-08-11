@@ -568,6 +568,16 @@ export default function Host() {
                         onSuggestPlace={() => navigate("/community/places/suggest")}
                         onViewPlace={(pid) => navigate(`/place/${pid}`)}
                       />
+                      {/* WO-096 DEF-096-03: a first-time host could reasonably
+                          assume picking a Community Place books a table. It
+                          does not — VeggieMeet never contacts or reserves at a
+                          venue, so say so where the choice is made. */}
+                      <p className="mt-2 text-xs text-charcoal-muted copy">
+                        Choosing a place sets where your Meetup happens. VeggieMeet doesn’t
+                        contact the venue or reserve a table — arrange that yourself if your
+                        group needs it.
+                      </p>
+
                       {placeError && (
                         <p
                           id="host-location-error"
