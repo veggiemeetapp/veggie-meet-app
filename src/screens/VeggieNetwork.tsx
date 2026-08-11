@@ -354,7 +354,7 @@ export default function VeggieNetwork() {
               <EmptyState
                 icon={<Handshake className="w-6 h-6" />}
                 title="Veggies are still joining"
-                description="As more people join near you, we’ll suggest who to meet next."
+                description="As more people join in your city, we’ll suggest who to meet next."
                 action={
                   <PrimaryButton onClick={() => navigate("/community")}>
                     Explore Community
