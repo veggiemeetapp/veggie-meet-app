@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Calendar, Clock, MapPin } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
-import { getMeetup, getPlace } from "@/lib/mock-data";
+
 import { formatMeetupDate, formatTimeRange } from "@/lib/format";
 import { fetchMeetupById, isUuid, joinMeetup } from "@/lib/backend";
 import { useAuth } from "@/hooks/useAuth";

@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Sparkles, Calendar, Clock, MapPin, Share2, MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
-import { getMeetup, getPlace } from "@/lib/mock-data";
+
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { fetchMeetupById, isUuid } from "@/lib/backend";
 import type { Meetup } from "@/types";
