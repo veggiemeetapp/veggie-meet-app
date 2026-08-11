@@ -14,9 +14,7 @@ export default function JoinConfirmation() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const [meetup, setMeetup] = useState<Meetup | null | undefined>(() =>
-    id ? getMeetup(id) ?? undefined : undefined,
-  );
+  const [meetup, setMeetup] = useState<Meetup | null | undefined>(undefined);
   const [joining, setJoining] = useState<boolean>(!!id && isUuid(id));
   const [joinError, setJoinError] = useState<string | null>(null);
 

@@ -10,9 +10,7 @@ import type { Meetup } from "@/types";
 
 export default function MeetupCreated() {
   const { id } = useParams();
-  const [meetup, setMeetup] = useState<Meetup | null | undefined>(() =>
-    id ? getMeetup(id) ?? undefined : undefined,
-  );
+  const [meetup, setMeetup] = useState<Meetup | null | undefined>(undefined);
 
   useEffect(() => {
     if (!id || meetup) return;
