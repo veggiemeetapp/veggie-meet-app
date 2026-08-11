@@ -45,6 +45,19 @@ export default function Today() {
     veggie_recommendations.length === 0 &&
     place_recommendations.length === 0;
 
+  // WO-095 §32: a truly empty Today shows one welcoming state with a single
+  // next step, instead of stacking three empty sections.
+  if (nothing) {
+    return (
+      <div className="animate-fade-in pb-8">
+        <TodayHeader />
+        <div className="mt-6">
+          <TodayEmptyState />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in pb-8">
       <TodayHeader />
