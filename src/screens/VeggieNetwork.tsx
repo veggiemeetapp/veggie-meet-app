@@ -142,6 +142,8 @@ export default function VeggieNetwork() {
   async function handleAccept(r: Relationship) {
     try {
       await acceptRequest(r.id);
+      // WO-096 DEF-096-01: accepting a request is a level-2 activation outcome.
+      logAnalyticsEvent("connection_request_accepted", { surface: "network_requests" });
       toast.success(`Connected with ${firstName(r.other.displayName)}`);
     } catch {
       toast.error("Couldn't accept just now. Try again.");
@@ -218,7 +220,7 @@ export default function VeggieNetwork() {
               <EmptyState
                 icon={<Sprout className="w-6 h-6" />}
                 title="No connections yet"
-                description="Connections form after you meet someone at a Meetup — that’s what makes them real."
+                description="A Connection forms once you send a Connection Request and the other Veggie accepts. Meet in person and scan each other's code to make it a Verified Connection."
                 action={
                   /* WO-095A DEF-095A-02: standard CTA vocabulary — the action
                      is "Meet Veggies", not the name of the tab it opens. */
