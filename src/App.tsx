@@ -60,6 +60,9 @@ const OwnerPlaceIdentityReview = lazy(() => import("./screens/OwnerPlaceIdentity
 const OwnerMemberReports = lazy(() => import("./screens/OwnerMemberReports"));
 const OwnerBetaOperations = lazy(() => import("./screens/OwnerBetaOperations"));
 const BetaFeedback = lazy(() => import("./screens/BetaFeedback"));
+// WO-098: public password recovery destination — must never sit behind the
+// onboarding guard, the member has no completed profile session yet.
+const ResetPassword = lazy(() => import("./screens/ResetPassword"));
 
 
 
@@ -176,6 +179,7 @@ const App = () => (
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/" element={gated(<Today />)} />
                 <Route path="/community" element={gated(<Community />)} />
                 <Route path="/community/places" element={gated(<CommunityPlaces />)} />
