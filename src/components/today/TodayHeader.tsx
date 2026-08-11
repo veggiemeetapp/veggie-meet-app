@@ -11,14 +11,18 @@ export function TodayHeader() {
   return (
     <header className="safe-top px-5 pt-4 pb-3 bg-background">
       <div className="flex items-center justify-between gap-2 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+        {/* WO-095B DEF-095A-05: the wordmark block was `shrink-0`, so at 200%
+            text it kept its full width and pushed the header controls off the
+            right edge of the document. It now truncates instead. */}
+        <div className="flex items-center gap-1.5 min-w-0">
           {/* DEF-092A-01: the wordmark used a colour emoji, which falls back to
               an empty outlined box wherever no emoji font is installed. */}
           <Sprout className="w-5 h-5 text-primary shrink-0" strokeWidth={1.75} aria-hidden="true" />
-          <span className="font-semibold tracking-tight text-charcoal">
+          <span className="font-semibold tracking-tight text-charcoal truncate">
             VeggieMeet
           </span>
         </div>
+
 
 
         <div className="flex items-center gap-1 shrink-0">

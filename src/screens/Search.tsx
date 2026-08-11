@@ -108,9 +108,12 @@ export default function Search() {
       <h1 className="sr-only">Search Veggies, Meetups, and Places</h1>
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border page-x pt-3 pb-3">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 min-w-0">
           <BackButton fallback="/community" />
-          <div className="flex-1">
+          {/* WO-095B DEF-095A-06: `flex-1` alone keeps `min-width:auto`, so the
+              input's default intrinsic character width (huge at 32px root text)
+              set the row width and overflowed 320px. */}
+          <div className="flex-1 min-w-0">
             <SearchInput
               value={query}
               onChange={setQuery}
@@ -119,6 +122,7 @@ export default function Search() {
             />
           </div>
         </div>
+
         {/* DEF-092A-02: at 320px the city chip and the tab rail could not both
             fit on one line, pushing 51px of horizontal overflow. Allow the row
             to wrap and let the tab rail shrink instead of forcing its width. */}
@@ -130,10 +134,14 @@ export default function Search() {
           />
           {/* WO-095A DEF-095A-06: a 13rem floor on the tab rail overflowed the
               320px viewport once the zero-state row wrapped. Let it shrink. */}
-          <div className="flex-1 min-w-0 max-w-xs">
-
+          {/* WO-095B: `max-w-xs` was a bare rem measure (640px at 200% text).
+              `basis-[15rem]` makes the rail wrap onto its own line as soon as
+              the row is too tight, and the clamp keeps it inside the page. */}
+          <div className="flex-1 basis-[15rem] min-w-0 max-w-[min(20rem,100%)]">
             <SearchTabs value={tab} onChange={setTab} />
           </div>
+
+
         </div>
 
       </div>
