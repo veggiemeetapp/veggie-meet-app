@@ -3109,6 +3109,7 @@ export type Database = {
           timezone: string
         }[]
       }
+      get_beta_activation_summary: { Args: { _window?: string }; Returns: Json }
       get_beta_feedback_queue: {
         Args: { _limit?: number; _offset?: number; _status?: string }
         Returns: Json

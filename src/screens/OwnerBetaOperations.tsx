@@ -9,6 +9,8 @@ import { safeBack } from "@/lib/navigation";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { showErrorToast } from "@/lib/errorToast";
 import { logOperationalFailure } from "@/lib/opsTelemetry";
+import { BetaActivation } from "@/components/owner/BetaActivation";
+
 import {
   FEEDBACK_STATUS_LABEL,
   fetchBetaFeedbackQueue,
@@ -119,6 +121,7 @@ export default function OwnerBetaOperations() {
             aria-label="Refresh"
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-accent/40"
             onClick={() => {
+              void qc.invalidateQueries({ queryKey: ["beta-activation"] });
               void qc.invalidateQueries({ queryKey: ["beta-health"] });
               void qc.invalidateQueries({ queryKey: ["beta-op-failures"] });
               void qc.invalidateQueries({ queryKey: ["beta-integrity"] });
@@ -130,8 +133,11 @@ export default function OwnerBetaOperations() {
         }
       />
 
-      <div className="flex-1 px-5 py-4 space-y-6">
+      <div className="flex-1 px-5 py-4 space-y-6 min-w-0">
+        <BetaActivation />
+
         <section aria-labelledby="beta-health-h">
+
           <h2
             id="beta-health-h"
             className="text-sm font-semibold text-charcoal flex items-center gap-2"
