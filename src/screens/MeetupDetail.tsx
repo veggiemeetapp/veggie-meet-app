@@ -216,8 +216,8 @@ export default function MeetupDetail() {
   const host = dbHost ?? undefined;
   const attendeeList: never[] = [];
   const description = meetup.description?.trim().length
-    ? `${meetup.description}\n\n${friendlyDescription(meetup.title)}`
-    : friendlyDescription(meetup.title);
+    ? meetup.description.trim()
+    : "The host hasn’t added a description yet.";
 
   return (
     <div className="pb-32">
@@ -266,7 +266,7 @@ export default function MeetupDetail() {
           </div>
         ) : null}
 
-        <MeetupInfo meetup={meetup} place={place} distanceKm={mockDistance(meetup.id)} />
+        <MeetupInfo meetup={meetup} />
 
         {isRealMeetup && <MeetupPlaceSection meetupId={meetup.id} />}
 
