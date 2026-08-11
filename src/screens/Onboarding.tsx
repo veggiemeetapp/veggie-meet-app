@@ -60,6 +60,7 @@ import {
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
 import { lovable } from "@/integrations/lovable/index";
+import { mapAuthError } from "@/lib/authErrors";
 
 
 function makeAvatarUrl(seed: string) {
@@ -591,6 +592,11 @@ function Auth({
   // profile steps, where every write would silently no-op.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
+  // WO-098: password recovery request lives on the same auth surface so the
+  // recovery path is always one tap from Sign in (§23).
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+
 
   useEffect(() => {
     if (session) onContinue();
@@ -625,6 +631,9 @@ function Auth({
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // WO-098 §57: guard against a double activation of the submit control
+    // creating two signup/sign-in requests.
+    if (busy) return;
     const address = email.trim();
     if (!address || password.length < 6) {
       toast.error("Please enter a valid email and a password (6+ characters).");
@@ -632,6 +641,7 @@ function Auth({
     }
     setBusy(true);
     if (isSignUp) {
+      logOnboardingEvent("auth_signup_started");
       const { data, error } = await supabase.auth.signUp({
         email: address,
         password,
@@ -639,10 +649,10 @@ function Auth({
       });
       setBusy(false);
       if (error) {
-        toast.error(error.message);
+        // WO-098 §52: bounded member-safe copy, never the provider message.
+        toast.error(mapAuthError(error).message);
         return;
       }
-      logOnboardingEvent("auth_signup_started");
       if (!data.session) {
         // Confirmation required — park here until the session arrives via the
         // auth listener (clicking the link in this tab or another one).
@@ -661,7 +671,10 @@ function Auth({
       });
       setBusy(false);
       if (error) {
-        toast.error(error.message);
+        const mapped = mapAuthError(error);
+        // Category only — the attempted email/password never leave the device.
+        logOnboardingEvent("auth_signin_failed", { category: mapped.category });
+        toast.error(mapped.message);
         return;
       }
       logOnboardingEvent("auth_signin_success");
@@ -671,7 +684,7 @@ function Auth({
   }
 
   async function handleResend() {
-    if (!pendingEmail) return;
+    if (!pendingEmail || busy) return;
     setBusy(true);
     const { error } = await supabase.auth.resend({
       type: "signup",
@@ -680,11 +693,113 @@ function Auth({
     });
     setBusy(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(mapAuthError(error).message);
       return;
     }
     setResent(true);
     toast.success("Confirmation email sent again.");
+  }
+
+  /**
+   * WO-098 §24 — password recovery request.
+   *
+   * The response is deliberately identical whether or not the address has an
+   * account: nothing here may confirm account existence (§17).
+   */
+  async function handleForgotSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    const address = email.trim();
+    if (!address) {
+      toast.error("Please enter the email you signed up with.");
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(address, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) {
+      const mapped = mapAuthError(error);
+      // Rate limiting is the only failure worth surfacing distinctly; every
+      // other outcome resolves to the same generic sent state below.
+      if (mapped.category === "rate_limited" || mapped.category === "offline") {
+        toast.error(mapped.message);
+        return;
+      }
+    }
+    logOnboardingEvent("auth_password_reset_requested");
+    setForgotSent(true);
+  }
+
+  if (forgotMode) {
+    return (
+      <div className="flex-1 flex flex-col page-x pt-8 pb-10 animate-fade-in">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
+            Reset your password
+          </h1>
+          <p className="mt-2 text-base text-charcoal-muted">
+            {forgotSent
+              ? "If that email has a VeggieMeet account, a reset link is on its way. It can take a minute to arrive."
+              : "Enter your email and we'll send you a link to choose a new password."}
+          </p>
+        </div>
+        {forgotSent ? (
+          <div className="space-y-3">
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-control border border-border bg-card px-4 py-3 text-sm text-charcoal-muted"
+            >
+              Check your inbox — and your spam folder, just in case.
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setForgotMode(false);
+                setForgotSent(false);
+              }}
+              className="w-full h-12 rounded-full border border-border bg-card font-semibold text-charcoal hover:bg-muted/40"
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+          <>
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="forgot-email"
+                  className="block text-sm font-semibold text-charcoal mb-2"
+                >
+                  Email
+                </label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <PrimaryButton type="submit" fullWidth disabled={busy}>
+                {busy ? "Sending…" : "Send reset link"}
+              </PrimaryButton>
+            </form>
+            <button
+              type="button"
+              onClick={() => setForgotMode(false)}
+              className="mt-6 text-sm text-charcoal-muted hover:text-charcoal self-start"
+            >
+              ← Back to sign in
+            </button>
+          </>
+        )}
+      </div>
+    );
   }
 
   if (pendingEmail) {
@@ -771,6 +886,18 @@ function Auth({
             {busy ? "Just a moment…" : isSignUp ? "Create account" : "Sign in"}
           </PrimaryButton>
         </form>
+        {!isSignUp && (
+          <button
+            type="button"
+            onClick={() => {
+              setForgotSent(false);
+              setForgotMode(true);
+            }}
+            className="mt-4 min-h-[44px] text-sm font-semibold text-primary self-start"
+          >
+            Forgot your password?
+          </button>
+        )}
         <div className="mt-6 flex items-center justify-between text-sm">
           <button
             type="button"
