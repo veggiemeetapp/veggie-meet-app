@@ -166,6 +166,7 @@ export default function Search() {
             onLoadMore={() => vQ.fetchNextPage()}
             renderItem={(v) => <VeggieResultCard key={v.entity_id} result={v} />}
             emptyLabel="No Veggies found"
+            scope="veggies"
             cityName={selectedCity?.name ?? null}
             allCities={allCities}
             onExpand={() => setAllCities(true)}
@@ -180,6 +181,7 @@ export default function Search() {
             onLoadMore={() => mQ.fetchNextPage()}
             renderItem={(m) => <MeetupResultCard key={m.entity_id} result={m} />}
             emptyLabel="No Meetups found"
+            scope="meetups"
             cityName={selectedCity?.name ?? null}
             allCities={allCities}
             onExpand={() => setAllCities(true)}
@@ -194,6 +196,7 @@ export default function Search() {
             onLoadMore={() => pQ.fetchNextPage()}
             renderItem={(p) => <PlaceResultCard key={p.entity_id} result={p} />}
             emptyLabel="No Places found"
+            scope="places"
             cityName={selectedCity?.name ?? null}
             allCities={allCities}
             onExpand={() => setAllCities(true)}
