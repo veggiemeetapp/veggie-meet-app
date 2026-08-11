@@ -1,4 +1,5 @@
 import { memberSafeMessage } from "@/lib/errors";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -40,6 +41,8 @@ export default function JoinConfirmation() {
     setJoinError(null);
     joinMeetup(profile.id, id)
       .then((res) => {
+        // WO-096 DEF-096-01: joining a Meetup is a level-2 activation outcome.
+        if (!cancelled) logAnalyticsEvent("meetup_joined", { meetup_id: id });
         if (!cancelled && res.chatId) {
           setMeetup((prev) =>
             prev && !prev.chatId ? { ...prev, chatId: res.chatId! } : prev,

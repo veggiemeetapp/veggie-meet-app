@@ -1,4 +1,5 @@
 import { safeBack } from "@/lib/navigation";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { BackButton } from "@/components/app";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -67,7 +68,12 @@ export default function VeggieNetwork() {
       p.set("tab", tab);
       setParams(p, { replace: true });
     }
+    // WO-096 DEF-096-01: discovery intent is level 1 of the activation model.
+    logAnalyticsEvent(tab === "meet-next" ? "meet_next_opened" : "network_opened", {
+      tab,
+    });
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const networkQuery = useQuery({
     queryKey: ["veggie-network", profile?.id],
@@ -136,6 +142,8 @@ export default function VeggieNetwork() {
   async function handleAccept(r: Relationship) {
     try {
       await acceptRequest(r.id);
+      // WO-096 DEF-096-01: accepting a request is a level-2 activation outcome.
+      logAnalyticsEvent("connection_request_accepted", { surface: "network_requests" });
       toast.success(`Connected with ${firstName(r.other.displayName)}`);
     } catch {
       toast.error("Couldn't accept just now. Try again.");
@@ -212,7 +220,7 @@ export default function VeggieNetwork() {
               <EmptyState
                 icon={<Sprout className="w-6 h-6" />}
                 title="No connections yet"
-                description="Connections form after you meet someone at a Meetup — that’s what makes them real."
+                description="A Connection forms once you send a Connection Request and the other Veggie accepts. Meet in person and scan each other's code to make it a Verified Connection."
                 action={
                   /* WO-095A DEF-095A-02: standard CTA vocabulary — the action
                      is "Meet Veggies", not the name of the tab it opens. */
@@ -346,7 +354,7 @@ export default function VeggieNetwork() {
               <EmptyState
                 icon={<Handshake className="w-6 h-6" />}
                 title="Veggies are still joining"
-                description="As more people join near you, we’ll suggest who to meet next."
+                description="As more people join in your city, we’ll suggest who to meet next."
                 action={
                   <PrimaryButton onClick={() => navigate("/community")}>
                     Explore Community

@@ -159,12 +159,20 @@ export default function Host() {
   const [modeLogged, setModeLogged] = useState<string | null>(null);
   const [preselectApplied, setPreselectApplied] = useState(false);
 
+  // WO-096 DEF-096-01: hosting intent is level 1 of the activation model and
+  // had no telemetry, so "opened Host but never published" was invisible.
+  useEffect(() => {
+    logAnalyticsEvent("host_opened", { source: preselectSource });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Seed city from Selected/Home once context resolves.
   useEffect(() => {
     if (cityId || !defaultCityId || !defaultCityName) return;
     setCityId(defaultCityId);
     setCityName(defaultCityName);
   }, [defaultCityId, defaultCityName, cityId]);
+
 
   // Discovery list source of truth: published + verified + active + operational.
   const placesQuery = useQuery({
@@ -399,6 +407,23 @@ export default function Host() {
       />
 
       <div className="px-5 py-6 space-y-7 pb-32">
+        {/* WO-096 DEF-096-04: first-time hosts had no expectation setting —
+            nothing said who can see a published Meetup, or that a small,
+            simple plan is enough. */}
+        <section
+          aria-label="What hosting involves"
+          className="rounded-card border border-border bg-muted/40 p-4"
+        >
+          <p className="text-sm text-charcoal copy">
+            Keep it simple — a time, a place, and a few Veggies is enough.
+          </p>
+          <p className="mt-1.5 text-xs text-charcoal-muted copy">
+            Once published, your Meetup is visible to Veggies in the city you choose, and they
+            can join until it’s full. You can edit or cancel it any time from My Plans.
+          </p>
+        </section>
+
+
         {/* Cover */}
         <section>
           <FieldLabel>Meetup cover</FieldLabel>
@@ -560,6 +585,16 @@ export default function Host() {
                         onSuggestPlace={() => navigate("/community/places/suggest")}
                         onViewPlace={(pid) => navigate(`/place/${pid}`)}
                       />
+                      {/* WO-096 DEF-096-03: a first-time host could reasonably
+                          assume picking a Community Place books a table. It
+                          does not — VeggieMeet never contacts or reserves at a
+                          venue, so say so where the choice is made. */}
+                      <p className="mt-2 text-xs text-charcoal-muted copy">
+                        Choosing a place sets where your Meetup happens. VeggieMeet doesn’t
+                        contact the venue or reserve a table — arrange that yourself if your
+                        group needs it.
+                      </p>
+
                       {placeError && (
                         <p
                           id="host-location-error"

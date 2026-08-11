@@ -1,4 +1,5 @@
 import { safeBack } from "@/lib/navigation";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { BackButton } from "@/components/app";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -104,6 +105,9 @@ export default function VeggieProfile() {
     setBusy(true);
     try {
       const res = await sendConnectionRequest(me.id, id);
+      // WO-096 DEF-096-01: sending a Connection Request is a level-2
+      // activation outcome and had no telemetry.
+      logAnalyticsEvent("connection_request_sent", { outcome: res.state });
       if (res.state === "connected") toast.success("You're now connected");
       else toast.success("Connection request sent");
       relQuery.refetch();
