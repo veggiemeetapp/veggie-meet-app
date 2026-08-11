@@ -211,8 +211,8 @@ export default function VeggieNetwork() {
             ) : (data?.all.length ?? 0) === 0 ? (
               <EmptyState
                 icon={<Sprout className="w-6 h-6" />}
-                title="You haven't connected with any Veggies yet."
-                description="Meet people through Meetups or explore who you may want to meet next."
+                title="No connections yet"
+                description="Connections form after you meet someone at a Meetup — that’s what makes them real."
                 action={
                   <PrimaryButton onClick={() => setTab("meet-next")}>
                     Meet Next
@@ -343,8 +343,8 @@ export default function VeggieNetwork() {
             ) : (meetNextQuery.data?.length ?? 0) === 0 ? (
               <EmptyState
                 icon={<Handshake className="w-6 h-6" />}
-                title="No recommendations right now."
-                description="Explore the community or check back after joining more Meetups."
+                title="Veggies are still joining"
+                description="As more people join near you, we’ll suggest who to meet next."
                 action={
                   <PrimaryButton onClick={() => navigate("/community")}>
                     Explore Community
