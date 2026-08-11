@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TODAY_ISO } from "@/lib/mock-data";
+
 import { fetchSuppressedProfileIds } from "@/lib/safety";
 
 

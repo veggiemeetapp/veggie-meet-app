@@ -1,7 +1,7 @@
-import { TODAY_ISO } from "@/lib/mock-data";
+import { todayISO } from "@/lib/todayDate";
 
 export function isToday(dateISO: string): boolean {
-  return dateISO === TODAY_ISO;
+  return dateISO === todayISO();
 }
 
 export function formatMeetupDate(dateISO: string): string {

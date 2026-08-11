@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Check, Clock, MapPin, Users } from "lucide-react";
 import type { Meetup } from "@/types";
-import { getPlace, getVeggie, veggies } from "@/lib/mock-data";
+
 import { formatTime12h } from "@/lib/format";
 import { useMeetupMembership } from "@/hooks/useMeetupMembership";
 import type { MeetupRole } from "@/lib/backend";
