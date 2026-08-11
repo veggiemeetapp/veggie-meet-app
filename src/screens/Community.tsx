@@ -13,7 +13,7 @@ import {
   fetchUpcomingMeetupsByCity,
   type NearbyVeggie,
 } from "@/lib/backend";
-import { TODAY_ISO } from "@/lib/mock-data";
+import { todayISO } from "@/lib/todayDate";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { formatDistanceBetween, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import type { CommunityPlace, Meetup } from "@/types";
@@ -52,7 +52,7 @@ export default function Community() {
   const meetupsQuery = useQuery<Meetup[]>({
     queryKey: ["community-feed", "meetups", cityId],
     enabled: !!cityId,
-    queryFn: () => fetchUpcomingMeetupsByCity(cityId!, TODAY_ISO),
+    queryFn: () => fetchUpcomingMeetupsByCity(cityId!, todayISO()),
     staleTime: 60_000,
   });
 

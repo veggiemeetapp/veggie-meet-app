@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAttendingMeetups, fetchHostedMeetups } from "@/lib/backend";
-import { TODAY_ISO, communityPlaces } from "@/lib/mock-data";
+import { todayISO } from "@/lib/todayDate";
 import type { CommunityPlace, Meetup } from "@/types";
 
 export type Dietary = "vegan" | "vegetarian" | "curious";
@@ -79,8 +79,8 @@ export async function fetchVeggieProfileBundle(
   const firstName = displayName.split(/\s+/)[0] ?? displayName;
 
   const [hosted, attending, checkinsRes, connSummaryRes] = await Promise.all([
-    fetchHostedMeetups(targetProfileId, TODAY_ISO),
-    fetchAttendingMeetups(targetProfileId, TODAY_ISO),
+    fetchHostedMeetups(targetProfileId, todayISO()),
+    fetchAttendingMeetups(targetProfileId, todayISO()),
     supabase
       .from("community_place_visits")
       .select("community_place_id, visited_at")

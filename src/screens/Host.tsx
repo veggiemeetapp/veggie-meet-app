@@ -26,7 +26,7 @@ import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/compone
 import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { cn } from "@/lib/utils";
-import { TODAY_ISO } from "@/lib/mock-data";
+import { todayISO } from "@/lib/todayDate";
 import type { CommunityPlace, MeetupCategory } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { logAnalyticsEvent } from "@/lib/analytics";
@@ -139,7 +139,7 @@ export default function Host() {
   const [customLat, setCustomLat] = useState("");
   const [customLng, setCustomLng] = useState("");
 
-  const [date, setDate] = useState<string>(TODAY_ISO);
+  const [date, setDate] = useState<string>(todayISO());
   const [startTime, setStartTime] = useState<string>("18:30");
   const [capacity, setCapacity] = useState<number>(10);
   const [isCustomCapacity, setIsCustomCapacity] = useState(false);
