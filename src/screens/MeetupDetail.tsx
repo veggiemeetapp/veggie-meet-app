@@ -22,7 +22,7 @@ import {
 } from "@/components/meetup";
 import { MeetupCheckInButton } from "@/components/meetup/MeetupCheckInButton";
 
-import { getMeetup, getPlace, getVeggie, veggies } from "@/lib/mock-data";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   resolveMeetupChatId,
@@ -151,12 +151,12 @@ export default function MeetupDetail() {
     };
   }, [id, isRealMeetup, queryClient]);
 
-  // Mock (non-uuid) meetups: resolve synchronously.
-  const mockMeetup = !isRealMeetup && id ? getMeetup(id) ?? null : null;
-
+  // WO-095: only server-backed (uuid) Meetups render. The screen used to fall
+  // back to the mock-data fixture for non-uuid ids, which rendered fixture
+  // people and places as if they were real.
   const meetup: Meetup | null | undefined = isRealMeetup
     ? membershipQuery.data?.meetup
-    : mockMeetup;
+    : null;
   const role: MeetupRole = isRealMeetup
     ? membershipQuery.data?.role ?? "visitor"
     : "visitor";
@@ -217,11 +217,8 @@ export default function MeetupDetail() {
     );
   }
 
-  const host = getVeggie(meetup.hostId) ?? dbHost ?? undefined;
-  const place = getPlace(meetup.communityPlaceId);
-  const attendeeList = meetup.attendeeIds
-    .map((i) => veggies.find((v) => v.id === i))
-    .filter((v): v is NonNullable<typeof v> => Boolean(v));
+  const host = dbHost ?? undefined;
+  const attendeeList: never[] = [];
   const description = meetup.description?.trim().length
     ? `${meetup.description}\n\n${friendlyDescription(meetup.title)}`
     : friendlyDescription(meetup.title);
