@@ -73,6 +73,8 @@ export default function Community() {
   const name = firstName(profile?.display_name);
   const hello = greeting(new Date().getHours());
   const cityLabel = selectedCity?.name ?? null;
+  // Titles are only rendered once a city is chosen; this keeps them safe anyway.
+  const cityTitle = cityLabel ?? "your city";
 
   const cityCoords = useMemo(
     () =>
@@ -130,7 +132,7 @@ export default function Community() {
               never uses device location for discovery. Titles now say so. */}
           <SectionHeader
             icon={Sprout}
-            title={`Meetups in ${cityLabel}`}
+            title={`Meetups in ${cityTitle}`}
             ctaLabel="View all"
             ctaTo="/community/meetups"
             ctaComingSoon
@@ -156,7 +158,7 @@ export default function Community() {
 
           <SectionHeader
             icon={Users}
-            title={`Veggies in ${cityLabel}`}
+            title={`Veggies in ${cityTitle}`}
             ctaLabel="Discover"
             ctaTo="/network?tab=meet-next"
           />
@@ -178,7 +180,7 @@ export default function Community() {
           {/* Community Places */}
           <SectionHeader
             icon={Utensils}
-            title={`Community Places in ${cityLabel}`}
+            title={`Community Places in ${cityTitle}`}
             ctaLabel="Explore"
             ctaTo="/community/places"
           />
