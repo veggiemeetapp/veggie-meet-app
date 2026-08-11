@@ -21,7 +21,7 @@ import { PrimaryButton, BackButton } from "@/components/app";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { CitySelector } from "@/components/location/CitySelector";
 import { cn } from "@/lib/utils";
-import { currentUser } from "@/lib/mock-data";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSetHomeCity, useSetSelectedCity } from "@/hooks/useLocation";
@@ -346,12 +346,8 @@ export default function Onboarding() {
   async function finish(action?: { route: string; label: string; entity_type: string; entity_id: string }) {
     if (saving) return;
     setSaving(true);
-    // Mirror to mock-user so legacy screens keep working.
-    currentUser.displayName = displayName.trim() || currentUser.displayName;
-    currentUser.bio = bio.trim() || currentUser.bio;
-    if (avatarUrl) currentUser.avatarUrl = avatarUrl;
-    if (interests.length) currentUser.interests = interests;
-    if (homeCityName) currentUser.currentCity = homeCityName;
+    // WO-095: the mock-user mirror is gone; the profile row is the only source.
+
 
     try {
       if (session?.user) {

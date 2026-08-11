@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
-import { fetchAttendingMeetups, fetchHostedMeetups } from "@/lib/backend";
+import {
+  fetchAttendingMeetups,
+  fetchHostedMeetups,
+  fetchPublishedCommunityPlaces,
+} from "@/lib/backend";
 import { todayISO } from "@/lib/todayDate";
 import type { CommunityPlace, Meetup } from "@/types";
 
@@ -111,17 +115,25 @@ export async function fetchVeggieProfileBundle(
     .eq("profile_id", targetProfileId)
     .neq("status", "cancelled");
 
-  // Favorite places: top places by check-in count
+  // Favorite places: top places by check-in count, resolved against published
+  // Community Places (WO-095: this used to resolve names from the mock-data
+  // fixture, so a real check-in could render a fixture place name).
   const counts = new Map<string, number>();
   for (const r of checkinsRes.data ?? []) {
     const id = (r as any).community_place_id as string;
     counts.set(id, (counts.get(id) ?? 0) + 1);
   }
-  const favoritePlaces = Array.from(counts.entries())
+  const topPlaceIds = Array.from(counts.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
-    .map(([id]) => communityPlaces.find((p) => p.id === id))
-    .filter((p): p is CommunityPlace => !!p);
+    .map(([id]) => id);
+  let favoritePlaces: CommunityPlace[] = [];
+  if (topPlaceIds.length > 0) {
+    const published = await fetchPublishedCommunityPlaces();
+    favoritePlaces = topPlaceIds
+      .map((id) => published.find((p) => p.id === id))
+      .filter((p): p is CommunityPlace => !!p);
+  }
 
   const uniquePlaces = new Set((checkinsRes.data ?? []).map((c: any) => c.community_place_id));
 
