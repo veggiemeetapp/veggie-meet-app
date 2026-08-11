@@ -148,12 +148,6 @@ export default function Today() {
         </section>
       )}
 
-      {nothing && (
-        <div className="mt-6">
-          <TodayEmptyState />
-        </div>
-      )}
-
     </div>
   );
 }
