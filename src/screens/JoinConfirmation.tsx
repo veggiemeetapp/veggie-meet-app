@@ -87,9 +87,8 @@ export default function JoinConfirmation() {
     );
   }
 
-  const place = getPlace(meetup.communityPlaceId);
-  const placeLabel = meetup.location?.locationName ?? meetup.customLocation?.name ?? place?.name;
-  const placeAddr = meetup.location?.address ?? meetup.customLocation?.address ?? place?.address;
+  const placeLabel = meetup.location?.locationName ?? meetup.customLocation?.name;
+  const placeAddr = meetup.location?.address ?? meetup.customLocation?.address;
   const isHost = profile?.id && profile.id === meetup.hostId;
 
   return (
