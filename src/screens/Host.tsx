@@ -159,12 +159,20 @@ export default function Host() {
   const [modeLogged, setModeLogged] = useState<string | null>(null);
   const [preselectApplied, setPreselectApplied] = useState(false);
 
+  // WO-096 DEF-096-01: hosting intent is level 1 of the activation model and
+  // had no telemetry, so "opened Host but never published" was invisible.
+  useEffect(() => {
+    logAnalyticsEvent("host_opened", { source: preselectSource });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Seed city from Selected/Home once context resolves.
   useEffect(() => {
     if (cityId || !defaultCityId || !defaultCityName) return;
     setCityId(defaultCityId);
     setCityName(defaultCityName);
   }, [defaultCityId, defaultCityName, cityId]);
+
 
   // Discovery list source of truth: published + verified + active + operational.
   const placesQuery = useQuery({
