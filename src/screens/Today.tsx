@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { CalendarClock, ChevronRight, RefreshCw } from "lucide-react";
+import { CalendarClock, CalendarPlus, ChevronRight, RefreshCw } from "lucide-react";
+import { EmptyState } from "@/components/app/EmptyState";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { Link } from "react-router-dom";
 import { useToday } from "@/hooks/useToday";
