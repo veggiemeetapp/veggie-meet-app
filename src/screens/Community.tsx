@@ -162,7 +162,10 @@ export default function Community() {
           {veggiesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (veggiesQuery.data ?? []).length === 0 ? (
-            <EmptyRow message={`No Veggies with ${cityLabel} as their Home City yet.`} />
+            <EmptyRow
+              message={`Veggies are still joining in ${cityLabel}. We’ll show them here as the community grows.`}
+            />
+
           ) : (
             <HScroll>
               {veggiesQuery.data!.map((v) => (
@@ -181,7 +184,12 @@ export default function Community() {
           {placesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (placesQuery.data ?? []).length === 0 ? (
-            <EmptyRow message={`No Community Places listed in ${cityLabel} yet.`} />
+            <EmptyRow
+              message={`No verified vegan places in ${cityLabel} yet. Suggest one you love and we’ll verify it.`}
+              actionLabel="Suggest a place"
+              actionTo="/community/places/suggest"
+            />
+
           ) : (
             <HScroll>
               {placesQuery.data!.map((p) => (
