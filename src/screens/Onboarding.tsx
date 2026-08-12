@@ -879,6 +879,24 @@ function Auth({
               className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+          {/* DEF-098A-01: recovery entry point sits directly under the password
+              field, above the primary action, so members can discover it. It
+              reuses the single WO-098 reset flow (forgotMode) — no second
+              implementation. */}
+          {!isSignUp && (
+            <div className="flex justify-start">
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotSent(false);
+                  setForgotMode(true);
+                }}
+                className="inline-flex min-h-[44px] items-center text-sm font-medium text-charcoal-muted underline underline-offset-4 hover:text-charcoal rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
           {/* DEF-096A-01: the shared button primitive defaults to
               type="button", so clicking this control never submitted the form —
               email signup and sign-in were only reachable via the Enter key. */}
@@ -886,18 +904,7 @@ function Auth({
             {busy ? "Just a moment…" : isSignUp ? "Create account" : "Sign in"}
           </PrimaryButton>
         </form>
-        {!isSignUp && (
-          <button
-            type="button"
-            onClick={() => {
-              setForgotSent(false);
-              setForgotMode(true);
-            }}
-            className="mt-4 min-h-[44px] text-sm font-semibold text-primary self-start"
-          >
-            Forgot your password?
-          </button>
-        )}
+
         <div className="mt-6 flex items-center justify-between text-sm">
           <button
             type="button"
