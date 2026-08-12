@@ -1559,6 +1559,14 @@ function Guidelines({
         <GuidelineItem title="Speak up safely" body="If something feels off, use Report or Block. We take every signal seriously." />
       </ul>
 
+      {/* WO-099: the full Community Guidelines are one tap away, same tab. */}
+      <Link
+        to="/community-guidelines"
+        className="mt-3 inline-flex min-h-[44px] items-center text-sm font-medium text-charcoal underline underline-offset-4 hover:text-primary"
+      >
+        Read the full Community Guidelines
+      </Link>
+
       <label className="mt-4 flex items-start gap-3 rounded-card border border-border bg-card p-3.5 cursor-pointer select-none">
         <input
           type="checkbox"
