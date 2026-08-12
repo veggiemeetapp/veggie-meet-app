@@ -31,6 +31,9 @@ const EXACT: Record<string, string> = {
   "/safety": "Safety & Trust",
   "/impact": "Community Impact",
   "/network": "Veggie Network",
+  "/privacy": "Privacy",
+  "/terms": "Terms",
+  "/community-guidelines": "Community Guidelines",
 };
 
 const PATTERNS: [RegExp, string][] = [
