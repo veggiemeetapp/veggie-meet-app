@@ -110,8 +110,10 @@ describe("analytics privacy", () => {
     expect(calls.length).toBeGreaterThan(0);
     for (const call of calls) {
       // Only the payload matters; event names may mention "password_reset".
-      const payload = call.slice(call.indexOf(",") + 1);
+      const comma = call.indexOf(",");
+      const payload = comma === -1 ? "" : call.slice(comma + 1);
       expect(payload).not.toMatch(/password|confirm|email|token/i);
+
     }
 
   });
