@@ -3,8 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PrimaryButton } from "@/components/app";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+import { PasswordField } from "@/components/auth/PasswordField";
+import {
+  PASSWORD_MISMATCH_MESSAGE,
+  PASSWORD_TOO_SHORT_MESSAGE,
+  isPasswordLongEnough,
+} from "@/lib/passwordPolicy";
 import { mapAuthError } from "@/lib/authErrors";
 import { logAnalyticsEvent } from "@/lib/analytics";
+
 
 /**
  * WO-098 — dedicated password reset destination.
@@ -67,15 +75,16 @@ export default function ResetPassword() {
     e.preventDefault();
     if (busy) return;
     setError(null);
-    if (password.length < 6) {
-      setError("Please choose a password of at least 6 characters.");
+    if (!isPasswordLongEnough(password)) {
+      setError(PASSWORD_TOO_SHORT_MESSAGE);
       return;
     }
     if (password !== confirm) {
-      setError("Those passwords don't match.");
+      setError(PASSWORD_MISMATCH_MESSAGE);
       return;
     }
     setBusy(true);
+
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
       const mapped = mapAuthError(updateError);
@@ -149,45 +158,31 @@ export default function ResetPassword() {
           Choose a new password
         </h1>
         <p className="mt-2 text-base text-charcoal-muted">
-          At least 6 characters. Pick something you haven't used elsewhere.
+          Pick something you haven't used elsewhere.
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label
-              htmlFor="new-password"
-              className="block text-sm font-semibold text-charcoal mb-2"
-            >
-              New password
-            </label>
-            <input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? "reset-error" : undefined}
-              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="confirm-password"
-              className="block text-sm font-semibold text-charcoal mb-2"
-            >
-              Confirm new password
-            </label>
-            <input
-              id="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? "reset-error" : undefined}
-              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+          <PasswordField
+            id="new-password"
+            label="New password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="new-password"
+            invalid={Boolean(error)}
+            describedBy={
+              error ? "reset-error password-requirements" : "password-requirements"
+            }
+          />
+          {/* WO-098B: the real, backend-enforced rules — shown before submit. */}
+          <PasswordRequirements password={password} />
+          <PasswordField
+            id="confirm-password"
+            label="Confirm new password"
+            value={confirm}
+            onChange={setConfirm}
+            autoComplete="new-password"
+            invalid={Boolean(error)}
+            describedBy={error ? "reset-error" : undefined}
+          />
           {error && (
             <p id="reset-error" role="alert" className="text-sm text-destructive">
               {error}
@@ -201,3 +196,4 @@ export default function ResetPassword() {
     </div>
   );
 }
+

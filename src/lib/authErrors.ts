@@ -28,7 +28,10 @@ export type MappedAuthError = {
   message: string;
 };
 
+import { PASSWORD_MIN_LENGTH } from "@/lib/passwordPolicy";
+
 const MAP: Array<{ test: RegExp; category: AuthErrorCategory; message: string }> = [
+
   {
     test: /invalid login credentials|invalid credentials|wrong password/i,
     category: "invalid_credentials",
@@ -50,16 +53,19 @@ const MAP: Array<{ test: RegExp; category: AuthErrorCategory; message: string }>
     message: "Too many attempts just now. Please wait a minute and try again.",
   },
   {
-    test: /pwned|compromised|leaked|data breach/i,
+    // WO-098B: length is checked first — the provider can report length AND
+    // breach in one message, and the length fix is the actionable one.
+    test: /password should be at least|password is too short|weak password|at least \d+ characters/i,
+    category: "weak_password",
+    message: `Please choose a longer password — at least ${PASSWORD_MIN_LENGTH} characters.`,
+  },
+  {
+    test: /pwned|compromised|leaked|data breach|easy to guess|known to be weak/i,
     category: "compromised_password",
     message:
       "That password has appeared in a known data breach. Please choose a different one.",
   },
-  {
-    test: /password should be|password is too short|weak password|at least 6/i,
-    category: "weak_password",
-    message: "Please choose a longer password — at least 6 characters.",
-  },
+
   {
     test: /already registered|already exists|user already/i,
     category: "email_taken",
