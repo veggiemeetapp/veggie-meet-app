@@ -981,10 +981,45 @@ function Auth({
           Continue with Email
         </button>
       </div>
-      <p className="mt-auto pt-8 text-center text-xs text-charcoal-muted">
-        By continuing you agree to VeggieMeet's community guidelines.
-      </p>
+      <div className="mt-auto pt-8">
+        <PolicyAcknowledgement />
+      </div>
     </div>
+  );
+}
+
+/**
+ * WO-099 §23 — concise, passive acknowledgement shown next to the account
+ * creation actions. Links open in the same tab so mobile Back returns to
+ * signup. Contrast is `text-charcoal-muted` on `background` (AA), not a
+ * low-contrast whisper, and there is no checkbox to pre-tick.
+ */
+function PolicyAcknowledgement() {
+  return (
+    <p className="text-center text-xs leading-relaxed text-charcoal-muted">
+      By creating an account you agree to follow our{" "}
+      <Link
+        to="/community-guidelines"
+        className="underline underline-offset-2 font-medium text-charcoal hover:text-primary"
+      >
+        Community Guidelines
+      </Link>
+      . See also{" "}
+      <Link
+        to="/privacy"
+        className="underline underline-offset-2 font-medium text-charcoal hover:text-primary"
+      >
+        Privacy
+      </Link>{" "}
+      and{" "}
+      <Link
+        to="/terms"
+        className="underline underline-offset-2 font-medium text-charcoal hover:text-primary"
+      >
+        Terms
+      </Link>
+      .
+    </p>
   );
 }
 
