@@ -1002,27 +1002,33 @@ function Auth({
  * low-contrast whisper, and there is no checkbox to pre-tick.
  */
 function PolicyAcknowledgement() {
+  // Stamp the current history entry so browser/gesture Back returns to the auth
+  // surface instead of the splash. Nothing member-identifying is written.
+  const stampReturn = () => {
+    try {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        "/onboarding?resume=auth",
+      );
+    } catch {
+      /* non-fatal: Back simply lands on the splash */
+    }
+  };
+  const linkClass =
+    "underline underline-offset-2 font-medium text-charcoal hover:text-primary rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
   return (
     <p className="text-center text-xs leading-relaxed text-charcoal-muted">
       By creating an account you agree to follow our{" "}
-      <Link
-        to="/community-guidelines"
-        className="underline underline-offset-2 font-medium text-charcoal hover:text-primary"
-      >
+      <Link to="/community-guidelines" onClick={stampReturn} className={linkClass}>
         Community Guidelines
       </Link>
       . See also{" "}
-      <Link
-        to="/privacy"
-        className="underline underline-offset-2 font-medium text-charcoal hover:text-primary"
-      >
+      <Link to="/privacy" onClick={stampReturn} className={linkClass}>
         Privacy
       </Link>{" "}
       and{" "}
-      <Link
-        to="/terms"
-        className="underline underline-offset-2 font-medium text-charcoal hover:text-primary"
-      >
+      <Link to="/terms" onClick={stampReturn} className={linkClass}>
         Terms
       </Link>
       .
