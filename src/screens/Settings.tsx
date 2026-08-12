@@ -2,7 +2,7 @@ import { memberSafeMessage } from "@/lib/errors";
 import { BackButton } from "@/components/app";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
