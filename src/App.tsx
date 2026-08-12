@@ -193,6 +193,9 @@ const App = () => (
                 <Route path="/community/places/suggest" element={gated(<SuggestPlace />)} />
                 <Route path="/search" element={gated(<Search />)} />
                 <Route path="/discover" element={<Navigate to="/community" replace />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                 <Route path="/host" element={gated(<Host />)} />
                 <Route path="/chats" element={gated(<Chats />)} />
                 <Route path="/you" element={gated(<You />)} />
