@@ -911,6 +911,11 @@ function Auth({
           <PrimaryButton type="submit" fullWidth disabled={busy}>
             {busy ? "Just a moment…" : isSignUp ? "Create account" : "Sign in"}
           </PrimaryButton>
+          {/* WO-099 §23/§24: passive acknowledgement, no pre-checked box, no
+              dark pattern. It references only what actually exists today: final
+              Community Guidelines, plus the Privacy and Terms surfaces (whose
+              formal copy is still in preparation and says so). */}
+          {isSignUp && <PolicyAcknowledgement />}
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm">
