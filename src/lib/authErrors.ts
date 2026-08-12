@@ -28,7 +28,10 @@ export type MappedAuthError = {
   message: string;
 };
 
+import { PASSWORD_MIN_LENGTH } from "@/lib/passwordPolicy";
+
 const MAP: Array<{ test: RegExp; category: AuthErrorCategory; message: string }> = [
+
   {
     test: /invalid login credentials|invalid credentials|wrong password/i,
     category: "invalid_credentials",

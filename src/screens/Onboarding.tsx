@@ -635,10 +635,13 @@ function Auth({
     // creating two signup/sign-in requests.
     if (busy) return;
     const address = email.trim();
-    if (!address || password.length < 6) {
-      toast.error("Please enter a valid email and a password (6+ characters).");
+    if (!address || !isPasswordLongEnough(password)) {
+      toast.error(
+        `Please enter a valid email and a password (${PASSWORD_MIN_LENGTH}+ characters).`,
+      );
       return;
     }
+
     setBusy(true);
     if (isSignUp) {
       logOnboardingEvent("auth_signup_started");
@@ -868,17 +871,18 @@ function Auth({
               className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-charcoal mb-2">Password</label>
-            <input aria-label="Password"
-              type="password"
-              autoComplete={isSignUp ? "new-password" : "current-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
-              className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+          <PasswordField
+            id="auth-password"
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            autoComplete={isSignUp ? "new-password" : "current-password"}
+            describedBy={isSignUp ? "password-requirements" : undefined}
+            placeholder={isSignUp ? `At least ${PASSWORD_MIN_LENGTH} characters` : undefined}
+          />
+          {/* WO-098B: signup shows the exact same rules as /reset-password. */}
+          {isSignUp && <PasswordRequirements password={password} />}
+
           {/* DEF-098A-01: recovery entry point sits directly under the password
               field, above the primary action, so members can discover it. It
               reuses the single WO-098 reset flow (forgotMode) — no second
