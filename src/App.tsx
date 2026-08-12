@@ -64,6 +64,13 @@ const BetaFeedback = lazy(() => import("./screens/BetaFeedback"));
 // onboarding guard, the member has no completed profile session yet.
 const ResetPassword = lazy(() => import("./screens/ResetPassword"));
 
+// WO-099: member-facing trust surfaces. These are intentionally PUBLIC — a
+// visitor must be able to read them before creating an account, so they are
+// mounted outside the auth/onboarding gate.
+const Privacy = lazy(() => import("./screens/legal/Privacy"));
+const Terms = lazy(() => import("./screens/legal/Terms"));
+const CommunityGuidelines = lazy(() => import("./screens/legal/CommunityGuidelines"));
+
 
 
 
@@ -186,6 +193,9 @@ const App = () => (
                 <Route path="/community/places/suggest" element={gated(<SuggestPlace />)} />
                 <Route path="/search" element={gated(<Search />)} />
                 <Route path="/discover" element={<Navigate to="/community" replace />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                 <Route path="/host" element={gated(<Host />)} />
                 <Route path="/chats" element={gated(<Chats />)} />
                 <Route path="/you" element={gated(<You />)} />

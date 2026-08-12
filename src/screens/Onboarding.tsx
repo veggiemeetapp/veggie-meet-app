@@ -1,6 +1,6 @@
 import { memberSafeMessage } from "@/lib/errors";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Camera,
   Check,
@@ -116,7 +116,14 @@ export default function Onboarding() {
   const setHomeCityMut = useSetHomeCity();
   const setSelectedMut = useSetSelectedCity();
 
-  const [step, setStep] = useState<OnboardingStep>("welcome");
+  // WO-099: a signed-out member who taps a policy link from the auth surface
+  // must come back to the auth surface, not the splash. The policy links stamp
+  // `?resume=auth` onto the current history entry, so Back restores it here.
+  // Signed-in members are unaffected: the hydration effect below still forces a
+  // post-auth step and never restores `welcome`/`auth`.
+  const [step, setStep] = useState<OnboardingStep>(() =>
+    resumeStep === "auth" ? "auth" : "welcome",
+  );
   const [authIntent, setAuthIntent] = useState<"signup" | "signin">("signup");
   const [hydrated, setHydrated] = useState(false);
 
@@ -911,6 +918,11 @@ function Auth({
           <PrimaryButton type="submit" fullWidth disabled={busy}>
             {busy ? "Just a moment…" : isSignUp ? "Create account" : "Sign in"}
           </PrimaryButton>
+          {/* WO-099 §23/§24: passive acknowledgement, no pre-checked box, no
+              dark pattern. It references only what actually exists today: final
+              Community Guidelines, plus the Privacy and Terms surfaces (whose
+              formal copy is still in preparation and says so). */}
+          {isSignUp && <PolicyAcknowledgement />}
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm">
@@ -976,10 +988,51 @@ function Auth({
           Continue with Email
         </button>
       </div>
-      <p className="mt-auto pt-8 text-center text-xs text-charcoal-muted">
-        By continuing you agree to VeggieMeet's community guidelines.
-      </p>
+      <div className="mt-auto pt-8">
+        <PolicyAcknowledgement />
+      </div>
     </div>
+  );
+}
+
+/**
+ * WO-099 §23 — concise, passive acknowledgement shown next to the account
+ * creation actions. Links open in the same tab so mobile Back returns to
+ * signup. Contrast is `text-charcoal-muted` on `background` (AA), not a
+ * low-contrast whisper, and there is no checkbox to pre-tick.
+ */
+function PolicyAcknowledgement() {
+  // Stamp the current history entry so browser/gesture Back returns to the auth
+  // surface instead of the splash. Nothing member-identifying is written.
+  const stampReturn = () => {
+    try {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        "/onboarding?resume=auth",
+      );
+    } catch {
+      /* non-fatal: Back simply lands on the splash */
+    }
+  };
+  const linkClass =
+    "underline underline-offset-2 font-medium text-charcoal hover:text-primary rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  return (
+    <p className="text-center text-xs leading-relaxed text-charcoal-muted">
+      By creating an account you agree to follow our{" "}
+      <Link to="/community-guidelines" onClick={stampReturn} className={linkClass}>
+        Community Guidelines
+      </Link>
+      . See also{" "}
+      <Link to="/privacy" onClick={stampReturn} className={linkClass}>
+        Privacy
+      </Link>{" "}
+      and{" "}
+      <Link to="/terms" onClick={stampReturn} className={linkClass}>
+        Terms
+      </Link>
+      .
+    </p>
   );
 }
 
@@ -1518,6 +1571,14 @@ function Guidelines({
         <GuidelineItem title="Support the community" body="Check in at meetups and places that welcome us. Small actions add up." />
         <GuidelineItem title="Speak up safely" body="If something feels off, use Report or Block. We take every signal seriously." />
       </ul>
+
+      {/* WO-099: the full Community Guidelines are one tap away, same tab. */}
+      <Link
+        to="/community-guidelines"
+        className="mt-3 inline-flex min-h-[44px] items-center text-sm font-medium text-charcoal underline underline-offset-4 hover:text-primary"
+      >
+        Read the full Community Guidelines
+      </Link>
 
       <label className="mt-4 flex items-start gap-3 rounded-card border border-border bg-card p-3.5 cursor-pointer select-none">
         <input
