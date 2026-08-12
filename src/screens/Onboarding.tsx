@@ -116,7 +116,14 @@ export default function Onboarding() {
   const setHomeCityMut = useSetHomeCity();
   const setSelectedMut = useSetSelectedCity();
 
-  const [step, setStep] = useState<OnboardingStep>("welcome");
+  // WO-099: a signed-out member who taps a policy link from the auth surface
+  // must come back to the auth surface, not the splash. The policy links stamp
+  // `?resume=auth` onto the current history entry, so Back restores it here.
+  // Signed-in members are unaffected: the hydration effect below still forces a
+  // post-auth step and never restores `welcome`/`auth`.
+  const [step, setStep] = useState<OnboardingStep>(() =>
+    resumeStep === "auth" ? "auth" : "welcome",
+  );
   const [authIntent, setAuthIntent] = useState<"signup" | "signin">("signup");
   const [hydrated, setHydrated] = useState(false);
 
