@@ -61,6 +61,10 @@ import {
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
 import { lovable } from "@/integrations/lovable/index";
 import { mapAuthError } from "@/lib/authErrors";
+import { PasswordField } from "@/components/auth/PasswordField";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+import { PASSWORD_MIN_LENGTH, isPasswordLongEnough } from "@/lib/passwordPolicy";
+
 
 
 function makeAvatarUrl(seed: string) {
