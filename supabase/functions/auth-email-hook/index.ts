@@ -15,7 +15,7 @@ const corsHeaders = {
 }
 
 // Configuration
-const SITE_NAME = "veggie-meet-app"
+const SITE_NAME = "VeggieMeet"
 const SENDER_DOMAIN = "notify.veggiemeet.app"
 const ROOT_DOMAIN = "veggiemeet.app"
 const FROM_DOMAIN = "veggiemeet.app"
