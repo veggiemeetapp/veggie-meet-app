@@ -202,6 +202,33 @@ function Hub({ data, go }: { data: AccountSettings; go: (s: Section) => void }) 
           <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
         </button>
       ))}
+
+      {/* WO-099: trust & policy surfaces reachable from Settings. Same-tab
+          navigation so mobile Back returns to Settings. */}
+      <nav aria-label="Trust and policies" className="pt-4">
+        <h2 className="px-1 text-xs uppercase tracking-wider text-charcoal-muted font-semibold">
+          Trust &amp; policies
+        </h2>
+        <div className="mt-2 rounded-card bg-card border border-border overflow-hidden">
+          {[
+            { to: "/community-guidelines", label: "Community Guidelines" },
+            { to: "/privacy", label: "Privacy" },
+            { to: "/terms", label: "Terms" },
+            { to: "/safety", label: "Safety & Trust" },
+          ].map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              className="flex items-center gap-3 px-4 min-h-14 border-b border-border/60 last:border-b-0 hover:bg-accent/40 transition-colors"
+            >
+              <span className="flex-1 text-sm font-semibold text-charcoal">
+                {l.label}
+              </span>
+              <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
+            </Link>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
