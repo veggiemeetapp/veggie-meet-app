@@ -109,7 +109,10 @@ describe("analytics privacy", () => {
     const calls = reset.match(/logAnalyticsEvent\([^)]*\)/gs) ?? [];
     expect(calls.length).toBeGreaterThan(0);
     for (const call of calls) {
-      expect(call).not.toMatch(/password|confirm|email|token/i);
+      // Only the payload matters; event names may mention "password_reset".
+      const payload = call.slice(call.indexOf(",") + 1);
+      expect(payload).not.toMatch(/password|confirm|email|token/i);
     }
+
   });
 });
