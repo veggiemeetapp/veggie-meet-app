@@ -18,6 +18,8 @@ import {
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
+import { PlacePhotoGallery } from "@/components/place/PlacePhotoGallery";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { placeStatusBanner } from "@/lib/placeMaintenance";
 import type { CommunityPlaceMaintenanceStatus } from "@/types";
 import {

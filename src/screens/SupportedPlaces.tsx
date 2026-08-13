@@ -6,6 +6,7 @@ import { ChevronRight, Leaf, MapPin, Store } from "lucide-react";
 import { AppHeader, Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { useAuth } from "@/hooks/useAuth";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import {
   fetchMySupportedPlaces,
   formatActivityDate,
