@@ -601,6 +601,44 @@ export type Database = {
           },
         ]
       }
+      community_place_photos: {
+        Row: {
+          community_place_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_cover: boolean
+          sort_order: number
+          storage_path: string
+        }
+        Insert: {
+          community_place_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_cover?: boolean
+          sort_order?: number
+          storage_path: string
+        }
+        Update: {
+          community_place_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_cover?: boolean
+          sort_order?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_place_photos_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: false
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_place_reports: {
         Row: {
           additional_details: string | null
@@ -2924,6 +2962,10 @@ export type Database = {
         Args: { _meetup_id: string }
         Returns: undefined
       }
+      add_community_place_photo: {
+        Args: { _place_id: string; _storage_path: string }
+        Returns: Json
+      }
       analytics_event_allowed: {
         Args: { _event_name: string }
         Returns: boolean
@@ -3088,6 +3130,10 @@ export type Database = {
       decline_meetup_invitation: {
         Args: { _invitation_id: string }
         Returns: undefined
+      }
+      delete_community_place_photo: {
+        Args: { _photo_id: string }
+        Returns: Json
       }
       discovery_eligible_profile_ids: {
         Args: { _include_related?: boolean; _me: string }
@@ -3407,6 +3453,14 @@ export type Database = {
         }
         Returns: Json
       }
+      move_community_place_photo: {
+        Args: { _direction: string; _photo_id: string }
+        Returns: Json
+      }
+      normalize_community_place_photos: {
+        Args: { _place_id: string }
+        Returns: undefined
+      }
       normalize_interests: { Args: { _interests: string[] }; Returns: string[] }
       place_freshness_label: {
         Args: { _last_reverified_at: string; _verified_at: string }
@@ -3582,6 +3636,10 @@ export type Database = {
       }
       set_community_place_active: {
         Args: { _active: boolean; _note: string; _place_id: string }
+        Returns: Json
+      }
+      set_community_place_photo_cover: {
+        Args: { _photo_id: string }
         Returns: Json
       }
       set_community_place_status: {
