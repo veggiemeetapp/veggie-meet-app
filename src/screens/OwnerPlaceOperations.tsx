@@ -608,6 +608,7 @@ export default function OwnerPlaceOperations() {
                         {[
                           { label: `View public page for ${p.name}`, short: "View public page", to: `/place/${p.id}` },
                           { label: `Edit public details for ${p.name}`, short: "Edit public details", to: `/owner/places/${p.id}/edit` },
+                          { label: `Manage photos for ${p.name}`, short: "Manage photos", to: `/owner/places/${p.id}/photos?from=owner_places` },
                           { label: `Reverify ${p.name}`, short: "Reverification", to: `/owner/places/${p.id}/reverify` },
                           { label: `Review vegan status for ${p.name}`, short: "Vegan status", to: `/owner/places/${p.id}/vegan-review` },
                           { label: `Review place identity for ${p.name}`, short: "Place identity", to: `/owner/places/${p.id}/identity-review` },
