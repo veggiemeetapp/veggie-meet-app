@@ -3,7 +3,6 @@ import { MapPin } from "lucide-react";
 import { Card } from "@/components/app";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { ResultReasonPill } from "./ResultReasonPill";
-import { sanitizeCover } from "@/lib/backend";
 import type { PlaceResult } from "@/lib/search";
 
 interface Props {
