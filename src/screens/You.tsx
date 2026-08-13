@@ -44,6 +44,7 @@ import { toMeetupCardShape } from "@/lib/youSummary";
 import type { YouHistoryItem, YouMeetupCard } from "@/lib/youSummary";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { isOwner } from "@/lib/placeVerification";
 
 
 type Tab = "hosting" | "going";
