@@ -8,6 +8,7 @@ import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import type { CommunityPlace, CommunityPlaceCategory } from "@/types";
 
 const categoryLabel: Record<CommunityPlaceCategory, string> = {
@@ -256,6 +257,8 @@ function PlaceListCard({
 }) {
   // WO-061A: server-provided coarse distance only.
   const distance = formatDistanceMeters(place.distanceMeters ?? null);
+  // WO-101: owner-managed cover photo for this place, if one exists.
+  const coverUrl = usePlaceCoverUrl(place.id);
 
   const area = locationFallbackLabel({
     neighborhood: place.neighborhood,
