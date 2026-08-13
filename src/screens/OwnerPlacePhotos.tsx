@@ -132,6 +132,7 @@ export default function OwnerPlacePhotos() {
         <input
           ref={fileRef}
           type="file"
+          aria-label="Choose a photo to upload"
           accept={ALLOWED_PLACE_PHOTO_MIME.join(",")}
           className="sr-only"
           onChange={(e) => {
