@@ -44,6 +44,7 @@ import { toMeetupCardShape } from "@/lib/youSummary";
 import type { YouHistoryItem, YouMeetupCard } from "@/lib/youSummary";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { isOwner } from "@/lib/placeVerification";
 
 
 type Tab = "hosting" | "going";
@@ -74,6 +75,14 @@ export default function You() {
     refetchOnMount: "always",
     refetchOnWindowFocus: "always",
     staleTime: 0,
+  });
+
+  // WO-101B: owner-only Community Place operations entry point.
+  // Resolved from the same server-side owner allowlist used by RequireOwner.
+  const ownerQuery = useQuery({
+    queryKey: ["you-is-owner"],
+    queryFn: isOwner,
+    staleTime: 5 * 60 * 1000,
   });
 
   const qc = useQueryClient();
@@ -266,6 +275,44 @@ export default function You() {
           <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
         </Card>
 
+        {/* WO-101B: owner-only Community Place operations entry */}
+        {ownerQuery.data === true && (
+          <Card
+            interactive
+            padding="md"
+            tabIndex={0}
+            aria-label="Open Community Place operations"
+            onClick={() => {
+              logAnalyticsEvent("owner_community_place_operations_opened", {
+                source: "you",
+              });
+              navigate("/owner/places");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                logAnalyticsEvent("owner_community_place_operations_opened", {
+                  source: "you",
+                });
+                navigate("/owner/places");
+              }
+            }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-charcoal">
+                Community Place operations
+              </div>
+              <div className="text-xs text-charcoal-muted">
+                Manage verified places and owner tools
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
+          </Card>
+        )}
 
         {/* Community Impact entry */}
         <CommunityImpactCard
