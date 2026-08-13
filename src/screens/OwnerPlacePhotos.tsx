@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Star, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/app/Buttons";
+import { BackButton } from "@/components/app";
 import { usePlacePhotos } from "@/hooks/usePlacePhotos";
 import {
   ALLOWED_PLACE_PHOTO_MIME,
