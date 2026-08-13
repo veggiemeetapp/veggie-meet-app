@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import { MapPin, Leaf } from "lucide-react";
 import { Card } from "@/components/app/Card";
 import { ReasonPill } from "./ReasonPill";
 import { RecCardMenu } from "./RecCardMenu";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import type { PlaceRecommendation } from "@/lib/today";
 
 interface Props {
