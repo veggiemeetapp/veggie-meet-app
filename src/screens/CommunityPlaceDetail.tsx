@@ -18,6 +18,8 @@ import {
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
+import { PlacePhotoGallery } from "@/components/place/PlacePhotoGallery";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { placeStatusBanner } from "@/lib/placeMaintenance";
 import type { CommunityPlaceMaintenanceStatus } from "@/types";
 import {
@@ -35,6 +37,10 @@ export default function CommunityPlaceDetail() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const source = search.get("from") ?? "direct";
+
+  // WO-101: owner-managed cover photo. Called before any early return so hook
+  // order stays stable across loading/error/empty states.
+  const coverUrl = usePlaceCoverUrl(id);
 
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
@@ -144,8 +150,8 @@ export default function CommunityPlaceDetail() {
     <div className="flex flex-col min-h-dvh pb-40">
       {/* Hero */}
       <div className="relative h-56 sm:h-64">
-        {place.has_cover_image && place.cover_image_url ? (
-          <img src={place.cover_image_url} alt="" className="w-full h-full object-cover" />
+        {coverUrl ? (
+          <img src={coverUrl} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-soft-green flex items-center justify-center">
             <Leaf className="w-12 h-12 text-primary/60" aria-hidden />
@@ -186,6 +192,8 @@ export default function CommunityPlaceDetail() {
           </span>
         </div>
       </div>
+
+      <PlacePhotoGallery placeId={place.id} placeName={place.name} />
 
       {statusBanner && (
         <div className="px-5 mt-4">

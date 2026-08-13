@@ -55,6 +55,7 @@ const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceOperations = lazy(() => import("./screens/OwnerPlaceOperations"));
 const OwnerPlaceReverify = lazy(() => import("./screens/OwnerPlaceReverify"));
 const OwnerPlaceEditDetails = lazy(() => import("./screens/OwnerPlaceEditDetails"));
+const OwnerPlacePhotos = lazy(() => import("./screens/OwnerPlacePhotos"));
 const OwnerPlaceVeganReview = lazy(() => import("./screens/OwnerPlaceVeganReview"));
 const OwnerPlaceIdentityReview = lazy(() => import("./screens/OwnerPlaceIdentityReview"));
 const OwnerMemberReports = lazy(() => import("./screens/OwnerMemberReports"));
@@ -240,6 +241,10 @@ const App = () => (
                 <Route
                   path="/owner/places/:placeId/edit"
                   element={ownerGated(<OwnerPlaceEditDetails />)}
+                />
+                <Route
+                  path="/owner/places/:placeId/photos"
+                  element={ownerGated(<OwnerPlacePhotos />)}
                 />
                 <Route
                   path="/owner/places/:placeId/vegan-review"

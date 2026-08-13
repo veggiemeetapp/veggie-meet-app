@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Leaf, Loader2, MapPin, Search } from "lucide-react";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { cn } from "@/lib/utils";
 import type { CommunityPlace } from "@/types";
 
@@ -162,18 +163,7 @@ export function CommunityPlacePicker({
                     : "border-border bg-card hover:bg-accent/30",
                 )}
               >
-                {p.hasCoverImage !== false ? (
-                  <img
-                    src={p.coverImageUrl}
-                    alt=""
-                    loading="lazy"
-                    className="w-14 h-14 rounded-control object-cover shrink-0 bg-muted"
-                  />
-                ) : (
-                  <span className="w-14 h-14 rounded-control bg-soft-green flex items-center justify-center shrink-0">
-                    <Leaf className="w-5 h-5 text-primary/70" aria-hidden />
-                  </span>
-                )}
+                <PickerCover placeId={p.id} />
                 <span className="min-w-0 flex-1 block">
                   <span className="block font-semibold text-charcoal line-clamp-2 [overflow-wrap:anywhere]">
                     {p.name}
@@ -221,5 +211,28 @@ export function CommunityPlacePicker({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * WO-101 — owner-managed cover thumbnail for a place row, with a neutral
+ * placeholder while loading or when the place has no photos yet.
+ */
+function PickerCover({ placeId }: { placeId: string }) {
+  const coverUrl = usePlaceCoverUrl(placeId);
+  if (!coverUrl) {
+    return (
+      <span className="w-14 h-14 rounded-control bg-soft-green flex items-center justify-center shrink-0">
+        <Leaf className="w-5 h-5 text-primary/70" aria-hidden />
+      </span>
+    );
+  }
+  return (
+    <img
+      src={coverUrl}
+      alt=""
+      loading="lazy"
+      className="w-14 h-14 rounded-control object-cover shrink-0 bg-muted"
+    />
   );
 }

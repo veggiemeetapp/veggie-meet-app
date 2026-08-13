@@ -8,6 +8,7 @@ import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import type { CommunityPlace, CommunityPlaceCategory } from "@/types";
 
 const categoryLabel: Record<CommunityPlaceCategory, string> = {
@@ -256,6 +257,8 @@ function PlaceListCard({
 }) {
   // WO-061A: server-provided coarse distance only.
   const distance = formatDistanceMeters(place.distanceMeters ?? null);
+  // WO-101: owner-managed cover photo for this place, if one exists.
+  const coverUrl = usePlaceCoverUrl(place.id);
 
   const area = locationFallbackLabel({
     neighborhood: place.neighborhood,
@@ -280,17 +283,18 @@ function PlaceListCard({
     >
       <Card padding="none" interactive className="h-full overflow-hidden flex flex-col">
         <div className="h-32 shrink-0">
-          {place.hasCoverImage === false ? (
-            <div className="w-full h-full bg-soft-green flex items-center justify-center">
-              <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
-            </div>
-          ) : (
+          {/* WO-101: owner-managed cover photo; neutral placeholder otherwise. */}
+          {coverUrl ? (
             <img
-              src={place.coverImageUrl}
+              src={coverUrl}
               alt=""
               className="w-full h-full object-cover"
               loading="lazy"
             />
+          ) : (
+            <div className="w-full h-full bg-soft-green flex items-center justify-center">
+              <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
+            </div>
           )}
         </div>
         <div className="p-3 flex-1 flex flex-col">

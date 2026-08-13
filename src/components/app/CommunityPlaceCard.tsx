@@ -2,6 +2,7 @@ import { MapPin, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { CommunityPlace } from "@/types";
 import { Card } from "./Card";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 
 interface Props {
   place: CommunityPlace;
@@ -18,15 +19,23 @@ const categoryLabel: Record<CommunityPlace["category"], string> = {
 
 export function CommunityPlaceCard({ place }: Props) {
   const navigate = useNavigate();
+  // WO-101: owner-managed cover photo, neutral placeholder when absent.
+  const coverUrl = usePlaceCoverUrl(place.id);
   return (
     <Card padding="none" interactive onClick={() => navigate(`/place/${place.id}`)} className="overflow-hidden w-60 shrink-0">
       <div className="relative h-36">
-        <img
-          src={place.coverImageUrl}
-          alt=""
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+        {coverUrl ? (
+          <img
+            src={coverUrl}
+            alt=""
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-soft-green flex items-center justify-center">
+            <MapPin className="w-6 h-6 text-primary/70" aria-hidden />
+          </div>
+        )}
         <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background/90 backdrop-blur text-charcoal">
           {categoryLabel[place.category]}
         </span>

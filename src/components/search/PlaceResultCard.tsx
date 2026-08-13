@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import { Card } from "@/components/app";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { ResultReasonPill } from "./ResultReasonPill";
-import { sanitizeCover } from "@/lib/backend";
 import type { PlaceResult } from "@/lib/search";
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
 
 export function PlaceResultCard({ result }: Props) {
   const location = result.neighborhood ?? result.city_name ?? result.address ?? "";
+  // WO-101: owner-managed cover photo, neutral placeholder when absent.
+  const coverUrl = usePlaceCoverUrl(result.entity_id);
   return (
     <Link
       to={`/place/${result.entity_id}`}
@@ -18,12 +20,18 @@ export function PlaceResultCard({ result }: Props) {
     >
       <Card interactive padding="none" className="overflow-hidden">
         <div className="flex gap-3">
-          <img
-            src={sanitizeCover(result.cover_image_url)}
-            alt=""
-            loading="lazy"
-            className="w-24 h-24 object-cover shrink-0"
-          />
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt=""
+              loading="lazy"
+              className="w-24 h-24 object-cover shrink-0"
+            />
+          ) : (
+            <span className="w-24 h-24 shrink-0 bg-soft-green flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-primary/70" aria-hidden />
+            </span>
+          )}
           <div className="flex-1 min-w-0 py-3 pr-3">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="font-semibold text-sm text-charcoal line-clamp-1">{result.name}</h3>

@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import { MapPin, Leaf } from "lucide-react";
 import { Card } from "@/components/app/Card";
 import { ReasonPill } from "./ReasonPill";
 import { RecCardMenu } from "./RecCardMenu";
+import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import type { PlaceRecommendation } from "@/lib/today";
 
 interface Props {
@@ -21,16 +22,25 @@ const CATEGORY_LABEL: Record<string, string> = {
 export function PlaceRecCard({ place }: Props) {
   const navigate = useNavigate();
   const go = () => navigate(`/place/${place.entity_id}`);
+  // WO-101: owner-managed cover photo, with a neutral placeholder when a place
+  // has none. No stock imagery is substituted for a real venue any more.
+  const coverUrl = usePlaceCoverUrl(place.entity_id);
   return (
     <Card padding="none" interactive className="w-60 shrink-0 overflow-hidden">
       <div className="relative h-32">
         <button onClick={go} className="block w-full h-full" aria-label={`View ${place.name}`}>
-          <img
-            src={place.cover_image_url ?? "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80"}
-            alt=""
-            className="w-full h-full object-cover bg-muted"
-            loading="lazy"
-          />
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt=""
+              className="w-full h-full object-cover bg-muted"
+              loading="lazy"
+            />
+          ) : (
+            <span className="w-full h-full bg-soft-green flex items-center justify-center">
+              <Leaf className="w-7 h-7 text-primary/70" aria-hidden />
+            </span>
+          )}
         </button>
         <span className="absolute top-2 left-2 rounded-full bg-background/90 backdrop-blur px-2 py-0.5 text-[10px] font-semibold text-charcoal">
           {CATEGORY_LABEL[place.category] ?? place.category}
