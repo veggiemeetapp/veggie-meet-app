@@ -151,7 +151,7 @@ export default function OwnerPlacePhotos() {
           ) : (
             <ImagePlus className="w-4 h-4" aria-hidden />
           )}
-          {atLimit ? "Photo limit reached" : "Add photo"}
+          {atLimit ? "Photo limit reached" : "Add photos"}
         </Button>
 
         {photosQ.isPending && <p className="text-sm text-charcoal-muted">Loading photos…</p>}
