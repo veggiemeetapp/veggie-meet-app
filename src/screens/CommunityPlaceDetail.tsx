@@ -421,10 +421,16 @@ export default function CommunityPlaceDetail() {
         </div>
       </div>
 
-      {/* Sticky actions */}
+      {/* WO-102 DEF-102-01: the bar is anchored above the *rendered* bottom nav,
+          which is `--nav-height` plus the device safe-area inset the nav pads
+          itself with (see BottomNav `.safe-bottom` / AppShell padding). The
+          previous `bottom: var(--nav-height)` ignored the inset, so on iPhones
+          with a home indicator the buttons sat inside the nav. The extra 0.625rem
+          is the deliberate breathing room; z-10 keeps the bar under BottomNav
+          (z-40) and under sheets/dialogs. */}
       <div
-        className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0"
-        style={{ bottom: "var(--nav-height)" }}
+        className="fixed z-10 left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-5 pb-0 bg-gradient-to-t from-background via-background to-background/0"
+        style={{ bottom: "calc(var(--nav-height) + env(safe-area-inset-bottom) + 0.625rem)" }}
       >
         <div className="flex gap-2">
           {canCheckIn && (
