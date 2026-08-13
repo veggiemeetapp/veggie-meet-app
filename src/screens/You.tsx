@@ -77,6 +77,14 @@ export default function You() {
     staleTime: 0,
   });
 
+  // WO-101B: owner-only Community Place operations entry point.
+  // Resolved from the same server-side owner allowlist used by RequireOwner.
+  const ownerQuery = useQuery({
+    queryKey: ["you-is-owner"],
+    queryFn: isOwner,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const qc = useQueryClient();
   useEffect(() => {
     if (!profile?.id) return;
