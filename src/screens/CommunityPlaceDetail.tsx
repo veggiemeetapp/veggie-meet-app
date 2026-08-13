@@ -38,6 +38,10 @@ export default function CommunityPlaceDetail() {
   const [search] = useSearchParams();
   const source = search.get("from") ?? "direct";
 
+  // WO-101: owner-managed cover photo. Called before any early return so hook
+  // order stays stable across loading/error/empty states.
+  const coverUrl = usePlaceCoverUrl(id);
+
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
 
@@ -188,6 +192,8 @@ export default function CommunityPlaceDetail() {
           </span>
         </div>
       </div>
+
+      <PlacePhotoGallery placeId={place.id} placeName={place.name} />
 
       {statusBanner && (
         <div className="px-5 mt-4">
