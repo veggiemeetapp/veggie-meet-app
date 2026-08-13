@@ -147,7 +147,12 @@ export default function CommunityPlaceDetail() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh pb-40">
+    <div
+      className="flex flex-col min-h-dvh"
+      /* WO-102: the last content row must clear the sticky action bar as well as
+         the nav + safe-area inset, so the report link is never trapped. */
+      style={{ paddingBottom: "calc(var(--nav-height) + env(safe-area-inset-bottom) + 7rem)" }}
+    >
       {/* Hero */}
       <div className="relative h-56 sm:h-64">
         {coverUrl ? (
