@@ -147,7 +147,12 @@ export default function CommunityPlaceDetail() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh pb-40">
+    <div
+      className="flex flex-col min-h-dvh"
+      /* WO-102: the last content row must clear the sticky action bar as well as
+         the nav + safe-area inset, so the report link is never trapped. */
+      style={{ paddingBottom: "calc(var(--nav-height) + env(safe-area-inset-bottom) + 5rem)" }}
+    >
       {/* Hero */}
       <div className="relative h-56 sm:h-64">
         {coverUrl ? (
@@ -421,10 +426,18 @@ export default function CommunityPlaceDetail() {
         </div>
       </div>
 
-      {/* Sticky actions */}
+      {/* WO-102 DEF-102-01: the bar is anchored above the *rendered* bottom nav,
+          which is `--nav-height` plus the device safe-area inset the nav pads
+          itself with (see BottomNav `.safe-bottom` / AppShell padding). The
+          previous `bottom: var(--nav-height)` ignored the inset, so on iPhones
+          with a home indicator the buttons sat inside the nav. The extra 0.625rem
+          is unnecessary: --nav-height (4.5rem) already over-reserves versus the nav's
+          ~61px rendered height, which yields the ~11px visible gap we want.
+          z-10 keeps the bar under BottomNav
+          (z-40) and under sheets/dialogs. */}
       <div
-        className="fixed left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-4 pb-3 bg-gradient-to-t from-background via-background to-background/0"
-        style={{ bottom: "var(--nav-height)" }}
+        className="fixed z-10 left-1/2 -translate-x-1/2 w-full max-w-[var(--phone-max-width)] px-5 pt-5 pb-0 bg-gradient-to-t from-background via-background to-background/0"
+        style={{ bottom: "calc(var(--nav-height) + env(safe-area-inset-bottom))" }}
       >
         <div className="flex gap-2">
           {canCheckIn && (
