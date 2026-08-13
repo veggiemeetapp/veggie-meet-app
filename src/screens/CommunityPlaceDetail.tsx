@@ -144,8 +144,8 @@ export default function CommunityPlaceDetail() {
     <div className="flex flex-col min-h-dvh pb-40">
       {/* Hero */}
       <div className="relative h-56 sm:h-64">
-        {place.has_cover_image && place.cover_image_url ? (
-          <img src={place.cover_image_url} alt="" className="w-full h-full object-cover" />
+        {coverUrl ? (
+          <img src={coverUrl} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-soft-green flex items-center justify-center">
             <Leaf className="w-12 h-12 text-primary/60" aria-hidden />

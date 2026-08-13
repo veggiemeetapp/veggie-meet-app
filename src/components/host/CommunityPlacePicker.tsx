@@ -162,9 +162,9 @@ export function CommunityPlacePicker({
                     : "border-border bg-card hover:bg-accent/30",
                 )}
               >
-                {p.hasCoverImage !== false ? (
+                {coverUrls[p.id] ? (
                   <img
-                    src={p.coverImageUrl}
+                    src={coverUrls[p.id] as string}
                     alt=""
                     loading="lazy"
                     className="w-14 h-14 rounded-control object-cover shrink-0 bg-muted"

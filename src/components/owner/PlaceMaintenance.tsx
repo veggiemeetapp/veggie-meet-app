@@ -285,6 +285,13 @@ export function PlaceMaintenance() {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => navigate(`/owner/places/${p.id}/photos?from=owner_places`)}
+                    >
+                      Manage photos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => navigate(`/owner/places/${p.id}/edit?from=owner_places`)}
                     >
                       Edit public details

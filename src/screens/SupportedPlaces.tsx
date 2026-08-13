@@ -175,6 +175,8 @@ function SupportedPlaceCard({
   position: number;
 }) {
   const sourceLabel = SUPPORT_SOURCE_LABEL[place.support_source];
+  // WO-101: owner-managed cover photo for this place, if one exists.
+  const coverUrl = usePlaceCoverUrl(place.community_place_id);
   const date = formatActivityDate(place.last_activity_at);
   const area = place.neighborhood ?? null;
   const repeat = place.direct_visit_count > 1;
@@ -209,9 +211,9 @@ function SupportedPlaceCard({
     >
       <Card interactive padding="none" className="overflow-hidden h-full">
         <div className="h-28 bg-soft-green flex items-center justify-center overflow-hidden">
-          {place.has_cover_image && place.cover_image_url ? (
+          {coverUrl ? (
             <img
-              src={place.cover_image_url}
+              src={coverUrl}
               alt={place.name}
               loading="lazy"
               className="w-full h-full object-cover"
