@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { mapLifecycleError } from "@/lib/candidatePublish";
 
 /** A Google Places result, limited to the WO-043B allowed verification fields. */
 export interface GoogleCandidate {
