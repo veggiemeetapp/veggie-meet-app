@@ -193,16 +193,26 @@ export default function OwnerPlaceVerification() {
         {merged && (
           <>
             {/* ---- Google search ---- */}
-            <section className="space-y-2">
-              <h2 className="text-sm font-semibold">Verify against Google Places</h2>
+            <section className="space-y-2 min-w-0">
+              <h2 className="text-sm font-semibold">Step 1 — Verify against Google Places</h2>
+              {hasGoogleVerification(merged) && (
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> Google place confirmed
+                </p>
+              )}
               <div className="flex gap-2">
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Name and city, e.g. Hum Vegetarian Ho Chi Minh City"
+                  aria-label="Search Google Places by business name and city"
                   onKeyDown={(e) => e.key === "Enter" && searchM.mutate()}
                 />
-                <Button onClick={() => searchM.mutate()} disabled={searchM.isPending || query.trim().length < 2}>
+                <Button
+                  onClick={() => searchM.mutate()}
+                  disabled={searchM.isPending || query.trim().length < 2}
+                  aria-label="Search Google Places"
+                >
                   {searchM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SearchIcon className="h-4 w-4" />}
                 </Button>
               </div>
@@ -210,30 +220,52 @@ export default function OwnerPlaceVerification() {
                 Only Place ID, name, address, coordinates, Maps link, status, type and website are retrieved.
                 Reviews, ratings and photos are never requested or stored.
               </p>
-              {googleResults?.map((g) => (
-                <div key={g.place_id} className="rounded-control border p-3 space-y-1">
-                  <p className="text-sm font-medium">{g.display_name}</p>
-                  <p className="text-xs text-muted-foreground">{g.formatted_address}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {g.business_status ?? "status unknown"} · {g.primary_type ?? "type unknown"} ·{" "}
-                    {g.latitude?.toFixed(5)}, {g.longitude?.toFixed(5)}
-                  </p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Button size="sm" onClick={() => importGoogle(g)}>Import fields</Button>
-                    {g.google_maps_url && (
-                      <a
-                        href={g.google_maps_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary inline-flex items-center gap-1"
+              <p className="sr-only" role="status">
+                {searchM.isPending
+                  ? "Searching Google Places…"
+                  : confirmGoogleM.isPending
+                    ? "Confirming this place and importing verified details…"
+                    : ""}
+              </p>
+              {googleResults?.map((g) => {
+                const confirming = confirmGoogleM.isPending && confirmGoogleM.variables?.place_id === g.place_id;
+                return (
+                  <div key={g.place_id} className="rounded-control border p-3 space-y-1 min-w-0">
+                    <p className="text-sm font-medium [overflow-wrap:anywhere]">{g.display_name}</p>
+                    <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{g.formatted_address}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {g.business_status ?? "status unknown"} · {g.primary_type ?? "type unknown"}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        onClick={() => confirmGoogleM.mutate(g)}
+                        disabled={confirmGoogleM.isPending}
                       >
-                        View on Google Maps <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
+                        {confirming ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Confirming…
+                          </>
+                        ) : (
+                          "Use this place"
+                        )}
+                      </Button>
+                      {g.google_maps_url && (
+                        <a
+                          href={g.google_maps_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary inline-flex items-center gap-1"
+                        >
+                          View on Google Maps <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </section>
+
 
             {/* ---- Curation form ---- */}
             <section className="space-y-3">
