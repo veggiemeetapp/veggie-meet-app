@@ -438,22 +438,16 @@ function PlaceNearbyCard({
     locationFallbackLabel({ neighborhood: place.neighborhood, cityName: place.cityName ?? cityLabel });
 
 
+  // WO-105 DEF-105-01: this card read the legacy `cover_image_url` column, which
+  // WO-101 retired, so real owner-managed covers never rendered here. It now
+  // uses the same canonical signed-URL hook as every other place surface.
+  const coverUrl = usePlaceCoverUrl(place.id);
+
   return (
     <Link to={`/place/${place.id}`} className="block">
       <Card padding="none" interactive className="w-56 shrink-0 overflow-hidden">
         <div className="h-32">
-          {place.hasCoverImage === false ? (
-            <div className="w-full h-full bg-soft-green flex items-center justify-center">
-              <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
-            </div>
-          ) : (
-            <img
-              src={place.coverImageUrl}
-              alt=""
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          )}
+          <PlaceCoverImage coverUrl={coverUrl} />
         </div>
 
         <div className="p-3">
