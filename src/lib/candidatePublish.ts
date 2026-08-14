@@ -96,7 +96,18 @@ export function mapLifecycleError(raw: string): string {
   return "We couldn’t publish this place. Please try again.";
 }
 
+/**
+ * WO-104A — a published candidate is completed lifecycle history, not a
+ * publishable draft. Its UI must never show publish blockers or publish actions.
+ */
+export function isPublishedCandidate(c: Pick<PlaceCandidate, "verification_status">): boolean {
+  return c.verification_status === "published";
+}
+
 export function publishBlockers(c: PlaceCandidate): string[] {
+  // Published candidates are complete: "already published" is state, not a defect.
+  if (isPublishedCandidate(c)) return [];
+
   const out: string[] = [];
 
   // One owner-understandable blocker for all Google-managed verification data.
@@ -119,7 +130,6 @@ export function publishBlockers(c: PlaceCandidate): string[] {
 
   if (c.business_status && c.business_status !== "OPERATIONAL")
     out.push(`Google business status is ${c.business_status}`);
-  if (c.verification_status === "published") out.push("Already published");
   if (c.verification_status === "rejected") out.push("Candidate is rejected");
   return out;
 }

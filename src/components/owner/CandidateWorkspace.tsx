@@ -20,6 +20,7 @@ import {
 import {
   hasGoogleVerification,
   INCOMPLETE_GOOGLE_RESULT_MESSAGE,
+  isPublishedCandidate,
   publishBlockers,
   toGoogleIdentityPatch,
 } from "@/lib/candidatePublish";
@@ -195,7 +196,48 @@ export default function OwnerPlaceVerification() {
           </ul>
         </section>
 
-        {merged && (
+        {/* WO-104A DEF-104A-01 — a published candidate is completed lifecycle
+            history: read-only, no blockers, no publish/reject/save actions. */}
+        {merged && isPublishedCandidate(merged) && (
+          <section className="space-y-3">
+            <div
+              role="status"
+              className="rounded-control border border-primary/40 bg-primary/5 p-3 space-y-1"
+            >
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> Published to Community Places
+              </p>
+              <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                {merged.public_display_name || merged.display_name}
+                {merged.published_at
+                  ? ` · published ${new Date(merged.published_at).toLocaleDateString()}`
+                  : ""}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                This candidate is now read-only. Edit the live place through Community Place
+                operations.
+              </p>
+            </div>
+            {merged.published_place_id && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/place/${merged.published_place_id}`)}
+                >
+                  View public place
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate(`/owner/places/${merged.published_place_id}/photos`)}
+                >
+                  Manage photos
+                </Button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {merged && !isPublishedCandidate(merged) && (
           <>
             {/* ---- Google search ---- */}
             <section className="space-y-2 min-w-0">

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GOOGLE_VERIFICATION_BLOCKER,
   hasGoogleVerification,
+  isPublishedCandidate,
   mapLifecycleError,
   publishBlockers,
   toGoogleIdentityPatch,
@@ -153,5 +154,46 @@ describe("lifecycle error mapping (WO-104)", () => {
     const raw = 'ERROR:  P0001 function public.publish_place_candidate(uuid) line 42 at RAISE';
     const msg = mapLifecycleError(raw);
     expect(msg).not.toMatch(/P0001|public\.|RAISE|uuid/);
+  });
+});
+
+// WO-104A — published candidates are completed lifecycle history.
+describe("WO-104A published candidate state", () => {
+  const published = candidate({
+    ...confirmed,
+    verification_status: "published",
+    published_place_id: "p-1",
+    published_at: "2026-08-13T10:00:00Z",
+  });
+
+  it("returns no publish blockers for a published candidate", () => {
+    expect(publishBlockers(published)).toEqual([]);
+  });
+
+  it("returns no blockers even when curated fields are incomplete", () => {
+    expect(
+      publishBlockers(candidate({ verification_status: "published", category: null, description: "" })),
+    ).toEqual([]);
+  });
+
+  it("flags published candidates so publish/reject controls can be hidden", () => {
+    expect(isPublishedCandidate(published)).toBe(true);
+  });
+
+  it("keeps the normal publish workflow for draft candidates", () => {
+    const draft = candidate({ ...confirmed });
+    expect(isPublishedCandidate(draft)).toBe(false);
+    expect(publishBlockers(draft)).toEqual([]);
+    expect(publishBlockers(candidate())).toContain(GOOGLE_VERIFICATION_BLOCKER);
+  });
+
+  it("still blocks rejected candidates", () => {
+    expect(publishBlockers(candidate({ ...confirmed, verification_status: "rejected" }))).toContain(
+      "Candidate is rejected",
+    );
+  });
+
+  it("exposes the published place id used by the view public place link", () => {
+    expect(`/place/${published.published_place_id}`).toBe("/place/p-1");
   });
 });
