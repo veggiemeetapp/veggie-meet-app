@@ -82,6 +82,9 @@ export default function OwnerPlaceVerification() {
   const saveM = useMutation({
     mutationFn: async () => {
       if (!selected) return;
+      // WO-108: never send a value the database vocabulary rejects.
+      const invalid = validateCandidatePatch(form);
+      if (invalid) throw new Error(invalid);
       await saveCandidateDraft(selected.id, form);
     },
     onSuccess: () => {
@@ -89,7 +92,7 @@ export default function OwnerPlaceVerification() {
       qc.invalidateQueries({ queryKey: ["place-candidates"] });
       toast.success("Draft saved. Nothing is public yet.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(mapCandidateConstraintError(e.message)),
   });
 
   /**
