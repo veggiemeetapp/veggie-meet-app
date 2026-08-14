@@ -1,14 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  fetchGooglePlaceDetails,
   fetchPlaceCandidates,
   isOwner,
   publishCandidate,
@@ -18,6 +17,12 @@ import {
   type GoogleCandidate,
   type PlaceCandidate,
 } from "@/lib/placeVerification";
+import {
+  hasGoogleVerification,
+  INCOMPLETE_GOOGLE_RESULT_MESSAGE,
+  publishBlockers,
+  toGoogleIdentityPatch,
+} from "@/lib/candidatePublish";
 
 
 const STATUS_LABEL: Record<string, string> = {
@@ -28,27 +33,6 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Rejected",
 };
 
-/** Publish gate mirrored from the server-side publish_place_candidate() checks,
- *  so the owner sees why a candidate is not publishable before trying. */
-function publishBlockers(c: PlaceCandidate): string[] {
-  const out: string[] = [];
-  if (c.latitude == null || c.longitude == null) out.push("Verified latitude and longitude required");
-  if (!c.google_formatted_address) out.push("Verified address required");
-  if (!c.category) out.push("Category required");
-  if (!c.description || c.description.trim().length < 20)
-    out.push("Original VeggieMeet description required (20+ characters)");
-  if (c.image_rights_status !== "licensed" && c.image_rights_status !== "owner_supplied" &&
-      c.image_rights_status !== "restaurant_supplied" && c.image_rights_status !== "none")
-    out.push('Image rights must be "none" (no image), "owner_supplied", "restaurant_supplied" or "licensed"');
-  if (c.cover_image_url && c.image_rights_status === "none")
-    out.push("A cover image requires cleared image rights");
-
-  if (c.business_status && c.business_status !== "OPERATIONAL")
-    out.push(`Google business status is ${c.business_status}`);
-  if (c.verification_status === "published") out.push("Already published");
-  if (c.verification_status === "rejected") out.push("Candidate is rejected");
-  return out;
-}
 
 export default function OwnerPlaceVerification() {
   const navigate = useNavigate();
@@ -120,21 +104,35 @@ export default function OwnerPlaceVerification() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function importGoogle(g: GoogleCandidate) {
-    setForm((f) => ({
-      ...f,
-      google_place_id: g.place_id,
-      google_display_name: g.display_name,
-      google_formatted_address: g.formatted_address,
-      google_primary_type: g.primary_type,
-      google_maps_url: g.google_maps_url,
-      google_website_url: g.website_url,
-      business_status: g.business_status,
-      latitude: g.latitude,
-      longitude: g.longitude,
-    }));
-    toast.success("Imported verified fields. Review, then save.");
-  }
+  /**
+   * WO-103 DEF-103-01 — confirming a Google result imports the verified
+   * identity/location fields AND persists them immediately, so the owner never
+   * handles raw coordinates. Curated VeggieMeet copy is untouched: only the
+   * Google-managed columns are written, and unsaved curated edits in `form`
+   * are preserved.
+   */
+  const confirmGoogleM = useMutation({
+    mutationFn: async (g: GoogleCandidate) => {
+      if (!selected) throw new Error("No candidate selected");
+      const patch = toGoogleIdentityPatch(g);
+      if (!patch) throw new Error(INCOMPLETE_GOOGLE_RESULT_MESSAGE);
+      await saveCandidateDraft(selected.id, patch as Partial<PlaceCandidate>);
+      return patch;
+    },
+    onSuccess: async (patch) => {
+      // Drop stale Google keys from the local draft so the saved values win.
+      setForm((f) => {
+        const next = { ...f };
+        for (const k of Object.keys(patch)) delete next[k as keyof PlaceCandidate];
+        return next;
+      });
+      await qc.invalidateQueries({ queryKey: ["place-candidates"] });
+      setGoogleResults(null);
+      toast.success("Google place confirmed.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   if (ownerQ.isLoading) {
     return <div className="flex-1 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
@@ -195,16 +193,26 @@ export default function OwnerPlaceVerification() {
         {merged && (
           <>
             {/* ---- Google search ---- */}
-            <section className="space-y-2">
-              <h2 className="text-sm font-semibold">Verify against Google Places</h2>
+            <section className="space-y-2 min-w-0">
+              <h2 className="text-sm font-semibold">Step 1 — Verify against Google Places</h2>
+              {hasGoogleVerification(merged) && (
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> Google place confirmed
+                </p>
+              )}
               <div className="flex gap-2">
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Name and city, e.g. Hum Vegetarian Ho Chi Minh City"
+                  aria-label="Search Google Places by business name and city"
                   onKeyDown={(e) => e.key === "Enter" && searchM.mutate()}
                 />
-                <Button onClick={() => searchM.mutate()} disabled={searchM.isPending || query.trim().length < 2}>
+                <Button
+                  onClick={() => searchM.mutate()}
+                  disabled={searchM.isPending || query.trim().length < 2}
+                  aria-label="Search Google Places"
+                >
                   {searchM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SearchIcon className="h-4 w-4" />}
                 </Button>
               </div>
@@ -212,34 +220,56 @@ export default function OwnerPlaceVerification() {
                 Only Place ID, name, address, coordinates, Maps link, status, type and website are retrieved.
                 Reviews, ratings and photos are never requested or stored.
               </p>
-              {googleResults?.map((g) => (
-                <div key={g.place_id} className="rounded-control border p-3 space-y-1">
-                  <p className="text-sm font-medium">{g.display_name}</p>
-                  <p className="text-xs text-muted-foreground">{g.formatted_address}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {g.business_status ?? "status unknown"} · {g.primary_type ?? "type unknown"} ·{" "}
-                    {g.latitude?.toFixed(5)}, {g.longitude?.toFixed(5)}
-                  </p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Button size="sm" onClick={() => importGoogle(g)}>Import fields</Button>
-                    {g.google_maps_url && (
-                      <a
-                        href={g.google_maps_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary inline-flex items-center gap-1"
+              <p className="sr-only" role="status">
+                {searchM.isPending
+                  ? "Searching Google Places…"
+                  : confirmGoogleM.isPending
+                    ? "Confirming this place and importing verified details…"
+                    : ""}
+              </p>
+              {googleResults?.map((g) => {
+                const confirming = confirmGoogleM.isPending && confirmGoogleM.variables?.place_id === g.place_id;
+                return (
+                  <div key={g.place_id} className="rounded-control border p-3 space-y-1 min-w-0">
+                    <p className="text-sm font-medium [overflow-wrap:anywhere]">{g.display_name}</p>
+                    <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{g.formatted_address}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {g.business_status ?? "status unknown"} · {g.primary_type ?? "type unknown"}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        onClick={() => confirmGoogleM.mutate(g)}
+                        disabled={confirmGoogleM.isPending}
                       >
-                        View on Google Maps <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
+                        {confirming ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Confirming…
+                          </>
+                        ) : (
+                          "Use this place"
+                        )}
+                      </Button>
+                      {g.google_maps_url && (
+                        <a
+                          href={g.google_maps_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary inline-flex items-center gap-1"
+                        >
+                          View on Google Maps <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </section>
+
 
             {/* ---- Curation form ---- */}
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold">Curated VeggieMeet copy</h2>
+              <h2 className="text-sm font-semibold">Step 2 — Review VeggieMeet copy</h2>
               <div className="space-y-1.5">
                 <Label htmlFor="pv-name">Display name (internal)</Label>
                 <Input
@@ -337,17 +367,17 @@ export default function OwnerPlaceVerification() {
                 />
               </div>
 
-              <div className="rounded-control bg-muted/50 p-3 text-xs space-y-1">
-                <p className="font-medium">Verified Google fields</p>
-                <p>Place ID: {merged.google_place_id ?? "—"}</p>
-                <p>Address: {merged.google_formatted_address ?? "—"}</p>
-                <p>
-                  Coordinates:{" "}
-                  {merged.latitude != null && merged.longitude != null
-                    ? `${merged.latitude}, ${merged.longitude}`
-                    : "—"}
+              {/* WO-103: owner-facing identity first; Place ID and coordinates
+                  are system data kept only for operational transparency. */}
+              <div className="rounded-control bg-muted/50 p-3 text-xs space-y-1 min-w-0">
+                <p className="font-medium">
+                  {hasGoogleVerification(merged) ? "Google place confirmed" : "Google place not confirmed yet"}
                 </p>
-                <p>Business status: {merged.business_status ?? "—"}</p>
+                <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
+                  {merged.google_display_name ?? "—"}
+                </p>
+                <p className="[overflow-wrap:anywhere]">{merged.google_formatted_address ?? "—"}</p>
+                <p>Status: {merged.business_status ?? "—"}</p>
                 {merged.google_maps_url && (
                   <a
                     href={merged.google_maps_url}
@@ -358,13 +388,28 @@ export default function OwnerPlaceVerification() {
                     View on Google Maps <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
+                <details className="pt-1">
+                  <summary className="cursor-pointer text-muted-foreground">System verification data</summary>
+                  <p className="mt-1 text-muted-foreground [overflow-wrap:anywhere]">
+                    Place ID: {merged.google_place_id ?? "—"}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Coordinates:{" "}
+                    {merged.latitude != null && merged.longitude != null
+                      ? `${merged.latitude}, ${merged.longitude}`
+                      : "—"}
+                  </p>
+                </details>
                 <p className="text-muted-foreground pt-1">
                   Place data © Google. Ratings, reviews and photos are not stored.
                 </p>
               </div>
 
               {publishBlockers(merged).length > 0 && (
-                <div className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-1">
+                <div
+                  role="alert"
+                  className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-1"
+                >
                   <p className="font-medium text-destructive">Not publishable yet</p>
                   <ul className="list-disc pl-4 text-muted-foreground">
                     {publishBlockers(merged).map((b) => <li key={b}>{b}</li>)}
@@ -372,16 +417,18 @@ export default function OwnerPlaceVerification() {
                 </div>
               )}
 
+              <h2 className="text-sm font-semibold pt-1">Step 3 — Verify &amp; publish</h2>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button variant="outline" onClick={() => saveM.mutate()} disabled={saveM.isPending}>
                   Save draft
                 </Button>
                 <Button
                   onClick={() => publishM.mutate()}
-                  disabled={publishM.isPending || publishBlockers(merged).length > 0}
+                  disabled={publishM.isPending || confirmGoogleM.isPending || publishBlockers(merged).length > 0}
                 >
                   {publishM.isPending ? "Publishing…" : "Verify & publish"}
                 </Button>
+
                 <Button variant="ghost" onClick={() => rejectM.mutate()} disabled={rejectM.isPending}>
                   Reject
                 </Button>
