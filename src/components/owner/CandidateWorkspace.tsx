@@ -340,17 +340,27 @@ export default function OwnerPlaceVerification() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-cat">Category</Label>
-                  <Input
-                    id="pv-cat"
+                  {/* WO-108: category is a fixed enum in the database. */}
+                  <Select
                     value={merged.category ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                    placeholder="restaurant, cafe, park…"
-                  />
+                    onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+                  >
+                    <SelectTrigger id="pv-cat" className="w-full">
+                      <SelectValue placeholder="Choose category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLACE_CATEGORIES.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-district">District</Label>
                   <Input
                     id="pv-district"
@@ -359,14 +369,30 @@ export default function OwnerPlaceVerification() {
                   />
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label htmlFor="pv-class">Vegan / vegetarian classification</Label>
-                <Input
-                  id="pv-class"
+                {/* WO-108 DEF-108-01: controlled vocabulary — the owner can no
+                    longer type a value the database CHECK will reject. */}
+                <Select
                   value={merged.veggie_classification ?? ""}
-                  onChange={(e) => setForm((f) => ({ ...f, veggie_classification: e.target.value }))}
-                />
+                  onValueChange={(v) => setForm((f) => ({ ...f, veggie_classification: v }))}
+                >
+                  <SelectTrigger id="pv-class" className="w-full" aria-describedby="pv-class-help">
+                    <SelectValue placeholder="Choose classification" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VEGGIE_CLASSIFICATIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p id="pv-class-help" className="text-[11px] text-muted-foreground">
+                  Choose the classification supported by your verification evidence.
+                </p>
               </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="pv-reason">Veggie-friendly reason</Label>
                 <Textarea
