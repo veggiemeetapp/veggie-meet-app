@@ -88,7 +88,7 @@ export function mapLifecycleError(raw: string): string {
     return "Google reports this business is not operational.";
   if (m.includes("rejected"))
     return "This candidate was rejected and cannot be published.";
-  if (m.includes("missing required verification") || m.includes("required"))
+  if (m.includes("marked verified") || m.includes("missing required verification") || m.includes("required"))
     return "Candidate is missing required verification details.";
   if (m.includes("not found")) return "This candidate could no longer be found.";
   if (m.includes("image rights"))
