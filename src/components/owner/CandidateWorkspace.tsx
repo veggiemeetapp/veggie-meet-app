@@ -428,8 +428,8 @@ export default function OwnerPlaceVerification() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-img">Cover image URL (licensed only)</Label>
                   <Input
                     id="pv-img"
@@ -437,16 +437,27 @@ export default function OwnerPlaceVerification() {
                     onChange={(e) => setForm((f) => ({ ...f, cover_image_url: e.target.value || null }))}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-rights">Image rights</Label>
-                  <Input
-                    id="pv-rights"
+                  {/* WO-108: fixed CHECK vocabulary — controlled options only. */}
+                  <Select
                     value={merged.image_rights_status ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, image_rights_status: e.target.value }))}
-                    placeholder="none | cleared | no_image | pending"
-                  />
+                    onValueChange={(v) => setForm((f) => ({ ...f, image_rights_status: v }))}
+                  >
+                    <SelectTrigger id="pv-rights" className="w-full">
+                      <SelectValue placeholder="Choose image rights" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {IMAGE_RIGHTS_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="pv-notes">Verification notes</Label>
                 <Textarea
