@@ -10,10 +10,10 @@ import { Label } from "@/components/ui/label";
 import {
   fetchPlaceCandidates,
   isOwner,
-  publishCandidate,
   rejectCandidate,
   saveCandidateDraft,
   searchGooglePlaces,
+  verifyAndPublishCandidate,
   type GoogleCandidate,
   type PlaceCandidate,
 } from "@/lib/placeVerification";
@@ -77,11 +77,16 @@ export default function OwnerPlaceVerification() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  /**
+   * WO-104 DEF-104-01 — "Verify & publish" runs the full lifecycle
+   * (draft/needs_review → verified → published) through ONE owner-only,
+   * transactional server RPC. The client never writes verification_status.
+   */
   const publishM = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("No candidate selected");
       if (Object.keys(form).length > 0) await saveCandidateDraft(selected.id, form);
-      return publishCandidate(selected.id);
+      return verifyAndPublishCandidate(selected.id);
     },
     onSuccess: () => {
       setForm({});
