@@ -113,7 +113,15 @@ export default function OwnerPlaceVerification() {
       qc.invalidateQueries({ queryKey: ["place-candidates"] });
       toast.success("Published to Community Places.");
     },
-    onError: (e: Error) => toast.error(mapCandidateConstraintError(e.message)),
+    // Lifecycle copy (WO-104) is already owner-safe; only raw DB vocabulary
+    // violations are re-mapped here.
+    onError: (e: Error) =>
+      toast.error(
+        /violates|constraint|invalid input value for enum/i.test(e.message)
+          ? mapCandidateConstraintError(e.message)
+          : e.message,
+      ),
+
   });
 
   const rejectM = useMutation({
