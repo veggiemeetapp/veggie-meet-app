@@ -65,10 +65,11 @@ describe("candidate publish gate copy (WO-103)", () => {
   it("shows one understandable blocker when Google verification is missing", () => {
     const blockers = publishBlockers(candidate());
     expect(blockers).toContain(GOOGLE_VERIFICATION_BLOCKER);
-    expect(blockers.filter((b) => /latitude|longitude|Place ID|address/i.test(b))).toEqual([
-      GOOGLE_VERIFICATION_BLOCKER,
-    ]);
+    // No technical coordinate/identity wording is surfaced to the owner.
+    expect(blockers.filter((b) => /latitude|longitude|Place ID|coordinate/i.test(b))).toEqual([]);
+    expect(blockers).toHaveLength(1);
   });
+
 
   it("removes the verification blocker once a Google result is confirmed", () => {
     const blockers = publishBlockers(candidate(confirmed));
