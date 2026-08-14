@@ -423,21 +423,43 @@ export default function OwnerPlaceVerification() {
               )}
 
               <h2 className="text-sm font-semibold pt-1">Step 3 — Verify &amp; publish</h2>
+              <p className="text-[11px] text-muted-foreground">
+                One action marks this candidate verified and publishes it to Community Places.
+              </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button variant="outline" onClick={() => saveM.mutate()} disabled={saveM.isPending}>
                   Save draft
                 </Button>
                 <Button
                   onClick={() => publishM.mutate()}
+                  aria-label="Verify and publish this candidate to Community Places"
                   disabled={publishM.isPending || confirmGoogleM.isPending || publishBlockers(merged).length > 0}
                 >
-                  {publishM.isPending ? "Publishing…" : "Verify & publish"}
+                  {publishM.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Verifying &amp; publishing…
+                    </>
+                  ) : (
+                    "Verify & publish"
+                  )}
                 </Button>
 
                 <Button variant="ghost" onClick={() => rejectM.mutate()} disabled={rejectM.isPending}>
                   Reject
                 </Button>
               </div>
+              <p className="sr-only" role="status">
+                {publishM.isPending
+                  ? "Verifying and publishing this candidate…"
+                  : publishM.isSuccess
+                    ? "Published to Community Places."
+                    : ""}
+              </p>
+              {publishM.isError && (
+                <p role="alert" className="text-xs text-destructive">
+                  {(publishM.error as Error).message}
+                </p>
+              )}
             </section>
           </>
         )}
