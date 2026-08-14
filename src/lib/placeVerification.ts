@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { mapLifecycleError } from "@/lib/candidatePublish";
 
 /** A Google Places result, limited to the WO-043B allowed verification fields. */
 export interface GoogleCandidate {
@@ -102,6 +103,22 @@ export async function publishCandidate(id: string): Promise<string> {
     _candidate_id: id,
   });
   if (error) throw new Error(error.message);
+  return data as unknown as string;
+}
+
+/**
+ * WO-104 DEF-104-01 — one owner action for the whole lifecycle.
+ *
+ * The server RPC atomically locks the candidate, revalidates every publication
+ * requirement, transitions draft/needs_review → verified → published and
+ * returns the published Community Place id. Never write
+ * `verification_status` from the client: lifecycle state is security state.
+ */
+export async function verifyAndPublishCandidate(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc("verify_and_publish_place_candidate", {
+    _candidate_id: id,
+  });
+  if (error) throw new Error(mapLifecycleError(error.message));
   return data as unknown as string;
 }
 

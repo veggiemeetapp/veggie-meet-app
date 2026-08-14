@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GOOGLE_VERIFICATION_BLOCKER,
   hasGoogleVerification,
+  mapLifecycleError,
   publishBlockers,
   toGoogleIdentityPatch,
 } from "./candidatePublish";
@@ -123,5 +124,34 @@ describe("Google identity import (WO-103)", () => {
     expect(toGoogleIdentityPatch({ ...google, longitude: 999 })).toBeNull();
     expect(hasGoogleVerification(candidate())).toBe(false);
     expect(hasGoogleVerification(candidate(confirmed))).toBe(true);
+  });
+});
+
+describe("lifecycle error mapping (WO-104)", () => {
+  it("maps server lifecycle errors to owner-safe copy", () => {
+    expect(mapLifecycleError("Candidate must be marked verified before publishing.")).toBe(
+      "Candidate is missing required verification details.",
+    );
+    expect(mapLifecycleError("Candidate already published.")).toBe(
+      "This place has already been published.",
+    );
+    expect(mapLifecycleError("This Google Place is already represented in Community Places.")).toBe(
+      "This Google Place is already represented in Community Places.",
+    );
+    expect(mapLifecycleError("Google reports this business is not operational.")).toBe(
+      "Google reports this business is not operational.",
+    );
+    expect(mapLifecycleError("This candidate was rejected and cannot be published.")).toBe(
+      "This candidate was rejected and cannot be published.",
+    );
+    expect(mapLifecycleError("permission denied")).toBe(
+      "Only the VeggieMeet owner can verify and publish places.",
+    );
+  });
+
+  it("never leaks raw Postgres internals", () => {
+    const raw = 'ERROR:  P0001 function public.publish_place_candidate(uuid) line 42 at RAISE';
+    const msg = mapLifecycleError(raw);
+    expect(msg).not.toMatch(/P0001|public\.|RAISE|uuid/);
   });
 });

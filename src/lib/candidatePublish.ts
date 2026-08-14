@@ -70,6 +70,32 @@ export function toGoogleIdentityPatch(g: GoogleCandidate): GoogleIdentityPatch |
   };
 }
 
+/**
+ * WO-104 — map server lifecycle errors to owner-safe copy. Raw Postgres detail
+ * (permission denied, function names, SQLSTATE) is never shown to the owner.
+ */
+export function mapLifecycleError(raw: string): string {
+  const m = raw.toLowerCase();
+  if (m.includes("permission denied"))
+    return "Only the VeggieMeet owner can verify and publish places.";
+  if (m.includes("already published") || m.includes("already been published"))
+    return "This place has already been published.";
+  if (m.includes("google place is already") || m.includes("google place id"))
+    return "This Google Place is already represented in Community Places.";
+  if (m.includes("name and address"))
+    return "A published place already uses this name and address.";
+  if (m.includes("not operational") || m.includes("permanently closed"))
+    return "Google reports this business is not operational.";
+  if (m.includes("rejected"))
+    return "This candidate was rejected and cannot be published.";
+  if (m.includes("marked verified") || m.includes("missing required verification") || m.includes("required"))
+    return "Candidate is missing required verification details.";
+  if (m.includes("not found")) return "This candidate could no longer be found.";
+  if (m.includes("image rights"))
+    return "Image rights must be classified before publishing.";
+  return "We couldn’t publish this place. Please try again.";
+}
+
 export function publishBlockers(c: PlaceCandidate): string[] {
   const out: string[] = [];
 

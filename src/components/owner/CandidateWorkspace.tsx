@@ -10,10 +10,10 @@ import { Label } from "@/components/ui/label";
 import {
   fetchPlaceCandidates,
   isOwner,
-  publishCandidate,
   rejectCandidate,
   saveCandidateDraft,
   searchGooglePlaces,
+  verifyAndPublishCandidate,
   type GoogleCandidate,
   type PlaceCandidate,
 } from "@/lib/placeVerification";
@@ -77,11 +77,16 @@ export default function OwnerPlaceVerification() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  /**
+   * WO-104 DEF-104-01 — "Verify & publish" runs the full lifecycle
+   * (draft/needs_review → verified → published) through ONE owner-only,
+   * transactional server RPC. The client never writes verification_status.
+   */
   const publishM = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("No candidate selected");
       if (Object.keys(form).length > 0) await saveCandidateDraft(selected.id, form);
-      return publishCandidate(selected.id);
+      return verifyAndPublishCandidate(selected.id);
     },
     onSuccess: () => {
       setForm({});
@@ -418,21 +423,43 @@ export default function OwnerPlaceVerification() {
               )}
 
               <h2 className="text-sm font-semibold pt-1">Step 3 — Verify &amp; publish</h2>
+              <p className="text-[11px] text-muted-foreground">
+                One action marks this candidate verified and publishes it to Community Places.
+              </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button variant="outline" onClick={() => saveM.mutate()} disabled={saveM.isPending}>
                   Save draft
                 </Button>
                 <Button
                   onClick={() => publishM.mutate()}
+                  aria-label="Verify and publish this candidate to Community Places"
                   disabled={publishM.isPending || confirmGoogleM.isPending || publishBlockers(merged).length > 0}
                 >
-                  {publishM.isPending ? "Publishing…" : "Verify & publish"}
+                  {publishM.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Verifying &amp; publishing…
+                    </>
+                  ) : (
+                    "Verify & publish"
+                  )}
                 </Button>
 
                 <Button variant="ghost" onClick={() => rejectM.mutate()} disabled={rejectM.isPending}>
                   Reject
                 </Button>
               </div>
+              <p className="sr-only" role="status">
+                {publishM.isPending
+                  ? "Verifying and publishing this candidate…"
+                  : publishM.isSuccess
+                    ? "Published to Community Places."
+                    : ""}
+              </p>
+              {publishM.isError && (
+                <p role="alert" className="text-xs text-destructive">
+                  {(publishM.error as Error).message}
+                </p>
+              )}
             </section>
           </>
         )}
