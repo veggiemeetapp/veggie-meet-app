@@ -272,15 +272,19 @@ export default function OwnerPlaceOperations() {
             logAnalyticsEvent("community_place_operations_filter_changed", { filter_type: "tab" });
           }}
         >
-          <div className="-mx-4 px-4 overflow-x-auto">
-            <TabsList className="w-max">
-              {TABS.map((t) => (
-                <TabsTrigger key={t.value} value={t.value}>
-                  {t.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
+          {/* WO-106A DEF-106A-01: the tab row used to scroll horizontally with no
+              affordance, so "Today curation" (last tab) was effectively invisible
+              on mobile. It now wraps: every owner section is always on screen. */}
+          <TabsList
+            aria-label="Community Place operations sections"
+            className="flex h-auto w-full flex-wrap justify-start gap-1 p-1"
+          >
+            {TABS.map((t) => (
+              <TabsTrigger key={t.value} value={t.value} className="shrink-0">
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
           {/* ---------------- Overview ---------------- */}
           <TabsContent value="overview" className="space-y-6 pt-4">
