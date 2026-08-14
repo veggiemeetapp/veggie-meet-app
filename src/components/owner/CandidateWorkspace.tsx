@@ -104,21 +104,35 @@ export default function OwnerPlaceVerification() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function importGoogle(g: GoogleCandidate) {
-    setForm((f) => ({
-      ...f,
-      google_place_id: g.place_id,
-      google_display_name: g.display_name,
-      google_formatted_address: g.formatted_address,
-      google_primary_type: g.primary_type,
-      google_maps_url: g.google_maps_url,
-      google_website_url: g.website_url,
-      business_status: g.business_status,
-      latitude: g.latitude,
-      longitude: g.longitude,
-    }));
-    toast.success("Imported verified fields. Review, then save.");
-  }
+  /**
+   * WO-103 DEF-103-01 — confirming a Google result imports the verified
+   * identity/location fields AND persists them immediately, so the owner never
+   * handles raw coordinates. Curated VeggieMeet copy is untouched: only the
+   * Google-managed columns are written, and unsaved curated edits in `form`
+   * are preserved.
+   */
+  const confirmGoogleM = useMutation({
+    mutationFn: async (g: GoogleCandidate) => {
+      if (!selected) throw new Error("No candidate selected");
+      const patch = toGoogleIdentityPatch(g);
+      if (!patch) throw new Error(INCOMPLETE_GOOGLE_RESULT_MESSAGE);
+      await saveCandidateDraft(selected.id, patch as Partial<PlaceCandidate>);
+      return patch;
+    },
+    onSuccess: async (patch) => {
+      // Drop stale Google keys from the local draft so the saved values win.
+      setForm((f) => {
+        const next = { ...f };
+        for (const k of Object.keys(patch)) delete next[k as keyof PlaceCandidate];
+        return next;
+      });
+      await qc.invalidateQueries({ queryKey: ["place-candidates"] });
+      setGoogleResults(null);
+      toast.success("Google place confirmed.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   if (ownerQ.isLoading) {
     return <div className="flex-1 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
