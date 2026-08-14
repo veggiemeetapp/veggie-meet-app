@@ -114,6 +114,9 @@ export function publishBlockers(c: PlaceCandidate): string[] {
   if (!hasGoogleVerification(c)) out.push(GOOGLE_VERIFICATION_BLOCKER);
 
   if (!c.category) out.push("Category required");
+  // WO-108: publication requires an explicit, evidence-backed classification.
+  if (!c.veggie_classification) out.push("Choose a vegan/vegetarian classification.");
+
   if (!c.description || c.description.trim().length < 20)
     out.push("Original VeggieMeet description required (20+ characters)");
   if (
