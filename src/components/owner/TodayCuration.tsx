@@ -263,7 +263,7 @@ export default function TodayCuration() {
             ) : (
               <ol className="space-y-2">
                 {featured.map((p, i) => (
-                  <Row key={p.place_id} place={p} position={i + 1}>
+                  <Row key={p.place_id} place={p} position={i + 1} actions="wrap">
                     <Button
                       variant="outline"
                       size="sm"
