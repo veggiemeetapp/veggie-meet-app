@@ -8,6 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  IMAGE_RIGHTS_OPTIONS,
+  PLACE_CATEGORIES,
+  VEGGIE_CLASSIFICATIONS,
+  mapCandidateConstraintError,
+  validateCandidatePatch,
+} from "@/lib/candidateVocabulary";
+import {
   fetchPlaceCandidates,
   isOwner,
   rejectCandidate,
@@ -68,6 +82,9 @@ export default function OwnerPlaceVerification() {
   const saveM = useMutation({
     mutationFn: async () => {
       if (!selected) return;
+      // WO-108: never send a value the database vocabulary rejects.
+      const invalid = validateCandidatePatch(form);
+      if (invalid) throw new Error(invalid);
       await saveCandidateDraft(selected.id, form);
     },
     onSuccess: () => {
@@ -75,7 +92,7 @@ export default function OwnerPlaceVerification() {
       qc.invalidateQueries({ queryKey: ["place-candidates"] });
       toast.success("Draft saved. Nothing is public yet.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(mapCandidateConstraintError(e.message)),
   });
 
   /**
@@ -86,6 +103,8 @@ export default function OwnerPlaceVerification() {
   const publishM = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("No candidate selected");
+      const invalid = validateCandidatePatch(form);
+      if (invalid) throw new Error(invalid);
       if (Object.keys(form).length > 0) await saveCandidateDraft(selected.id, form);
       return verifyAndPublishCandidate(selected.id);
     },
@@ -94,7 +113,15 @@ export default function OwnerPlaceVerification() {
       qc.invalidateQueries({ queryKey: ["place-candidates"] });
       toast.success("Published to Community Places.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    // Lifecycle copy (WO-104) is already owner-safe; only raw DB vocabulary
+    // violations are re-mapped here.
+    onError: (e: Error) =>
+      toast.error(
+        /violates|constraint|invalid input value for enum/i.test(e.message)
+          ? mapCandidateConstraintError(e.message)
+          : e.message,
+      ),
+
   });
 
   const rejectM = useMutation({
@@ -340,17 +367,27 @@ export default function OwnerPlaceVerification() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-cat">Category</Label>
-                  <Input
-                    id="pv-cat"
+                  {/* WO-108: category is a fixed enum in the database. */}
+                  <Select
                     value={merged.category ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                    placeholder="restaurant, cafe, park…"
-                  />
+                    onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+                  >
+                    <SelectTrigger id="pv-cat" className="w-full">
+                      <SelectValue placeholder="Choose category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLACE_CATEGORIES.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-district">District</Label>
                   <Input
                     id="pv-district"
@@ -359,14 +396,30 @@ export default function OwnerPlaceVerification() {
                   />
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label htmlFor="pv-class">Vegan / vegetarian classification</Label>
-                <Input
-                  id="pv-class"
+                {/* WO-108 DEF-108-01: controlled vocabulary — the owner can no
+                    longer type a value the database CHECK will reject. */}
+                <Select
                   value={merged.veggie_classification ?? ""}
-                  onChange={(e) => setForm((f) => ({ ...f, veggie_classification: e.target.value }))}
-                />
+                  onValueChange={(v) => setForm((f) => ({ ...f, veggie_classification: v }))}
+                >
+                  <SelectTrigger id="pv-class" className="w-full" aria-describedby="pv-class-help">
+                    <SelectValue placeholder="Choose classification" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VEGGIE_CLASSIFICATIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p id="pv-class-help" className="text-[11px] text-muted-foreground">
+                  Choose the classification supported by your verification evidence.
+                </p>
               </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="pv-reason">Veggie-friendly reason</Label>
                 <Textarea
@@ -385,8 +438,8 @@ export default function OwnerPlaceVerification() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-img">Cover image URL (licensed only)</Label>
                   <Input
                     id="pv-img"
@@ -394,16 +447,27 @@ export default function OwnerPlaceVerification() {
                     onChange={(e) => setForm((f) => ({ ...f, cover_image_url: e.target.value || null }))}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-rights">Image rights</Label>
-                  <Input
-                    id="pv-rights"
+                  {/* WO-108: fixed CHECK vocabulary — controlled options only. */}
+                  <Select
                     value={merged.image_rights_status ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, image_rights_status: e.target.value }))}
-                    placeholder="none | cleared | no_image | pending"
-                  />
+                    onValueChange={(v) => setForm((f) => ({ ...f, image_rights_status: v }))}
+                  >
+                    <SelectTrigger id="pv-rights" className="w-full">
+                      <SelectValue placeholder="Choose image rights" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {IMAGE_RIGHTS_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="pv-notes">Verification notes</Label>
                 <Textarea
