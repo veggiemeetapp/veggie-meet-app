@@ -103,6 +103,8 @@ export default function OwnerPlaceVerification() {
   const publishM = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("No candidate selected");
+      const invalid = validateCandidatePatch(form);
+      if (invalid) throw new Error(invalid);
       if (Object.keys(form).length > 0) await saveCandidateDraft(selected.id, form);
       return verifyAndPublishCandidate(selected.id);
     },
@@ -111,7 +113,7 @@ export default function OwnerPlaceVerification() {
       qc.invalidateQueries({ queryKey: ["place-candidates"] });
       toast.success("Published to Community Places.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(mapCandidateConstraintError(e.message)),
   });
 
   const rejectM = useMutation({
