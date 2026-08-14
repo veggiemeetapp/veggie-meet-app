@@ -143,4 +143,40 @@ describe("TodayCuration", () => {
     renderScreen();
     expect(await screen.findByText("Couldn’t load Today curation.")).toBeTruthy();
   });
+
+  // WO-107: information-first card layout for automatic recommendation cards.
+  it("renders place information above the action row (WO-107)", async () => {
+    renderScreen();
+    const feature = await screen.findByLabelText("Feature Zeroism on Today");
+    const card = feature.closest("li") as HTMLElement;
+    const name = card.querySelector("p") as HTMLElement;
+    expect(name.textContent).toBe("Zeroism");
+    // Name node precedes the action container in DOM/focus order.
+    expect(
+      name.compareDocumentPosition(card.querySelector('[data-testid="curation-actions"]')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("gives the automatic card a full-width two-column action row and no fixed height", async () => {
+    renderScreen();
+    const feature = await screen.findByLabelText("Feature Zeroism on Today");
+    const card = feature.closest("li") as HTMLElement;
+    const actions = card.querySelector('[data-testid="curation-actions"]') as HTMLElement;
+    expect(actions.className).toContain("grid");
+    expect(actions.className).toContain("grid-cols-2");
+    expect(actions.className).toContain("min-h-11");
+    expect(card.className).not.toMatch(/h-\d|min-h-\[/);
+    expect(card.querySelectorAll("button").length).toBe(2);
+  });
+
+  it("keeps metadata and the featured wrap layout intact", async () => {
+    renderScreen();
+    expect(await screen.findByText(/Café · Operational/)).toBeTruthy();
+    const up = screen.getByLabelText("Move Filthy Vegan up");
+    const actions = up.closest('[data-testid="curation-actions"]') as HTMLElement;
+    expect(actions.className).toContain("flex-wrap");
+    expect(actions.querySelectorAll("button").length).toBe(3);
+  });
 });
+

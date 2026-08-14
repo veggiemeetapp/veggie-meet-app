@@ -47,16 +47,20 @@ const CATEGORY_LABEL: Record<string, string> = {
 function Row({
   place,
   position,
+  actions = "pair",
   children,
 }: {
   place: CurationPlace;
   position?: number;
+  /** `pair` = two equal-width buttons; `wrap` = flexible wrapping row. */
+  actions?: "pair" | "wrap";
   children: React.ReactNode;
 }) {
   const eligible = isTodayEligible(place);
   return (
     <li className="rounded-control border bg-card p-3">
-      <div className="flex flex-wrap items-start gap-3">
+      {/* WO-107: information first, full width; actions beneath. */}
+      <div className="flex items-start gap-2">
         {position !== undefined && (
           <span
             aria-hidden
@@ -75,11 +79,21 @@ function Row({
             {!eligible && " · Not shown on Today"}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
+      </div>
+      <div
+        data-testid="curation-actions"
+        className={
+          actions === "pair"
+            ? "mt-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 [&>button]:w-full [&>button]:min-h-11"
+            : "mt-3 flex flex-wrap items-center gap-2 [&>button]:min-h-11"
+        }
+      >
+        {children}
       </div>
     </li>
   );
 }
+
 
 export default function TodayCuration() {
   const qc = useQueryClient();
@@ -249,7 +263,7 @@ export default function TodayCuration() {
             ) : (
               <ol className="space-y-2">
                 {featured.map((p, i) => (
-                  <Row key={p.place_id} place={p} position={i + 1}>
+                  <Row key={p.place_id} place={p} position={i + 1} actions="wrap">
                     <Button
                       variant="outline"
                       size="sm"
