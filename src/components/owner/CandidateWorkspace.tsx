@@ -269,7 +269,7 @@ export default function OwnerPlaceVerification() {
 
             {/* ---- Curation form ---- */}
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold">Curated VeggieMeet copy</h2>
+              <h2 className="text-sm font-semibold">Step 2 — Review VeggieMeet copy</h2>
               <div className="space-y-1.5">
                 <Label htmlFor="pv-name">Display name (internal)</Label>
                 <Input
