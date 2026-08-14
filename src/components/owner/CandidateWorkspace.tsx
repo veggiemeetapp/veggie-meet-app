@@ -367,17 +367,17 @@ export default function OwnerPlaceVerification() {
                 />
               </div>
 
-              <div className="rounded-control bg-muted/50 p-3 text-xs space-y-1">
-                <p className="font-medium">Verified Google fields</p>
-                <p>Place ID: {merged.google_place_id ?? "—"}</p>
-                <p>Address: {merged.google_formatted_address ?? "—"}</p>
-                <p>
-                  Coordinates:{" "}
-                  {merged.latitude != null && merged.longitude != null
-                    ? `${merged.latitude}, ${merged.longitude}`
-                    : "—"}
+              {/* WO-103: owner-facing identity first; Place ID and coordinates
+                  are system data kept only for operational transparency. */}
+              <div className="rounded-control bg-muted/50 p-3 text-xs space-y-1 min-w-0">
+                <p className="font-medium">
+                  {hasGoogleVerification(merged) ? "Google place confirmed" : "Google place not confirmed yet"}
                 </p>
-                <p>Business status: {merged.business_status ?? "—"}</p>
+                <p className="text-sm font-semibold text-charcoal [overflow-wrap:anywhere]">
+                  {merged.google_display_name ?? "—"}
+                </p>
+                <p className="[overflow-wrap:anywhere]">{merged.google_formatted_address ?? "—"}</p>
+                <p>Status: {merged.business_status ?? "—"}</p>
                 {merged.google_maps_url && (
                   <a
                     href={merged.google_maps_url}
@@ -388,13 +388,28 @@ export default function OwnerPlaceVerification() {
                     View on Google Maps <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
+                <details className="pt-1">
+                  <summary className="cursor-pointer text-muted-foreground">System verification data</summary>
+                  <p className="mt-1 text-muted-foreground [overflow-wrap:anywhere]">
+                    Place ID: {merged.google_place_id ?? "—"}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Coordinates:{" "}
+                    {merged.latitude != null && merged.longitude != null
+                      ? `${merged.latitude}, ${merged.longitude}`
+                      : "—"}
+                  </p>
+                </details>
                 <p className="text-muted-foreground pt-1">
                   Place data © Google. Ratings, reviews and photos are not stored.
                 </p>
               </div>
 
               {publishBlockers(merged).length > 0 && (
-                <div className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-1">
+                <div
+                  role="alert"
+                  className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-1"
+                >
                   <p className="font-medium text-destructive">Not publishable yet</p>
                   <ul className="list-disc pl-4 text-muted-foreground">
                     {publishBlockers(merged).map((b) => <li key={b}>{b}</li>)}
@@ -402,16 +417,18 @@ export default function OwnerPlaceVerification() {
                 </div>
               )}
 
+              <h2 className="text-sm font-semibold pt-1">Step 3 — Verify &amp; publish</h2>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button variant="outline" onClick={() => saveM.mutate()} disabled={saveM.isPending}>
                   Save draft
                 </Button>
                 <Button
                   onClick={() => publishM.mutate()}
-                  disabled={publishM.isPending || publishBlockers(merged).length > 0}
+                  disabled={publishM.isPending || confirmGoogleM.isPending || publishBlockers(merged).length > 0}
                 >
                   {publishM.isPending ? "Publishing…" : "Verify & publish"}
                 </Button>
+
                 <Button variant="ghost" onClick={() => rejectM.mutate()} disabled={rejectM.isPending}>
                   Reject
                 </Button>
