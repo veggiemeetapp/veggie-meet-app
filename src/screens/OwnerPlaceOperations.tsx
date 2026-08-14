@@ -22,6 +22,8 @@ import { ReportQueue } from "@/components/owner/ReportQueue";
 import { PlaceMaintenance } from "@/components/owner/PlaceMaintenance";
 import { ReverificationQueue } from "@/components/owner/ReverificationQueue";
 import CandidateWorkspace from "@/components/owner/CandidateWorkspace";
+import TodayCuration from "@/components/owner/TodayCuration";
+
 
 import { isOwner } from "@/lib/placeVerification";
 import { logAnalyticsEvent } from "@/lib/analytics";
@@ -58,7 +60,10 @@ const TABS = [
   { value: "reverification", label: "Reverification" },
   { value: "maintenance", label: "Maintenance" },
   { value: "candidates", label: "Candidates" },
+  // WO-106: owner editorial control over Today Community Places.
+  { value: "today", label: "Today curation" },
 ] as const;
+
 
 type TabValue = (typeof TABS)[number]["value"];
 
@@ -774,6 +779,11 @@ export default function OwnerPlaceOperations() {
           <TabsContent value="candidates" className="pt-4">
             <CandidateWorkspace />
           </TabsContent>
+
+          <TabsContent value="today" className="pt-4">
+            <TodayCuration />
+          </TabsContent>
+
         </Tabs>
       </div>
     </div>

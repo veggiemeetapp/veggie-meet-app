@@ -150,7 +150,17 @@ export const ANALYTICS_EVENTS = [
   "connection_request_sent",
   "connection_request_accepted",
   "meetup_joined",
+  "owner_community_place_operations_opened",
+
+  // WO-106 owner Today curation (city + slot only — never place identity).
+  "today_place_curation_opened",
+  "today_place_featured",
+  "today_place_unfeatured",
+  "today_place_hidden",
+  "today_place_restored",
+  "today_place_reordered",
 ] as const;
+
 
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];

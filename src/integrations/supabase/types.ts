@@ -2688,6 +2688,61 @@ export type Database = {
           },
         ]
       }
+      today_place_curation: {
+        Row: {
+          city_id: string
+          community_place_id: string
+          created_at: string
+          featured_rank: number | null
+          id: string
+          state: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          city_id: string
+          community_place_id: string
+          created_at?: string
+          featured_rank?: number | null
+          id?: string
+          state?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          city_id?: string
+          community_place_id?: string
+          created_at?: string
+          featured_rank?: number | null
+          id?: string
+          state?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "today_place_curation_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "today_place_curation_community_place_id_fkey"
+            columns: ["community_place_id"]
+            isOneToOne: true
+            referencedRelation: "community_places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "today_place_curation_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_blocks: {
         Row: {
           blocked_profile_id: string
@@ -3361,6 +3416,7 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: Json
       }
+      get_today_place_curation: { Args: { _city_id: string }; Returns: Json }
       get_veggie_profile_availability: {
         Args: { _target_profile_id: string }
         Returns: Json
@@ -3462,6 +3518,10 @@ export type Database = {
         Returns: undefined
       }
       normalize_interests: { Args: { _interests: string[] }; Returns: string[] }
+      normalize_today_featured_ranks: {
+        Args: { _city_id: string }
+        Returns: undefined
+      }
       place_freshness_label: {
         Args: { _last_reverified_at: string; _verified_at: string }
         Returns: string
@@ -3509,6 +3569,10 @@ export type Database = {
       remove_meetup_attendee: {
         Args: { _attendee_id: string; _meetup_id: string; _reason: string }
         Returns: undefined
+      }
+      reorder_today_featured_places: {
+        Args: { _city_id: string; _ordered_place_ids: string[] }
+        Returns: Json
       }
       report_and_block_profile: {
         Args: {
@@ -3652,6 +3716,10 @@ export type Database = {
         Returns: Json
       }
       set_selected_city: { Args: { _city_id: string }; Returns: Json }
+      set_today_place_state: {
+        Args: { _place_id: string; _state: string }
+        Returns: Json
+      }
       shares_context_with: { Args: { _profile_id: string }; Returns: boolean }
       start_community_place_identity_review: {
         Args: { _place_id: string }

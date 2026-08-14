@@ -230,6 +230,12 @@ const App = () => (
                 <Route path="/settings" element={gated(<Settings />)} />
                 <Route path="/settings/feedback" element={gated(<BetaFeedback />)} />
                 <Route path="/owner/places" element={ownerGated(<OwnerPlaceOperations />)} />
+                {/* WO-106: direct entry to the Today curation tab. */}
+                <Route
+                  path="/owner/places/today-curation"
+                  element={<Navigate to="/owner/places?tab=today" replace />}
+                />
+
                 <Route path="/owner/beta" element={ownerGated(<OwnerBetaOperations />)} />
                 <Route path="/owner/member-reports" element={ownerGated(<OwnerMemberReports />)} />
 
