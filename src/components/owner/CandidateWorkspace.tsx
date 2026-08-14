@@ -1,14 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  fetchGooglePlaceDetails,
   fetchPlaceCandidates,
   isOwner,
   publishCandidate,
@@ -18,6 +17,12 @@ import {
   type GoogleCandidate,
   type PlaceCandidate,
 } from "@/lib/placeVerification";
+import {
+  hasGoogleVerification,
+  INCOMPLETE_GOOGLE_RESULT_MESSAGE,
+  publishBlockers,
+  toGoogleIdentityPatch,
+} from "@/lib/candidatePublish";
 
 
 const STATUS_LABEL: Record<string, string> = {
@@ -28,27 +33,6 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Rejected",
 };
 
-/** Publish gate mirrored from the server-side publish_place_candidate() checks,
- *  so the owner sees why a candidate is not publishable before trying. */
-function publishBlockers(c: PlaceCandidate): string[] {
-  const out: string[] = [];
-  if (c.latitude == null || c.longitude == null) out.push("Verified latitude and longitude required");
-  if (!c.google_formatted_address) out.push("Verified address required");
-  if (!c.category) out.push("Category required");
-  if (!c.description || c.description.trim().length < 20)
-    out.push("Original VeggieMeet description required (20+ characters)");
-  if (c.image_rights_status !== "licensed" && c.image_rights_status !== "owner_supplied" &&
-      c.image_rights_status !== "restaurant_supplied" && c.image_rights_status !== "none")
-    out.push('Image rights must be "none" (no image), "owner_supplied", "restaurant_supplied" or "licensed"');
-  if (c.cover_image_url && c.image_rights_status === "none")
-    out.push("A cover image requires cleared image rights");
-
-  if (c.business_status && c.business_status !== "OPERATIONAL")
-    out.push(`Google business status is ${c.business_status}`);
-  if (c.verification_status === "published") out.push("Already published");
-  if (c.verification_status === "rejected") out.push("Candidate is rejected");
-  return out;
-}
 
 export default function OwnerPlaceVerification() {
   const navigate = useNavigate();
