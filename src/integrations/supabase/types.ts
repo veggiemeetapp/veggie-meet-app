@@ -3822,6 +3822,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      verify_and_publish_place_candidate: {
+        Args: { _candidate_id: string }
+        Returns: string
+      }
       verify_meetup_connection: { Args: { _token: string }; Returns: Json }
     }
     Enums: {
