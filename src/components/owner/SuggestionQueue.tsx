@@ -202,11 +202,11 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                   <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
                     {s.published_place_id ? (
                       <Button size="sm" variant="outline" asChild>
-                        <Link to={`/community/places/${s.published_place_id}`}>View Community Place</Link>
+                        <Link to={`/place/${s.published_place_id}`}>View Community Place</Link>
                       </Button>
                     ) : s.promoted_candidate_id ? (
                       <Button size="sm" variant="outline" asChild>
-                        <Link to={`/owner/places?candidate=${s.promoted_candidate_id}`}>View candidate</Link>
+                        <Link to="/owner/places?tab=candidates">View candidate</Link>
                       </Button>
                     ) : null}
                     <p className="w-full text-[11px] text-muted-foreground">
