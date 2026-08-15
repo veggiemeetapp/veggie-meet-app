@@ -49,11 +49,28 @@ export interface OwnerSuggestion {
   city_name: string | null;
   city_id: string | null;
   submitted_at: string;
+  /** WO-109: reviewed_at — when the suggestion was handled (history sorting). */
+  resolved_at: string | null;
   moderation_status: SuggestionStatus;
   rejection_reason: string | null;
   promoted_candidate_id: string | null;
+  /** Verification status of the promoted candidate, when one exists. */
+  candidate_status: string | null;
+  /** Set once the promoted candidate has been published. */
+  published_place_id: string | null;
   submitter_profile_id: string;
   possible_duplicate: boolean;
+}
+
+/** WO-109 lifecycle scopes for the owner queue. */
+export type SuggestionScope = "active" | "history";
+
+/** Suggestions still needing owner action. Mirrors the server-side filter. */
+export const ACTIVE_STATUSES: SuggestionStatus[] = ["pending", "under_review"];
+
+/** True when a suggestion still requires owner action. */
+export function isActiveSuggestion(status: SuggestionStatus): boolean {
+  return ACTIVE_STATUSES.includes(status);
 }
 
 /** User-facing status wording. Never exposes internal moderation detail. */
@@ -110,8 +127,13 @@ export async function fetchMyPlaceSuggestions(): Promise<MySuggestion[]> {
   return data ?? [];
 }
 
-export async function fetchSuggestionQueue(): Promise<OwnerSuggestion[]> {
-  const { data, error } = await rpc<OwnerSuggestion[]>("get_place_suggestion_queue");
+/** WO-109: the queue is filtered server-side by lifecycle state. */
+export async function fetchSuggestionQueue(
+  scope: SuggestionScope = "active",
+): Promise<OwnerSuggestion[]> {
+  const { data, error } = await rpc<OwnerSuggestion[]>("get_place_suggestion_queue", {
+    _scope: scope,
+  });
   if (error) throw new Error(error.message);
   return data ?? [];
 }
