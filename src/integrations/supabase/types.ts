@@ -3405,7 +3405,9 @@ export type Database = {
         Args: { _place_id: string }
         Returns: Json
       }
-      get_place_suggestion_queue: { Args: never; Returns: Json }
+      get_place_suggestion_queue:
+        | { Args: never; Returns: Json }
+        | { Args: { _scope?: string }; Returns: Json }
       get_private_beta_health: { Args: never; Returns: Json }
       get_private_beta_integrity_health: { Args: never; Returns: Json }
       get_profile_connection_summary: {
