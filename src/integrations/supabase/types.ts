@@ -2999,6 +2999,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      _place_addr_key: { Args: { _t: string }; Returns: string }
+      _place_brand_key: { Args: { _t: string }; Returns: string }
+      _place_name_key: { Args: { _t: string }; Returns: string }
+      _place_suggestion_match_context: {
+        Args: { _suggestion_id: string }
+        Returns: Json
+      }
+      _place_unaccent: { Args: { _t: string }; Returns: string }
       _suggestion_norm: { Args: { _t: string }; Returns: string }
       _valid_report_reason: {
         Args: { _code: string; _kind: string }
@@ -3051,6 +3059,15 @@ export type Database = {
       }
       cancel_place_reverification: {
         Args: { _place_id: string }
+        Returns: Json
+      }
+      check_community_place_suggestion_duplicate: {
+        Args: {
+          _address_text: string
+          _city_id: string
+          _official_source_url: string
+          _place_name: string
+        }
         Returns: Json
       }
       check_in_to_community_place: {
