@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { AppHeader, BackButton } from "@/components/app";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { logAnalyticsEvent } from "@/lib/analytics";
-import { submitPlaceSuggestion, type SubmitReason } from "@/lib/placeSuggestions";
+import {
+  checkSuggestionDuplicate,
+  submitPlaceSuggestion,
+  DUPLICATE_REASON_LABEL,
+  type DuplicateCheck,
+  type SubmitReason,
+} from "@/lib/placeSuggestions";
 
 const LIMITS = {
   placeName: 120,
@@ -36,6 +42,14 @@ const REASON_COPY: Record<SubmitReason, { title: string; body: string }> = {
   duplicate_suggestion: {
     title: "This place may already be listed",
     body: "We already have a similar place in our review queue.",
+  },
+  duplicate_published_place: {
+    title: "This place is already on VeggieMeet.",
+    body: "We found a Community Place at this address.",
+  },
+  duplicate_active_suggestion: {
+    title: "This location has already been suggested",
+    body: "It's awaiting review, so there's nothing more to do right now.",
   },
   submission_limit_reached: {
     title: "You’ve reached today’s limit",
@@ -82,6 +96,10 @@ export default function SuggestPlace() {
   const [formError, setFormError] = useState<{ title: string; body: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  // WO-110: a possible match warns once, then submission continues. Only an
+  // exact physical duplicate (server-decided) blocks the member.
+  const [similar, setSimilar] = useState<DuplicateCheck | null>(null);
+  const [blocked, setBlocked] = useState<DuplicateCheck | null>(null);
   const refs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
@@ -130,6 +148,45 @@ export default function SuggestPlace() {
 
     setSubmitting(true);
     try {
+      // Supplemental UX only — the server re-enforces on submit.
+      if (!similar) {
+        let check: DuplicateCheck = { level: "none" };
+        try {
+          check = await checkSuggestionDuplicate({
+            cityId,
+            placeName,
+            addressText,
+            officialSourceUrl,
+          });
+        } catch {
+          check = { level: "none" };
+        }
+        if (check.level === "hard") {
+          setBlocked(check);
+          setFormError(
+            check.entity_type === "place"
+              ? REASON_COPY.duplicate_published_place
+              : REASON_COPY.duplicate_active_suggestion,
+          );
+          logAnalyticsEvent("community_place_suggestion_failed", {
+            safe_reason_code:
+              check.entity_type === "place"
+                ? "duplicate_published_place"
+                : "duplicate_active_suggestion",
+          });
+          setSubmitting(false);
+          return;
+        }
+        if (check.level === "possible") {
+          setSimilar(check);
+          logAnalyticsEvent("community_place_suggestion_possible_duplicate_shown", {
+            match_entity_type: check.entity_type ?? "unknown",
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const res = await submitPlaceSuggestion({
         cityId,
         placeName,
@@ -146,6 +203,14 @@ export default function SuggestPlace() {
         setDone(true);
       } else {
         logAnalyticsEvent("community_place_suggestion_failed", { safe_reason_code: res.reason });
+        if (res.reason === "duplicate_published_place") {
+          setBlocked({
+            level: "hard",
+            entity_type: "place",
+            match_name: res.match_name ?? undefined,
+            published_place_id: res.published_place_id ?? null,
+          });
+        }
         setFormError(REASON_COPY[res.reason] ?? REASON_COPY.invalid_input);
       }
     } catch {
@@ -339,6 +404,29 @@ export default function SuggestPlace() {
             </Field>
 
             <div aria-live="polite">
+              {similar && !blocked && (
+                <div
+                  role="status"
+                  className="mb-3 rounded-control border border-warning/40 bg-warning/10 p-3"
+                >
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-charcoal">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden />
+                    Similar place found
+                  </p>
+                  <p className="mt-1 text-sm text-charcoal-muted [overflow-wrap:anywhere]">
+                    We found a place with a similar name
+                    {similar.match_name ? ` (${similar.match_name})` : ""}. If this is a different
+                    branch or location, you can still submit it for review.
+                  </p>
+                  {similar.reasons && similar.reasons.length > 0 && (
+                    <p className="mt-1 text-xs text-charcoal-muted">
+                      {similar.reasons
+                        .map((r) => DUPLICATE_REASON_LABEL[r] ?? r)
+                        .join(" · ")}
+                    </p>
+                  )}
+                </div>
+              )}
               {formError && (
                 <div className="rounded-control border border-destructive/30 bg-destructive/5 p-3">
                   <p className="text-sm font-semibold text-charcoal">{formError.title}</p>
@@ -347,7 +435,13 @@ export default function SuggestPlace() {
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
+            {blocked?.published_place_id && (
+              <Button variant="outline" className="w-full" asChild>
+                <Link to={`/place/${blocked.published_place_id}`}>View Community Place</Link>
+              </Button>
+            )}
+
+            <Button type="submit" className="w-full" disabled={submitting || !!blocked}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
