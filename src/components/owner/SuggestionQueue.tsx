@@ -185,13 +185,15 @@ export function SuggestionQueue({ onPromoted }: { onPromoted?: (candidateId: str
                   {/* In History, lifecycle status outranks the duplicate hint:
                       it's audit context, not outstanding owner work. */}
                   {s.possible_duplicate && !handled && (
-                    <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-warning">
-                      <AlertTriangle className="h-3 w-3" aria-hidden /> Possible duplicate
+                    <p className="mt-1 inline-flex flex-wrap items-center gap-1 text-[11px] font-medium text-warning">
+                      <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden /> Possible match
+                      {s.duplicate_match ? `: ${s.duplicate_match.name}` : ""}
                     </p>
                   )}
                   {s.possible_duplicate && handled && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      Name matched an existing place at review time
+                    <p className="mt-1 text-[11px] text-muted-foreground [overflow-wrap:anywhere]">
+                      Flagged as a possible match for{" "}
+                      {s.duplicate_match?.name ?? "an existing place"} at review time
                     </p>
                   )}
                 </button>
@@ -316,7 +318,39 @@ function Detail({ s }: { s: OwnerSuggestion }) {
       {s.rejection_reason && <Row label="Internal rejection reason" value={s.rejection_reason} />}
       <Row label="Submitter profile" value={s.submitter_profile_id} />
       {s.promoted_candidate_id && <Row label="Promoted candidate" value={s.promoted_candidate_id} />}
+      {s.duplicate_match && <MatchContext m={s.duplicate_match} />}
     </dl>
+  );
+}
+
+/** WO-110: owner comparison context. A possible match is review information,
+ *  never an automatic decision — the owner still promotes, rejects or marks it
+ *  duplicate. */
+function MatchContext({ m }: { m: NonNullable<OwnerSuggestion["duplicate_match"]> }) {
+  const kind =
+    m.entity_type === "place" ? "Community Place" : m.entity_type === "candidate" ? "candidate" : "suggestion";
+  return (
+    <div className="mt-3 min-w-0 rounded-control border border-warning/40 bg-warning/10 p-3">
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+        Possible existing match ({kind})
+      </h3>
+      <dl className="mt-2 space-y-2 text-xs">
+        <Row label="Name" value={m.name} />
+        {m.address && <Row label="Address" value={m.address} />}
+        <Row label="Status" value={m.status ?? "—"} />
+        <Row label="Why flagged" value={m.reasons.length ? m.reasons.join(" · ") : "Similar identity"} />
+      </dl>
+      {m.published_place_id && (
+        <Button size="sm" variant="outline" className="mt-2" asChild>
+          <Link to={`/place/${m.published_place_id}`}>View Community Place</Link>
+        </Button>
+      )}
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        A different physical branch of the same business is not a duplicate. Use Mark Duplicate only
+        when this is the same location.
+      </p>
+    </div>
   );
 }
 

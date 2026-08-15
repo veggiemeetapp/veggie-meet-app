@@ -281,7 +281,12 @@ export default function SuggestPlace() {
                 id="place-name"
                 ref={(el) => (refs.current.placeName = el)}
                 value={placeName}
-                onChange={(e) => setPlaceName(e.target.value)}
+                onChange={(e) => {
+                  setPlaceName(e.target.value);
+                  setSimilar(null);
+                  setBlocked(null);
+                  setFormError(null);
+                }}
                 maxLength={LIMITS.placeName}
                 placeholder="Example: Green Table Vegan Café"
                 aria-required="true"
@@ -337,7 +342,12 @@ export default function SuggestPlace() {
                 id="address"
                 ref={(el) => (refs.current.addressText = el)}
                 value={addressText}
-                onChange={(e) => setAddressText(e.target.value)}
+                onChange={(e) => {
+                  setAddressText(e.target.value);
+                  setSimilar(null);
+                  setBlocked(null);
+                  setFormError(null);
+                }}
                 maxLength={LIMITS.addressText}
                 placeholder="Example: District 1 or 29 Lê Anh Xuân"
                 aria-required="true"
