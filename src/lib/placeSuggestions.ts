@@ -21,6 +21,8 @@ export type SubmitReason =
   | "invalid_input"
   | "invalid_url"
   | "duplicate_suggestion"
+  | "duplicate_published_place"
+  | "duplicate_active_suggestion"
   | "submission_limit_reached"
   | "unsupported_city"
   | "unauthenticated";
@@ -29,7 +31,53 @@ export interface SubmitResult {
   ok: boolean;
   reason: SubmitReason;
   suggestion_id?: string;
+  /** WO-110: set when the server stored a possible-match reference. */
+  possible_duplicate?: boolean;
+  match_name?: string | null;
+  published_place_id?: string | null;
 }
+
+/** WO-110 duplicate confidence returned by the server-side classifier.
+ *  hard     → same physical location; submission is refused.
+ *  possible → similar identity only; submission is allowed and owner reviews.
+ */
+export type DuplicateLevel = "none" | "possible" | "hard";
+
+/** Safe, public-only duplicate reasons. Never exposes internal scores. */
+export type DuplicateReasonCode =
+  | "same_address_same_city"
+  | "same_address_pending_suggestion"
+  | "similar_name"
+  | "same_official_website";
+
+export interface DuplicateCheck {
+  level: DuplicateLevel;
+  entity_type?: "place" | "candidate" | "suggestion";
+  match_id?: string;
+  match_name?: string;
+  match_address?: string | null;
+  match_status?: string | null;
+  published_place_id?: string | null;
+  reasons?: DuplicateReasonCode[];
+}
+
+/** Owner-facing review context for a flagged suggestion. */
+export interface DuplicateMatch {
+  entity_type: "place" | "candidate" | "suggestion";
+  id: string;
+  name: string;
+  address: string | null;
+  status: string | null;
+  published_place_id?: string | null;
+  reasons: string[];
+}
+
+export const DUPLICATE_REASON_LABEL: Record<DuplicateReasonCode, string> = {
+  same_address_same_city: "Same address in this city",
+  same_address_pending_suggestion: "Same address already awaiting review",
+  similar_name: "Similar name",
+  same_official_website: "Same official website",
+};
 
 export interface MySuggestion {
   id: string;
@@ -60,6 +108,8 @@ export interface OwnerSuggestion {
   published_place_id: string | null;
   submitter_profile_id: string;
   possible_duplicate: boolean;
+  /** WO-110: what the suggestion may duplicate, with owner-safe reasons. */
+  duplicate_match: DuplicateMatch | null;
 }
 
 /** WO-109 lifecycle scopes for the owner queue. */
@@ -119,6 +169,27 @@ export async function submitPlaceSuggestion(input: {
   });
   if (error) throw new Error(error.message);
   return (data as SubmitResult) ?? { ok: false, reason: "invalid_input" };
+}
+
+/** WO-110: server-side duplicate classification used as supplemental member UX.
+ *  Enforcement still lives in submit_community_place_suggestion(). */
+export async function checkSuggestionDuplicate(input: {
+  cityId: string;
+  placeName: string;
+  addressText: string;
+  officialSourceUrl: string;
+}): Promise<DuplicateCheck> {
+  const { data, error } = await rpc<DuplicateCheck>(
+    "check_community_place_suggestion_duplicate",
+    {
+      _city_id: input.cityId,
+      _place_name: input.placeName,
+      _address_text: input.addressText,
+      _official_source_url: input.officialSourceUrl,
+    },
+  );
+  if (error) throw new Error(error.message);
+  return (data as DuplicateCheck) ?? { level: "none" };
 }
 
 export async function fetchMyPlaceSuggestions(): Promise<MySuggestion[]> {
