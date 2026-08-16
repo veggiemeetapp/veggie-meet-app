@@ -98,14 +98,18 @@ describe("shareOrCopy", () => {
 describe("createShareGuard", () => {
   it("ignores rapid repeat taps while a share is in flight", async () => {
     const guard = createShareGuard();
-    let resolve!: () => void;
-    const fn = vi.fn(() => new Promise<void>((r) => (resolve = r)));
+    let resolve: (() => void) | undefined;
+    const pending = new Promise<void>((r) => {
+      resolve = r;
+    });
+    const fn = vi.fn(() => pending);
     const first = guard(fn);
     await guard(fn);
     expect(fn).toHaveBeenCalledTimes(1);
-    resolve();
+    resolve!();
     await first;
     await guard(fn);
     expect(fn).toHaveBeenCalledTimes(2);
   });
+
 });
