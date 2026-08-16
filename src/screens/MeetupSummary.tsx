@@ -37,7 +37,7 @@ import {
 } from "@/lib/postMeetup";
 import { ReportMeetupDialog } from "@/components/safety/ReportMeetupDialog";
 import { sanitizeCover } from "@/lib/backend";
-import { formatMeetupDate } from "@/lib/format";
+import { formatMeetupDate, formatMeetupTimeRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {

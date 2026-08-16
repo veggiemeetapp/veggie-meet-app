@@ -145,12 +145,16 @@ export function formatPlanTimeRange(plan: PlanItem): string {
     hour: "numeric",
     minute: "2-digit",
   });
+  // WO-112: with no host-set end time, ends_at is only a lifecycle fallback —
+  // never present it to members as a real ending time.
+  if (!plan.end_time) return start;
   const end = tzFmt(plan.ends_at, plan.timezone, {
     hour: "numeric",
     minute: "2-digit",
   });
   return `${start} – ${end}`;
 }
+
 
 export function planLocationLabel(plan: PlanItem): string {
   const parts = [plan.location.name, plan.location.neighborhood ?? plan.location.city]
