@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeCover } from "@/lib/backend";
+import { normalizeClockTime } from "@/lib/format";
+
 import type { Meetup, MeetupCategory, MeetupStatus } from "@/types";
 
 /**

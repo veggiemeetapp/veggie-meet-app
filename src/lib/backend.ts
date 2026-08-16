@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeClockTime } from "@/lib/format";
+
 import type { Meetup, Message, MeetupCategory, MeetupLocationSource, MeetupStatus, MessageType, Veggie, CommunityPlace, CommunityPlaceCategory } from "@/types";
 
 // WO-082: canonical UUID shape only. The previous loose pattern accepted
