@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -109,15 +109,10 @@ export default function You() {
   const hostedCount = summaryQuery.data?.counts.hosting_upcoming ?? 0;
   const isActiveHost = hostedCount > 0 || profile?.is_active_host;
 
+  // WO-113: "Veggie since <month year>" removed from the member-facing profile.
+  // It was derived from profiles.created_at (no dedicated column); no schema or
+  // data change was needed and no other surface consumed it.
 
-  const memberSince = useMemo(() => {
-    const created = (profile as unknown as { created_at?: string } | null)?.created_at;
-    if (!created) return null;
-    return new Date(created).toLocaleDateString(undefined, {
-      month: "long",
-      year: "numeric",
-    });
-  }, [profile]);
 
   if (loading) {
     return (
@@ -205,11 +200,8 @@ export default function You() {
               Active Host
             </span>
           )}
-          {memberSince && (
-            <p className="mt-2 inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-charcoal-muted">
-              Veggie since {memberSince}
-            </p>
-          )}
+
+
 
           <div className="mt-5 flex w-full gap-2">
             <PrimaryButton
