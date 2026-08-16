@@ -13,6 +13,8 @@ import {
   Save,
   Ban,
   CheckCircle2,
+  X,
+
 
 } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
@@ -59,13 +61,6 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function addMinutes(hhmm: string, mins: number): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  const total = h * 60 + m + mins;
-  const nh = Math.floor(total / 60) % 24;
-  const nm = total % 60;
-  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
-}
 
 const CUSTOM_PLACE_ID = "__custom__";
 
