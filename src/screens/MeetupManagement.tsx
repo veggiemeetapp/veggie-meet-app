@@ -13,6 +13,8 @@ import {
   Save,
   Ban,
   CheckCircle2,
+  X,
+
 
 } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
@@ -59,13 +61,6 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function addMinutes(hhmm: string, mins: number): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  const total = h * 60 + m + mins;
-  const nh = Math.floor(total / 60) % 24;
-  const nm = total % 60;
-  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
-}
 
 const CUSTOM_PLACE_ID = "__custom__";
 
@@ -112,7 +107,9 @@ export default function MeetupManagement() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("18:30");
-  const [duration, setDuration] = useState(120);
+  // WO-112: optional end time. "" means "no specified ending time" (NULL).
+  const [endTime, setEndTime] = useState("");
+
   const [capacity, setCapacity] = useState(10);
   const [saving, setSaving] = useState(false);
 
@@ -134,11 +131,9 @@ export default function MeetupManagement() {
     setDescription(meetup.description ?? "");
     setDate(meetup.date);
     setStartTime(meetup.startTime);
-    const [sh, sm] = meetup.startTime.split(":").map(Number);
-    const [eh, em] = meetup.endTime.split(":").map(Number);
-    const mins = Math.max(30, eh * 60 + em - (sh * 60 + sm));
-    setDuration(mins);
+    setEndTime(meetup.endTime ?? "");
     setCapacity(meetup.capacity);
+
     // Hydrate location editor from persisted snapshot.
     setLocCityId(meetup.location?.cityId ?? null);
     setLocCityName(meetup.location?.cityName ?? null);
@@ -226,15 +221,22 @@ export default function MeetupManagement() {
     const d = new Date(`${date}T${startTime}:00`);
     return d.getTime() < Date.now();
   }, [date, startTime]);
+  // WO-112: blank end time is valid; an end at or before the start is not.
+  const endTimeError =
+    endTime !== "" && endTime <= startTime
+      ? "End time must be after the start time."
+      : null;
   const canSave =
     title.trim().length > 0 &&
     !!date &&
     !!startTime &&
+    !endTimeError &&
     capacity >= 1 &&
     !capacityBelowAttendance &&
     !startsInPast &&
     !saving &&
     meetup?.status === "upcoming";
+
 
   // Attendee removal dialog
   const [removeTarget, setRemoveTarget] = useState<ManagedAttendee | null>(null);
@@ -401,7 +403,7 @@ export default function MeetupManagement() {
         description: description.trim(),
         date,
         startTime,
-        endTime: addMinutes(startTime, duration),
+        endTime: endTime === "" ? null : endTime,
         capacity,
         communityPlaceId: meetup.communityPlaceId || null,
         // Location is edited separately via update_meetup_location — pass current snapshot unchanged.
@@ -667,9 +669,54 @@ export default function MeetupManagement() {
               />
             </div>
           </div>
+          {/* WO-112 — optional end time; blank means no specified ending time. */}
+          <div>
+            <label
+              htmlFor="manage-end-time"
+              className="block text-sm font-semibold text-charcoal mb-2"
+            >
+              <span className="inline-flex items-center gap-1">
+                <Clock className="w-4 h-4" aria-hidden="true" /> End time{" "}
+                <span className="font-normal text-charcoal-muted">(optional)</span>
+              </span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="manage-end-time"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                aria-invalid={endTimeError ? true : undefined}
+                aria-describedby={
+                  endTimeError ? "manage-end-time-error" : "manage-end-time-hint"
+                }
+                className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal"
+              />
+              {endTime !== "" && (
+                <button
+                  type="button"
+                  onClick={() => setEndTime("")}
+                  aria-label="Clear end time"
+                  className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {endTimeError ? (
+              <p id="manage-end-time-error" className="mt-1.5 text-xs text-destructive">
+                {endTimeError}
+              </p>
+            ) : (
+              <p id="manage-end-time-hint" className="mt-1.5 text-xs text-charcoal-muted">
+                Leave blank if there’s no set end time.
+              </p>
+            )}
+          </div>
           {startsInPast && !locked && !isEnded && (
             <p className="text-xs text-destructive">Start time is in the past.</p>
           )}
+
 
 
           <div>

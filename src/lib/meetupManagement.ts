@@ -39,7 +39,9 @@ export interface UpdateHostedMeetupInput {
   description: string;
   date: string;      // YYYY-MM-DD
   startTime: string; // HH:mm
-  endTime: string;   // HH:mm
+  /** WO-112 — optional; null clears any existing end time. */
+  endTime: string | null;
+
   capacity: number;
   communityPlaceId: string | null;
   customLocationName: string | null;

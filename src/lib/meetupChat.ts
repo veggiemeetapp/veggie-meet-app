@@ -27,7 +27,7 @@ export interface MeetupChatContext {
     title: string;
     date: string;
     start_time: string;
-    end_time: string;
+    end_time: string | null;
     status: string;
     location_name: string | null;
     address: string | null;

@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeCover } from "@/lib/backend";
+import { normalizeClockTime } from "@/lib/format";
+
 import type { Meetup, MeetupCategory, MeetupStatus } from "@/types";
 
 /**
@@ -91,7 +93,7 @@ export function toMeetupCardShape(card: YouMeetupCard, myProfileId: string): Mee
     coverImageUrl: sanitizeCover(card.cover_image_url),
     date: card.date,
     startTime: (card.start_time || "").slice(0, 5),
-    endTime: (card.end_time || "").slice(0, 5),
+    endTime: normalizeClockTime(card.end_time),
     // Server-authoritative count; `/you` never needs per-attendee identities.
     attendeeIds: Array.from({ length: Math.max(card.attendee_count, 0) }, (_, i) => `count:${i}`),
     capacity: card.capacity,

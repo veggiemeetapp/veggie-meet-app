@@ -37,7 +37,7 @@ import {
 } from "@/lib/postMeetup";
 import { ReportMeetupDialog } from "@/components/safety/ReportMeetupDialog";
 import { sanitizeCover } from "@/lib/backend";
-import { formatMeetupDate } from "@/lib/format";
+import { formatMeetupDate, formatMeetupTimeRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -236,8 +236,8 @@ function OverviewCard({ summary }: { summary: MyMeetupSummary }) {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-charcoal-muted" />
             <span>
-              {m.start_time?.slice(0, 5)}
-              {m.end_time ? ` – ${m.end_time.slice(0, 5)}` : ""}
+              {formatMeetupTimeRange(m.start_time, m.end_time)}
+
             </span>
           </div>
           <div className="flex items-start gap-2">
