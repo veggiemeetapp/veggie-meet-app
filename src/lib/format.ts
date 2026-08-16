@@ -23,20 +23,53 @@ export function formatTime12h(hhmm: string): string {
   return m === 0 ? `${h12}:00 ${period}` : `${h12}:${mStr.padStart(2, "0")} ${period}`;
 }
 
-export function formatTimeRange(start: string, end: string): string {
-  return `${formatTime12h(start)} – ${formatTime12h(end)}`;
+/**
+ * WO-112 — normalise any accepted time shape ("HH:MM", "HH:MM:SS", null) to
+ * "HH:MM", or null when there is no usable value.
+ */
+export function normalizeClockTime(t?: string | null): string | null {
+  if (!t) return null;
+  const trimmed = t.trim();
+  if (!/^\d{1,2}:\d{2}/.test(trimmed)) return null;
+  const [h, m] = trimmed.split(":");
+  return `${h.padStart(2, "0")}:${m.slice(0, 2)}`;
 }
 
-export function formatDuration(start: string, end: string): string {
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
+/**
+ * WO-112 — the single canonical Meetup time formatter.
+ * End time is optional: NULL/blank means "no specified ending time", and the
+ * range collapses to the start time alone (never "6:30 PM – undefined").
+ * The date is never repeated here — surfaces render it separately.
+ */
+export function formatMeetupTimeRange(start: string, end?: string | null): string {
+  const s = normalizeClockTime(start);
+  if (!s) return "";
+  const e = normalizeClockTime(end);
+  if (!e || e === s) return formatTime12h(s);
+  return `${formatTime12h(s)} – ${formatTime12h(e)}`;
+}
+
+/** @deprecated use formatMeetupTimeRange — kept as a null-safe alias. */
+export function formatTimeRange(start: string, end?: string | null): string {
+  return formatMeetupTimeRange(start, end);
+}
+
+/** Returns null when there is no end time, so callers can omit duration. */
+export function formatDuration(start: string, end?: string | null): string | null {
+  const s = normalizeClockTime(start);
+  const e = normalizeClockTime(end);
+  if (!s || !e) return null;
+  const [sh, sm] = s.split(":").map(Number);
+  const [eh, em] = e.split(":").map(Number);
   const mins = eh * 60 + em - (sh * 60 + sm);
+  if (mins <= 0) return null;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   if (h && m) return `${h}h ${m}m`;
   if (h) return `${h}h`;
   return `${m}m`;
 }
+
 
 export function initials(name: string): string {
   return name
