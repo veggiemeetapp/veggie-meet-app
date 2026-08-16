@@ -226,15 +226,22 @@ export default function MeetupManagement() {
     const d = new Date(`${date}T${startTime}:00`);
     return d.getTime() < Date.now();
   }, [date, startTime]);
+  // WO-112: blank end time is valid; an end at or before the start is not.
+  const endTimeError =
+    endTime !== "" && endTime <= startTime
+      ? "End time must be after the start time."
+      : null;
   const canSave =
     title.trim().length > 0 &&
     !!date &&
     !!startTime &&
+    !endTimeError &&
     capacity >= 1 &&
     !capacityBelowAttendance &&
     !startsInPast &&
     !saving &&
     meetup?.status === "upcoming";
+
 
   // Attendee removal dialog
   const [removeTarget, setRemoveTarget] = useState<ManagedAttendee | null>(null);
