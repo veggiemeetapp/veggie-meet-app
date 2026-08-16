@@ -159,6 +159,9 @@ export const ANALYTICS_EVENTS = [
   "today_place_hidden",
   "today_place_restored",
   "today_place_reordered",
+
+  // WO-117 — one-time Google Calendar export (no account data, no sync state).
+  "meetup_add_to_calendar",
 ] as const;
 
 

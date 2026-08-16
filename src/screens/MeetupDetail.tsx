@@ -19,7 +19,9 @@ import {
   AttendeePreview,
   WhatToExpect,
   MeetupDescription,
+  AddToGoogleCalendarButton,
 } from "@/components/meetup";
+
 import { MeetupCheckInButton } from "@/components/meetup/MeetupCheckInButton";
 
 
@@ -333,12 +335,15 @@ export default function MeetupDetail() {
               >
                 <QrCode className="w-4 h-4" /> Check in with Veggies
               </Link>
+              {/* WO-117: hosts export their own Meetup without RSVPing. */}
+              <AddToGoogleCalendarButton meetup={meetup} surface="meetup_detail" />
               <Link
                 to={`/meetup/${meetup.id}/manage`}
                 className="text-center text-sm font-semibold text-charcoal py-1 inline-flex items-center justify-center gap-1"
               >
                 <Settings className="w-4 h-4" /> Manage Meetup
               </Link>
+
             </>
           )}
 
@@ -376,6 +381,9 @@ export default function MeetupDetail() {
               >
                 <QrCode className="w-4 h-4" /> Check in with Veggies
               </Link>
+              {/* WO-117: persistent calendar export for already-joined members. */}
+              <AddToGoogleCalendarButton meetup={meetup} surface="meetup_detail" />
+
             </>
           )}
 

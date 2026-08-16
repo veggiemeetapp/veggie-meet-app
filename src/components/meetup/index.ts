@@ -6,3 +6,4 @@ export { AttendeePreview } from "./AttendeePreview";
 export { WhatToExpect } from "./WhatToExpect";
 export { MeetupDescription } from "./MeetupDescription";
 export { MeetupLocationStatus } from "./MeetupLocationStatus";
+export { AddToGoogleCalendarButton } from "./AddToGoogleCalendarButton";
