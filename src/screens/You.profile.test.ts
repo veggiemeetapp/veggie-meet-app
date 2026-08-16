@@ -33,3 +33,22 @@ describe("WO-113 profile surfaces", () => {
     });
   }
 });
+
+/**
+ * WO-113A — /you production regression guards.
+ *
+ * Root cause of DEF-113A-01 was a stale/mixed production asset set (missing
+ * lazy chunks), not application code. The two guards below cover the real UI
+ * defects found while re-certifying the page on production.
+ */
+describe("WO-113A /you profile card", () => {
+  const code = readFileSync(resolve(process.cwd(), "src/screens/You.tsx"), "utf8");
+
+  it("profile actions row wraps instead of forcing a fixed 2-up row", () => {
+    expect(code).toMatch(/flex w-full flex-wrap gap-2/);
+  });
+
+  it("past-meetup Hosted badge does not use the low-contrast amber-on-amber pair", () => {
+    expect(code).not.toMatch(/bg-host-badge\/15 text-host-badge/);
+  });
+});

@@ -203,7 +203,9 @@ export default function You() {
 
 
 
-          <div className="mt-5 flex w-full gap-2">
+          {/* WO-113A: wrap instead of a fixed 2-up row so both actions keep
+              their full label at 200% text zoom without horizontal overflow. */}
+          <div className="mt-5 flex w-full flex-wrap gap-2 [&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-[8rem]">
             <PrimaryButton
               size="sm"
               fullWidth
@@ -729,7 +731,7 @@ function PastMeetupsSection({
                         </span>
                       )}
                       {m.is_host && !m.cancelled && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/15 text-host-badge">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/25 text-charcoal">
                           Hosted
                         </span>
                       )}
