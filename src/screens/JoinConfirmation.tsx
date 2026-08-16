@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Calendar, Clock, MapPin } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
+import { AddToGoogleCalendarButton } from "@/components/meetup";
+
 
 import { formatMeetupDate, formatTimeRange } from "@/lib/format";
 import { fetchMeetupById, isUuid, joinMeetup } from "@/lib/backend";
@@ -158,6 +160,18 @@ export default function JoinConfirmation() {
         </div>
       </Card>
 
+      {/* WO-117: optional, non-blocking calendar export. Joining already
+          succeeded — skipping or failing this never changes RSVP state. */}
+      {!joinError && !joining && (
+        <div className="mt-4">
+          <AddToGoogleCalendarButton
+            meetup={meetup}
+            surface="post_join"
+            variant="outline"
+          />
+        </div>
+      )}
+
       <div className="mt-auto pt-12 flex flex-col gap-3">
         {meetup.chatId ? (
           <PrimaryButton
@@ -175,6 +189,7 @@ export default function JoinConfirmation() {
             </PrimaryButton>
           </Link>
         )}
+
 
         <Link to="/">
           <SecondaryButton fullWidth>Back to Today</SecondaryButton>
