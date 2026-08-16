@@ -701,27 +701,86 @@ export default function Host() {
           </div>
         </section>
 
-        {/* Date & Time */}
-        <section className="grid grid-cols-2 gap-3">
+        {/* Date, start time & optional end time (WO-112) */}
+        <section className="space-y-3">
           <div>
-            <FieldLabel>Date</FieldLabel>
-            <input aria-label="Date"
+            <label
+              htmlFor="host-date"
+              className="block text-sm font-semibold text-charcoal mb-2"
+            >
+              Date
+            </label>
+            <input
+              id="host-date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
-          <div>
-            <FieldLabel>Time</FieldLabel>
-            <input aria-label="Time"
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+          {/* Side by side once there is comfortable room; stacked on the
+              narrowest phones so neither control gets squeezed. */}
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3">
+            <div>
+              <label
+                htmlFor="host-start-time"
+                className="block text-sm font-semibold text-charcoal mb-2"
+              >
+                Start time
+              </label>
+              <input
+                id="host-start-time"
+                type="time"
+                required
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="host-end-time"
+                className="block text-sm font-semibold text-charcoal mb-2"
+              >
+                End time{" "}
+                <span className="font-normal text-charcoal-muted">(optional)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="host-end-time"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  aria-invalid={endTimeError ? true : undefined}
+                  aria-describedby={
+                    endTimeError ? "host-end-time-error" : "host-end-time-hint"
+                  }
+                  className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                {endTime !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => setEndTime("")}
+                    aria-label="Clear end time"
+                    className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {endTimeError ? (
+                <p id="host-end-time-error" className="mt-1.5 text-xs text-destructive">
+                  {endTimeError}
+                </p>
+              ) : (
+                <p id="host-end-time-hint" className="mt-1.5 text-xs text-charcoal-muted">
+                  Leave blank if there’s no set end time.
+                </p>
+              )}
+            </div>
           </div>
         </section>
+
 
         {/* Capacity */}
         <section>
