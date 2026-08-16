@@ -674,9 +674,54 @@ export default function MeetupManagement() {
               />
             </div>
           </div>
+          {/* WO-112 — optional end time; blank means no specified ending time. */}
+          <div>
+            <label
+              htmlFor="manage-end-time"
+              className="block text-sm font-semibold text-charcoal mb-2"
+            >
+              <span className="inline-flex items-center gap-1">
+                <Clock className="w-4 h-4" aria-hidden="true" /> End time{" "}
+                <span className="font-normal text-charcoal-muted">(optional)</span>
+              </span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="manage-end-time"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                aria-invalid={endTimeError ? true : undefined}
+                aria-describedby={
+                  endTimeError ? "manage-end-time-error" : "manage-end-time-hint"
+                }
+                className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal"
+              />
+              {endTime !== "" && (
+                <button
+                  type="button"
+                  onClick={() => setEndTime("")}
+                  aria-label="Clear end time"
+                  className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {endTimeError ? (
+              <p id="manage-end-time-error" className="mt-1.5 text-xs text-destructive">
+                {endTimeError}
+              </p>
+            ) : (
+              <p id="manage-end-time-hint" className="mt-1.5 text-xs text-charcoal-muted">
+                Leave blank if there’s no set end time.
+              </p>
+            )}
+          </div>
           {startsInPast && !locked && !isEnded && (
             <p className="text-xs text-destructive">Start time is in the past.</p>
           )}
+
 
 
           <div>
