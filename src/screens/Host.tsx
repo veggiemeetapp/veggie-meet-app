@@ -735,7 +735,8 @@ export default function Host() {
                 className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
-            <div>
+            <div className="flex-1 basis-[10rem] min-w-0">
+
               <label
                 htmlFor="host-end-time"
                 className="block text-sm font-semibold text-charcoal mb-2"
