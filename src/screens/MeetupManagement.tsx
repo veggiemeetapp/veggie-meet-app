@@ -112,7 +112,9 @@ export default function MeetupManagement() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("18:30");
-  const [duration, setDuration] = useState(120);
+  // WO-112: optional end time. "" means "no specified ending time" (NULL).
+  const [endTime, setEndTime] = useState("");
+
   const [capacity, setCapacity] = useState(10);
   const [saving, setSaving] = useState(false);
 
@@ -134,11 +136,9 @@ export default function MeetupManagement() {
     setDescription(meetup.description ?? "");
     setDate(meetup.date);
     setStartTime(meetup.startTime);
-    const [sh, sm] = meetup.startTime.split(":").map(Number);
-    const [eh, em] = meetup.endTime.split(":").map(Number);
-    const mins = Math.max(30, eh * 60 + em - (sh * 60 + sm));
-    setDuration(mins);
+    setEndTime(meetup.endTime ?? "");
     setCapacity(meetup.capacity);
+
     // Hydrate location editor from persisted snapshot.
     setLocCityId(meetup.location?.cityId ?? null);
     setLocCityName(meetup.location?.cityName ?? null);
