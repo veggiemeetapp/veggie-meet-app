@@ -784,7 +784,10 @@ export default function Host() {
         {/* Capacity */}
         <section>
           <FieldLabel>Group size (including you)</FieldLabel>
-          <div className="flex gap-2">
+          {/* WO-112B: wrap so the row never forces horizontal page overflow at
+              large text sizes. */}
+          <div className="flex flex-wrap gap-2">
+
             {CAPACITIES.map((n) => (
               <button
                 key={n}
