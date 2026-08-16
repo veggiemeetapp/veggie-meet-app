@@ -1,6 +1,6 @@
 import { Calendar, Clock, MapPin, Navigation } from "lucide-react";
 import type { Meetup, CommunityPlace } from "@/types";
-import { formatMeetupDate, formatTimeRange, formatDuration } from "@/lib/format";
+import { formatMeetupDate, formatMeetupTimeRange, formatDuration } from "@/lib/format";
 
 interface Props {
   meetup: Meetup;
@@ -23,10 +23,19 @@ export function MeetupInfo({ meetup, place, distanceKm }: Props) {
 
       <div className="mt-5 space-y-3 text-[15px] text-charcoal">
         <Row icon={<Calendar className="w-4 h-4" />} label={formatMeetupDate(meetup.date)} />
-        <Row
-          icon={<Clock className="w-4 h-4" />}
-          label={`${formatTimeRange(meetup.startTime, meetup.endTime)} · ${formatDuration(meetup.startTime, meetup.endTime)}`}
-        />
+        {(() => {
+          // WO-112: end time is optional — the duration suffix only exists when
+          // the host set an end.
+          const range = formatMeetupTimeRange(meetup.startTime, meetup.endTime);
+          const duration = formatDuration(meetup.startTime, meetup.endTime);
+          return (
+            <Row
+              icon={<Clock className="w-4 h-4" />}
+              label={duration ? `${range} · ${duration}` : range}
+            />
+          );
+        })()}
+
         {(() => {
           const name = meetup.location?.locationName ?? meetup.customLocation?.name ?? place?.name;
           const addr = meetup.location?.address ?? meetup.customLocation?.address ?? place?.address;

@@ -30,7 +30,7 @@ interface DBMeetupRow {
   cover_image_url: string | null;
   date: string;
   start_time: string;
-  end_time: string;
+  end_time: string | null;
   capacity: number;
   status: string;
   chats?: { id: string }[] | null;
@@ -61,7 +61,7 @@ function toMeetup(row: DBMeetupRow): Meetup {
     coverImageUrl: sanitizeCover(row.cover_image_url),
     date: row.date,
     startTime: (row.start_time || "").slice(0, 5),
-    endTime: (row.end_time || "").slice(0, 5),
+    endTime: normalizeClockTime(row.end_time),
     attendeeIds: [row.host_id],
     capacity: row.capacity,
     status: (row.status as MeetupStatus) ?? "upcoming",

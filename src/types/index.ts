@@ -50,7 +50,9 @@ export interface Meetup {
   coverImageUrl: string;
   date: string; // YYYY-MM-DD
   startTime: string; // HH:mm
-  endTime: string; // HH:mm
+  /** WO-112 — optional. NULL means "no specified ending time". */
+  endTime: string | null;
+
   attendeeIds: ID[];
   capacity: number;
   status: MeetupStatus;
