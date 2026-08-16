@@ -713,10 +713,13 @@ export default function Host() {
               className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
-          {/* Side by side once there is comfortable room; stacked on the
-              narrowest phones so neither control gets squeezed. */}
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3">
-            <div>
+          {/* WO-112B: rem-based flex basis instead of a viewport breakpoint, so
+              the pair sits side by side when there is room and wraps to a stack
+              on very narrow phones AND at large text sizes (200% zoom), where a
+              two-column grid clipped the native time inputs. */}
+          <div className="flex flex-wrap gap-3">
+            <div className="flex-1 basis-[10rem] min-w-0">
+
               <label
                 htmlFor="host-start-time"
                 className="block text-sm font-semibold text-charcoal mb-2"
