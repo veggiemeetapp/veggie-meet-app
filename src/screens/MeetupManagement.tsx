@@ -640,8 +640,11 @@ export default function MeetupManagement() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          {/* WO-112B: wraps at large text sizes so the native date/time inputs
+              are never clipped. */}
+          <div className="flex flex-wrap gap-3">
+            <div className="flex-1 basis-[10rem] min-w-0">
+
               <FieldLabel>
                 <span className="inline-flex items-center gap-1">
                   <Calendar className="w-4 h-4" aria-hidden="true" /> Date
