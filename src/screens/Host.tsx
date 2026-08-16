@@ -271,6 +271,15 @@ export default function Host() {
         ]),
   ];
 
+  // WO-112 §36: End time is optional, so it never appears in the missing
+  // required-fields list — an invalid range is reported as its own message.
+  const ctaStatusMessage = canSubmit
+    ? "All required Meetup details are complete."
+    : missingRequirements.length > 0
+      ? `Still needed: ${missingRequirements.join(", ")}.`
+      : (endTimeError ?? "Please review the Meetup details.");
+
+
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -361,7 +370,7 @@ export default function Host() {
         _category: cat.id,
         _date: date,
         _start_time: startTime,
-        _end_time: addMinutes(startTime, 120),
+        _end_time: endTime === "" ? null : endTime,
         _capacity: capacity,
         _city_id: resolved.cityId,
         _community_place_id: resolved.communityPlaceId,
