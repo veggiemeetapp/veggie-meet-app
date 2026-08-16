@@ -63,9 +63,17 @@ export function MeetupHero({ imageUrl, title, extraAction, shareUrl, shareMeta }
       <div className="safe-top absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-3">
         <BackButton fallback="/community" />
         <div className="flex items-center gap-2">
-          <button aria-label="Share" className={roundBtn}>
-            <Share2 className="w-4 h-4" />
-          </button>
+          {shareUrl ? (
+            <button
+              type="button"
+              aria-label="Share Meetup"
+              onClick={onShare}
+              className={cn(roundBtn, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2")}
+            >
+              <Share2 className="w-4 h-4" aria-hidden />
+            </button>
+          ) : null}
+
           {extraAction ? (
             <div className={cn(roundBtn, "p-0")}>{extraAction}</div>
           ) : null}
