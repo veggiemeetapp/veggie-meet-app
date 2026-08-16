@@ -2,18 +2,23 @@ import { safeBack } from "@/lib/navigation";
 import { BackButton } from "@/components/app";
 import { Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { createShareGuard, shareOrCopy } from "@/lib/share";
 
 interface Props {
   imageUrl?: string;
   title: string;
   extraAction?: ReactNode;
+  /** WO-115 — canonical Meetup URL. When absent the Share affordance is hidden. */
+  shareUrl?: string;
+  shareMeta?: Record<string, string>;
 }
 
-export function MeetupHero({ imageUrl, title, extraAction }: Props) {
+export function MeetupHero({ imageUrl, title, extraAction, shareUrl, shareMeta }: Props) {
   const navigate = useNavigate();
   const hasImage = Boolean(imageUrl);
+  const guard = useMemo(() => createShareGuard(), []);
   const roundBtn = cn(
     "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
     hasImage
@@ -21,8 +26,22 @@ export function MeetupHero({ imageUrl, title, extraAction }: Props) {
       : "bg-secondary text-charcoal hover:bg-accent",
   );
 
+  const onShare = () =>
+    guard(() =>
+      shareOrCopy({
+        title: `${title} | VeggieMeet`,
+        text: `Join me at ${title} on VeggieMeet.`,
+        url: shareUrl!,
+        copiedMessage: "Meetup link copied",
+        errorMessage: "Couldn’t share this Meetup. Please try again.",
+        analyticsEvent: "meetup_share",
+        analyticsMeta: shareMeta,
+      }),
+    );
+
   return (
     <div className={cn("relative", hasImage ? "h-72" : "h-16")}>
+
       {hasImage && (
         <>
           <img
@@ -44,9 +63,17 @@ export function MeetupHero({ imageUrl, title, extraAction }: Props) {
       <div className="safe-top absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-3">
         <BackButton fallback="/community" />
         <div className="flex items-center gap-2">
-          <button aria-label="Share" className={roundBtn}>
-            <Share2 className="w-4 h-4" />
-          </button>
+          {shareUrl ? (
+            <button
+              type="button"
+              aria-label="Share Meetup"
+              onClick={onShare}
+              className={cn(roundBtn, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2")}
+            >
+              <Share2 className="w-4 h-4" aria-hidden />
+            </button>
+          ) : null}
+
           {extraAction ? (
             <div className={cn(roundBtn, "p-0")}>{extraAction}</div>
           ) : null}

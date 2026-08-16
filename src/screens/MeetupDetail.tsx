@@ -34,6 +34,8 @@ import {
   type MeetupRole,
 } from "@/lib/backend";
 import { fetchMeetupLifecycle, lifecycleLabel } from "@/lib/meetupLifecycle";
+import { meetupShareUrl } from "@/lib/share";
+
 import { useAuth } from "@/hooks/useAuth";
 import type { Meetup, Veggie } from "@/types";
 
@@ -224,6 +226,9 @@ export default function MeetupDetail() {
       <MeetupHero
         imageUrl={meetup.coverImageUrl}
         title={meetup.title}
+        shareUrl={isRealMeetup ? meetupShareUrl(meetup.id) : undefined}
+        shareMeta={{ meetup_id: meetup.id }}
+
         extraAction={
           isRealMeetup ? (
             <DropdownMenu>
