@@ -731,7 +731,7 @@ function PastMeetupsSection({
                         </span>
                       )}
                       {m.is_host && !m.cancelled && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/15 text-host-badge">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/25 text-charcoal">
                           Hosted
                         </span>
                       )}
