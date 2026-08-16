@@ -224,6 +224,9 @@ export default function MeetupDetail() {
       <MeetupHero
         imageUrl={meetup.coverImageUrl}
         title={meetup.title}
+        shareUrl={isRealMeetup ? meetupShareUrl(meetup.id) : undefined}
+        shareMeta={{ meetup_id: meetup.id }}
+
         extraAction={
           isRealMeetup ? (
             <DropdownMenu>
