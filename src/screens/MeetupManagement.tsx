@@ -657,7 +657,8 @@ export default function MeetupManagement() {
                 className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal"
               />
             </div>
-            <div>
+            <div className="flex-1 basis-[10rem] min-w-0">
+
               <FieldLabel>
                 <span className="inline-flex items-center gap-1">
                   <Clock className="w-4 h-4" aria-hidden="true" /> Start time
