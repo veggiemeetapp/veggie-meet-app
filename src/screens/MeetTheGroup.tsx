@@ -6,7 +6,7 @@ import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } fro
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
-import { formatMeetupDate, formatTimeRange } from "@/lib/format";
+import { formatMeetupDate, formatMeetupTimeRange } from "@/lib/format";
 
 type GroupMember = {
   id: string;
@@ -25,7 +25,7 @@ type GroupPayload = {
     title: string;
     date: string;
     start_time: string;
-    end_time: string;
+    end_time: string | null;
     location_name: string | null;
     address: string | null;
     chat_id: string | null;
@@ -129,7 +129,7 @@ export default function MeetTheGroup() {
           <h2 className="font-semibold text-charcoal [overflow-wrap:anywhere]">{meetup.title}</h2>
           <p className="mt-1 text-sm text-charcoal-muted">
             {formatMeetupDate(meetup.date)} ·{" "}
-            {formatTimeRange(meetup.start_time.slice(0, 5), meetup.end_time.slice(0, 5))}
+            {formatMeetupTimeRange(meetup.start_time, meetup.end_time)}
           </p>
           {meetup.location_name && (
             <p className="mt-1 text-sm text-charcoal-muted [overflow-wrap:anywhere]">

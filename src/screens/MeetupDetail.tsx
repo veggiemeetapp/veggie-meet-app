@@ -348,7 +348,7 @@ export default function MeetupDetail() {
                   meetupId={meetup.id}
                   profileId={profile.id}
                   startsAt={`${meetup.date}T${meetup.startTime}`}
-                  endsAt={`${meetup.date}T${meetup.endTime}`}
+                  endsAt={`${meetup.date}T${meetup.endTime ?? meetup.startTime}`}
                 />
               )}
 

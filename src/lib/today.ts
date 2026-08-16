@@ -23,7 +23,7 @@ export interface MeetupRecommendation {
   category: string;
   date: string;
   start_time: string;
-  end_time: string;
+  end_time: string | null;
   cover_image_url: string | null;
   host_id: string;
   attendee_count: number;

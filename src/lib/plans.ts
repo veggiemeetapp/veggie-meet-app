@@ -35,7 +35,7 @@ export interface PlanItem {
   role: PlanRole;
   date: string;              // YYYY-MM-DD (Meetup local)
   start_time: string;        // HH:MM:SS (Meetup local)
-  end_time: string;
+  end_time: string | null;
   timezone: string | null;
   starts_at: string;         // ISO timestamptz
   ends_at: string;

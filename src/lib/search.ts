@@ -39,7 +39,7 @@ export interface MeetupResult {
   cover_image_url: string | null;
   date: string;
   start_time: string;
-  end_time: string;
+  end_time: string | null;
   timezone: string | null;
   capacity: number;
   attendee_count: number;

@@ -7,7 +7,7 @@ import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
 import {
   formatMeetupDate,
   formatTime12h,
-  formatTimeRange,
+  formatMeetupTimeRange,
 } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -244,10 +244,8 @@ export default function MeetupChat() {
               <div className="flex items-center gap-2">
                 <Clock className="w-3.5 h-3.5 text-primary" />
                 <span>
-                  {formatTimeRange(
-                    meetup.start_time.slice(0, 5),
-                    meetup.end_time.slice(0, 5),
-                  )}
+                  {formatMeetupTimeRange(meetup.start_time, meetup.end_time)}
+
                 </span>
               </div>
               {meetup.location_name && (
