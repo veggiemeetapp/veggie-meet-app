@@ -141,7 +141,10 @@ export default function Host() {
 
   const [date, setDate] = useState<string>(todayISO());
   const [startTime, setStartTime] = useState<string>("18:30");
+  // WO-112: optional end time. "" means the host set no ending time (stored NULL).
+  const [endTime, setEndTime] = useState<string>("");
   const [capacity, setCapacity] = useState<number>(10);
+
   const [isCustomCapacity, setIsCustomCapacity] = useState(false);
   const [customCapacity, setCustomCapacity] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -231,13 +234,22 @@ export default function Host() {
       ? "Choose a Community Place, or switch to a custom location."
       : null;
 
+  // WO-112: same-day range only. Blank end time is always valid; an end equal to
+  // or before the start is not (overnight Meetups are out of scope — see §11).
+  const endTimeError =
+    endTime !== "" && endTime <= startTime
+      ? "End time must be after the start time."
+      : null;
+
   const canSubmit =
     title.trim().length > 0 &&
     categoryIdx !== null &&
     !!cityId &&
+    !endTimeError &&
     (!isCustom
       ? !!selectedPlace
       : customName.trim().length > 0 && customAddress.trim().length > 0 && coordsValid);
+
 
   // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA used to be a
   // plain `disabled` button, so a keyboard or screen-reader host could neither
