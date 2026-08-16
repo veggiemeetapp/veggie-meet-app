@@ -396,6 +396,9 @@ export default function Host() {
           city_id: resolved.cityId,
           location_source: resolved.locationSource,
           has_custom_cover: Boolean(cover),
+          // WO-112 §48: boolean only — no raw timestamps.
+          has_end_time: endTime !== "",
+
         });
         if (resolved.communityPlaceId) {
           logAnalyticsEvent("meetup_created_at_community_place", {
