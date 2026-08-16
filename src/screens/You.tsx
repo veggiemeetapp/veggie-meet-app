@@ -200,11 +200,8 @@ export default function You() {
               Active Host
             </span>
           )}
-          {memberSince && (
-            <p className="mt-2 inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-charcoal-muted">
-              Veggie since {memberSince}
-            </p>
-          )}
+
+
 
           <div className="mt-5 flex w-full gap-2">
             <PrimaryButton
