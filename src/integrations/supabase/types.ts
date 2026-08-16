@@ -2001,7 +2001,7 @@ export type Database = {
           custom_location_name: string | null
           date: string
           description: string
-          end_time: string
+          end_time: string | null
           host_id: string
           id: string
           latitude: number | null
@@ -2034,7 +2034,7 @@ export type Database = {
           custom_location_name?: string | null
           date: string
           description?: string
-          end_time: string
+          end_time?: string | null
           host_id: string
           id?: string
           latitude?: number | null
@@ -2069,7 +2069,7 @@ export type Database = {
           custom_location_name?: string | null
           date?: string
           description?: string
-          end_time?: string
+          end_time?: string | null
           host_id?: string
           id?: string
           latitude?: number | null
