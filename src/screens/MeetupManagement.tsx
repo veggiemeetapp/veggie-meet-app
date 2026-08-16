@@ -408,7 +408,7 @@ export default function MeetupManagement() {
         description: description.trim(),
         date,
         startTime,
-        endTime: addMinutes(startTime, duration),
+        endTime: endTime === "" ? null : endTime,
         capacity,
         communityPlaceId: meetup.communityPlaceId || null,
         // Location is edited separately via update_meetup_location — pass current snapshot unchanged.
