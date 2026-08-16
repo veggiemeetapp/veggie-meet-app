@@ -109,15 +109,10 @@ export default function You() {
   const hostedCount = summaryQuery.data?.counts.hosting_upcoming ?? 0;
   const isActiveHost = hostedCount > 0 || profile?.is_active_host;
 
+  // WO-113: "Veggie since <month year>" removed from the member-facing profile.
+  // It was derived from profiles.created_at (no dedicated column); no schema or
+  // data change was needed and no other surface consumed it.
 
-  const memberSince = useMemo(() => {
-    const created = (profile as unknown as { created_at?: string } | null)?.created_at;
-    if (!created) return null;
-    return new Date(created).toLocaleDateString(undefined, {
-      month: "long",
-      year: "numeric",
-    });
-  }, [profile]);
 
   if (loading) {
     return (
