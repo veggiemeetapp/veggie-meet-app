@@ -12,8 +12,13 @@
          no offline requirement, and an app-shell worker would risk stale
          protected surfaces (see WO-083). -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
+    <!-- WO-114 DEF-114-01: favicon.ico must exist in the deployed artifact.
+         Without it, browsers' implicit /favicon.ico request fell through to a
+         host default (a non-VeggieMeet mark). Both are the same brand asset. -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="VeggieMeet" />
