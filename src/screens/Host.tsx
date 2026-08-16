@@ -27,6 +27,8 @@ import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/todayDate";
+import { formatMeetupTimeRange } from "@/lib/format";
+
 import type { CommunityPlace, MeetupCategory } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { logAnalyticsEvent } from "@/lib/analytics";
@@ -306,13 +308,6 @@ export default function Host() {
     );
   }
 
-  function addMinutes(hhmm: string, mins: number): string {
-    const [h, m] = hhmm.split(":").map(Number);
-    const total = h * 60 + m + mins;
-    const nh = Math.floor(total / 60) % 24;
-    const nm = total % 60;
-    return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
-  }
 
   // Resolve the persisted snapshot fields we send to the DB.
   const resolved = useMemo(() => {
@@ -888,9 +883,8 @@ export default function Host() {
               canSubmit && "sr-only",
             )}
           >
-            {canSubmit
-              ? "All required Meetup details are complete."
-              : `Still needed: ${missingRequirements.join(", ")}.`}
+            {ctaStatusMessage}
+
           </p>
         </div>
       </div>
@@ -909,7 +903,7 @@ export default function Host() {
               {title || "Untitled Meetup"}
             </div>
             <div className="text-charcoal-muted">
-              {date} · {startTime} · up to {capacity} Veggies
+              {date} · {formatMeetupTimeRange(startTime, endTime)} · up to {capacity} Veggies
             </div>
             {resolved && (
               <div className="pt-1">
