@@ -41,13 +41,20 @@ def leaf_mask() -> Image.Image:
     return mask.crop(mask.getbbox())
 
 
-def render(size: int, mask: Image.Image) -> Image.Image:
+def render(size: int, mask: Image.Image, radius_ratio: float = RADIUS_RATIO,
+           leaf_ratio: float = LEAF_RATIO) -> Image.Image:
+    """Full-bleed green tile (rounded unless radius_ratio is 0) + centred leaf.
+
+    radius_ratio=0 is used for surfaces that apply their own mask (iOS
+    apple-touch-icon, Android maskable): a transparent corner there renders as
+    black or as a cropped gap, so those variants ship as a square.
+    """
     big = size * SS
     icon = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     ImageDraw.Draw(icon).rounded_rectangle(
-        (0, 0, big - 1, big - 1), radius=int(big * RADIUS_RATIO), fill=GREEN + (255,)
+        (0, 0, big - 1, big - 1), radius=int(big * radius_ratio), fill=GREEN + (255,)
     )
-    target = int(big * LEAF_RATIO)
+    target = int(big * leaf_ratio)
     mw, mh = mask.size
     scale = target / max(mw, mh)
     lm = mask.resize((max(1, int(mw * scale)), max(1, int(mh * scale))), Image.LANCZOS)
@@ -59,7 +66,10 @@ def render(size: int, mask: Image.Image) -> Image.Image:
 def main() -> None:
     mask = leaf_mask()
     render(64, mask).save(os.path.join(PUB, "favicon.png"))
-    render(180, mask).save(os.path.join(PUB, "apple-touch-icon.png"))
+    render(180, mask, radius_ratio=0).save(os.path.join(PUB, "apple-touch-icon.png"))
+    render(512, mask, radius_ratio=0, leaf_ratio=0.5).save(
+        os.path.join(PUB, "app-icon-maskable-512.png")
+    )
     render(192, mask).save(os.path.join(PUB, "app-icon-192.png"))
     render(512, mask).save(os.path.join(PUB, "app-icon-512.png"))
     render(256, mask).save(
