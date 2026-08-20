@@ -126,6 +126,8 @@ export function CustomLocationSearch({
     });
   }
 
+  const selectedMapsUrl = safeMapsUrl(value.googleMapsUrl);
+
   if (hasSelection) {
     return (
       <div className="mt-2 rounded-card border border-primary bg-accent/30 p-3">
