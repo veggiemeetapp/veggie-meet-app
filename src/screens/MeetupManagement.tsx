@@ -510,6 +510,17 @@ export default function MeetupManagement() {
         timezone: locResolved.timezone,
         locationSource: locResolved.locationSource,
       });
+      // WO-123: keep the stored Google reference in step with the new location.
+      try {
+        await setMeetupGoogleLocationMeta(
+          meetup.id,
+          locIsCustom ? locCustom.googlePlaceId : null,
+          locIsCustom ? locCustom.googleMapsUrl : null,
+        );
+      } catch {
+        /* ignore — cosmetic metadata only */
+      }
+
       // Copy is driven by notifications_inserted (not recipients_count), so we
       // never claim attendees were notified when zero notifications landed.
       if (res.notifications_inserted > 0) {
