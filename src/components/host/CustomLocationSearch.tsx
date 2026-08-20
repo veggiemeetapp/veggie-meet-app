@@ -227,32 +227,44 @@ export function CustomLocationSearch({
 
       {results !== null && results.length > 0 && (
         <ul className="space-y-2" aria-label="Place search results">
-          {results.map((r) => (
-            <li key={r.placeId}>
-              <button
-                type="button"
-                onClick={() => select(r)}
-                className="w-full flex items-start gap-2 p-3 rounded-card border border-border bg-card text-left hover:bg-accent/30"
+          {results.map((r) => {
+            const mapsUrl = safeMapsUrl(r.googleMapsUrl);
+            return (
+              <li
+                key={r.placeId}
+                className="rounded-card border border-border bg-card overflow-hidden"
               >
-                <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden />
-                <span className="min-w-0 flex-1 block">
-                  <span className="block font-semibold text-charcoal [overflow-wrap:anywhere]">
-                    {r.name}
+                <button
+                  type="button"
+                  onClick={() => select(r)}
+                  className="w-full flex items-start gap-2 p-3 text-left hover:bg-accent/30"
+                >
+                  <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden />
+                  <span className="min-w-0 flex-1 block">
+                    <span className="block font-semibold text-charcoal [overflow-wrap:anywhere]">
+                      {r.name}
+                    </span>
+                    {r.address && (
+                      <span className="block mt-0.5 text-xs text-charcoal-muted [overflow-wrap:anywhere]">
+                        {r.address}
+                      </span>
+                    )}
+                    {r.businessStatus === "CLOSED_TEMPORARILY" && (
+                      <span className="block mt-1 text-[11px] font-semibold text-destructive">
+                        Temporarily closed on Google
+                      </span>
+                    )}
                   </span>
-                  {r.address && (
-                    <span className="block mt-0.5 text-xs text-charcoal-muted [overflow-wrap:anywhere]">
-                      {r.address}
-                    </span>
-                  )}
-                  {r.businessStatus === "CLOSED_TEMPORARILY" && (
-                    <span className="block mt-1 text-[11px] font-semibold text-destructive">
-                      Temporarily closed on Google
-                    </span>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
+                </button>
+                {mapsUrl && (
+                  <div className="px-3 pb-3 -mt-1">
+                    <MapsLink url={mapsUrl} placeName={r.name} />
+                  </div>
+                )}
+              </li>
+            );
+          })}
+
         </ul>
       )}
 
