@@ -397,6 +397,21 @@ export default function Host() {
       if (error) throw error;
       const newId = data as string | null;
       if (newId) {
+        // WO-123: store the Google reference for the chosen custom location.
+        // Non-fatal — the Meetup already exists and reads fine without it.
+        if (isCustom && customLoc.googlePlaceId) {
+          try {
+            await setMeetupGoogleLocationMeta(
+              newId,
+              customLoc.googlePlaceId,
+              customLoc.googleMapsUrl,
+            );
+          } catch {
+            /* ignore — cosmetic metadata only */
+          }
+        }
+
+
 
         // WO-042 §9: authoritative, once-only event fired only after the
         // backend insert succeeded. No PII — enums, ids and counts only.
