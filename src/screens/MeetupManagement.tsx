@@ -124,10 +124,17 @@ export default function MeetupManagement() {
   const [locCityId, setLocCityId] = useState<string | null>(null);
   const [locCityName, setLocCityName] = useState<string | null>(null);
   const [locPlaceId, setLocPlaceId] = useState<string | null>(null);
-  const [locCustomName, setLocCustomName] = useState("");
-  const [locCustomAddress, setLocCustomAddress] = useState("");
-  const [locCustomLat, setLocCustomLat] = useState("");
-  const [locCustomLng, setLocCustomLng] = useState("");
+  // WO-123: the custom location is chosen through Google Places search;
+  // coordinates and the Google reference are never typed by the host.
+  const [locCustom, setLocCustom] = useState<CustomLocationValue>({
+    name: "",
+    address: "",
+    latitude: null,
+    longitude: null,
+    googlePlaceId: null,
+    googleMapsUrl: null,
+  });
+
   const [locConfirmOpen, setLocConfirmOpen] = useState(false);
   const [locSaving, setLocSaving] = useState(false);
 
