@@ -5,7 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AppShell } from "@/components/app";
+import { AppShell, RouteLoading } from "@/components/app";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { sanitizeInternalPath } from "@/lib/authRedirect";
 import { NavigationBehavior } from "@/lib/navigation";
@@ -170,10 +170,11 @@ const gated = (el: JSX.Element) => (
 // Owner-only routes: auth + onboarding + id validation + owner gate.
 const ownerGated = (el: JSX.Element) => gated(<RequireOwner>{el}</RequireOwner>);
 
-// Neutral suspense fallback while a lazy route chunk loads. Kept blank on
-// purpose: individual screens render their own skeleton immediately after
-// mount, so a shared spinner here would only cause a visual flicker.
-const RouteFallback = () => <div aria-hidden className="min-h-dvh" />;
+// WO-121: branded suspense fallback while a lazy route chunk loads. It renders
+// inside AppShell's <main>, so the app shell and bottom navigation stay visible
+// and the selected tab updates instantly. A short delayed reveal keeps cached
+// transitions flicker-free; screens still own their own data skeletons.
+const RouteFallback = () => <RouteLoading />;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
