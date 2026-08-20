@@ -1,7 +1,48 @@
 import { useState } from "react";
-import { Loader2, MapPin, Search, X } from "lucide-react";
+import { ExternalLink, Loader2, MapPin, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { searchMeetupPlaces, type MeetupPlaceResult } from "@/lib/meetupPlaceSearch";
+
+/**
+ * WO-123B — only canonical Google Maps links returned by the server-side Places
+ * details response are ever rendered. Anything else (manual entry, legacy rows,
+ * unexpected schemes/hosts) renders no link at all.
+ */
+function safeMapsUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:") return null;
+    const host = u.hostname.toLowerCase();
+    const ok =
+      host === "maps.google.com" ||
+      host === "www.google.com" ||
+      host === "google.com" ||
+      host === "goo.gl" ||
+      host === "maps.app.goo.gl" ||
+      /^(www\.)?google\.[a-z.]+$/.test(host);
+    return ok ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function MapsLink({ url, placeName }: { url: string; placeName: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      aria-label={placeName ? `View ${placeName} on Google Maps` : "View on Google Maps"}
+      className="inline-flex items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+    >
+      View on Google Maps
+      <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+    </a>
+  );
+}
+
 
 export interface CustomLocationValue {
   name: string;
