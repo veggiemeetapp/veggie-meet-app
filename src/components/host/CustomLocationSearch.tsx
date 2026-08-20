@@ -138,9 +138,15 @@ export function CustomLocationSearch({
                 {value.address}
               </p>
             )}
+            {selectedMapsUrl && (
+              <p className="mt-1.5">
+                <MapsLink url={selectedMapsUrl} placeName={value.name} />
+              </p>
+            )}
             <p className="mt-1.5 text-[11px] text-charcoal-muted">
               Location confirmed from Google Maps. Timezone comes from the city.
             </p>
+
           </div>
           <button
             type="button"
