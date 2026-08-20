@@ -281,8 +281,9 @@ export default function MeetupManagement() {
         cityId: locCityId,
         cityName: locCityName,
         communityPlaceId: null as string | null,
-        locationName: locCustomName.trim(),
-        address: locCustomAddress.trim() || null,
+        locationName: locCustom.name.trim(),
+        address: locCustom.address.trim() || null,
+
         neighborhood: null as string | null,
         latitude: lat,
         longitude: lng,
