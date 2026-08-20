@@ -641,67 +641,27 @@ export default function Host() {
 
             <div>
               <div className="space-y-2">
-                {/* Custom-location fields (preserved behavior) */}
-
-
-                  {isCustom && (
-                    <div className="mt-2 space-y-3 rounded-card border border-border bg-muted/30 p-3">
-                      <div>
-                        <FieldLabel>Location name</FieldLabel>
-                        <input aria-label="Location name"
-                          type="text"
-                          value={customName}
-                          onChange={(e) => setCustomName(e.target.value)}
-                          placeholder="e.g. Riverside Park pavilion"
-                          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div>
-                        <FieldLabel>Street address</FieldLabel>
-                        <input aria-label="Street address"
-                          type="text"
-                          value={customAddress}
-                          onChange={(e) => setCustomAddress(e.target.value)}
-                          placeholder="Street, District, City"
-                          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <FieldLabel>Latitude (optional)</FieldLabel>
-                          <input aria-label="Latitude (optional)"
-                            type="text"
-                            inputMode="decimal"
-                            value={customLat}
-                            onChange={(e) => setCustomLat(e.target.value)}
-                            placeholder="10.7769"
-                            className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal"
-                          />
-                        </div>
-                        <div>
-                          <FieldLabel>Longitude (optional)</FieldLabel>
-                          <input aria-label="Longitude (optional)"
-                            type="text"
-                            inputMode="decimal"
-                            value={customLng}
-                            onChange={(e) => setCustomLng(e.target.value)}
-                            placeholder="106.7009"
-                            className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal"
-                          />
-                        </div>
-                      </div>
-                      {!coordsValid && (
-                        <p className="text-xs text-destructive">
-                          Coordinates must both be provided (or both blank) and within valid ranges.
-                        </p>
-                      )}
-                      <p className="text-[11px] text-charcoal-muted">
-                        Timezone is set from the city automatically.
-                      </p>
-                    </div>
-                  )}
+                {/* WO-123: custom location = Google Places search-and-select,
+                    with manual entry as the fallback. No coordinate fields. */}
+                {isCustom && (
+                  <CustomLocationSearch
+                    value={customLoc}
+                    onChange={setCustomLoc}
+                    region={
+                      selectedCity?.id === cityId
+                        ? selectedCity?.country_code
+                        : homeCity?.id === cityId
+                          ? homeCity?.country_code
+                          : null
+                    }
+                    onEvent={(event, detail) =>
+                      logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
+                    }
+                  />
+                )}
               </div>
             </div>
+
 
           </div>
         </section>
