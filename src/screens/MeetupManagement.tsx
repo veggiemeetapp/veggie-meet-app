@@ -30,6 +30,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
+import {
+  CustomLocationSearch,
+  type CustomLocationValue,
+} from "@/components/host/CustomLocationSearch";
+import { setMeetupGoogleLocationMeta } from "@/lib/meetupPlaceSearch";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchMeetupAttendees,
@@ -118,10 +124,17 @@ export default function MeetupManagement() {
   const [locCityId, setLocCityId] = useState<string | null>(null);
   const [locCityName, setLocCityName] = useState<string | null>(null);
   const [locPlaceId, setLocPlaceId] = useState<string | null>(null);
-  const [locCustomName, setLocCustomName] = useState("");
-  const [locCustomAddress, setLocCustomAddress] = useState("");
-  const [locCustomLat, setLocCustomLat] = useState("");
-  const [locCustomLng, setLocCustomLng] = useState("");
+  // WO-123: the custom location is chosen through Google Places search;
+  // coordinates and the Google reference are never typed by the host.
+  const [locCustom, setLocCustom] = useState<CustomLocationValue>({
+    name: "",
+    address: "",
+    latitude: null,
+    longitude: null,
+    googlePlaceId: null,
+    googleMapsUrl: null,
+  });
+
   const [locConfirmOpen, setLocConfirmOpen] = useState(false);
   const [locSaving, setLocSaving] = useState(false);
 
@@ -144,26 +157,16 @@ export default function MeetupManagement() {
           ? CUSTOM_PLACE_ID
           : null,
     );
-    setLocCustomName(
-      meetup.location?.locationSource === "custom_location"
-        ? meetup.location?.locationName ?? ""
-        : "",
-    );
-    setLocCustomAddress(
-      meetup.location?.locationSource === "custom_location"
-        ? meetup.location?.address ?? ""
-        : "",
-    );
-    setLocCustomLat(
-      meetup.location?.locationSource === "custom_location" && meetup.location?.latitude != null
-        ? String(meetup.location.latitude)
-        : "",
-    );
-    setLocCustomLng(
-      meetup.location?.locationSource === "custom_location" && meetup.location?.longitude != null
-        ? String(meetup.location.longitude)
-        : "",
-    );
+    const isCustomSnapshot = meetup.location?.locationSource === "custom_location";
+    setLocCustom({
+      name: isCustomSnapshot ? meetup.location?.locationName ?? "" : "",
+      address: isCustomSnapshot ? meetup.location?.address ?? "" : "",
+      latitude: isCustomSnapshot ? meetup.location?.latitude ?? null : null,
+      longitude: isCustomSnapshot ? meetup.location?.longitude ?? null : null,
+      googlePlaceId: null,
+      googleMapsUrl: null,
+    });
+
   }, [meetup?.id]);
 
   const placesQuery = useQuery({
@@ -264,23 +267,23 @@ export default function MeetupManagement() {
   const locSelectedPlace: CommunityPlace | undefined = (placesQuery.data ?? []).find(
     (p) => p.id === locPlaceId,
   );
+  // Coordinates only ever arrive from a Google Places selection.
   const locCoordsValid =
-    (locCustomLat === "" && locCustomLng === "") ||
-    (Number.isFinite(Number(locCustomLat)) &&
-      Number.isFinite(Number(locCustomLng)) &&
-      Number(locCustomLat) >= -90 && Number(locCustomLat) <= 90 &&
-      Number(locCustomLng) >= -180 && Number(locCustomLng) <= 180);
+    (locCustom.latitude === null && locCustom.longitude === null) ||
+    (locCustom.latitude !== null && locCustom.longitude !== null);
   const locResolved = useMemo(() => {
     if (!locCityId || !meetup) return null;
     if (locIsCustom) {
-      const lat = locCustomLat === "" ? null : Number(locCustomLat);
-      const lng = locCustomLng === "" ? null : Number(locCustomLng);
+      const lat = locCustom.latitude;
+      const lng = locCustom.longitude;
+
       return {
         cityId: locCityId,
         cityName: locCityName,
         communityPlaceId: null as string | null,
-        locationName: locCustomName.trim(),
-        address: locCustomAddress.trim() || null,
+        locationName: locCustom.name.trim(),
+        address: locCustom.address.trim() || null,
+
         neighborhood: null as string | null,
         latitude: lat,
         longitude: lng,
@@ -310,9 +313,10 @@ export default function MeetupManagement() {
       locationSource: "community_place" as const,
     };
   }, [
-    locCityId, locCityName, locIsCustom, locCustomName, locCustomAddress,
-    locCustomLat, locCustomLng, locSelectedPlace, selectedCity, homeCity, meetup,
+    locCityId, locCityName, locIsCustom, locCustom,
+    locSelectedPlace, selectedCity, homeCity, meetup,
   ]);
+
 
 
   if (authLoading || meetupQuery.isPending) {
@@ -506,6 +510,17 @@ export default function MeetupManagement() {
         timezone: locResolved.timezone,
         locationSource: locResolved.locationSource,
       });
+      // WO-123: keep the stored Google reference in step with the new location.
+      try {
+        await setMeetupGoogleLocationMeta(
+          meetup.id,
+          locIsCustom ? locCustom.googlePlaceId : null,
+          locIsCustom ? locCustom.googleMapsUrl : null,
+        );
+      } catch {
+        /* ignore — cosmetic metadata only */
+      }
+
       // Copy is driven by notifications_inserted (not recipients_count), so we
       // never claim attendees were notified when zero notifications landed.
       if (res.notifications_inserted > 0) {
@@ -852,55 +867,22 @@ export default function MeetupManagement() {
 
 
           {locIsCustom && (
-            <div className="space-y-3 rounded-control border border-border bg-muted/20 p-3">
-              <div>
-                <FieldLabel>Location name</FieldLabel>
-                <input aria-label="Location name"
-                  type="text"
-                  value={locCustomName}
-                  onChange={(e) => setLocCustomName(e.target.value)}
-                  placeholder="Where will you meet?"
-                  className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                />
-              </div>
-              <div>
-                <FieldLabel>Address (optional)</FieldLabel>
-                <input aria-label="Address (optional)"
-                  type="text"
-                  value={locCustomAddress}
-                  onChange={(e) => setLocCustomAddress(e.target.value)}
-                  className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <FieldLabel>Latitude (optional)</FieldLabel>
-                  <input aria-label="Latitude (optional)"
-                    type="text"
-                    inputMode="decimal"
-                    value={locCustomLat}
-                    onChange={(e) => setLocCustomLat(e.target.value)}
-                    className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                  />
-                </div>
-                <div>
-                  <FieldLabel>Longitude (optional)</FieldLabel>
-                  <input aria-label="Longitude (optional)"
-                    type="text"
-                    inputMode="decimal"
-                    value={locCustomLng}
-                    onChange={(e) => setLocCustomLng(e.target.value)}
-                    className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                  />
-                </div>
-              </div>
-              {!locCoordsValid && (
-                <p className="text-xs text-destructive">
-                  Coordinates must be valid (lat: -90…90, lng: -180…180) — or leave both blank.
-                </p>
-              )}
-            </div>
+            <CustomLocationSearch
+              value={locCustom}
+              onChange={setLocCustom}
+              region={
+                selectedCity?.id === locCityId
+                  ? selectedCity?.country_code
+                  : homeCity?.id === locCityId
+                    ? homeCity?.country_code
+                    : null
+              }
+              onEvent={(event, detail) =>
+                logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
+              }
+            />
           )}
+
 
           <PrimaryButton
             fullWidth

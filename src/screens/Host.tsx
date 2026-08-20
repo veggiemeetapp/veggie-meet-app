@@ -25,6 +25,12 @@ import {
 import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
+import {
+  CustomLocationSearch,
+  type CustomLocationValue,
+} from "@/components/host/CustomLocationSearch";
+import { setMeetupGoogleLocationMeta } from "@/lib/meetupPlaceSearch";
+
 import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/todayDate";
 import { formatMeetupTimeRange } from "@/lib/format";
@@ -135,11 +141,19 @@ export default function Host() {
   const [cityId, setCityId] = useState<string | null>(null);
   const [cityName, setCityName] = useState<string | null>(null);
   const [placeId, setPlaceId] = useState<string | null>(null);
-  const [customName, setCustomName] = useState("");
-  const [customAddress, setCustomAddress] = useState("");
-  // Optional coordinates for custom locations (both required or both blank).
-  const [customLat, setCustomLat] = useState("");
-  const [customLng, setCustomLng] = useState("");
+  // WO-123: custom location comes from a Google Places search; coordinates and
+  // the Google reference are captured silently and never typed by the host.
+  const [customLoc, setCustomLoc] = useState<CustomLocationValue>({
+    name: "",
+    address: "",
+    latitude: null,
+    longitude: null,
+    googlePlaceId: null,
+    googleMapsUrl: null,
+  });
+  const customName = customLoc.name;
+  const customAddress = customLoc.address;
+
 
   const [date, setDate] = useState<string>(todayISO());
   const [startTime, setStartTime] = useState<string>("18:30");
@@ -224,12 +238,12 @@ export default function Host() {
     });
   }, [preselectApplied, preselectedPlaceId, places]);
 
+  // Coordinates now only ever arrive from a Google Places selection, so they
+  // are valid by construction (both present or both absent).
   const coordsValid =
-    (customLat === "" && customLng === "") ||
-    (Number.isFinite(Number(customLat)) &&
-      Number.isFinite(Number(customLng)) &&
-      Number(customLat) >= -90 && Number(customLat) <= 90 &&
-      Number(customLng) >= -180 && Number(customLng) <= 180);
+    (customLoc.latitude === null && customLoc.longitude === null) ||
+    (customLoc.latitude !== null && customLoc.longitude !== null);
+
 
   const placeError =
     !isCustom && placeId === null && places.length > 0
@@ -313,8 +327,9 @@ export default function Host() {
   const resolved = useMemo(() => {
     if (!cityId) return null;
     if (isCustom) {
-      const lat = customLat === "" ? null : Number(customLat);
-      const lng = customLng === "" ? null : Number(customLng);
+      const lat = customLoc.latitude;
+      const lng = customLoc.longitude;
+
       return {
         cityId,
         cityName,
@@ -346,9 +361,10 @@ export default function Host() {
       locationSource: "community_place" as const,
     };
   }, [
-    cityId, cityName, isCustom, customName, customAddress, customLat, customLng,
+    cityId, cityName, isCustom, customLoc,
     selectedPlace, selectedCity, homeCity,
   ]);
+
 
   async function submit() {
     if (!canSubmit || categoryIdx === null || !resolved || !profile?.id) return;
@@ -381,6 +397,21 @@ export default function Host() {
       if (error) throw error;
       const newId = data as string | null;
       if (newId) {
+        // WO-123: store the Google reference for the chosen custom location.
+        // Non-fatal — the Meetup already exists and reads fine without it.
+        if (isCustom && customLoc.googlePlaceId) {
+          try {
+            await setMeetupGoogleLocationMeta(
+              newId,
+              customLoc.googlePlaceId,
+              customLoc.googleMapsUrl,
+            );
+          } catch {
+            /* ignore — cosmetic metadata only */
+          }
+        }
+
+
 
         // WO-042 §9: authoritative, once-only event fired only after the
         // backend insert succeeded. No PII — enums, ids and counts only.
@@ -631,67 +662,27 @@ export default function Host() {
 
             <div>
               <div className="space-y-2">
-                {/* Custom-location fields (preserved behavior) */}
-
-
-                  {isCustom && (
-                    <div className="mt-2 space-y-3 rounded-card border border-border bg-muted/30 p-3">
-                      <div>
-                        <FieldLabel>Location name</FieldLabel>
-                        <input aria-label="Location name"
-                          type="text"
-                          value={customName}
-                          onChange={(e) => setCustomName(e.target.value)}
-                          placeholder="e.g. Riverside Park pavilion"
-                          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div>
-                        <FieldLabel>Street address</FieldLabel>
-                        <input aria-label="Street address"
-                          type="text"
-                          value={customAddress}
-                          onChange={(e) => setCustomAddress(e.target.value)}
-                          placeholder="Street, District, City"
-                          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <FieldLabel>Latitude (optional)</FieldLabel>
-                          <input aria-label="Latitude (optional)"
-                            type="text"
-                            inputMode="decimal"
-                            value={customLat}
-                            onChange={(e) => setCustomLat(e.target.value)}
-                            placeholder="10.7769"
-                            className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal"
-                          />
-                        </div>
-                        <div>
-                          <FieldLabel>Longitude (optional)</FieldLabel>
-                          <input aria-label="Longitude (optional)"
-                            type="text"
-                            inputMode="decimal"
-                            value={customLng}
-                            onChange={(e) => setCustomLng(e.target.value)}
-                            placeholder="106.7009"
-                            className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal"
-                          />
-                        </div>
-                      </div>
-                      {!coordsValid && (
-                        <p className="text-xs text-destructive">
-                          Coordinates must both be provided (or both blank) and within valid ranges.
-                        </p>
-                      )}
-                      <p className="text-[11px] text-charcoal-muted">
-                        Timezone is set from the city automatically.
-                      </p>
-                    </div>
-                  )}
+                {/* WO-123: custom location = Google Places search-and-select,
+                    with manual entry as the fallback. No coordinate fields. */}
+                {isCustom && (
+                  <CustomLocationSearch
+                    value={customLoc}
+                    onChange={setCustomLoc}
+                    region={
+                      selectedCity?.id === cityId
+                        ? selectedCity?.country_code
+                        : homeCity?.id === cityId
+                          ? homeCity?.country_code
+                          : null
+                    }
+                    onEvent={(event, detail) =>
+                      logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
+                    }
+                  />
+                )}
               </div>
             </div>
+
 
           </div>
         </section>

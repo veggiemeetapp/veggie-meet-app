@@ -2002,6 +2002,8 @@ export type Database = {
           date: string
           description: string
           end_time: string | null
+          google_maps_url: string | null
+          google_place_id: string | null
           host_id: string
           id: string
           latitude: number | null
@@ -2035,6 +2037,8 @@ export type Database = {
           date: string
           description?: string
           end_time?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
           host_id: string
           id?: string
           latitude?: number | null
@@ -2070,6 +2074,8 @@ export type Database = {
           date?: string
           description?: string
           end_time?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
           host_id?: string
           id?: string
           latitude?: number | null
@@ -3730,6 +3736,14 @@ export type Database = {
         Returns: Json
       }
       set_home_city: { Args: { _city_id: string }; Returns: Json }
+      set_meetup_google_location_meta: {
+        Args: {
+          _google_maps_url: string
+          _google_place_id: string
+          _meetup_id: string
+        }
+        Returns: undefined
+      }
       set_member_report_status: {
         Args: { _report_id: string; _status: string }
         Returns: Json
