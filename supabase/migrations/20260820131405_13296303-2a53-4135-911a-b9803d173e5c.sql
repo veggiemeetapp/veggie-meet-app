@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.set_meetup_google_location_meta(uuid, text, text) FROM anon;

@@ -11,6 +11,27 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
 const PLACES_BASE = 'https://places.googleapis.com/v1';
 
+// WO-123A — best-effort per-caller rate limit to cap Google API cost abuse.
+// Deliberately in-memory (per isolate): search/details must never write to the
+// database. Owner verification work is exempt from the tighter member budget.
+const RATE_WINDOW_MS = 60_000;
+const MEMBER_MAX_PER_WINDOW = 20;
+const OWNER_MAX_PER_WINDOW = 60;
+const hits = new Map<string, number[]>();
+
+function rateLimited(key: string, max: number): boolean {
+  const now = Date.now();
+  const recent = (hits.get(key) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= max) {
+    hits.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  hits.set(key, recent);
+  if (hits.size > 5000) hits.clear();
+  return false;
+}
+
 // Allowed verification fields ONLY.
 const SEARCH_MASK = [
   'places.id',
