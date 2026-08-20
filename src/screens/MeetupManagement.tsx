@@ -157,26 +157,16 @@ export default function MeetupManagement() {
           ? CUSTOM_PLACE_ID
           : null,
     );
-    setLocCustomName(
-      meetup.location?.locationSource === "custom_location"
-        ? meetup.location?.locationName ?? ""
-        : "",
-    );
-    setLocCustomAddress(
-      meetup.location?.locationSource === "custom_location"
-        ? meetup.location?.address ?? ""
-        : "",
-    );
-    setLocCustomLat(
-      meetup.location?.locationSource === "custom_location" && meetup.location?.latitude != null
-        ? String(meetup.location.latitude)
-        : "",
-    );
-    setLocCustomLng(
-      meetup.location?.locationSource === "custom_location" && meetup.location?.longitude != null
-        ? String(meetup.location.longitude)
-        : "",
-    );
+    const isCustomSnapshot = meetup.location?.locationSource === "custom_location";
+    setLocCustom({
+      name: isCustomSnapshot ? meetup.location?.locationName ?? "" : "",
+      address: isCustomSnapshot ? meetup.location?.address ?? "" : "",
+      latitude: isCustomSnapshot ? meetup.location?.latitude ?? null : null,
+      longitude: isCustomSnapshot ? meetup.location?.longitude ?? null : null,
+      googlePlaceId: null,
+      googleMapsUrl: null,
+    });
+
   }, [meetup?.id]);
 
   const placesQuery = useQuery({
