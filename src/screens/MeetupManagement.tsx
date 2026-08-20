@@ -856,55 +856,22 @@ export default function MeetupManagement() {
 
 
           {locIsCustom && (
-            <div className="space-y-3 rounded-control border border-border bg-muted/20 p-3">
-              <div>
-                <FieldLabel>Location name</FieldLabel>
-                <input aria-label="Location name"
-                  type="text"
-                  value={locCustomName}
-                  onChange={(e) => setLocCustomName(e.target.value)}
-                  placeholder="Where will you meet?"
-                  className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                />
-              </div>
-              <div>
-                <FieldLabel>Address (optional)</FieldLabel>
-                <input aria-label="Address (optional)"
-                  type="text"
-                  value={locCustomAddress}
-                  onChange={(e) => setLocCustomAddress(e.target.value)}
-                  className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <FieldLabel>Latitude (optional)</FieldLabel>
-                  <input aria-label="Latitude (optional)"
-                    type="text"
-                    inputMode="decimal"
-                    value={locCustomLat}
-                    onChange={(e) => setLocCustomLat(e.target.value)}
-                    className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                  />
-                </div>
-                <div>
-                  <FieldLabel>Longitude (optional)</FieldLabel>
-                  <input aria-label="Longitude (optional)"
-                    type="text"
-                    inputMode="decimal"
-                    value={locCustomLng}
-                    onChange={(e) => setLocCustomLng(e.target.value)}
-                    className="w-full h-11 rounded-control border border-border bg-card px-3 text-sm text-charcoal"
-                  />
-                </div>
-              </div>
-              {!locCoordsValid && (
-                <p className="text-xs text-destructive">
-                  Coordinates must be valid (lat: -90…90, lng: -180…180) — or leave both blank.
-                </p>
-              )}
-            </div>
+            <CustomLocationSearch
+              value={locCustom}
+              onChange={setLocCustom}
+              region={
+                selectedCity?.id === locCityId
+                  ? selectedCity?.country_code
+                  : homeCity?.id === locCityId
+                    ? homeCity?.country_code
+                    : null
+              }
+              onEvent={(event, detail) =>
+                logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
+              }
+            />
           )}
+
 
           <PrimaryButton
             fullWidth
