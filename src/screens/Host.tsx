@@ -321,8 +321,9 @@ export default function Host() {
   const resolved = useMemo(() => {
     if (!cityId) return null;
     if (isCustom) {
-      const lat = customLat === "" ? null : Number(customLat);
-      const lng = customLng === "" ? null : Number(customLng);
+      const lat = customLoc.latitude;
+      const lng = customLoc.longitude;
+
       return {
         cityId,
         cityName,
