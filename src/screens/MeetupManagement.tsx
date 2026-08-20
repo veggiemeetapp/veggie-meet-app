@@ -267,17 +267,16 @@ export default function MeetupManagement() {
   const locSelectedPlace: CommunityPlace | undefined = (placesQuery.data ?? []).find(
     (p) => p.id === locPlaceId,
   );
+  // Coordinates only ever arrive from a Google Places selection.
   const locCoordsValid =
-    (locCustomLat === "" && locCustomLng === "") ||
-    (Number.isFinite(Number(locCustomLat)) &&
-      Number.isFinite(Number(locCustomLng)) &&
-      Number(locCustomLat) >= -90 && Number(locCustomLat) <= 90 &&
-      Number(locCustomLng) >= -180 && Number(locCustomLng) <= 180);
+    (locCustom.latitude === null && locCustom.longitude === null) ||
+    (locCustom.latitude !== null && locCustom.longitude !== null);
   const locResolved = useMemo(() => {
     if (!locCityId || !meetup) return null;
     if (locIsCustom) {
-      const lat = locCustomLat === "" ? null : Number(locCustomLat);
-      const lng = locCustomLng === "" ? null : Number(locCustomLng);
+      const lat = locCustom.latitude;
+      const lng = locCustom.longitude;
+
       return {
         cityId: locCityId,
         cityName: locCityName,
