@@ -85,16 +85,24 @@ Deno.serve(async (req) => {
     const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
     if (claimsError || !claims?.claims) return json({ error: 'permission denied' }, 403);
 
-    // ---- 2. Owner-only authorization (temporary allowlist, pre admin-role) ----
-    const { data: isOwner, error: ownerError } = await supabase.rpc('is_owner');
-    if (ownerError || isOwner !== true) return json({ error: 'permission denied' }, 403);
-
-    // ---- 3. Input validation ----
+    // ---- 2. Input validation ----
     const body = await req.json().catch(() => null);
     const action = typeof body?.action === 'string' ? body.action : '';
     if (action !== 'search' && action !== 'details') {
       return json({ error: 'action must be "search" or "details"' }, 400);
     }
+
+    // ---- 3. Authorization ----
+    // WO-123: any signed-in member may look up a place for a Meetup custom
+    // location (`scope: "meetup_location"`). Everything else — the Community
+    // Place verification workspace — stays owner-only. Both paths return the
+    // same narrow, field-masked projection; nothing is written here.
+    const memberScope = body?.scope === 'meetup_location';
+    if (!memberScope) {
+      const { data: isOwner, error: ownerError } = await supabase.rpc('is_owner');
+      if (ownerError || isOwner !== true) return json({ error: 'permission denied' }, 403);
+    }
+
 
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY');
     if (!apiKey) return json({ error: 'GOOGLE_PLACES_API_KEY is not configured' }, 503);
