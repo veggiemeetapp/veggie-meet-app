@@ -30,6 +30,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
+import {
+  CustomLocationSearch,
+  type CustomLocationValue,
+} from "@/components/host/CustomLocationSearch";
+import { setMeetupGoogleLocationMeta } from "@/lib/meetupPlaceSearch";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchMeetupAttendees,
