@@ -25,6 +25,12 @@ import {
 import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
+import {
+  CustomLocationSearch,
+  type CustomLocationValue,
+} from "@/components/host/CustomLocationSearch";
+import { setMeetupGoogleLocationMeta } from "@/lib/meetupPlaceSearch";
+
 import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/todayDate";
 import { formatMeetupTimeRange } from "@/lib/format";
