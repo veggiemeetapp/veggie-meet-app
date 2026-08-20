@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>You're offline — VeggieMeet</title>
+    <meta name="theme-color" content="#f8f7f2" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <style>
+      :root {
+        --bg: hsl(40 33% 98%);
+        --fg: hsl(220 15% 15%);
+        --muted: hsl(220 8% 42%);
+        --primary: hsl(145 45% 34%);
+        --primary-fg: hsl(40 33% 98%);
+        --card: hsl(0 0% 100%);
+        --border: hsl(40 15% 88%);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 420px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px 24px;
+        text-align: center;
+      }
+      .mark {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 16px;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      h1 { font-size: 1.25rem; line-height: 1.3; margin: 0 0 8px; }
+      p { font-size: 0.9375rem; line-height: 1.55; color: var(--muted); margin: 0 0 20px; }
+      button {
+        font: inherit;
+        font-weight: 600;
+        border: 0;
+        cursor: pointer;
+        border-radius: 999px;
+        padding: 12px 22px;
+        background: var(--primary);
+        color: var(--primary-fg);
+      }
+      button:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+      .brand { margin-top: 20px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main role="main">
+      <div class="mark" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="hsl(40 33% 98%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 20h10" />
+          <path d="M10 20c5.5-2.5.8-6.4 3-10" />
+          <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.7-.3 4.4 0 5.5.8z" />
+          <path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />
+        </svg>
+      </div>
+      <h1>You're offline</h1>
+      <p>
+        VeggieMeet needs a connection to show meetups, places, and messages.
+        Nothing shown here is live — reconnect to see the latest.
+      </p>
+      <button type="button" onclick="location.reload()">Try again</button>
+      <p class="brand" aria-hidden="true">VeggieMeet</p>
+    </main>
+  </body>
+</html>
