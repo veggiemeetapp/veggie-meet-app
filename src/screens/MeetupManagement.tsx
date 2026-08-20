@@ -313,9 +313,10 @@ export default function MeetupManagement() {
       locationSource: "community_place" as const,
     };
   }, [
-    locCityId, locCityName, locIsCustom, locCustomName, locCustomAddress,
-    locCustomLat, locCustomLng, locSelectedPlace, selectedCity, homeCity, meetup,
+    locCityId, locCityName, locIsCustom, locCustom,
+    locSelectedPlace, selectedCity, homeCity, meetup,
   ]);
+
 
 
   if (authLoading || meetupQuery.isPending) {
