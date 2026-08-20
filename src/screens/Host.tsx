@@ -355,9 +355,10 @@ export default function Host() {
       locationSource: "community_place" as const,
     };
   }, [
-    cityId, cityName, isCustom, customName, customAddress, customLat, customLng,
+    cityId, cityName, isCustom, customLoc,
     selectedPlace, selectedCity, homeCity,
   ]);
+
 
   async function submit() {
     if (!canSubmit || categoryIdx === null || !resolved || !profile?.id) return;
