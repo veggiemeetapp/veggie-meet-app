@@ -135,11 +135,19 @@ export default function Host() {
   const [cityId, setCityId] = useState<string | null>(null);
   const [cityName, setCityName] = useState<string | null>(null);
   const [placeId, setPlaceId] = useState<string | null>(null);
-  const [customName, setCustomName] = useState("");
-  const [customAddress, setCustomAddress] = useState("");
-  // Optional coordinates for custom locations (both required or both blank).
-  const [customLat, setCustomLat] = useState("");
-  const [customLng, setCustomLng] = useState("");
+  // WO-123: custom location comes from a Google Places search; coordinates and
+  // the Google reference are captured silently and never typed by the host.
+  const [customLoc, setCustomLoc] = useState<CustomLocationValue>({
+    name: "",
+    address: "",
+    latitude: null,
+    longitude: null,
+    googlePlaceId: null,
+    googleMapsUrl: null,
+  });
+  const customName = customLoc.name;
+  const customAddress = customLoc.address;
+
 
   const [date, setDate] = useState<string>(todayISO());
   const [startTime, setStartTime] = useState<string>("18:30");
