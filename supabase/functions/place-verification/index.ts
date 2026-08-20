@@ -11,6 +11,27 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
 const PLACES_BASE = 'https://places.googleapis.com/v1';
 
+// WO-123A — best-effort per-caller rate limit to cap Google API cost abuse.
+// Deliberately in-memory (per isolate): search/details must never write to the
+// database. Owner verification work is exempt from the tighter member budget.
+const RATE_WINDOW_MS = 60_000;
+const MEMBER_MAX_PER_WINDOW = 20;
+const OWNER_MAX_PER_WINDOW = 60;
+const hits = new Map<string, number[]>();
+
+function rateLimited(key: string, max: number): boolean {
+  const now = Date.now();
+  const recent = (hits.get(key) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= max) {
+    hits.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  hits.set(key, recent);
+  if (hits.size > 5000) hits.clear();
+  return false;
+}
+
 // Allowed verification fields ONLY.
 const SEARCH_MASK = [
   'places.id',
@@ -103,17 +124,29 @@ Deno.serve(async (req) => {
       if (ownerError || isOwner !== true) return json({ error: 'permission denied' }, 403);
     }
 
+    // ---- 3b. Rate limit (WO-123A) ----
+    const callerId = String(claims.claims.sub ?? 'unknown');
+    if (rateLimited(callerId, memberScope ? MEMBER_MAX_PER_WINDOW : OWNER_MAX_PER_WINDOW)) {
+      return json({ error: 'Too many place searches. Please wait a moment and try again.' }, 429);
+    }
 
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY');
     if (!apiKey) return json({ error: 'GOOGLE_PLACES_API_KEY is not configured' }, 503);
 
     // ---- 4. Google Places API (New) ----
     if (action === 'search') {
-      const query = typeof body?.query === 'string' ? body.query.trim() : '';
+      // Normalize: collapse whitespace and control characters before spending a
+      // paid Google call, so "  cafe   x  " and "cafe x" are one query shape.
+      const query = (typeof body?.query === 'string' ? body.query : '')
+        .replace(/[\u0000-\u001f\u007f]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       if (query.length < 2 || query.length > 200) {
         return json({ error: 'query must be 2-200 characters' }, 400);
       }
-      const region = typeof body?.region === 'string' ? body.region.slice(0, 2) : 'VN';
+      const region = (typeof body?.region === 'string' ? body.region : 'VN')
+        .toUpperCase()
+        .slice(0, 2);
 
       const res = await fetch(`${PLACES_BASE}/places:searchText`, {
         method: 'POST',
