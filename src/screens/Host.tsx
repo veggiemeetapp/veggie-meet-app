@@ -232,12 +232,12 @@ export default function Host() {
     });
   }, [preselectApplied, preselectedPlaceId, places]);
 
+  // Coordinates now only ever arrive from a Google Places selection, so they
+  // are valid by construction (both present or both absent).
   const coordsValid =
-    (customLat === "" && customLng === "") ||
-    (Number.isFinite(Number(customLat)) &&
-      Number.isFinite(Number(customLng)) &&
-      Number(customLat) >= -90 && Number(customLat) <= 90 &&
-      Number(customLng) >= -180 && Number(customLng) <= 180);
+    (customLoc.latitude === null && customLoc.longitude === null) ||
+    (customLoc.latitude !== null && customLoc.longitude !== null);
+
 
   const placeError =
     !isCustom && placeId === null && places.length > 0
