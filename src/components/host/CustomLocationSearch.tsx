@@ -1,7 +1,48 @@
 import { useState } from "react";
-import { Loader2, MapPin, Search, X } from "lucide-react";
+import { ExternalLink, Loader2, MapPin, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { searchMeetupPlaces, type MeetupPlaceResult } from "@/lib/meetupPlaceSearch";
+
+/**
+ * WO-123B — only canonical Google Maps links returned by the server-side Places
+ * details response are ever rendered. Anything else (manual entry, legacy rows,
+ * unexpected schemes/hosts) renders no link at all.
+ */
+function safeMapsUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:") return null;
+    const host = u.hostname.toLowerCase();
+    const ok =
+      host === "maps.google.com" ||
+      host === "www.google.com" ||
+      host === "google.com" ||
+      host === "goo.gl" ||
+      host === "maps.app.goo.gl" ||
+      /^(www\.)?google\.[a-z.]+$/.test(host);
+    return ok ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function MapsLink({ url, placeName }: { url: string; placeName: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      aria-label={placeName ? `View ${placeName} on Google Maps` : "View on Google Maps"}
+      className="inline-flex items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+    >
+      View on Google Maps
+      <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+    </a>
+  );
+}
+
 
 export interface CustomLocationValue {
   name: string;
@@ -85,6 +126,8 @@ export function CustomLocationSearch({
     });
   }
 
+  const selectedMapsUrl = safeMapsUrl(value.googleMapsUrl);
+
   if (hasSelection) {
     return (
       <div className="mt-2 rounded-card border border-primary bg-accent/30 p-3">
@@ -97,9 +140,15 @@ export function CustomLocationSearch({
                 {value.address}
               </p>
             )}
+            {selectedMapsUrl && (
+              <p className="mt-1.5">
+                <MapsLink url={selectedMapsUrl} placeName={value.name} />
+              </p>
+            )}
             <p className="mt-1.5 text-[11px] text-charcoal-muted">
               Location confirmed from Google Maps. Timezone comes from the city.
             </p>
+
           </div>
           <button
             type="button"
@@ -178,32 +227,44 @@ export function CustomLocationSearch({
 
       {results !== null && results.length > 0 && (
         <ul className="space-y-2" aria-label="Place search results">
-          {results.map((r) => (
-            <li key={r.placeId}>
-              <button
-                type="button"
-                onClick={() => select(r)}
-                className="w-full flex items-start gap-2 p-3 rounded-card border border-border bg-card text-left hover:bg-accent/30"
+          {results.map((r) => {
+            const mapsUrl = safeMapsUrl(r.googleMapsUrl);
+            return (
+              <li
+                key={r.placeId}
+                className="rounded-card border border-border bg-card overflow-hidden"
               >
-                <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden />
-                <span className="min-w-0 flex-1 block">
-                  <span className="block font-semibold text-charcoal [overflow-wrap:anywhere]">
-                    {r.name}
+                <button
+                  type="button"
+                  onClick={() => select(r)}
+                  className="w-full flex items-start gap-2 p-3 text-left hover:bg-accent/30"
+                >
+                  <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden />
+                  <span className="min-w-0 flex-1 block">
+                    <span className="block font-semibold text-charcoal [overflow-wrap:anywhere]">
+                      {r.name}
+                    </span>
+                    {r.address && (
+                      <span className="block mt-0.5 text-xs text-charcoal-muted [overflow-wrap:anywhere]">
+                        {r.address}
+                      </span>
+                    )}
+                    {r.businessStatus === "CLOSED_TEMPORARILY" && (
+                      <span className="block mt-1 text-[11px] font-semibold text-destructive">
+                        Temporarily closed on Google
+                      </span>
+                    )}
                   </span>
-                  {r.address && (
-                    <span className="block mt-0.5 text-xs text-charcoal-muted [overflow-wrap:anywhere]">
-                      {r.address}
-                    </span>
-                  )}
-                  {r.businessStatus === "CLOSED_TEMPORARILY" && (
-                    <span className="block mt-1 text-[11px] font-semibold text-destructive">
-                      Temporarily closed on Google
-                    </span>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
+                </button>
+                {mapsUrl && (
+                  <div className="px-3 pb-3 -mt-1">
+                    <MapsLink url={mapsUrl} placeName={r.name} />
+                  </div>
+                )}
+              </li>
+            );
+          })}
+
         </ul>
       )}
 
