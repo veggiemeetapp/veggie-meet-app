@@ -124,17 +124,29 @@ Deno.serve(async (req) => {
       if (ownerError || isOwner !== true) return json({ error: 'permission denied' }, 403);
     }
 
+    // ---- 3b. Rate limit (WO-123A) ----
+    const callerId = String(claims.claims.sub ?? 'unknown');
+    if (rateLimited(callerId, memberScope ? MEMBER_MAX_PER_WINDOW : OWNER_MAX_PER_WINDOW)) {
+      return json({ error: 'Too many place searches. Please wait a moment and try again.' }, 429);
+    }
 
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY');
     if (!apiKey) return json({ error: 'GOOGLE_PLACES_API_KEY is not configured' }, 503);
 
     // ---- 4. Google Places API (New) ----
     if (action === 'search') {
-      const query = typeof body?.query === 'string' ? body.query.trim() : '';
+      // Normalize: collapse whitespace and control characters before spending a
+      // paid Google call, so "  cafe   x  " and "cafe x" are one query shape.
+      const query = (typeof body?.query === 'string' ? body.query : '')
+        .replace(/[\u0000-\u001f\u007f]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       if (query.length < 2 || query.length > 200) {
         return json({ error: 'query must be 2-200 characters' }, 400);
       }
-      const region = typeof body?.region === 'string' ? body.region.slice(0, 2) : 'VN';
+      const region = (typeof body?.region === 'string' ? body.region : 'VN')
+        .toUpperCase()
+        .slice(0, 2);
 
       const res = await fetch(`${PLACES_BASE}/places:searchText`, {
         method: 'POST',
