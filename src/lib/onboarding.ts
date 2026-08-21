@@ -149,8 +149,9 @@ export async function fetchStartingOptions(): Promise<StartingOptions> {
 export async function fetchInterestCatalogue(): Promise<InterestOption[]> {
   const { data, error } = await supabase
     .from("interest_catalogue" as never)
-    .select("id, label, category, active, sort_order")
+    .select("id, label, category, active, sort_order, group_key, group_label, group_sort")
     .eq("active" as never, true)
+    .order("group_sort" as never, { ascending: true })
     .order("sort_order" as never, { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as InterestOption[];
