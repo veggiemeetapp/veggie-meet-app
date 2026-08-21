@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { fetchInterestCatalogue } from "@/lib/onboarding";
+import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
 import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import {
@@ -117,6 +119,9 @@ export default function MeetupManagement() {
   const [endTime, setEndTime] = useState("");
 
   const [capacity, setCapacity] = useState(10);
+  // WO-124 — interest tags (shared taxonomy) for this Meetup.
+  const [primaryInterestId, setPrimaryInterestId] = useState<string | null>(null);
+  const [additionalInterestIds, setAdditionalInterestIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Location editor state (independent from the main Save; uses update_meetup_location).
@@ -146,6 +151,8 @@ export default function MeetupManagement() {
     setStartTime(meetup.startTime);
     setEndTime(meetup.endTime ?? "");
     setCapacity(meetup.capacity);
+    setPrimaryInterestId(meetup.primaryInterestId ?? null);
+    setAdditionalInterestIds(meetup.additionalInterestIds ?? []);
 
     // Hydrate location editor from persisted snapshot.
     setLocCityId(meetup.location?.cityId ?? null);
@@ -168,6 +175,13 @@ export default function MeetupManagement() {
     });
 
   }, [meetup?.id]);
+
+  // WO-124 — approved interest taxonomy, same source as onboarding/profile.
+  const interestCatalogue = useQuery({
+    queryKey: ["interest-catalogue"],
+    queryFn: fetchInterestCatalogue,
+    staleTime: 60 * 60 * 1000,
+  });
 
   const placesQuery = useQuery({
     queryKey: ["manage-places", locCityId],
@@ -235,6 +249,7 @@ export default function MeetupManagement() {
     !!startTime &&
     !endTimeError &&
     capacity >= 1 &&
+    !!primaryInterestId &&
     !capacityBelowAttendance &&
     !startsInPast &&
     !saving &&
@@ -414,6 +429,8 @@ export default function MeetupManagement() {
         customLocationName: meetup.customLocation?.name ?? null,
         customLocationAddress: meetup.customLocation?.address ?? null,
         coverImageUrl: meetup.coverImageUrl,
+        primaryInterestId,
+        additionalInterestIds,
       });
       toast({
         title: "Meetup updated",
