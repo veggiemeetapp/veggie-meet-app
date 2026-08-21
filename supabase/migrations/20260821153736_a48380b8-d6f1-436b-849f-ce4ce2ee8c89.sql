@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.create_hosted_meetup(text,text,text,date,time without time zone,time without time zone,integer,uuid,uuid,text,text,text,double precision,double precision,text,text,text,text[]) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.update_hosted_meetup(uuid,text,text,date,time without time zone,time without time zone,integer,uuid,text,text,text,text,text[]) FROM anon;
