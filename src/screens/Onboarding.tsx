@@ -59,6 +59,7 @@ import {
 
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
+import { InterestPicker } from "@/components/interests/InterestPicker";
 import { lovable } from "@/integrations/lovable/index";
 import { mapAuthError } from "@/lib/authErrors";
 import { PasswordField } from "@/components/auth/PasswordField";
