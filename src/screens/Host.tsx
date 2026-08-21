@@ -206,6 +206,13 @@ export default function Host() {
     staleTime: 60_000,
   });
 
+  // WO-124 — the approved interest taxonomy (single server-side source of truth).
+  const interestCatalogue = useQuery({
+    queryKey: ["interest-catalogue"],
+    queryFn: fetchInterestCatalogue,
+    staleTime: 60 * 60 * 1000,
+  });
+
   // WO-053: places under status maintenance can't host new Meetups. The server
   // re-validates this on insert; this only keeps them out of the picker.
   const places = (placesQuery.data ?? []).filter(
