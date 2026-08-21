@@ -23,6 +23,7 @@ import { fetchInterestCatalogue } from "@/lib/onboarding";
 import {
   PROFILE_MAX_INTERESTS,
   PROFILE_MIN_INTERESTS,
+  PROFILE_RECOMMENDED_INTERESTS,
 } from "@/lib/interests";
 import { InterestPicker } from "@/components/interests/InterestPicker";
 
@@ -259,10 +260,14 @@ export default function EditProfile() {
 
           <Field
             label={`Interests (${interests.length}/${PROFILE_MAX_INTERESTS})`}
-            required
             error={
               !interestsValid && dirty
-                ? `Pick between ${PROFILE_MIN_INTERESTS} and ${PROFILE_MAX_INTERESTS} interests.`
+                ? `Pick up to ${PROFILE_MAX_INTERESTS} interests.`
+                : undefined
+            }
+            hint={
+              interests.length < PROFILE_RECOMMENDED_INTERESTS
+                ? `Adding at least ${PROFILE_RECOMMENDED_INTERESTS} interests gives you much better Meetup and Veggie recommendations.`
                 : undefined
             }
           >

@@ -13,8 +13,13 @@ import type { InterestOption } from "@/lib/onboarding";
 export const ONBOARDING_MIN_INTERESTS = 3;
 export const ONBOARDING_MAX_INTERESTS = 8;
 
-/** Profile editing allows a richer set (server enforces the same bounds). */
-export const PROFILE_MIN_INTERESTS = 3;
+/**
+ * Profile editing: established members may keep as few as 0 interests (we only
+ * recommend 3+ for good recommendations) and up to 20. The server enforces the
+ * same ceiling; the 3-interest floor applies to onboarding only.
+ */
+export const PROFILE_MIN_INTERESTS = 0;
+export const PROFILE_RECOMMENDED_INTERESTS = 3;
 export const PROFILE_MAX_INTERESTS = 20;
 
 /** Meetup tagging: exactly one primary, up to two additional. */

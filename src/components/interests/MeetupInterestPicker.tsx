@@ -109,7 +109,7 @@ export function MeetupInterestPicker({
                 key={id}
                 type="button"
                 onClick={() => (primaryId ? toggleAdditional(id) : selectPrimary(id))}
-                className="min-h-11 px-3.5 py-2 rounded-full text-sm font-medium border border-dashed border-primary/60 text-primary bg-primary/5 hover:bg-primary/10 transition"
+                className="min-h-11 px-3.5 py-2 rounded-full text-sm font-medium border border-dashed border-primary/60 text-primary bg-card hover:bg-accent/60 transition"
               >
                 + {labelForId(options, id)}
               </button>
@@ -123,10 +123,13 @@ export function MeetupInterestPicker({
       </p>
       <div className="space-y-4">
         {groups.map((g) => (
-          <div key={g.key}>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-charcoal-muted">
+          <div key={g.key} role="group" aria-labelledby={`meetup-interest-group-${g.key}`}>
+            <p
+              id={`meetup-interest-group-${g.key}`}
+              className="mb-2 text-xs font-semibold uppercase tracking-wide text-charcoal-muted"
+            >
               {g.label}
-            </h3>
+            </p>
             <div className="flex flex-wrap gap-2">
               {g.options.map((o) => {
                 const isPrimary = primaryId === o.id;
