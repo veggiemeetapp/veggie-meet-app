@@ -19,11 +19,12 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { updateMyProfile } from "@/lib/profile";
 import { uploadAvatar } from "@/lib/imageUpload";
+import { fetchInterestCatalogue } from "@/lib/onboarding";
 import {
-  MAX_INTERESTS,
-  MIN_INTERESTS,
-  fetchInterestCatalogue,
-} from "@/lib/onboarding";
+  PROFILE_MAX_INTERESTS,
+  PROFILE_MIN_INTERESTS,
+} from "@/lib/interests";
+import { InterestPicker } from "@/components/interests/InterestPicker";
 
 function sampleAvatar() {
   const seed = `veggie-${Math.random().toString(36).slice(2, 8)}`;
