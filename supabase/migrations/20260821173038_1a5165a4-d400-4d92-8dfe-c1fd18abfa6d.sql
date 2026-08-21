@@ -1,0 +1,13 @@
+DELETE FROM public.messages WHERE chat_id IN (SELECT id FROM public.chats WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49');
+DELETE FROM public.chat_participants WHERE chat_id IN (SELECT id FROM public.chats WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49');
+DELETE FROM public.chats WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.attendance WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.meetup_update_seen WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.meetup_invitations WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.meetup_location_changes WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.meetup_qr_tokens WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.meetup_follow_up_state WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.meetup_completions WHERE meetup_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.notifications WHERE entity_id = '72735079-e77f-4f14-bde0-986050e28f49' OR destination_id = '72735079-e77f-4f14-bde0-986050e28f49';
+DELETE FROM public.analytics_events WHERE properties::text LIKE '%72735079-e77f-4f14-bde0-986050e28f49%';
+DELETE FROM public.meetups WHERE id = '72735079-e77f-4f14-bde0-986050e28f49';
