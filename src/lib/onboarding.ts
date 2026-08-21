@@ -48,6 +48,8 @@ export const ONBOARDING_PROGRESS_STEPS: OnboardingStep[] = [
   "starting_point",
 ];
 
+// WO-124 — onboarding keeps the short 3–8 range; profile editing allows up to
+// 20 (see src/lib/interests.ts). Both bounds are re-enforced server-side.
 export const MAX_INTERESTS = 8;
 export const MIN_INTERESTS = 3;
 
