@@ -363,11 +363,14 @@ function Field({
   label,
   required,
   error,
+  hint,
   children,
 }: {
   label: string;
   required?: boolean;
   error?: string;
+  /** WO-124A — optional guidance shown under the label (e.g. recommended count). */
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -376,6 +379,7 @@ function Field({
         {label}
         {required && <span className="text-primary"> *</span>}
       </label>
+      {hint && <p className="-mt-1 mb-2 text-xs text-charcoal-muted">{hint}</p>}
       {children}
       {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
     </div>
