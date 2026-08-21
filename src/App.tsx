@@ -189,7 +189,7 @@ const App = () => (
           <AppShell>
             <Suspense fallback={<RouteFallback />}>
               <Routes>
-                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/__wo124d-qa" element={<Wo124dQa />} />
 
 
                 <Route path="/reset-password" element={<ResetPassword />} />
