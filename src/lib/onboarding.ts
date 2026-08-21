@@ -73,6 +73,10 @@ export interface InterestOption {
   category: string | null;
   active: boolean;
   sort_order: number;
+  /** WO-124 — server-defined grouping for the shared taxonomy. */
+  group_key?: string | null;
+  group_label?: string | null;
+  group_sort?: number | null;
 }
 
 export type DietaryIdentity =
