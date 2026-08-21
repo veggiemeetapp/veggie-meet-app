@@ -1,3 +1,4 @@
+import ObPreview from "./screens/__ObPreview";
 import { safeBack } from "@/lib/navigation";
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
