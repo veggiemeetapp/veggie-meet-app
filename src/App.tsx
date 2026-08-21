@@ -200,6 +200,7 @@ const App = () => (
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                 <Route path="/host" element={gated(<Host />)} />
+
                 <Route path="/chats" element={gated(<Chats />)} />
                 <Route path="/you" element={gated(<You />)} />
                 <Route path="/you/edit" element={gated(<EditProfile />)} />

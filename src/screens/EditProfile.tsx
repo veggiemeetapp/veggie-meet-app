@@ -23,6 +23,7 @@ import { fetchInterestCatalogue } from "@/lib/onboarding";
 import {
   PROFILE_MAX_INTERESTS,
   PROFILE_MIN_INTERESTS,
+  PROFILE_RECOMMENDED_INTERESTS,
 } from "@/lib/interests";
 import { InterestPicker } from "@/components/interests/InterestPicker";
 
@@ -259,10 +260,14 @@ export default function EditProfile() {
 
           <Field
             label={`Interests (${interests.length}/${PROFILE_MAX_INTERESTS})`}
-            required
             error={
               !interestsValid && dirty
-                ? `Pick between ${PROFILE_MIN_INTERESTS} and ${PROFILE_MAX_INTERESTS} interests.`
+                ? `Pick up to ${PROFILE_MAX_INTERESTS} interests.`
+                : undefined
+            }
+            hint={
+              interests.length < PROFILE_RECOMMENDED_INTERESTS
+                ? `Adding at least ${PROFILE_RECOMMENDED_INTERESTS} interests gives you much better Meetup and Veggie recommendations.`
                 : undefined
             }
           >
@@ -358,11 +363,14 @@ function Field({
   label,
   required,
   error,
+  hint,
   children,
 }: {
   label: string;
   required?: boolean;
   error?: string;
+  /** WO-124A — optional guidance shown under the label (e.g. recommended count). */
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -371,6 +379,7 @@ function Field({
         {label}
         {required && <span className="text-primary"> *</span>}
       </label>
+      {hint && <p className="-mt-1 mb-2 text-xs text-charcoal-muted">{hint}</p>}
       {children}
       {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
     </div>

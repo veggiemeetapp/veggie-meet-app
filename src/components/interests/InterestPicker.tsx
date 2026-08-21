@@ -66,10 +66,13 @@ export function InterestPicker({
 
       <div className="space-y-5" role="group" aria-label="Interests">
         {groups.map((g) => (
-          <div key={g.key}>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-charcoal-muted">
+          <div key={g.key} role="group" aria-labelledby={`interest-group-${g.key}`}>
+            <p
+              id={`interest-group-${g.key}`}
+              className="mb-2 text-xs font-semibold uppercase tracking-wide text-charcoal-muted"
+            >
               {g.label}
-            </h3>
+            </p>
             <div className="flex flex-wrap gap-2">
               {g.options.map((o) => {
                 const active = selected.includes(o.label);
