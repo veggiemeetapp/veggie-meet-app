@@ -45,6 +45,7 @@ const CommunityPlaceDetail = lazy(() => import("./screens/CommunityPlaceDetail")
 const VeggieNetwork = lazy(() => import("./screens/VeggieNetwork"));
 const RelationshipDetail = lazy(() => import("./screens/RelationshipDetail"));
 const VeggieProfile = lazy(() => import("./screens/VeggieProfile"));
+const Wo124dQa = lazy(() => import("./screens/__Wo124dQa"));
 const DirectMessage = lazy(() => import("./screens/DirectMessage"));
 const Notifications = lazy(() => import("./screens/Notifications"));
 const SafetyCenter = lazy(() => import("./screens/SafetyCenter"));
