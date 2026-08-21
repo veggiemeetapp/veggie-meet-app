@@ -54,8 +54,8 @@ export interface Meetup {
   endTime: string | null;
 
   /** WO-124 — shared interest taxonomy tags (catalogue ids). */
-  primaryInterestId: ID | null;
-  additionalInterestIds: ID[];
+  primaryInterestId?: ID | null;
+  additionalInterestIds?: ID[];
 
   attendeeIds: ID[];
   capacity: number;
