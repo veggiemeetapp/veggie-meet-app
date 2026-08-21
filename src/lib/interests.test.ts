@@ -47,13 +47,56 @@ interface Row {
 
 function canonicalRows(): Row[] {
   const sql = taxonomySql();
-  const re = /\('([a-z_]+)','([^']+)','([a-z_]+)','([^']+)',(\d+),(\d+)\)/g;
+  const re = /\('([a-z_]+)','([^']+)','([a-z_]+)','([^']+)',(\d+),(\d+)(?:,true)?\)/g;
   const rows: Row[] = [];
   for (const m of sql.matchAll(re)) {
     rows.push({ id: m[1], label: m[2], group: m[4] });
   }
   return rows;
 }
+
+/**
+ * WO-124B — the authoritative 35 approved interests, exactly as signed off.
+ * This is the single source of truth for CI: any drift in display text,
+ * grouping or membership fails here before it can reach production.
+ */
+const AUTHORITATIVE: Array<[string, string]> = [
+  ["Vegan Food", "Food & Social"],
+  ["Coffee", "Food & Social"],
+  ["Cooking", "Food & Social"],
+  ["Dining Out", "Food & Social"],
+  ["Food Markets", "Food & Social"],
+  ["Food Tours", "Food & Social"],
+  ["Picnics", "Food & Social"],
+  ["Live Music", "Culture & Entertainment"],
+  ["Dancing", "Culture & Entertainment"],
+  ["Festivals", "Culture & Entertainment"],
+  ["Comedy", "Culture & Entertainment"],
+  ["Film", "Culture & Entertainment"],
+  ["Art & Museums", "Culture & Entertainment"],
+  ["Photography", "Culture & Entertainment"],
+  ["Reading", "Culture & Entertainment"],
+  ["Karaoke", "Culture & Entertainment"],
+  ["Hiking", "Outdoors & Adventure"],
+  ["Walking", "Outdoors & Adventure"],
+  ["Running", "Outdoors & Adventure"],
+  ["Cycling", "Outdoors & Adventure"],
+  ["Climbing", "Outdoors & Adventure"],
+  ["Camping", "Outdoors & Adventure"],
+  ["Park Days", "Outdoors & Adventure"],
+  ["Yoga", "Sports & Wellness"],
+  ["Pilates", "Sports & Wellness"],
+  ["Meditation", "Sports & Wellness"],
+  ["Fitness", "Sports & Wellness"],
+  ["Team Sports", "Sports & Wellness"],
+  ["Racquet Sports", "Sports & Wellness"],
+  ["Travel", "Travel & Learning"],
+  ["Language Exchange", "Travel & Learning"],
+  ["Workshops & Learning", "Travel & Learning"],
+  ["Board Games", "Community & Purpose"],
+  ["Volunteering", "Community & Purpose"],
+  ["Sustainability", "Community & Purpose"],
+];
 
 describe("canonical taxonomy", () => {
   const rows = canonicalRows();
@@ -62,6 +105,19 @@ describe("canonical taxonomy", () => {
     expect(rows).toHaveLength(35);
     expect(new Set(rows.map((r) => r.id)).size).toBe(35);
     expect(new Set(rows.map((r) => r.label)).size).toBe(35);
+  });
+
+  it("matches the authoritative label set exactly — no extras, no substitutes", () => {
+    expect([...rows.map((r) => r.label)].sort()).toEqual(
+      AUTHORITATIVE.map(([l]) => l).sort(),
+    );
+  });
+
+  it("places every authoritative interest in its approved group", () => {
+    const byLabel = new Map(rows.map((r) => [r.label, r.group]));
+    for (const [label, group] of AUTHORITATIVE) {
+      expect(byLabel.get(label)).toBe(group);
+    }
   });
 
   it("matches the approved group counts", () => {
@@ -87,10 +143,26 @@ describe("canonical taxonomy", () => {
       "Baking",
       "Brunch",
       "Alcohol-Free Socials",
+      "Tea",
+      "Street Food",
+      "Films",
+      "Workshops",
+      "Languages",
+      "Tech",
+      "Activism",
+      "Parks & Picnics",
+      "Gardening",
+      "Beaches",
+      "Swimming",
+      "Writing",
+      "Crafts & DIY",
+      "Animal Welfare",
+      "Plant-Based Nutrition",
     ]) {
       expect(labels).not.toContain(banned);
     }
   });
+
 
   it("contains no sensitive identity characteristics", () => {
     const sensitive =
