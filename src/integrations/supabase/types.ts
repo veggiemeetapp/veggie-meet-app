@@ -1490,6 +1490,9 @@ export type Database = {
           active: boolean
           category: string | null
           created_at: string
+          group_key: string | null
+          group_label: string | null
+          group_sort: number
           id: string
           label: string
           sort_order: number
@@ -1498,6 +1501,9 @@ export type Database = {
           active?: boolean
           category?: string | null
           created_at?: string
+          group_key?: string | null
+          group_label?: string | null
+          group_sort?: number
           id: string
           label: string
           sort_order?: number
@@ -1506,9 +1512,65 @@ export type Database = {
           active?: boolean
           category?: string | null
           created_at?: string
+          group_key?: string | null
+          group_label?: string | null
+          group_sort?: number
           id?: string
           label?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      interest_legacy_map: {
+        Row: {
+          interest_id: string
+          legacy_key: string
+        }
+        Insert: {
+          interest_id: string
+          legacy_key: string
+        }
+        Update: {
+          interest_id?: string
+          legacy_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interest_legacy_map_interest_id_fkey"
+            columns: ["interest_id"]
+            isOneToOne: false
+            referencedRelation: "interest_catalogue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interest_migration_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity: string
+          id: string
+          legacy_value: string
+          new_value: string | null
+          profile_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity: string
+          id?: string
+          legacy_value: string
+          new_value?: string | null
+          profile_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity?: string
+          id?: string
+          legacy_value?: string
+          new_value?: string | null
+          profile_id?: string | null
         }
         Relationships: []
       }
@@ -1986,6 +2048,7 @@ export type Database = {
       }
       meetups: {
         Row: {
+          additional_interest_ids: string[]
           address: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
@@ -2014,6 +2077,7 @@ export type Database = {
           longitude: number | null
           migrated_at: string | null
           neighborhood: string | null
+          primary_interest_id: string | null
           start_time: string
           status: Database["public"]["Enums"]["meetup_status"]
           timezone: string | null
@@ -2021,6 +2085,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_interest_ids?: string[]
           address?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
@@ -2051,6 +2116,7 @@ export type Database = {
           longitude?: number | null
           migrated_at?: string | null
           neighborhood?: string | null
+          primary_interest_id?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["meetup_status"]
           timezone?: string | null
@@ -2058,6 +2124,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_interest_ids?: string[]
           address?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
@@ -2088,6 +2155,7 @@ export type Database = {
           longitude?: number | null
           migrated_at?: string | null
           neighborhood?: string | null
+          primary_interest_id?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["meetup_status"]
           timezone?: string | null
@@ -2114,6 +2182,13 @@ export type Database = {
             columns: ["host_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetups_primary_interest_id_fkey"
+            columns: ["primary_interest_id"]
+            isOneToOne: false
+            referencedRelation: "interest_catalogue"
             referencedColumns: ["id"]
           },
         ]
@@ -3067,6 +3142,11 @@ export type Database = {
         Args: { _place_id: string }
         Returns: Json
       }
+      canonical_interest_ids: { Args: { _values: string[] }; Returns: string[] }
+      canonical_interest_labels: {
+        Args: { _values: string[] }
+        Returns: string[]
+      }
       check_community_place_suggestion_duplicate: {
         Args: {
           _address_text: string
@@ -3173,6 +3253,7 @@ export type Database = {
       }
       create_hosted_meetup: {
         Args: {
+          _additional_interest_ids?: string[]
           _address: string
           _capacity: number
           _category: string
@@ -3186,6 +3267,7 @@ export type Database = {
           _location_name: string
           _longitude: number
           _neighborhood: string
+          _primary_interest_id?: string
           _start_time: string
           _timezone: string
           _title: string
@@ -3512,6 +3594,14 @@ export type Database = {
         Args: { _meetup_id: string }
         Returns: string
       }
+      meetup_interest_score: {
+        Args: {
+          _additional: string[]
+          _primary: string
+          _viewer_interests: string[]
+        }
+        Returns: number
+      }
       meetup_start_at: {
         Args: { _date: string; _start_time: string; _timezone: string }
         Returns: string
@@ -3613,6 +3703,7 @@ export type Database = {
         Returns: string
       }
       request_account_deletion: { Args: never; Returns: Json }
+      resolve_interest_id: { Args: { _value: string }; Returns: string }
       resolve_viewer_city_id: { Args: { _profile_id: string }; Returns: string }
       reverify_community_place: {
         Args: {
@@ -3867,6 +3958,7 @@ export type Database = {
       }
       update_hosted_meetup: {
         Args: {
+          _additional_interest_ids?: string[]
           _capacity: number
           _community_place_id: string
           _cover_image_url: string
@@ -3876,6 +3968,7 @@ export type Database = {
           _description: string
           _end_time: string
           _meetup_id: string
+          _primary_interest_id?: string
           _start_time: string
           _title: string
         }
