@@ -17,6 +17,7 @@ import { isRetryableRead } from "@/lib/errors";
 // auth/onboarding does not pay a code-split cost.
 import Today from "./screens/Today";
 import Onboarding from "./screens/Onboarding";
+
 import NotFound from "./pages/NotFound";
 
 // Everything else is route-level code split. Each screen ships in its own
@@ -188,6 +189,7 @@ const App = () => (
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/onboarding" element={<Onboarding />} />
+
 
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/" element={gated(<Today />)} />
