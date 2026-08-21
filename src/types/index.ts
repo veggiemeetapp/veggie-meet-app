@@ -53,6 +53,10 @@ export interface Meetup {
   /** WO-112 — optional. NULL means "no specified ending time". */
   endTime: string | null;
 
+  /** WO-124 — shared interest taxonomy tags (catalogue ids). */
+  primaryInterestId: ID | null;
+  additionalInterestIds: ID[];
+
   attendeeIds: ID[];
   capacity: number;
   status: MeetupStatus;

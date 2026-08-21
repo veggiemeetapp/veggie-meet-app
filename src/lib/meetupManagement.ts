@@ -47,6 +47,9 @@ export interface UpdateHostedMeetupInput {
   customLocationName: string | null;
   customLocationAddress: string | null;
   coverImageUrl: string | null;
+  /** WO-124 — null leaves the existing interest tags untouched. */
+  primaryInterestId?: string | null;
+  additionalInterestIds?: string[];
 }
 
 export async function updateHostedMeetup(input: UpdateHostedMeetupInput): Promise<void> {
@@ -62,6 +65,8 @@ export async function updateHostedMeetup(input: UpdateHostedMeetupInput): Promis
     _custom_location_name: input.customLocationName,
     _custom_location_address: input.customLocationAddress,
     _cover_image_url: input.coverImageUrl,
+    _primary_interest_id: input.primaryInterestId ?? null,
+    _additional_interest_ids: input.additionalInterestIds ?? [],
   });
   if (error) throw new Error(error.message);
 }

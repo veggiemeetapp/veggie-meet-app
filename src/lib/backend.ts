@@ -45,6 +45,8 @@ interface DBMeetupRow {
   address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  primary_interest_id?: string | null;
+  additional_interest_ids?: string[] | null;
   location_source?: "community_place" | "custom_location" | "unknown" | null;
   location_is_inferred?: boolean | null;
 }
@@ -64,6 +66,8 @@ function toMeetup(row: DBMeetupRow): Meetup {
     date: row.date,
     startTime: (row.start_time || "").slice(0, 5),
     endTime: normalizeClockTime(row.end_time),
+    primaryInterestId: row.primary_interest_id ?? null,
+    additionalInterestIds: row.additional_interest_ids ?? [],
     attendeeIds: [row.host_id],
     capacity: row.capacity,
     status: (row.status as MeetupStatus) ?? "upcoming",
