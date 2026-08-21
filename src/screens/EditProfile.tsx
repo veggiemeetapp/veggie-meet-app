@@ -258,45 +258,24 @@ export default function EditProfile() {
 
 
           <Field
-            label={`Interests (${interests.length}/${MAX_INTERESTS})`}
+            label={`Interests (${interests.length}/${PROFILE_MAX_INTERESTS})`}
             required
             error={
               !interestsValid && dirty
-                ? `Pick between ${MIN_INTERESTS} and ${MAX_INTERESTS} interests.`
+                ? `Pick between ${PROFILE_MIN_INTERESTS} and ${PROFILE_MAX_INTERESTS} interests.`
                 : undefined
             }
           >
-            {catalogue.isLoading ? (
-              <p className="text-sm text-charcoal-muted">Loading interests…</p>
-            ) : (
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label="Interests"
-              >
-                {(catalogue.data ?? []).map((i) => {
-                  const active = interests.includes(i.label);
-                  return (
-                    <button
-                      key={i.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => toggleInterest(i.label)}
-                      className={cn(
-                        "min-h-11 px-3.5 py-2 rounded-full text-sm font-medium border transition",
-                        active
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-charcoal border-border hover:bg-accent/60",
-                      )}
-                    >
-                      {active && <span className="mr-1.5" aria-hidden="true">✓</span>}
-                      {i.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <InterestPicker
+              options={catalogue.data ?? []}
+              loading={catalogue.isLoading}
+              selected={interests}
+              onToggle={toggleInterest}
+              min={PROFILE_MIN_INTERESTS}
+              max={PROFILE_MAX_INTERESTS}
+            />
           </Field>
+
 
           {saveError && (
             <p role="alert" aria-live="polite" className="text-sm text-destructive">
