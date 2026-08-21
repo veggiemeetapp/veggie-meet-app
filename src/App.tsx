@@ -191,6 +191,7 @@ const App = () => (
                 <Route path="/onboarding" element={<Onboarding />} />
 
 
+
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/" element={gated(<Today />)} />
                 <Route path="/community" element={gated(<Community />)} />
