@@ -1,0 +1,111 @@
+/**
+ * WO-124 — shared interest taxonomy helpers.
+ *
+ * The taxonomy itself lives in one place only: `public.interest_catalogue`.
+ * Nothing here hardcodes the list of interests — these helpers just group,
+ * filter and bound what the server returns, so member profiles and Meetup
+ * tagging can never drift apart or offer a value the server would reject.
+ */
+
+import type { InterestOption } from "@/lib/onboarding";
+
+/** Onboarding keeps the flow short. */
+export const ONBOARDING_MIN_INTERESTS = 3;
+export const ONBOARDING_MAX_INTERESTS = 8;
+
+/** Profile editing allows a richer set (server enforces the same bounds). */
+export const PROFILE_MIN_INTERESTS = 3;
+export const PROFILE_MAX_INTERESTS = 20;
+
+/** Meetup tagging: exactly one primary, up to two additional. */
+export const MEETUP_MAX_ADDITIONAL_INTERESTS = 2;
+
+export interface InterestGroup {
+  key: string;
+  label: string;
+  options: InterestOption[];
+}
+
+interface GroupedRow extends InterestOption {
+  group_key?: string | null;
+  group_label?: string | null;
+  group_sort?: number | null;
+}
+
+/** Group catalogue rows by their server-defined group, preserving server order. */
+export function groupInterests(rows: InterestOption[]): InterestGroup[] {
+  const groups = new Map<string, InterestGroup & { sort: number }>();
+  for (const row of rows as GroupedRow[]) {
+    const key = row.group_key ?? row.category ?? "other";
+    const label = row.group_label ?? "Interests";
+    const sort = row.group_sort ?? 0;
+    if (!groups.has(key)) groups.set(key, { key, label, sort, options: [] });
+    groups.get(key)!.options.push(row);
+  }
+  return [...groups.values()]
+    .sort((a, b) => a.sort - b.sort || a.label.localeCompare(b.label))
+    .map(({ key, label, options }) => ({ key, label, options }));
+}
+
+/** Case-insensitive label/id search across the catalogue. */
+export function filterInterests(rows: InterestOption[], query: string): InterestOption[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter(
+    (r) => r.label.toLowerCase().includes(q) || r.id.toLowerCase().includes(q),
+  );
+}
+
+export function labelForId(rows: InterestOption[], id: string | null): string | null {
+  if (!id) return null;
+  return rows.find((r) => r.id === id)?.label ?? null;
+}
+
+export function idForLabel(rows: InterestOption[], label: string): string | null {
+  const l = label.trim().toLowerCase();
+  return rows.find((r) => r.label.toLowerCase() === l)?.id ?? null;
+}
+
+/**
+ * Lightweight, purely client-side suggestion: which catalogue interests are
+ * hinted at by the Meetup title/description. Suggestions are never applied
+ * automatically — the host always confirms.
+ */
+export function suggestInterestIds(
+  rows: InterestOption[],
+  text: string,
+  limit = 3,
+): string[] {
+  const words = text.toLowerCase().match(/[a-z]+/g) ?? [];
+  if (!words.length) return [];
+  const bag = new Set(words);
+  const scored = rows
+    .map((r) => {
+      const tokens = r.label.toLowerCase().match(/[a-z]+/g) ?? [];
+      const hits = tokens.filter((t) => bag.has(t) || bag.has(`${t}s`)).length;
+      return { id: r.id, hits };
+    })
+    .filter((s) => s.hits > 0)
+    .sort((a, b) => b.hits - a.hits);
+  return scored.slice(0, limit).map((s) => s.id);
+}
+
+/**
+ * Mirror of `public.meetup_interest_score`: primary-tag overlap always
+ * outranks additional-tag overlap. Kept here for tests and UI explanations —
+ * ranking itself is computed server-side.
+ */
+export function meetupInterestScore(
+  primaryId: string | null,
+  additionalIds: string[],
+  viewerInterestIds: string[],
+): number {
+  const viewer = new Set(viewerInterestIds);
+  const primary = primaryId && viewer.has(primaryId) ? 40 : 0;
+  const extra =
+    Math.min(
+      MEETUP_MAX_ADDITIONAL_INTERESTS,
+      additionalIds.filter((id) => viewer.has(id)).length,
+    ) * 12;
+  return primary + extra;
+}

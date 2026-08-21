@@ -48,6 +48,8 @@ export const ONBOARDING_PROGRESS_STEPS: OnboardingStep[] = [
   "starting_point",
 ];
 
+// WO-124 — onboarding keeps the short 3–8 range; profile editing allows up to
+// 20 (see src/lib/interests.ts). Both bounds are re-enforced server-side.
 export const MAX_INTERESTS = 8;
 export const MIN_INTERESTS = 3;
 
@@ -71,6 +73,10 @@ export interface InterestOption {
   category: string | null;
   active: boolean;
   sort_order: number;
+  /** WO-124 — server-defined grouping for the shared taxonomy. */
+  group_key?: string | null;
+  group_label?: string | null;
+  group_sort?: number | null;
 }
 
 export type DietaryIdentity =
@@ -143,8 +149,9 @@ export async function fetchStartingOptions(): Promise<StartingOptions> {
 export async function fetchInterestCatalogue(): Promise<InterestOption[]> {
   const { data, error } = await supabase
     .from("interest_catalogue" as never)
-    .select("id, label, category, active, sort_order")
+    .select("id, label, category, active, sort_order, group_key, group_label, group_sort")
     .eq("active" as never, true)
+    .order("group_sort" as never, { ascending: true })
     .order("sort_order" as never, { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as InterestOption[];

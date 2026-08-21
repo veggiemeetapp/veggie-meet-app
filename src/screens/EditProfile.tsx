@@ -19,11 +19,12 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { updateMyProfile } from "@/lib/profile";
 import { uploadAvatar } from "@/lib/imageUpload";
+import { fetchInterestCatalogue } from "@/lib/onboarding";
 import {
-  MAX_INTERESTS,
-  MIN_INTERESTS,
-  fetchInterestCatalogue,
-} from "@/lib/onboarding";
+  PROFILE_MAX_INTERESTS,
+  PROFILE_MIN_INTERESTS,
+} from "@/lib/interests";
+import { InterestPicker } from "@/components/interests/InterestPicker";
 
 function sampleAvatar() {
   const seed = `veggie-${Math.random().toString(36).slice(2, 8)}`;
@@ -70,19 +71,21 @@ export default function EditProfile() {
   const nameValid = displayName.trim().length > 0 && displayName.trim().length <= 40;
   const cityValid = !!homeCity?.id;
   const interestsValid =
-    interests.length >= MIN_INTERESTS && interests.length <= MAX_INTERESTS;
+    interests.length >= PROFILE_MIN_INTERESTS &&
+    interests.length <= PROFILE_MAX_INTERESTS;
   const canSave = nameValid && cityValid && interestsValid && dirty && !saving && !uploading;
 
   function toggleInterest(label: string) {
     setInterests((s) =>
       s.includes(label)
         ? s.filter((x) => x !== label)
-        : s.length >= MAX_INTERESTS
+        : s.length >= PROFILE_MAX_INTERESTS
           ? s
           : [...s, label],
     );
     setDirty(true);
   }
+
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -255,45 +258,24 @@ export default function EditProfile() {
 
 
           <Field
-            label={`Interests (${interests.length}/${MAX_INTERESTS})`}
+            label={`Interests (${interests.length}/${PROFILE_MAX_INTERESTS})`}
             required
             error={
               !interestsValid && dirty
-                ? `Pick between ${MIN_INTERESTS} and ${MAX_INTERESTS} interests.`
+                ? `Pick between ${PROFILE_MIN_INTERESTS} and ${PROFILE_MAX_INTERESTS} interests.`
                 : undefined
             }
           >
-            {catalogue.isLoading ? (
-              <p className="text-sm text-charcoal-muted">Loading interests…</p>
-            ) : (
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label="Interests"
-              >
-                {(catalogue.data ?? []).map((i) => {
-                  const active = interests.includes(i.label);
-                  return (
-                    <button
-                      key={i.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => toggleInterest(i.label)}
-                      className={cn(
-                        "min-h-11 px-3.5 py-2 rounded-full text-sm font-medium border transition",
-                        active
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-charcoal border-border hover:bg-accent/60",
-                      )}
-                    >
-                      {active && <span className="mr-1.5" aria-hidden="true">✓</span>}
-                      {i.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <InterestPicker
+              options={catalogue.data ?? []}
+              loading={catalogue.isLoading}
+              selected={interests}
+              onToggle={toggleInterest}
+              min={PROFILE_MIN_INTERESTS}
+              max={PROFILE_MAX_INTERESTS}
+            />
           </Field>
+
 
           {saveError && (
             <p role="alert" aria-live="polite" className="text-sm text-destructive">

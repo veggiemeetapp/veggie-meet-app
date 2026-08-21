@@ -41,6 +41,8 @@ import { logAnalyticsEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
+import { fetchInterestCatalogue } from "@/lib/onboarding";
+import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
 
 import {
   Dialog,
@@ -136,6 +138,9 @@ export default function Host() {
   const [cover, setCover] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [categoryIdx, setCategoryIdx] = useState<number | null>(null);
+  // WO-124 — shared interest taxonomy tags for this Meetup.
+  const [primaryInterestId, setPrimaryInterestId] = useState<string | null>(null);
+  const [additionalInterestIds, setAdditionalInterestIds] = useState<string[]>([]);
 
   // Location step
   const [cityId, setCityId] = useState<string | null>(null);
@@ -201,6 +206,13 @@ export default function Host() {
     staleTime: 60_000,
   });
 
+  // WO-124 — the approved interest taxonomy (single server-side source of truth).
+  const interestCatalogue = useQuery({
+    queryKey: ["interest-catalogue"],
+    queryFn: fetchInterestCatalogue,
+    staleTime: 60 * 60 * 1000,
+  });
+
   // WO-053: places under status maintenance can't host new Meetups. The server
   // re-validates this on insert; this only keeps them out of the picker.
   const places = (placesQuery.data ?? []).filter(
@@ -260,6 +272,7 @@ export default function Host() {
   const canSubmit =
     title.trim().length > 0 &&
     categoryIdx !== null &&
+    !!primaryInterestId &&
     !!cityId &&
     !endTimeError &&
     (!isCustom
@@ -275,6 +288,7 @@ export default function Host() {
   const missingRequirements: string[] = [
     ...(title.trim().length === 0 ? ["a Meetup title"] : []),
     ...(categoryIdx === null ? ["a category"] : []),
+    ...(!primaryInterestId ? ["what this Meetup is about"] : []),
     ...(!cityId ? ["a city"] : []),
     ...(!isCustom
       ? !selectedPlace
@@ -392,6 +406,8 @@ export default function Host() {
         _longitude: resolved.longitude,
         _timezone: resolved.timezone,
         _cover_image_url: cover || DEFAULT_COVER,
+        _primary_interest_id: primaryInterestId,
+        _additional_interest_ids: additionalInterestIds,
       });
 
       if (error) throw error;
@@ -424,6 +440,9 @@ export default function Host() {
           has_custom_cover: Boolean(cover),
           // WO-112 §48: boolean only — no raw timestamps.
           has_end_time: endTime !== "",
+          // WO-124 §: taxonomy ids and a count only — never free text.
+          primary_interest_id: primaryInterestId,
+          additional_interest_count: additionalInterestIds.length,
 
         });
         if (resolved.communityPlaceId) {
@@ -536,6 +555,24 @@ export default function Host() {
             ))}
 
           </div>
+        </section>
+
+        {/* WO-124 — interest tagging (drives recommendations) */}
+        <section>
+          <FieldLabel>What's this Meetup about?</FieldLabel>
+          <p className="mb-3 text-xs text-charcoal-muted">
+            Pick one main interest, plus up to two extras. We use these to suggest
+            your Meetup to Veggies with matching interests.
+          </p>
+          <MeetupInterestPicker
+            options={interestCatalogue.data ?? []}
+            loading={interestCatalogue.isLoading}
+            primaryId={primaryInterestId}
+            additionalIds={additionalInterestIds}
+            onPrimaryChange={setPrimaryInterestId}
+            onAdditionalChange={setAdditionalInterestIds}
+            suggestFrom={`${title} ${description}`}
+          />
         </section>
 
         {/* Location — required */}

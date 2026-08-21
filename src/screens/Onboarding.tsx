@@ -59,6 +59,7 @@ import {
 
 // (legacy `ONBOARDED_KEY` localStorage flag removed — route gating uses the server profile only.)
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
+import { InterestPicker } from "@/components/interests/InterestPicker";
 import { lovable } from "@/integrations/lovable/index";
 import { mapAuthError } from "@/lib/authErrors";
 import { PasswordField } from "@/components/auth/PasswordField";
@@ -1282,12 +1283,10 @@ function Interests({
   }, []);
 
   const canContinue = selected.length >= MIN_INTERESTS && selected.length <= MAX_INTERESTS;
-  const remaining = Math.max(0, MIN_INTERESTS - selected.length);
-  const atMax = selected.length >= MAX_INTERESTS;
 
   return (
     <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
-      <div className="mb-6">
+      <div className="mb-5">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           What are you into?
         </h1>
@@ -1295,44 +1294,15 @@ function Interests({
           Pick {MIN_INTERESTS}–{MAX_INTERESTS} — we'll use these to suggest people and meetups.
         </p>
       </div>
-      <div className="flex flex-wrap gap-2 flex-1 content-start">
-        {(!loaded ? Array.from({ length: 10 }).map((_, i) => ({ id: `s-${i}`, label: "", category: null, active: true, sort_order: 0 })) : options).map((o) => {
-          const active = selected.includes(o.label);
-          if (!loaded) {
-            return (
-              <span
-                key={o.id}
-                className="px-4 py-2.5 rounded-full text-sm bg-muted/60 animate-pulse w-24 h-9"
-                aria-hidden
-              />
-            );
-          }
-          return (
-            <button
-              key={o.id}
-              type="button"
-              onClick={() => toggle(o.label)}
-              aria-pressed={active}
-              className={cn(
-                "px-4 py-2.5 rounded-full text-sm font-medium border transition-all active:scale-[0.97]",
-                active
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card text-charcoal border-border hover:bg-accent/60",
-              )}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-4 text-center text-xs text-charcoal-muted min-h-[1rem]">
-        {atMax
-          ? `That's the max — ${MAX_INTERESTS} selected.`
-          : canContinue
-            ? `Nice — ${selected.length} selected. Pick up to ${MAX_INTERESTS}.`
-            : remaining === 1
-              ? "One more to go."
-              : `Pick ${remaining} more.`}
+      <div className="flex-1">
+        <InterestPicker
+          options={options}
+          loading={!loaded}
+          selected={selected}
+          onToggle={toggle}
+          min={MIN_INTERESTS}
+          max={MAX_INTERESTS}
+        />
       </div>
       <PrimaryButton
         fullWidth
@@ -1344,6 +1314,7 @@ function Interests({
       </PrimaryButton>
     </div>
   );
+
 }
 
 function Photo({
