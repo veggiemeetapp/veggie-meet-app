@@ -672,6 +672,24 @@ export default function MeetupManagement() {
             />
           </div>
 
+          {/* WO-124 — interest tagging drives recommendations */}
+          <div>
+            <FieldLabel>What's this Meetup about?</FieldLabel>
+            <p className="mb-3 text-xs text-charcoal-muted">
+              One main interest, plus up to two extras.
+            </p>
+            <MeetupInterestPicker
+              options={interestCatalogue.data ?? []}
+              loading={interestCatalogue.isLoading}
+              primaryId={primaryInterestId}
+              additionalIds={additionalInterestIds}
+              onPrimaryChange={setPrimaryInterestId}
+              onAdditionalChange={setAdditionalInterestIds}
+              suggestFrom={`${title} ${description}`}
+            />
+          </div>
+
+
           {/* WO-112B: wraps at large text sizes so the native date/time inputs
               are never clipped. */}
           <div className="flex flex-wrap gap-3">
