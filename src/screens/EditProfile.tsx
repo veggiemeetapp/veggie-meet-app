@@ -71,19 +71,21 @@ export default function EditProfile() {
   const nameValid = displayName.trim().length > 0 && displayName.trim().length <= 40;
   const cityValid = !!homeCity?.id;
   const interestsValid =
-    interests.length >= MIN_INTERESTS && interests.length <= MAX_INTERESTS;
+    interests.length >= PROFILE_MIN_INTERESTS &&
+    interests.length <= PROFILE_MAX_INTERESTS;
   const canSave = nameValid && cityValid && interestsValid && dirty && !saving && !uploading;
 
   function toggleInterest(label: string) {
     setInterests((s) =>
       s.includes(label)
         ? s.filter((x) => x !== label)
-        : s.length >= MAX_INTERESTS
+        : s.length >= PROFILE_MAX_INTERESTS
           ? s
           : [...s, label],
     );
     setDirty(true);
   }
+
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
