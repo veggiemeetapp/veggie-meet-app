@@ -185,6 +185,70 @@ describe("canonical taxonomy", () => {
     expect(all.toLowerCase()).toMatch(/'books'\s*,\s*'reading'/);
   });
 
+  /**
+   * WO-124C — replays every migration in order to derive the legacy aliases
+   * that actually exist after all inserts and deletes.
+   */
+  function effectiveLegacyMap(): Map<string, string> {
+    const map = new Map<string, string>();
+    const files = fs
+      .readdirSync(MIGRATIONS_DIR)
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
+    for (const f of files) {
+      const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, f), "utf8");
+      for (const block of sql.split(/INSERT INTO public\.interest_legacy_map/i).slice(1)) {
+        const head = block.split(/;/)[0];
+        for (const m of head.matchAll(/\('([^']+)'\s*,\s*'([a-z_]+)'\)/g)) {
+          map.set(m[1].toLowerCase(), m[2]);
+        }
+      }
+      for (const m of sql.matchAll(
+        /DELETE FROM public\.interest_legacy_map\s+WHERE legacy_key\s*=\s*'([^']+)'/gi,
+      )) {
+        map.delete(m[1].toLowerCase());
+      }
+    }
+    return map;
+  }
+
+  it("never force-aliases the ambiguous legacy value Parks & Picnics (DEF-124C-01)", () => {
+    const map = effectiveLegacyMap();
+    expect(map.has("parks & picnics")).toBe(false);
+    expect(map.get("parks & picnics")).toBeUndefined();
+    for (const [key, target] of map) {
+      if (/parks?\s*(&|and)\s*picnics/.test(key)) {
+        throw new Error(`ambiguous legacy alias present: ${key} -> ${target}`);
+      }
+    }
+  });
+
+  it("keeps the retired Parks & Picnics row instead of deleting it", () => {
+    const files = fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"));
+    const all = files
+      .map((f) => fs.readFileSync(path.join(MIGRATIONS_DIR, f), "utf8"))
+      .join("\n");
+    expect(all).toMatch(/'parks_picnics','Parks & Picnics'/);
+    expect(all).not.toMatch(/DELETE FROM public\.interest_catalogue/i);
+    // and it is not part of the active authoritative taxonomy
+    expect(canonicalRows().map((r) => r.label)).not.toContain("Parks & Picnics");
+  });
+
+  it("keeps the genuinely deterministic legacy aliases", () => {
+    const map = effectiveLegacyMap();
+    expect(map.get("picnic")).toBe("picnics");
+    expect(map.get("picnics")).toBe("picnics");
+    expect(map.get("park day")).toBe("park_days");
+    expect(map.get("books")).toBe("reading");
+    expect(map.get("films")).toBe("film");
+    expect(map.get("movies")).toBe("film");
+    expect(map.get("languages")).toBe("language_exchange");
+    expect(map.get("workshops")).toBe("workshops_learning");
+    expect(map.get("workshop")).toBe("workshops_learning");
+    expect(map.get("baking")).toBe("cooking");
+  });
+
+
   it("keeps stable ids independent of display text", () => {
     for (const r of rows) expect(r.id).toMatch(/^[a-z][a-z_]*$/);
   });
