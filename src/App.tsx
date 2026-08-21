@@ -1,4 +1,3 @@
-import ObPreview from "./screens/__ObPreview";
 import { safeBack } from "@/lib/navigation";
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -189,7 +188,6 @@ const App = () => (
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/__ob-preview" element={<ObPreview />} />
 
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/" element={gated(<Today />)} />
