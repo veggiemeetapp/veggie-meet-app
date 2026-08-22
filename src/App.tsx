@@ -211,6 +211,7 @@ const App = () => (
                 <Route path="/you/place-suggestions" element={gated(<MyPlaceSuggestions />)} />
                 <Route path="/you/place-reports" element={gated(<MyPlaceReports />)} />
 
+                <Route path="/__wo125" element={<Wo125Harness />} />
                 <Route path="/meetup/:id" element={gated(<MeetupDetail />)} />
                 <Route path="/meetup/:id/manage" element={gated(<MeetupManagement />)} />
                 <Route path="/meetup/:id/summary" element={gated(<MeetupSummary />)} />
