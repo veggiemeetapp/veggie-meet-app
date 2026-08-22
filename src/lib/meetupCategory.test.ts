@@ -22,7 +22,8 @@ describe("resolveMeetupCategoryLabel", () => {
   it("uses the legacy label only for historical meetups without canonical tags", () => {
     expect(resolveMeetupCategoryLabel(null, "dinner", labels)).toBe("Dinner");
     expect(resolveMeetupCategoryLabel("  ", "walk", labels)).toBe("Walk");
-    expect(resolveMeetupCategoryLabel(undefined, "other", labels)).toBe("Other");
+    // The residual `other` enum member is never a real category label.
+    expect(resolveMeetupCategoryLabel(undefined, "other", labels)).toBeNull();
   });
 
   it("renders nothing when there is no usable classification at all", () => {
@@ -34,5 +35,6 @@ describe("resolveMeetupCategoryLabel", () => {
     expect(legacyCategoryLabel("workshop")).toBe("Workshop");
     expect(legacyCategoryLabel("BRUNCH")).toBe("Brunch");
     expect(legacyCategoryLabel(null)).toBeNull();
+    expect(legacyCategoryLabel("other")).toBeNull();
   });
 });

@@ -10,7 +10,8 @@
  * - canonical Primary id present  -> canonical catalogue label (never raw ids)
  * - canonical id present but unresolved (unknown/retired/malformed, or labels
  *   still loading) -> render nothing, so no inaccurate label is ever shown
- * - no canonical id (historical Meetup) -> explicit legacy enum fallback label
+ * - no canonical id (historical Meetup) -> explicit legacy enum fallback label,
+ *   except the residual member `other`, which is never displayed
  */
 
 import { useMemo } from "react";
@@ -26,8 +27,12 @@ const LEGACY_CATEGORY_LABELS: Record<string, string> = {
   cooking: "Cooking",
   walk: "Walk",
   workshop: "Workshop",
-  other: "Other",
 };
+
+/**
+ * DEF-126-01 — `other` is a residual compatibility value, never a real
+ * member-facing category, so it is deliberately absent from this map.
+ */
 
 const clean = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v.trim() : null;
