@@ -29,6 +29,9 @@ export interface YouMeetupCard {
   meetup_id: string;
   title: string;
   category: string;
+  /** WO-126A — canonical Primary interest id. */
+  primary_interest_id: string | null;
+  additional_interest_ids?: string[] | null;
   cover_image_url: string | null;
   date: string;
   start_time: string;
@@ -88,6 +91,8 @@ export function toMeetupCardShape(card: YouMeetupCard, myProfileId: string): Mee
     title: card.title,
     description: "",
     category: (card.category as MeetupCategory) ?? "other",
+    primaryInterestId: card.primary_interest_id ?? null,
+    additionalInterestIds: card.additional_interest_ids ?? [],
     hostId: card.is_host ? myProfileId : "",
     communityPlaceId: card.community_place_id ?? "",
     coverImageUrl: sanitizeCover(card.cover_image_url),

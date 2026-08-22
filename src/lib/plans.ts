@@ -32,6 +32,9 @@ export interface PlanItem {
   title: string;
   image: string | null;
   category: string;
+  /** WO-126A — canonical Primary interest id (source of truth for display). */
+  primary_interest_id: string | null;
+  additional_interest_ids?: string[] | null;
   role: PlanRole;
   date: string;              // YYYY-MM-DD (Meetup local)
   start_time: string;        // HH:MM:SS (Meetup local)

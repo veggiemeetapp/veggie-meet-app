@@ -21,6 +21,9 @@ export interface MeetupRecommendation {
   entity_id: string;
   title: string;
   category: string;
+  /** WO-126A — canonical Primary interest id. */
+  primary_interest_id: string | null;
+  additional_interest_ids?: string[] | null;
   date: string;
   start_time: string;
   end_time: string | null;

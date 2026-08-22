@@ -10,6 +10,8 @@ export interface InvitationMeetupSummary {
   id: string;
   title: string;
   category: string;
+  /** WO-126A — canonical Primary interest id. */
+  primaryInterestId: string | null;
   coverImageUrl: string;
   date: string;
   startTime: string;
@@ -50,6 +52,7 @@ interface MeetupRow {
   id: string;
   title: string;
   category: string;
+  primary_interest_id: string | null;
   cover_image_url: string | null;
   host_id: string;
   date: string;
@@ -73,6 +76,7 @@ function toSummary(row: MeetupRow, attendeeCount: number): InvitationMeetupSumma
     id: row.id,
     title: row.title,
     category: row.category,
+    primaryInterestId: row.primary_interest_id ?? null,
     coverImageUrl: sanitizeCover(row.cover_image_url),
     date: row.date,
     startTime: (row.start_time || "").slice(0, 5),
@@ -100,7 +104,7 @@ export async function fetchEligibleMeetups(
   const meetupsQuery = supabase
     .from("meetups")
     .select(
-      "id, title, category, cover_image_url, host_id, date, start_time, capacity, status, community_place_id, custom_location_name, profiles:host_id(display_name), community_places:community_place_id(name)",
+      "id, title, category, primary_interest_id, cover_image_url, host_id, date, start_time, capacity, status, community_place_id, custom_location_name, profiles:host_id(display_name), community_places:community_place_id(name)",
     )
     .gte("date", today)
     .order("date")
@@ -220,7 +224,7 @@ export async function fetchInvitationsBundle(
   const { data: meetupRows } = await supabase
     .from("meetups")
     .select(
-      "id, title, category, cover_image_url, host_id, date, start_time, capacity, status, community_place_id, custom_location_name, profiles:host_id(display_name), community_places:community_place_id(name)",
+      "id, title, category, primary_interest_id, cover_image_url, host_id, date, start_time, capacity, status, community_place_id, custom_location_name, profiles:host_id(display_name), community_places:community_place_id(name)",
     )
     .in("id", meetupIds);
   const meetups = (meetupRows ?? []) as unknown as MeetupRow[];
