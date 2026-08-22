@@ -29,6 +29,7 @@ import {
   fetchEligibleMeetups,
   PERSONAL_MESSAGE_MAX,
 } from "@/lib/invitations";
+import { useMeetupCategoryLabels } from "@/lib/meetupCategory";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -159,9 +160,11 @@ export function MeetupInvitationSheet({
                         loading="lazy"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-                          {m.category}
-                        </div>
+                        {categoryLabels.labelFor(m.primaryInterestId, m.category) && (
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                            {categoryLabels.labelFor(m.primaryInterestId, m.category)}
+                          </div>
+                        )}
                         <div className="font-semibold text-charcoal text-sm leading-snug line-clamp-2">
                           {m.title}
                         </div>
