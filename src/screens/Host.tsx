@@ -461,7 +461,14 @@ export default function Host() {
       // WO-124F / DEF-124F-01: single normalization path — one member-safe
       // toast plus exactly one non-PII `request_failed` event. A stale app
       // shell (pre-WO-124 payload) additionally gets a Reload affordance.
+      // WO-124G / DEF-124G-01: the confirmation dialog must close first —
+      // a modal Radix dialog disables pointer events on the rest of the page
+      // and traps focus, which made the toast's Reload action unreachable by
+      // both pointer and keyboard. Nothing was saved, so closing is safe and
+      // the entered form details are still on the form behind it.
+      setConfirmOpen(false);
       const stale = isStaleClientError(e);
+
       showErrorToast(e, {
         surface: "host_create",
         titleOverride: stale ? undefined : "Couldn't create Meetup",
