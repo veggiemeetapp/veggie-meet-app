@@ -45,10 +45,6 @@ describe("Host create payload contract", () => {
  */
 describe("WO-124G host failure recovery contract", () => {
   it("closes the confirmation dialog before showing the failure toast", () => {
-    const src = readFileSync(
-      new URL("./Host.tsx", import.meta.url),
-      "utf8",
-    );
     const catchStart = src.indexOf("} catch (e) {");
     const toastCall = src.indexOf("showErrorToast(e, {", catchStart);
     const close = src.indexOf("setConfirmOpen(false)", catchStart);
