@@ -25,6 +25,33 @@ export const PROFILE_MAX_INTERESTS = 20;
 /** Meetup tagging: exactly one primary, up to two additional. */
 export const MEETUP_MAX_ADDITIONAL_INTERESTS = 2;
 
+/**
+ * WO-125 — normalise a Meetup's stored tags for display only.
+ *
+ * Drops null/blank/non-string values, removes duplicates, never repeats the
+ * primary among the additional tags, and bounds additional tags to two. Storage
+ * and server validation are untouched; this only makes malformed historical rows
+ * degrade safely on read.
+ */
+export function resolveMeetupTagIds(
+  primaryInterestId?: string | null,
+  additionalInterestIds?: string[] | null,
+): { primaryId: string | null; additionalIds: string[] } {
+  const clean = (v: unknown): string | null =>
+    typeof v === "string" && v.trim() ? v.trim() : null;
+  const primaryId = clean(primaryInterestId);
+  const seen = new Set<string>(primaryId ? [primaryId] : []);
+  const additionalIds: string[] = [];
+  for (const raw of Array.isArray(additionalInterestIds) ? additionalInterestIds : []) {
+    const id = clean(raw);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    additionalIds.push(id);
+    if (additionalIds.length >= MEETUP_MAX_ADDITIONAL_INTERESTS) break;
+  }
+  return { primaryId, additionalIds };
+}
+
 export interface InterestGroup {
   key: string;
   label: string;
