@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
-import QaStaleToast from "@/screens/QaStaleToast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell, RouteLoading } from "@/components/app";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -204,7 +203,6 @@ const App = () => (
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                 <Route path="/host" element={gated(<Host />)} />
-                <Route path="/__qa124f" element={<QaStaleToast />} />
 
                 <Route path="/chats" element={gated(<Chats />)} />
                 <Route path="/you" element={gated(<You />)} />
