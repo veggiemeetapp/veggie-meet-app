@@ -40,9 +40,11 @@ export default function MeetupCreated() {
 
       {meetup && (
         <Card padding="md" className="mt-8">
-          <div className="text-xs font-semibold text-primary uppercase tracking-wider">
-            {meetup.category}
-          </div>
+          {categoryLabel && (
+            <div className="text-xs font-semibold text-primary uppercase tracking-wider">
+              {categoryLabel}
+            </div>
+          )}
           <div className="mt-1 text-lg font-semibold text-charcoal leading-tight">
             {meetup.title}
           </div>

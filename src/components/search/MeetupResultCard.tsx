@@ -4,6 +4,7 @@ import { Card } from "@/components/app";
 import { ResultReasonPill } from "./ResultReasonPill";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { sanitizeCover } from "@/lib/backend";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import type { MeetupResult } from "@/lib/search";
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export function MeetupResultCard({ result }: Props) {
+  // WO-126A — canonical Primary label, legacy enum only as historical fallback.
+  const categoryLabel = useMeetupCategoryLabel(result.primary_interest_id, result.category);
   const location =
     result.location_name ??
     result.neighborhood ??
@@ -32,9 +35,11 @@ export function MeetupResultCard({ result }: Props) {
           <div className="flex-1 min-w-0 py-3 pr-3">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="font-semibold text-sm text-charcoal line-clamp-1">{result.title}</h3>
-              <span className="text-[10px] font-medium text-charcoal-muted uppercase tracking-wider shrink-0">
-                {result.category}
-              </span>
+              {categoryLabel && (
+                <span className="text-[10px] font-medium text-charcoal-muted uppercase tracking-wider shrink-0">
+                  {categoryLabel}
+                </span>
+              )}
             </div>
             <div className="mt-1 flex items-center gap-1 text-[11px] text-charcoal-muted">
               <Calendar className="w-3 h-3 shrink-0" aria-hidden />
