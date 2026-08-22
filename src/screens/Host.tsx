@@ -1,4 +1,6 @@
-import { memberSafeMessage } from "@/lib/errors";
+import { isStaleClientError } from "@/lib/errors";
+import { showErrorToast } from "@/lib/errorToast";
+import { ToastAction } from "@/components/ui/toast";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -52,7 +54,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
 
 /**
  * DEF-092A-03: the category chips rendered colour emoji, which fall back to an
