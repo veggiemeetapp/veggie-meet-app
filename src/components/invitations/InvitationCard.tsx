@@ -3,6 +3,7 @@ import { Calendar, Check, Clock, Loader2, MapPin, Ticket, Users } from "lucide-r
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import type { HydratedInvitation } from "@/lib/invitations";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -29,6 +30,8 @@ export function InvitationCard({
 }: Props) {
   const navigate = useNavigate();
   const { meetup, invitation, recipientAttending } = bundle;
+  // WO-126A — canonical Primary label wins over the legacy compatibility enum.
+  const categoryLabel = useMeetupCategoryLabel(meetup.primaryInterestId, meetup.category);
 
   // Derive the visible state from live meetup data, not stored status.
   let visibleStatus: "invited" | "viewed" | "joined" | "full" | "cancelled" | "ended";
@@ -69,9 +72,11 @@ export function InvitationCard({
         />
       </div>
       <div className="px-3 pt-2.5 pb-3">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-charcoal-muted">
-          {meetup.category}
-        </div>
+        {categoryLabel && (
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-charcoal-muted">
+            {categoryLabel}
+          </div>
+        )}
         <div className="mt-0.5 font-semibold text-charcoal leading-snug line-clamp-2">
           {meetup.title}
         </div>

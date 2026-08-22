@@ -1,6 +1,7 @@
 import { Calendar, Clock, MapPin, Navigation } from "lucide-react";
 import type { Meetup, CommunityPlace } from "@/types";
 import { formatMeetupDate, formatMeetupTimeRange, formatDuration } from "@/lib/format";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 
 interface Props {
   meetup: Meetup;
@@ -9,11 +10,16 @@ interface Props {
 }
 
 export function MeetupInfo({ meetup, place, distanceKm }: Props) {
+  // WO-126A — canonical Primary category label; the legacy enum is only a
+  // fallback for historical Meetups without a canonical tag.
+  const categoryLabel = useMeetupCategoryLabel(meetup.primaryInterestId, meetup.category);
   return (
     <div>
-      <span className="inline-block text-[11px] font-semibold text-primary uppercase tracking-wider bg-soft-green px-2.5 py-1 rounded-full">
-        {meetup.category}
-      </span>
+      {categoryLabel && (
+        <span className="inline-block text-[11px] font-semibold text-primary uppercase tracking-wider bg-soft-green px-2.5 py-1 rounded-full">
+          {categoryLabel}
+        </span>
+      )}
       {/* break-words keeps very long unbroken titles from widening the phone
           shell and pushing the sticky action bar off-screen on small viewports */}
       <h1 className="mt-3 text-[26px] leading-tight font-semibold text-charcoal break-words">

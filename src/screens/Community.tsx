@@ -15,6 +15,7 @@ import {
 } from "@/lib/backend";
 import { todayISO } from "@/lib/todayDate";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import { formatDistanceBetween, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
@@ -353,6 +354,8 @@ function MeetupNearbyCard({
   cityLabel: string | null;
 }) {
   const label = locationLabelFor(meetup, cityCoords, cityLabel);
+  // WO-126A — canonical Primary category label.
+  const categoryLabel = useMeetupCategoryLabel(meetup.primaryInterestId, meetup.category);
   return (
     <Link to={`/meetup/${meetup.id}`} className="block">
       <Card padding="none" interactive className="w-64 shrink-0 overflow-hidden">
@@ -363,9 +366,11 @@ function MeetupNearbyCard({
             className="w-full h-full object-cover"
             loading="lazy"
           />
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background/90 backdrop-blur text-charcoal uppercase tracking-wider">
-            {meetup.category}
-          </span>
+          {categoryLabel && (
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background/90 backdrop-blur text-charcoal uppercase tracking-wider">
+              {categoryLabel}
+            </span>
+          )}
         </div>
         <div className="p-3">
           <h3 className="font-semibold text-charcoal text-sm leading-tight line-clamp-1">

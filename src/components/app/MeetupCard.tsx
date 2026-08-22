@@ -4,6 +4,7 @@ import type { Meetup } from "@/types";
 
 import { formatTime12h } from "@/lib/format";
 import { useMeetupMembership } from "@/hooks/useMeetupMembership";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import type { MeetupRole } from "@/lib/backend";
 import { Card } from "./Card";
 import { AvatarGroup } from "./UserAvatar";
@@ -21,6 +22,9 @@ interface Props {
 export function MeetupCard({ meetup, role: roleOverride }: Props) {
   const membership = useMeetupMembership(roleOverride ? null : meetup);
   const role = roleOverride ?? membership.role;
+  // WO-126A: canonical Primary label is authoritative; the legacy enum is only
+  // a fallback for historical Meetups with no canonical tag.
+  const categoryLabel = useMeetupCategoryLabel(meetup.primaryInterestId, meetup.category);
   // WO-095: host / place / attendee identities are server-authoritative. This
   // card used to fall back to the mock-data fixture, which could render
   // fixture people as if they were real members.
@@ -47,9 +51,11 @@ export function MeetupCard({ meetup, role: roleOverride }: Props) {
           />
 
           <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
-              {meetup.category}
-            </span>
+            {categoryLabel && (
+              <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+                {categoryLabel}
+              </span>
+            )}
             <h3 className="mt-0.5 font-semibold text-charcoal leading-snug line-clamp-2">
               {meetup.title}
             </h3>
