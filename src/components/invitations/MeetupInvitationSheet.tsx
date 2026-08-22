@@ -54,6 +54,10 @@ export function MeetupInvitationSheet({
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("select");
   const [meetups, setMeetups] = useState<EligibleMeetup[] | null>(null);
+  // WO-126A — canonical Primary category labels for the eligible-Meetup list.
+  const categoryLabels = useMeetupCategoryLabels(
+    (meetups ?? []).map((m) => m.primaryInterestId),
+  );
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState(DEFAULT_INVITATION_MESSAGE);
