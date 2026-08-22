@@ -19,6 +19,7 @@ import {
   AttendeePreview,
   WhatToExpect,
   MeetupDescription,
+  MeetupInterestTags,
   AddToGoogleCalendarButton,
 } from "@/components/meetup";
 
