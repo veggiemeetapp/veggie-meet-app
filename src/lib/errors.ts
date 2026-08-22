@@ -22,6 +22,7 @@ export type ErrorCategory =
   | "capacity"
   | "rate_limited"
   | "domain"
+  | "stale_client"
   | "unknown";
 
 export interface NormalizedError {
@@ -195,9 +196,45 @@ function safeDomainMessage(message: string): string | null {
   return trimmed;
 }
 
+/**
+ * WO-124F / DEF-124F-01 — narrow allow-list for the one raised-RPC rejection a
+ * *stale client* can trigger: a pre-WO-124 Host bundle omits the interest
+ * arguments, so `create_hosted_meetup` raises SQLSTATE 22023 with the
+ * product-approved copy "Choose what this Meetup is about." before any insert.
+ *
+ * Deliberately message- and code-scoped: no other 22023 payload is trusted, so
+ * arbitrary data-exception text still falls through to the sanitized paths.
+ */
+const STALE_CLIENT_RULES: Array<{ codes: string[]; test: RegExp }> = [
+  {
+    codes: ["22023"],
+    test: /^choose what this meetup is about\.?$/i,
+  },
+];
+
+export function isStaleClientError(error: unknown): boolean {
+  const code = codeOf(error);
+  const msg = rawMessage(error).trim();
+  return STALE_CLIENT_RULES.some(
+    (rule) => rule.codes.includes(code) && rule.test.test(msg),
+  );
+}
+
 export function normalizeError(error: unknown): NormalizedError {
   const msg = rawMessage(error);
   const lower = msg.toLowerCase();
+
+  // Checked before the generic paths: this is an actionable domain/validation
+  // error whose only real fix is reloading an out-of-date app shell.
+  if (isStaleClientError(error)) {
+    return {
+      category: "stale_client",
+      title: "Choose what this Meetup is about",
+      description:
+        "VeggieMeet has been updated. Reload the app, then pick what your Meetup is about before publishing. Nothing was saved.",
+      retryable: false,
+    };
+  }
 
   if (isNetworkError(error) || (offlineHint() && !statusOf(error))) {
     return {

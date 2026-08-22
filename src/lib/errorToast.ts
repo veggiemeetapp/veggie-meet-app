@@ -1,6 +1,7 @@
 import { toast } from "@/hooks/use-toast";
 import { normalizeError, type NormalizedError } from "@/lib/errors";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import type { ToastActionElement } from "@/components/ui/toast";
 
 /**
  * WO-083 — deduped, member-safe error toasts.
@@ -13,7 +14,7 @@ const lastShown = new Map<string, number>();
 
 export function showErrorToast(
   error: unknown,
-  opts?: { surface?: string; titleOverride?: string },
+  opts?: { surface?: string; titleOverride?: string; action?: ToastActionElement },
 ): NormalizedError {
   const normalized = normalizeError(error);
   const title = opts?.titleOverride ?? normalized.title;
@@ -26,12 +27,18 @@ export function showErrorToast(
       title,
       description: normalized.description || undefined,
       variant: "destructive",
+      action: opts?.action,
     });
   }
   // Bounded failure telemetry only: category + surface. Never the raw message.
   logAnalyticsEvent("request_failed", {
     category: normalized.category,
     surface: opts?.surface ?? "unknown",
+    // WO-124F: bounded, non-PII diagnostic context only.
+    code: typeof (error as { code?: unknown })?.code === "string"
+      ? ((error as { code: string }).code as string)
+      : "none",
+    retryable: normalized.retryable,
   });
   return normalized;
 }

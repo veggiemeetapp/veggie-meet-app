@@ -1,4 +1,6 @@
-import { memberSafeMessage } from "@/lib/errors";
+import { isStaleClientError } from "@/lib/errors";
+import { showErrorToast } from "@/lib/errorToast";
+import { ToastAction } from "@/components/ui/toast";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -52,7 +54,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
 
 /**
  * DEF-092A-03: the category chips rendered colour emoji, which fall back to an
@@ -457,9 +458,31 @@ export default function Host() {
         return;
       }
     } catch (e) {
-      toast.error("Couldn't create Meetup", {
-        description: memberSafeMessage(e),
+      // WO-124F / DEF-124F-01: single normalization path — one member-safe
+      // toast plus exactly one non-PII `request_failed` event. A stale app
+      // shell (pre-WO-124 payload) additionally gets a Reload affordance.
+      const stale = isStaleClientError(e);
+      showErrorToast(e, {
+        surface: "host_create",
+        titleOverride: stale ? undefined : "Couldn't create Meetup",
+        action: stale ? (
+          <ToastAction
+            altText="Reload VeggieMeet to get the latest version"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Reload VeggieMeet now? Details you've entered on this form will be cleared.",
+                )
+              ) {
+                window.location.reload();
+              }
+            }}
+          >
+            Reload
+          </ToastAction>
+        ) : undefined,
       });
+
     } finally {
       setSaving(false);
     }
