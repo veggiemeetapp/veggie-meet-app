@@ -141,3 +141,28 @@ export function meetupInterestScore(
     ) * 12;
   return primary + extra;
 }
+
+/**
+ * WO-126 — documentation mirror of `public.legacy_meetup_category_for_interest`.
+ *
+ * The legacy `meetups.category` enum column is retained as an invisible
+ * compatibility detail and is derived SERVER-SIDE from the Meetup's Primary
+ * canonical category. This mirror exists for tests and documentation only —
+ * the client never sends a category value. Mapping is by stable interest id,
+ * never by display label. Ids without an accurate legacy equivalent resolve to
+ * the enum's residual member `other`, which is never shown to hosts or members.
+ */
+export const LEGACY_MEETUP_CATEGORY_BY_INTEREST_ID: Record<string, string> = {
+  coffee: "coffee",
+  cooking: "cooking",
+  dining_out: "dinner",
+  picnics: "picnic",
+  hiking: "walk",
+  walking: "walk",
+  workshops_learning: "workshop",
+};
+
+export function legacyMeetupCategoryForInterest(id: string | null): string {
+  if (!id) return "other";
+  return LEGACY_MEETUP_CATEGORY_BY_INTEREST_ID[id] ?? "other";
+}

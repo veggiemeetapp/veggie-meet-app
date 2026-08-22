@@ -672,12 +672,14 @@ export default function MeetupManagement() {
             />
           </div>
 
-          {/* WO-124 — interest tagging drives recommendations */}
+          {/* WO-126 — the canonical taxonomy is the only classification UI */}
           <div>
-            <FieldLabel>What's this Meetup about?</FieldLabel>
+            <FieldLabel>Category</FieldLabel>
             <p className="mb-3 text-xs text-charcoal-muted">
-              One main interest, plus up to two extras.
+              Pick one main category, plus up to two optional extras. We use these to
+              suggest your Meetup to Veggies with matching interests.
             </p>
+
             <MeetupInterestPicker
               options={interestCatalogue.data ?? []}
               loading={interestCatalogue.isLoading}

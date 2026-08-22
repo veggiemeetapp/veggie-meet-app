@@ -3561,6 +3561,10 @@ export type Database = {
       }
       join_meetup: { Args: { _meetup_id: string }; Returns: string }
       leave_meetup: { Args: { _meetup_id: string }; Returns: undefined }
+      legacy_meetup_category_for_interest: {
+        Args: { _interest_id: string }
+        Returns: Database["public"]["Enums"]["meetup_category"]
+      }
       log_analytics_event: {
         Args: { _event_name: string; _properties?: Json }
         Returns: undefined

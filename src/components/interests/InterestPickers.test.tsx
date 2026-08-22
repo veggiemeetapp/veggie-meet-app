@@ -105,9 +105,9 @@ function MeetupHarness() {
 }
 
 describe("MeetupInterestPicker", () => {
-  it("asks for one required main interest first", () => {
+  it("asks for one required main category first", () => {
     render(<MeetupHarness />);
-    expect(screen.getByText(/Pick the one interest this Meetup is mostly about/)).toBeTruthy();
+    expect(screen.getByText(/Pick the one category this Meetup is mostly about/)).toBeTruthy();
   });
 
   it("assigns the first tap as primary and later taps as additional", () => {
@@ -121,7 +121,7 @@ describe("MeetupInterestPicker", () => {
   it("prevents the primary interest from being duplicated as additional", () => {
     render(<MeetupHarness />);
     fireEvent.click(screen.getByRole("button", { name: "Coffee" }));
-    fireEvent.click(screen.getByRole("button", { name: "Coffee (main interest)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Coffee (main category)" }));
     expect(screen.getByTestId("state").textContent).toBe("-|");
   });
 
@@ -141,8 +141,8 @@ describe("MeetupInterestPicker", () => {
     render(<MeetupHarness />);
     fireEvent.click(screen.getByRole("button", { name: "Coffee" }));
     fireEvent.click(screen.getByRole("button", { name: "Yoga" }));
-    expect(screen.getByRole("button", { name: "Coffee (main interest)" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Yoga (additional interest)" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Coffee (main category)" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Yoga (additional category)" })).toBeTruthy();
   });
 
   it("offers description-based suggestions the host must confirm", () => {
@@ -161,5 +161,24 @@ describe("MeetupInterestPicker", () => {
     expect(onPrimary).not.toHaveBeenCalled();
     fireEvent.click(suggestion);
     expect(onPrimary).toHaveBeenCalledWith("coffee");
+  });
+});
+
+/**
+ * WO-126 — the canonical taxonomy is the only host-facing classification, so
+ * the picker must speak "category" everywhere a host or screen reader reads it.
+ */
+describe("WO-126 category terminology", () => {
+  it("uses category wording for search and the required main choice", () => {
+    render(<MeetupHarness />);
+    expect(screen.getByLabelText("Search Meetup categories")).toBeTruthy();
+    expect(screen.getByText(/Main category/)).toBeTruthy();
+  });
+
+  it("announces additional category counts", () => {
+    render(<MeetupHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "Coffee" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yoga" }));
+    expect(screen.getByText(/1\/2 additional categories/)).toBeTruthy();
   });
 });

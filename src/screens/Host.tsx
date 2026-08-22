@@ -11,17 +11,6 @@ import {
   MapPin,
   Loader2,
   AlertTriangle,
-  Coffee,
-  Salad,
-  EggFried,
-  Footprints,
-  Dices,
-  Mountain,
-  CookingPot,
-  ShoppingBasket,
-  Leaf,
-  Sparkles,
-  type LucideIcon,
 } from "lucide-react";
 
 import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
@@ -37,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/todayDate";
 import { formatMeetupTimeRange } from "@/lib/format";
 
-import type { CommunityPlace, MeetupCategory } from "@/types";
+import type { CommunityPlace } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +34,7 @@ import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
+import { labelForId } from "@/lib/interests";
 
 import {
   Dialog,
@@ -54,26 +44,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-/**
- * DEF-092A-03: the category chips rendered colour emoji, which fall back to an
- * empty outlined box on any platform without an emoji font (the whole rail read
- * as broken glyphs). They now use the icon set the rest of the app already
- * ships, at the shared 16px chip-icon size.
- */
-const CATEGORIES: { id: MeetupCategory; label: string; icon: LucideIcon }[] = [
-  { id: "coffee", label: "Coffee", icon: Coffee },
-  { id: "dinner", label: "Dinner", icon: Salad },
-  { id: "brunch", label: "Brunch", icon: EggFried },
-  { id: "walk", label: "Walking", icon: Footprints },
-  { id: "other", label: "Board Games", icon: Dices },
-  { id: "walk", label: "Hiking", icon: Mountain },
-  { id: "cooking", label: "Cooking", icon: CookingPot },
-  { id: "other", label: "Farmers Market", icon: ShoppingBasket },
-  { id: "other", label: "Volunteering", icon: Leaf },
-  { id: "other", label: "Other", icon: Sparkles },
-];
-
 
 const EXPECTATIONS = [
   "Casual Conversation",
@@ -138,7 +108,6 @@ export default function Host() {
 
   const [cover, setCover] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [categoryIdx, setCategoryIdx] = useState<number | null>(null);
   // WO-124 — shared interest taxonomy tags for this Meetup.
   const [primaryInterestId, setPrimaryInterestId] = useState<string | null>(null);
   const [additionalInterestIds, setAdditionalInterestIds] = useState<string[]>([]);
@@ -272,7 +241,6 @@ export default function Host() {
 
   const canSubmit =
     title.trim().length > 0 &&
-    categoryIdx !== null &&
     !!primaryInterestId &&
     !!cityId &&
     !endTimeError &&
@@ -288,8 +256,7 @@ export default function Host() {
   // aria-describedby, and the button stays focusable via aria-disabled.
   const missingRequirements: string[] = [
     ...(title.trim().length === 0 ? ["a Meetup title"] : []),
-    ...(categoryIdx === null ? ["a category"] : []),
-    ...(!primaryInterestId ? ["what this Meetup is about"] : []),
+    ...(!primaryInterestId ? ["a main category"] : []),
     ...(!cityId ? ["a city"] : []),
     ...(!isCustom
       ? !selectedPlace
@@ -381,10 +348,16 @@ export default function Host() {
   ]);
 
 
+  // WO-126 — canonical display labels for the Review & publish summary.
+  const catalogueOptions = interestCatalogue.data ?? [];
+  const primaryCategoryLabel = labelForId(catalogueOptions, primaryInterestId);
+  const additionalCategoryLabels = additionalInterestIds
+    .map((id) => labelForId(catalogueOptions, id))
+    .filter((l): l is string => !!l);
+
   async function submit() {
-    if (!canSubmit || categoryIdx === null || !resolved || !profile?.id) return;
+    if (!canSubmit || !resolved || !profile?.id) return;
     setSaving(true);
-    const cat = CATEGORIES[categoryIdx];
     try {
       // WO-076: creation is server-authoritative. Host identity is derived
       // from auth inside `create_hosted_meetup` — never sent from the client —
@@ -393,7 +366,10 @@ export default function Host() {
       const { data, error } = await (supabase.rpc as any)("create_hosted_meetup", {
         _title: title.trim(),
         _description: description.trim(),
-        _category: cat.id,
+        // WO-126: the legacy category column is now derived server-side from
+        // the canonical Primary category. The argument is retained only for
+        // wire compatibility and is ignored by `create_hosted_meetup`.
+        _category: null,
         _date: date,
         _start_time: startTime,
         _end_time: endTime === "" ? null : endTime,
@@ -434,7 +410,6 @@ export default function Host() {
         // backend insert succeeded. No PII — enums, ids and counts only.
         logAnalyticsEvent("meetup_created", {
           meetup_id: newId,
-          category: cat.id,
           capacity,
           city_id: resolved.cityId,
           location_source: resolved.locationSource,
@@ -573,26 +548,12 @@ export default function Host() {
           />
         </section>
 
-        {/* Category */}
+        {/* WO-126 — the canonical taxonomy is the only classification UI */}
         <section>
           <FieldLabel>Category</FieldLabel>
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c, i) => (
-              <Chip key={i} active={categoryIdx === i} onClick={() => setCategoryIdx(i)}>
-                <c.icon className="w-4 h-4 mr-1.5 shrink-0" aria-hidden="true" />
-                {c.label}
-              </Chip>
-            ))}
-
-          </div>
-        </section>
-
-        {/* WO-124 — interest tagging (drives recommendations) */}
-        <section>
-          <FieldLabel>What's this Meetup about?</FieldLabel>
           <p className="mb-3 text-xs text-charcoal-muted">
-            Pick one main interest, plus up to two extras. We use these to suggest
-            your Meetup to Veggies with matching interests.
+            Pick one main category, plus up to two optional extras. We use these to
+            suggest your Meetup to Veggies with matching interests.
           </p>
           <MeetupInterestPicker
             options={interestCatalogue.data ?? []}
@@ -970,6 +931,22 @@ export default function Host() {
             <div className="text-charcoal-muted">
               {date} · {formatMeetupTimeRange(startTime, endTime)} · up to {capacity} Veggies
             </div>
+            {/* WO-126 — canonical categories only; no legacy category is shown. */}
+            {primaryCategoryLabel && (
+              <div className="pt-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted">
+                  Category
+                </div>
+                <div className="text-charcoal">
+                  Main: {primaryCategoryLabel}
+                </div>
+                {additionalCategoryLabels.length > 0 && (
+                  <div className="text-xs text-charcoal-muted">
+                    Additional: {additionalCategoryLabels.join(", ")}
+                  </div>
+                )}
+              </div>
+            )}
             {resolved && (
               <div className="pt-1">
                 <div className="text-charcoal [overflow-wrap:anywhere]">

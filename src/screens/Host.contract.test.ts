@@ -53,3 +53,56 @@ describe("WO-124G host failure recovery contract", () => {
     expect(close).toBeLessThan(toastCall);
   });
 });
+
+/**
+ * WO-126 — the legacy Category chip selector is gone from Host create. The
+ * canonical taxonomy is the only classification UI; the legacy
+ * `meetups.category` column is derived server-side from the Primary category.
+ */
+describe("WO-126 consolidated Host category contract", () => {
+  it("has no legacy category selector or state", () => {
+    expect(src).not.toContain("const CATEGORIES");
+    expect(src).not.toContain("categoryIdx");
+  });
+
+  it("never sends a host-chosen legacy category value", () => {
+    expect(src).toContain("_category: null,");
+  });
+
+  it("labels the canonical section as Category with the approved helper copy", () => {
+    expect(src).toContain("<FieldLabel>Category</FieldLabel>");
+    expect(src).toContain("Pick one main category, plus up to two optional extras.");
+    expect(src).not.toContain("What's this Meetup about?");
+  });
+
+  it("blocks publish until a main category is chosen", () => {
+    expect(src).toContain('["a main category"]');
+  });
+
+  it("shows canonical category labels in Review & publish", () => {
+    expect(src).toContain("primaryCategoryLabel");
+    expect(src).toContain("additionalCategoryLabels");
+  });
+});
+
+const manageSrc = readFileSync(
+  resolve(process.cwd(), "src/screens/MeetupManagement.tsx"),
+  "utf8",
+);
+
+describe("WO-126 consolidated Host Manage category contract", () => {
+  it("has no legacy category selector", () => {
+    expect(manageSrc).not.toContain("const CATEGORIES");
+    expect(manageSrc).not.toContain("categoryIdx");
+  });
+
+  it("uses the consolidated Category interface", () => {
+    expect(manageSrc).toContain("<FieldLabel>Category</FieldLabel>");
+    expect(manageSrc).toContain("Pick one main category, plus up to two optional extras.");
+    expect(manageSrc).toContain("MeetupInterestPicker");
+  });
+
+  it("does not send any category argument when saving edits", () => {
+    expect(manageSrc).not.toContain("_category");
+  });
+});
