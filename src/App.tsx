@@ -19,7 +19,6 @@ import Today from "./screens/Today";
 import Onboarding from "./screens/Onboarding";
 
 import NotFound from "./pages/NotFound";
-import Wo125Harness from "./screens/__wo125Harness";
 
 // Everything else is route-level code split. Each screen ships in its own
 // chunk and is fetched only when its route is visited, cutting the initial
@@ -212,7 +211,6 @@ const App = () => (
                 <Route path="/you/place-suggestions" element={gated(<MyPlaceSuggestions />)} />
                 <Route path="/you/place-reports" element={gated(<MyPlaceReports />)} />
 
-                <Route path="/__wo125" element={<Wo125Harness />} />
                 <Route path="/meetup/:id" element={gated(<MeetupDetail />)} />
                 <Route path="/meetup/:id/manage" element={gated(<MeetupManagement />)} />
                 <Route path="/meetup/:id/summary" element={gated(<MeetupSummary />)} />
