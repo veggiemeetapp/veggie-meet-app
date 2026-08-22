@@ -12,6 +12,7 @@ import { formatMeetupDate, formatTimeRange } from "@/lib/format";
 import { fetchMeetupById, isUuid, joinMeetup } from "@/lib/backend";
 import { useAuth } from "@/hooks/useAuth";
 import type { Meetup } from "@/types";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 
 export default function JoinConfirmation() {
   const { id } = useParams();
@@ -20,6 +21,8 @@ export default function JoinConfirmation() {
   const [meetup, setMeetup] = useState<Meetup | null | undefined>(undefined);
   const [joining, setJoining] = useState<boolean>(!!id && isUuid(id));
   const [joinError, setJoinError] = useState<string | null>(null);
+  // WO-126A — canonical Primary label; legacy enum only for historical Meetups.
+  const categoryLabel = useMeetupCategoryLabel(meetup?.primaryInterestId, meetup?.category);
 
   // Load backend meetup if not in mock data
   useEffect(() => {

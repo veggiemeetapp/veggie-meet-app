@@ -7,6 +7,7 @@ import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { fetchMeetupById, isUuid } from "@/lib/backend";
 import type { Meetup } from "@/types";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 
 export default function MeetupCreated() {
   const { id } = useParams();
@@ -21,6 +22,8 @@ export default function MeetupCreated() {
     fetchMeetupById(id).then((m) => setMeetup(m));
   }, [id, meetup]);
 
+  // WO-126A — canonical Primary label; legacy enum only for historical Meetups.
+  const categoryLabel = useMeetupCategoryLabel(meetup?.primaryInterestId, meetup?.category);
   const placeLabel = meetup?.location?.locationName ?? meetup?.customLocation?.name;
   const placeAddr = meetup?.location?.address ?? meetup?.customLocation?.address;
 
