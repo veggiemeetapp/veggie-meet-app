@@ -3303,6 +3303,29 @@ export type Database = {
         Args: { _meetup_id: string }
         Returns: undefined
       }
+      eligible_upcoming_meetups_for_viewer: {
+        Args: { _city_id: string; _me: string }
+        Returns: {
+          additional_interest_ids: string[]
+          attendee_count: number
+          capacity: number
+          category: Database["public"]["Enums"]["meetup_category"]
+          cover_image_url: string
+          date: string
+          end_at: string
+          end_time: string
+          host_id: string
+          id: string
+          is_attending: boolean
+          is_host: boolean
+          is_removed: boolean
+          meetup_city_id: string
+          primary_interest_id: string
+          start_at: string
+          start_time: string
+          title: string
+        }[]
+      }
       get_active_cities: {
         Args: never
         Returns: {

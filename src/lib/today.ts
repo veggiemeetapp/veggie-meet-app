@@ -32,9 +32,15 @@ export interface MeetupRecommendation {
   attendee_count: number;
   capacity: number;
   is_attending: boolean;
+  /**
+   * WO-127 — the viewer hosts this Meetup. Hosting never affects eligibility;
+   * it only drives the restrained "You’re hosting" indicator and ranking.
+   */
+  is_host?: boolean;
   reason_code: string;
   reason_label: string;
   action_type: "join_meetup" | "view_meetup";
+
 }
 
 export interface VeggieRecommendation {
