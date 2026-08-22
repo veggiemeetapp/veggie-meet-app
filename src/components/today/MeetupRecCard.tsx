@@ -36,7 +36,16 @@ export function MeetupRecCard({ meetup }: Props) {
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <ReasonPill label={meetup.reason_label} />
+            {/* WO-127: a hosted Meetup keeps its place in Upcoming Meetups and
+                carries a restrained hosting indicator instead of a second
+                competing pill. It never replaces the canonical category label. */}
+            {meetup.is_host ? (
+              <span className="inline-flex max-w-full items-center truncate rounded-full border border-primary/30 bg-background px-2 py-0.5 text-[10px] font-semibold text-primary">
+                You’re hosting
+              </span>
+            ) : (
+              <ReasonPill label={meetup.reason_label} />
+            )}
             <RecCardMenu
               entityType="meetup"
               entityId={meetup.entity_id}
@@ -44,6 +53,7 @@ export function MeetupRecCard({ meetup }: Props) {
               label={meetup.title}
             />
           </div>
+
           <button
             onClick={go}
             className="mt-1 block text-left w-full"
@@ -60,8 +70,9 @@ export function MeetupRecCard({ meetup }: Props) {
               </span>
             </div>
             <span className="mt-2 inline-block text-xs font-semibold text-primary">
-              {meetup.is_attending ? "View meetup →" : "Join meetup →"}
+              {meetup.is_attending || meetup.is_host ? "View meetup →" : "Join meetup →"}
             </span>
+
           </button>
         </div>
       </div>
