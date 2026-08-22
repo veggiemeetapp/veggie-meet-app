@@ -19,6 +19,7 @@ import Today from "./screens/Today";
 import Onboarding from "./screens/Onboarding";
 
 import NotFound from "./pages/NotFound";
+import Wo125Harness from "./screens/__wo125Harness";
 
 // Everything else is route-level code split. Each screen ships in its own
 // chunk and is fetched only when its route is visited, cutting the initial
