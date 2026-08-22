@@ -36,3 +36,24 @@ describe("Host create payload contract", () => {
     expect(src).toContain("window.location.reload()");
   });
 });
+
+/**
+ * WO-124G / DEF-124G-01 — the publish confirmation dialog must close before the
+ * failure toast is raised. A modal Radix dialog disables pointer events on the
+ * rest of the page and traps focus, which made the stale-client Reload action
+ * unreachable by pointer and keyboard on the live bundle.
+ */
+describe("WO-124G host failure recovery contract", () => {
+  it("closes the confirmation dialog before showing the failure toast", () => {
+    const src = readFileSync(
+      new URL("./Host.tsx", import.meta.url),
+      "utf8",
+    );
+    const catchStart = src.indexOf("} catch (e) {");
+    const toastCall = src.indexOf("showErrorToast(e, {", catchStart);
+    const close = src.indexOf("setConfirmOpen(false)", catchStart);
+    expect(catchStart).toBeGreaterThan(-1);
+    expect(close).toBeGreaterThan(catchStart);
+    expect(close).toBeLessThan(toastCall);
+  });
+});
