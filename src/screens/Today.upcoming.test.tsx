@@ -11,6 +11,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { MeetupRecommendation, TodayExperience } from "@/lib/today";
 
 const useToday = vi.fn();
@@ -59,10 +60,13 @@ function experience(over: Partial<TodayExperience> = {}): TodayExperience {
 }
 
 function renderToday() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter>
-      <Today />
-    </MemoryRouter>,
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <Today />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
@@ -111,7 +115,8 @@ describe("Today — Upcoming Meetups", () => {
     });
     renderToday();
     expect(screen.getByText("You can check in now")).toBeInTheDocument();
-    expect(screen.getByText(/Saigon Plant-Based Social/)).toBeInTheDocument();
+    // Present twice on purpose: check-in card supporting text + Upcoming card.
+    expect(screen.getAllByText(/Saigon Plant-Based Social/).length).toBe(2);
   });
 
   it("keeps a Meetup the viewer only attends, and a full Meetup they are in", () => {
