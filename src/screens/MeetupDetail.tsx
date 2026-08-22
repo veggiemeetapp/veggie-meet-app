@@ -19,6 +19,7 @@ import {
   AttendeePreview,
   WhatToExpect,
   MeetupDescription,
+  MeetupInterestTags,
   AddToGoogleCalendarButton,
 } from "@/components/meetup";
 
@@ -276,6 +277,14 @@ export default function MeetupDetail() {
         <MeetupInfo meetup={meetup} />
 
         {isRealMeetup && <MeetupPlaceSection meetupId={meetup.id} />}
+
+        {/* WO-125 — read-only interest tags, after the essentials, before the story. */}
+        <MeetupInterestTags
+          primaryInterestId={meetup.primaryInterestId}
+          additionalInterestIds={meetup.additionalInterestIds}
+        />
+
+
 
 
         {host && <HostCard host={host} />}
