@@ -11,6 +11,7 @@ import {
   filterInterests,
   groupInterests,
   meetupInterestScore,
+  legacyMeetupCategoryForInterest,
 } from "@/lib/interests";
 import type { InterestOption } from "@/lib/onboarding";
 
@@ -320,5 +321,20 @@ describe("meetup interest ranking (mirror of public.meetup_interest_score)", () 
 
   it("F. additional-tag credit is capped at two matches", () => {
     expect(meetupInterestScore(null, ["coffee", "yoga", "hiking"], ["coffee", "yoga", "hiking"])).toBe(24);
+  });
+});
+
+describe("WO-126 legacy category compatibility mapping", () => {
+  it("maps canonical ids deterministically, never display labels", () => {
+    expect(legacyMeetupCategoryForInterest("coffee")).toBe("coffee");
+    expect(legacyMeetupCategoryForInterest("dining_out")).toBe("dinner");
+    expect(legacyMeetupCategoryForInterest("hiking")).toBe("walk");
+    expect(legacyMeetupCategoryForInterest("walking")).toBe("walk");
+    expect(legacyMeetupCategoryForInterest("workshops_learning")).toBe("workshop");
+  });
+
+  it("falls back to the residual enum member for unmapped ids", () => {
+    expect(legacyMeetupCategoryForInterest("board_games")).toBe("other");
+    expect(legacyMeetupCategoryForInterest(null)).toBe("other");
   });
 });

@@ -92,8 +92,8 @@ export function MeetupInterestPicker({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search Meetup interests"
-          placeholder="Search interests"
+          aria-label="Search Meetup categories"
+          placeholder="Search categories"
           className="w-full h-11 rounded-control border border-border bg-card pl-10 pr-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
@@ -119,7 +119,7 @@ export function MeetupInterestPicker({
       )}
 
       <p className="mb-2 text-sm font-semibold text-charcoal">
-        Main interest <span className="text-primary">*</span>
+        Main category <span className="text-primary">*</span>
       </p>
       <div className="space-y-4">
         {groups.map((g) => (
@@ -141,9 +141,9 @@ export function MeetupInterestPicker({
                     aria-pressed={isPrimary || isAdditional}
                     aria-label={
                       isPrimary
-                        ? `${o.label} (main interest)`
+                        ? `${o.label} (main category)`
                         : isAdditional
-                          ? `${o.label} (additional interest)`
+                          ? `${o.label} (additional category)`
                           : o.label
                     }
                     onClick={() => (primaryId === null || isPrimary ? selectPrimary(o.id) : toggleAdditional(o.id))}
@@ -181,8 +181,8 @@ export function MeetupInterestPicker({
 
       <p aria-live="polite" className="mt-3 text-xs text-charcoal-muted">
         {primaryLabel
-          ? `Main: ${primaryLabel}. ${additionalIds.length}/${MEETUP_MAX_ADDITIONAL_INTERESTS} additional interests — tap more to add, tap the main one again to change it.`
-          : "Pick the one interest this Meetup is mostly about."}
+          ? `Main category: ${primaryLabel}. ${additionalIds.length}/${MEETUP_MAX_ADDITIONAL_INTERESTS} additional categories — tap more to add, tap the main one again to change it.`
+          : "Pick the one category this Meetup is mostly about."}
       </p>
     </div>
   );
