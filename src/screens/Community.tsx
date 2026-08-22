@@ -15,6 +15,7 @@ import {
 } from "@/lib/backend";
 import { todayISO } from "@/lib/todayDate";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
+import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import { formatDistanceBetween, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
