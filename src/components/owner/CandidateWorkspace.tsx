@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
+import { CheckCircle2, ChevronRight, ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
+
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,16 @@ import {
   publishBlockers,
   toGoogleIdentityPatch,
 } from "@/lib/candidatePublish";
+import {
+  CANDIDATE_GROUP_DEFAULT_OPEN,
+  CANDIDATE_GROUP_EMPTY,
+  groupCandidates,
+  groupCountLabel,
+  type CandidateGroup,
+  type CandidateGroupKey,
+} from "@/lib/candidateGrouping";
+import { useActiveCities } from "@/hooks/useLocation";
+
 
 
 const STATUS_LABEL: Record<string, string> = {
