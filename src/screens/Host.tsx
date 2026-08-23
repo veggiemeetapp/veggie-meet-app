@@ -45,46 +45,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const EXPECTATIONS = [
-  "Casual Conversation",
-  "Everyone Welcome",
-  "Vegetarian Friendly",
-  "Beginner Friendly",
-  "Small Group",
-  "Outdoor",
-  "Indoor",
-];
-
 const CAPACITIES = [6, 10, 20, 30];
 const CUSTOM_PLACE_ID = "__custom__";
 const DEFAULT_COVER =
   "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=1200&q=80";
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-[0.97]",
-        active
-          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-          : "bg-card text-charcoal border-border hover:bg-accent/60",
-      )}
-
-    >
-      {children}
-    </button>
-  );
-}
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -139,7 +103,6 @@ export default function Host() {
   const [isCustomCapacity, setIsCustomCapacity] = useState(false);
   const [customCapacity, setCustomCapacity] = useState<string>("");
   const [description, setDescription] = useState("");
-  const [expectations, setExpectations] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -296,12 +259,6 @@ export default function Host() {
       reader.onload = () => setCover(reader.result as string);
       reader.readAsDataURL(file);
     }
-  }
-
-  function toggleExpectation(item: string) {
-    setExpectations((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item],
-    );
   }
 
 
@@ -870,21 +827,6 @@ export default function Host() {
           />
         </section>
 
-        {/* What to expect */}
-        <section>
-          <FieldLabel>What to expect</FieldLabel>
-          <div className="flex flex-wrap gap-2">
-            {EXPECTATIONS.map((item) => (
-              <Chip
-                key={item}
-                active={expectations.includes(item)}
-                onClick={() => toggleExpectation(item)}
-              >
-                {item}
-              </Chip>
-            ))}
-          </div>
-        </section>
       </div>
 
       {/* Sticky CTA */}

@@ -17,7 +17,6 @@ import {
   MeetupPlaceSection,
   HostCard,
   AttendeePreview,
-  WhatToExpect,
   MeetupDescription,
   MeetupInterestTags,
   AddToGoogleCalendarButton,
@@ -297,8 +296,6 @@ export default function MeetupDetail() {
         />
 
         <MeetupDescription description={description} />
-
-        <WhatToExpect />
       </div>
 
       <div className="fixed bottom-0 inset-x-0 mx-auto max-w-phone bg-background/95 backdrop-blur-xl border-t border-border safe-bottom">
