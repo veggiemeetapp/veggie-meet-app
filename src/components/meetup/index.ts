@@ -3,7 +3,6 @@ export { MeetupInfo } from "./MeetupInfo";
 export { MeetupPlaceSection } from "./MeetupPlaceSection";
 export { HostCard } from "./HostCard";
 export { AttendeePreview } from "./AttendeePreview";
-export { WhatToExpect } from "./WhatToExpect";
 export { MeetupDescription } from "./MeetupDescription";
 export { MeetupInterestTags } from "./MeetupInterestTags";
 export { MeetupLocationStatus } from "./MeetupLocationStatus";
