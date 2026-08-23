@@ -91,7 +91,7 @@ const ROWS: PlaceCandidate[] = [
   base({
     id: "x1",
     display_name: "Mystery Status Place",
-    verification_status: "some_future_status",
+    verification_status: "some_future_status" as PlaceCandidate["verification_status"],
     updated_at: "2026-01-04T00:00:00Z",
   }),
   base({
