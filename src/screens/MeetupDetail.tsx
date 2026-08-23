@@ -223,8 +223,16 @@ export default function MeetupDetail() {
     ? meetup.description.trim()
     : "The host hasn’t added a description yet.";
 
+  // WO-130: reserve exactly the sticky panel's measured height (which already
+  // includes its safe-area padding) plus one spacing token, so the last line of
+  // content rests above the panel without a large empty gap.
+  const contentClearance = panelHeight
+    ? `calc(${panelHeight}px + 1rem)`
+    : "calc(8rem + env(safe-area-inset-bottom))";
+
   return (
-    <div className="pb-32">
+    <div style={{ paddingBottom: contentClearance }}>
+
       <MeetupHero
         imageUrl={meetup.coverImageUrl}
         title={meetup.title}
