@@ -39,6 +39,8 @@ import { fetchMeetupLifecycle, lifecycleLabel } from "@/lib/meetupLifecycle";
 import { meetupShareUrl } from "@/lib/share";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useStickyPanelHeight } from "@/hooks/useStickyPanelHeight";
+
 import type { Meetup, Veggie } from "@/types";
 
 
@@ -75,6 +77,10 @@ export default function MeetupDetail() {
   const queryClient = useQueryClient();
   const [dbHost, setDbHost] = useState<Veggie | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  // WO-130 DEF-130-01: the action panel height varies by role/state and text
+  // scaling, so content clearance is measured instead of hard-coded.
+  const { ref: panelRef, height: panelHeight } = useStickyPanelHeight();
+
 
   const isRealMeetup = !!id && isUuid(id);
 
@@ -223,8 +229,16 @@ export default function MeetupDetail() {
     ? meetup.description.trim()
     : "The host hasn’t added a description yet.";
 
+  // WO-130: reserve exactly the sticky panel's measured height (which already
+  // includes its safe-area padding) plus one spacing token, so the last line of
+  // content rests above the panel without a large empty gap.
+  const contentClearance = panelHeight
+    ? `calc(${panelHeight}px + 1rem)`
+    : "calc(8rem + env(safe-area-inset-bottom))";
+
   return (
-    <div className="pb-32">
+    <div style={{ paddingBottom: contentClearance }}>
+
       <MeetupHero
         imageUrl={meetup.coverImageUrl}
         title={meetup.title}
@@ -298,7 +312,11 @@ export default function MeetupDetail() {
         <MeetupDescription description={description} />
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 mx-auto max-w-phone bg-background/95 backdrop-blur-xl border-t border-border safe-bottom">
+      <div
+        ref={panelRef}
+        data-testid="meetup-action-panel"
+        className="fixed bottom-0 inset-x-0 mx-auto max-w-phone bg-background/95 backdrop-blur-xl border-t border-border safe-bottom z-30"
+      >
         <div className="px-5 py-4 flex flex-col gap-2">
           {isHistorical ? (
             <>
