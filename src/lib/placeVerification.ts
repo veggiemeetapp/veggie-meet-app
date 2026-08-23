@@ -48,7 +48,12 @@ export interface PlaceCandidate {
   source: string;
   published_place_id: string | null;
   published_at: string | null;
+  /** WO-128 — existing timestamps used for owner list ordering. */
+  updated_at?: string | null;
+  created_at?: string | null;
+  city_id?: string | null;
 }
+
 
 /** Is the signed-in user on the owner allowlist? Never trust this alone — the
  *  server re-checks on every read, write, publish and Google call. */

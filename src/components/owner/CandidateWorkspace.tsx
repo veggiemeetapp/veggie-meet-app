@@ -190,38 +190,130 @@ export default function OwnerPlaceVerification() {
             reverification live in their own tabs of the operations dashboard,
             so they are intentionally not repeated here. */}
 
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold">Candidates ({candidatesQ.data?.length ?? 0})</h2>
-          {candidatesQ.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-          <ul className="space-y-1.5">
-            {(candidatesQ.data ?? []).map((c) => (
-              <li key={c.id}>
-                <button
-                  onClick={() => {
-                    setSelectedId(c.id === selectedId ? null : c.id);
-                    setForm({});
-                    setGoogleResults(null);
-                    setQuery(c.display_name);
-                  }}
-                  className={`w-full text-left rounded-control border p-3 transition-colors ${
-                    c.id === selectedId ? "border-primary bg-primary/5" : "hover:bg-muted/50"
-                  }`}
+        {/* WO-128 — status-grouped collapsible sections + candidate search so
+            the queue stays compact as candidate records accumulate. */}
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold">
+              Candidates ({candidatesQ.data?.length ?? 0})
+            </h2>
+            {searching && (
+              <p className="text-[11px] text-muted-foreground">
+                {totalMatches} {totalMatches === 1 ? "match" : "matches"}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="pv-candidate-search" className="sr-only">
+              Search candidates
+            </Label>
+            <div className="flex items-center gap-2 min-w-0">
+              <Input
+                id="pv-candidate-search"
+                type="search"
+                value={candidateSearch}
+                onChange={(e) => setCandidateSearch(e.target.value)}
+                placeholder="Search candidates"
+                className="min-w-0"
+              />
+              {searching && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCandidateSearch("")}
+                  aria-label="Clear candidate search"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium">{c.display_name}</span>
-                    <span className="text-[11px] shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-                      {STATUS_LABEL[c.verification_status] ?? c.verification_status}
-                    </span>
+                  Clear
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Searches name, address, district, city, category and Place ID across every status.
+            </p>
+          </div>
+
+          {candidatesQ.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+
+          {searching && totalMatches === 0 && (
+            <p role="status" className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+              No candidates match “{candidateSearch.trim()}”.
+            </p>
+          )}
+
+          <div className="space-y-2">
+            {groups.map((g) => {
+              const open = isGroupOpen(g);
+              return (
+                <div key={g.key} className="rounded-control border min-w-0">
+                  <h3>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(g.key)}
+                      aria-expanded={open}
+                      aria-controls={`pv-group-${g.key}`}
+                      className="w-full flex items-center gap-2 p-3 text-left min-h-11 rounded-control hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <ChevronRight
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 ${
+                          open ? "rotate-90" : ""
+                        }`}
+                        aria-hidden
+                      />
+                      <span className="text-sm font-semibold min-w-0 [overflow-wrap:anywhere]">
+                        {g.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0 ml-auto">
+                        ({groupCountLabel(g, searching)})
+                      </span>
+                    </button>
+                  </h3>
+                  <div id={`pv-group-${g.key}`} hidden={!open} className="px-3 pb-3">
+                    {g.items.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        {searching
+                          ? `No ${g.label.toLowerCase()} candidates match this search.`
+                          : CANDIDATE_GROUP_EMPTY[g.key]}
+                      </p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {g.items.map((c) => (
+                          <li key={c.id}>
+                            <button
+                              onClick={() => {
+                                setSelectedId(c.id === selectedId ? null : c.id);
+                                setForm({});
+                                setGoogleResults(null);
+                                setQuery(c.display_name);
+                              }}
+                              className={`w-full text-left rounded-control border p-3 transition-colors ${
+                                c.id === selectedId ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="text-sm font-medium min-w-0 [overflow-wrap:anywhere]">
+                                  {c.display_name}
+                                </span>
+                                <span className="text-[11px] shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                                  {STATUS_LABEL[c.verification_status] ?? c.verification_status}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 [overflow-wrap:anywhere]">
+                                {c.district ?? "—"} · {c.category ?? "no category"}
+                                {c.google_place_id ? " · Place ID set" : " · no Place ID"}
+                              </p>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {c.district ?? "—"} · {c.category ?? "no category"}
-                    {c.google_place_id ? " · Place ID set" : " · no Place ID"}
-                  </p>
-                </button>
-              </li>
-            ))}
-          </ul>
+                </div>
+              );
+            })}
+          </div>
         </section>
+
 
         {/* WO-104A DEF-104A-01 — a published candidate is completed lifecycle
             history: read-only, no blockers, no publish/reject/save actions. */}
