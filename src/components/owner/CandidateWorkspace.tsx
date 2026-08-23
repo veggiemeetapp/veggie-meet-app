@@ -97,7 +97,7 @@ export default function OwnerPlaceVerification() {
 
   /** During an active search any section holding matches reveals itself. */
   const isGroupOpen = (g: CandidateGroup<PlaceCandidate>) =>
-    searching ? g.matchCount > 0 : openGroups[g.key];
+    searching ? g.matchCount > 0 || openGroups[g.key] : openGroups[g.key];
   const toggleGroup = (key: CandidateGroupKey) =>
     setOpenGroups((s) => ({ ...s, [key]: !s[key] }));
 
