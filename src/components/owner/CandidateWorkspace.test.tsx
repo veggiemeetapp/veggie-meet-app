@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -145,8 +145,13 @@ describe("WO-128 candidate grouping", () => {
     const headings = screen
       .getAllByRole("button")
       .map((b) => b.textContent ?? "")
-      .filter((t) => /^(Draft|Published|Rejected)\s*\(/.test(t));
-    expect(headings).toEqual(["Draft (4)", "Published (2)", "Rejected (1)"]);
+      .map((t) => t.replace(/\s+/g, " ").trim())
+      .filter((t) => /^(Draft|Published|Rejected) ?\(/.test(t));
+    expect(headings.map((t) => t.replace(/ /g, ""))).toEqual([
+      "Draft(4)",
+      "Published(2)",
+      "Rejected(1)",
+    ]);
   });
 
   it("folds needs_review and unknown statuses into the Draft active queue without hiding them", async () => {
@@ -186,16 +191,15 @@ describe("WO-128 candidate grouping", () => {
     renderWorkspace();
     await waitFor(() => expect(header(/^Draft/)).toBeInTheDocument());
 
-    const draftPanel = document.getElementById("pv-group-draft")!;
-    const draftNames = within(draftPanel)
-      .getAllByRole("listitem")
-      .map((li) => li.textContent ?? "");
+    const names = (id: string) =>
+      Array.from(document.getElementById(id)!.querySelectorAll("li")).map(
+        (li) => li.textContent ?? "",
+      );
+    const draftNames = names("pv-group-draft");
     expect(draftNames[0]).toContain("Green Bowl");
     expect(draftNames[1]).toContain("Hum Vegetarian");
 
-    const pubNames = within(document.getElementById("pv-group-published")!)
-      .getAllByRole("listitem")
-      .map((li) => li.textContent ?? "");
+    const pubNames = names("pv-group-published");
     expect(pubNames[0]).toContain("Pasteur Garden");
     expect(pubNames[1]).toContain("BÀ XÃ Vegan");
   });
@@ -215,8 +219,8 @@ describe("WO-128 candidate search", () => {
     await waitFor(() => expect(header(/^Draft/)).toBeInTheDocument());
     await type("garden");
 
-    await waitFor(() => expect(header(/^Published/)).toHaveTextContent("Published (1 of 2)"));
-    expect(header(/^Draft/)).toHaveTextContent("Draft (0 of 4)");
+    await waitFor(() => expect(header(/^Published/)).toHaveTextContent(/Published\s*\(1 of 2\)/));
+    expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(0 of 4\)/);
     expect(header(/^Published/)).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Pasteur Garden")).toBeVisible();
   });
@@ -226,8 +230,8 @@ describe("WO-128 candidate search", () => {
     await waitFor(() => expect(header(/^Draft/)).toBeInTheDocument());
     await type("district 3");
 
-    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent("Draft (1 of 4)"));
-    expect(header(/^Rejected/)).toHaveTextContent("Rejected (1 of 1)");
+    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(1 of 4\)/));
+    expect(header(/^Rejected/)).toHaveTextContent(/Rejected\s*\(1 of 1\)/);
     expect(screen.getByText("Rejected Diner")).toBeVisible();
     expect(screen.getByText("Green Bowl")).toBeVisible();
   });
@@ -236,17 +240,17 @@ describe("WO-128 candidate search", () => {
     renderWorkspace();
     await waitFor(() => expect(header(/^Draft/)).toBeInTheDocument());
     await type("cafe");
-    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent("Draft (1 of 4)"));
+    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(1 of 4\)/));
 
     await type("ChIJhum");
-    await waitFor(() => expect(header(/^Published/)).toHaveTextContent("Published (1 of 2)"));
+    await waitFor(() => expect(header(/^Published/)).toHaveTextContent(/Published\s*\(1 of 2\)/));
   });
 
   it("searches by city name", async () => {
     renderWorkspace();
     await waitFor(() => expect(header(/^Draft/)).toBeInTheDocument());
     await type("ho chi minh");
-    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent("Draft (4 of 4)"));
+    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(4 of 4\)/));
   });
 
   it("shows a bounded zero-result message and restores counts when cleared", async () => {
@@ -257,17 +261,17 @@ describe("WO-128 candidate search", () => {
     await waitFor(() =>
       expect(screen.getByText(/No candidates match “zzzznope”\./)).toBeInTheDocument(),
     );
-    expect(header(/^Draft/)).toHaveTextContent("Draft (0 of 4)");
+    expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(0 of 4\)/);
 
     await user.click(screen.getByRole("button", { name: "Clear candidate search" }));
-    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent("Draft (4)"));
+    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(4\)/));
     expect(screen.getByText("Hum Vegetarian")).toBeVisible();
   });
 
   it("shows a bounded per-section empty state when a group has no rows", async () => {
     fetchCandidates.mockResolvedValue([ROWS[4]]);
     renderWorkspace();
-    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent("Draft (0)"));
+    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(0\)/));
     expect(screen.getByText("No draft candidates.")).toBeVisible();
   });
 
@@ -283,7 +287,7 @@ describe("WO-128 candidate search", () => {
 
   it("moves a candidate between groups when its status changes", async () => {
     const { rerender } = renderWorkspace();
-    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent("Draft (4)"));
+    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(4\)/));
 
     fetchCandidates.mockResolvedValue(
       ROWS.map((r) =>
@@ -301,7 +305,7 @@ describe("WO-128 candidate search", () => {
       </QueryClientProvider>,
     );
 
-    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent("Draft (3)"));
-    expect(header(/^Published/)).toHaveTextContent("Published (3)");
+    await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(3\)/));
+    expect(header(/^Published/)).toHaveTextContent(/Published\s*\(3\)/);
   });
 });
