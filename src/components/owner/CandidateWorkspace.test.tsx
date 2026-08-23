@@ -121,16 +121,21 @@ const ROWS: PlaceCandidate[] = [
 
 function renderWorkspace() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const utils = render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
         <CandidateWorkspace />
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return { ...utils, qc };
 }
 
-const header = (name: RegExp) => screen.getByRole("button", { name });
+/** Section header buttons are identified by the panel they control. */
+const header = (name: RegExp) => {
+  const key = name.source.replace("^", "").toLowerCase();
+  return document.querySelector<HTMLButtonElement>(`[aria-controls="pv-group-${key}"]`)!;
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -286,7 +291,7 @@ describe("WO-128 candidate search", () => {
   });
 
   it("moves a candidate between groups when its status changes", async () => {
-    const { rerender } = renderWorkspace();
+    const { qc } = renderWorkspace();
     await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(4\)/));
 
     fetchCandidates.mockResolvedValue(
@@ -296,14 +301,7 @@ describe("WO-128 candidate search", () => {
           : r,
       ),
     );
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    rerender(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <CandidateWorkspace />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
+    await qc.invalidateQueries({ queryKey: ["place-candidates"] });
 
     await waitFor(() => expect(header(/^Draft/)).toHaveTextContent(/Draft\s*\(3\)/));
     expect(header(/^Published/)).toHaveTextContent(/Published\s*\(3\)/);
