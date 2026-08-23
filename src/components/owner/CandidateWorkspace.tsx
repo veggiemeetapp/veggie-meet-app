@@ -67,6 +67,11 @@ export default function OwnerPlaceVerification() {
   const [query, setQuery] = useState("");
   const [googleResults, setGoogleResults] = useState<GoogleCandidate[] | null>(null);
   const [form, setForm] = useState<Partial<PlaceCandidate>>({});
+  const [candidateSearch, setCandidateSearch] = useState("");
+  // WO-128 §16 — accordion state is local component state for this session only.
+  const [openGroups, setOpenGroups] = useState<Record<CandidateGroupKey, boolean>>({
+    ...CANDIDATE_GROUP_DEFAULT_OPEN,
+  });
 
   const ownerQ = useQuery({ queryKey: ["is-owner"], queryFn: isOwner });
   const candidatesQ = useQuery({
@@ -74,12 +79,34 @@ export default function OwnerPlaceVerification() {
     queryFn: fetchPlaceCandidates,
     enabled: ownerQ.data === true,
   });
+  const citiesQ = useActiveCities();
+
+  const cityName = useMemo(() => {
+    const map = new Map<string, string>(
+      (citiesQ.data ?? []).map((c: { id: string; name: string }) => [c.id, c.name]),
+    );
+    return (id: string | null | undefined) => (id ? map.get(id) : undefined);
+  }, [citiesQ.data]);
+
+  const searching = candidateSearch.trim().length > 0;
+  const groups = useMemo(
+    () => groupCandidates(candidatesQ.data, candidateSearch, cityName),
+    [candidatesQ.data, candidateSearch, cityName],
+  );
+  const totalMatches = groups.reduce((n, g) => n + g.matchCount, 0);
+
+  /** During an active search any section holding matches reveals itself. */
+  const isGroupOpen = (g: CandidateGroup<PlaceCandidate>) =>
+    searching ? g.matchCount > 0 : openGroups[g.key];
+  const toggleGroup = (key: CandidateGroupKey) =>
+    setOpenGroups((s) => ({ ...s, [key]: !s[key] }));
 
   const selected = useMemo(
     () => candidatesQ.data?.find((c) => c.id === selectedId) ?? null,
     [candidatesQ.data, selectedId],
   );
   const merged: PlaceCandidate | null = selected ? { ...selected, ...form } : null;
+
 
   const searchM = useMutation({
     mutationFn: () => searchGooglePlaces(query),
