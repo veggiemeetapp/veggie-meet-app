@@ -75,6 +75,10 @@ export default function MeetupDetail() {
   const queryClient = useQueryClient();
   const [dbHost, setDbHost] = useState<Veggie | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  // WO-130 DEF-130-01: the action panel height varies by role/state and text
+  // scaling, so content clearance is measured instead of hard-coded.
+  const { ref: panelRef, height: panelHeight } = useStickyPanelHeight();
+
 
   const isRealMeetup = !!id && isUuid(id);
 
