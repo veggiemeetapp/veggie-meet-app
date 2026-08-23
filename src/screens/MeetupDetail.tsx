@@ -306,7 +306,11 @@ export default function MeetupDetail() {
         <MeetupDescription description={description} />
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 mx-auto max-w-phone bg-background/95 backdrop-blur-xl border-t border-border safe-bottom">
+      <div
+        ref={panelRef}
+        data-testid="meetup-action-panel"
+        className="fixed bottom-0 inset-x-0 mx-auto max-w-phone bg-background/95 backdrop-blur-xl border-t border-border safe-bottom z-30"
+      >
         <div className="px-5 py-4 flex flex-col gap-2">
           {isHistorical ? (
             <>
