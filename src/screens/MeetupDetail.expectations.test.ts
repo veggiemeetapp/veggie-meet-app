@@ -38,7 +38,9 @@ describe("WO-129 What to expect removal", () => {
   ];
 
   for (const file of ["src/screens/MeetupDetail.tsx", "src/screens/Host.tsx", "src/screens/MeetupManagement.tsx"]) {
-    const code = read(file).toLowerCase();
+    // The Description placeholder ("Tell everyone what to expect.") is host-written
+    // copy for a preserved field, not the retired expectation feature.
+    const code = read(file).toLowerCase().replace("tell everyone what to expect.", "");
     for (const phrase of phrases) {
       it(`${file} does not render "${phrase}"`, () => {
         expect(code).not.toContain(phrase);
