@@ -123,6 +123,11 @@ export default function MeetupManagement() {
   const [primaryInterestId, setPrimaryInterestId] = useState<string | null>(null);
   const [additionalInterestIds, setAdditionalInterestIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  // WO-133 — staged cover edit. Nothing is written until Save, so unrelated
+  // fields are never touched by a cover change and Remove is reversible.
+  const [coverDraft, setCoverDraft] = useState<CoverDraft>(COVER_DRAFT_UNCHANGED);
+  const [coverSaveError, setCoverSaveError] = useState<string | null>(null);
+
 
   // Location editor state (independent from the main Save; uses update_meetup_location).
   const contextQuery = useLocationContext();
