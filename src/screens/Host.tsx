@@ -776,15 +776,16 @@ export default function Host() {
                         group needs it.
                       </p>
 
-                      {placeError && (
+                      {(fieldErrors.place ?? placeError) && (
                         <p
                           id="host-location-error"
                           role="alert"
-                          className="mt-2 text-xs text-destructive"
+                          className="mt-2 text-xs font-medium text-destructive"
                         >
-                          {placeError}
+                          {fieldErrors.place ?? placeError}
                         </p>
                       )}
+
                     </>
                   )
                 ) : null}
