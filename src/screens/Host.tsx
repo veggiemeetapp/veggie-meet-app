@@ -876,7 +876,7 @@ export default function Host() {
               <FieldError id="host-start-time-error" message={fieldErrors.startTime} />
             </div>
 
-            <div className="flex-1 basis-[10rem] min-w-0">
+            <div className="flex-1 basis-[10rem] min-w-0" data-host-field="endTime">
 
               <label
                 htmlFor="host-end-time"
@@ -891,11 +891,14 @@ export default function Host() {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  aria-invalid={endTimeError ? true : undefined}
+                  aria-invalid={endTimeMessage ? true : undefined}
                   aria-describedby={
-                    endTimeError ? "host-end-time-error" : "host-end-time-hint"
+                    endTimeMessage ? "host-end-time-error" : "host-end-time-hint"
                   }
-                  className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={cn(
+                    "w-full h-12 rounded-control border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring",
+                    endTimeMessage ? "border-destructive" : "border-border",
+                  )}
                 />
                 {endTime !== "" && (
                   <button
@@ -908,9 +911,9 @@ export default function Host() {
                   </button>
                 )}
               </div>
-              {endTimeError ? (
-                <p id="host-end-time-error" className="mt-1.5 text-xs text-destructive">
-                  {endTimeError}
+              {endTimeMessage ? (
+                <p id="host-end-time-error" className="mt-1.5 text-xs font-medium text-destructive">
+                  {endTimeMessage}
                 </p>
               ) : (
                 <p id="host-end-time-hint" className="mt-1.5 text-xs text-charcoal-muted">
@@ -918,6 +921,7 @@ export default function Host() {
                 </p>
               )}
             </div>
+
           </div>
         </section>
 
