@@ -44,6 +44,9 @@ import {
   MEETUP_CAPACITY_MIN,
   MEETUP_CAPACITY_MAX,
   MEETUP_COVER_TARGET_CHARS,
+  MEETUP_COVER_ALLOWED_MIME,
+  isAllowedCoverFile,
+
   type FieldIssue,
   type MeetupField,
   type MeetupPublishError,
