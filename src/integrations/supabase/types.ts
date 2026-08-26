@@ -3988,6 +3988,7 @@ export type Database = {
         Args: {
           _additional_interest_ids?: string[]
           _capacity: number
+          _clear_cover?: boolean
           _community_place_id: string
           _cover_image_url: string
           _custom_location_address: string
