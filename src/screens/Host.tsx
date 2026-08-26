@@ -852,7 +852,7 @@ export default function Host() {
               on very narrow phones AND at large text sizes (200% zoom), where a
               two-column grid clipped the native time inputs. */}
           <div className="flex flex-wrap gap-3">
-            <div className="flex-1 basis-[10rem] min-w-0">
+            <div className="flex-1 basis-[10rem] min-w-0" data-host-field="startTime">
 
               <label
                 htmlFor="host-start-time"
@@ -866,9 +866,16 @@ export default function Host() {
                 required
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+                aria-invalid={fieldErrors.startTime ? true : undefined}
+                aria-describedby={fieldErrors.startTime ? "host-start-time-error" : undefined}
+                className={cn(
+                  "w-full h-12 rounded-control border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring",
+                  fieldErrors.startTime ? "border-destructive" : "border-border",
+                )}
               />
+              <FieldError id="host-start-time-error" message={fieldErrors.startTime} />
             </div>
+
             <div className="flex-1 basis-[10rem] min-w-0">
 
               <label
