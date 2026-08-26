@@ -38,7 +38,6 @@ import { labelForId } from "@/lib/interests";
 import {
   validateMeetupDraft,
   classifyMeetupPublishError,
-  issueSummary,
   publishFailureAnalytics,
   MEETUP_TITLE_MAX,
   MEETUP_DESCRIPTION_MAX,
