@@ -81,8 +81,12 @@ describe("WO-126 consolidated Host category contract", () => {
   });
 
   it("blocks publish until a main category is chosen", () => {
-    expect(src).toContain('["a main category"]');
+    // WO-131: named by the shared validator and shown inline on the Category
+    // section instead of only in the CTA requirements list.
+    expect(src).toContain('<FieldError id="host-category-error"');
+    expect(src).toContain("validateMeetupDraft({");
   });
+
 
   it("shows canonical category labels in Review & publish", () => {
     expect(src).toContain("primaryCategoryLabel");
