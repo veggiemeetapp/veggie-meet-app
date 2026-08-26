@@ -413,8 +413,14 @@ export default function MeetupManagement() {
 
 
   async function handleSave() {
+    // WO-133 — `saving` also guards against a double-submit issuing two
+    // conflicting cover mutations; `canSave` is false while it is true.
     if (!meetup || !canSave) return;
     setSaving(true);
+    setCoverSaveError(null);
+    // Snapshot the staged cover so a late picker result can't change what we
+    // are about to persist mid-flight.
+    const cover = resolveCoverUpdate(coverDraft);
     try {
       await updateHostedMeetup({
         meetupId: meetup.id,
@@ -428,26 +434,51 @@ export default function MeetupManagement() {
         // Location is edited separately via update_meetup_location — pass current snapshot unchanged.
         customLocationName: meetup.customLocation?.name ?? null,
         customLocationAddress: meetup.customLocation?.address ?? null,
-        coverImageUrl: meetup.coverImageUrl,
+        // Cover: null + clearCover=false means "leave the current cover as is".
+        coverImageUrl: cover.dirty ? cover.coverImageUrl : null,
+        clearCover: cover.clearCover,
         primaryInterestId,
         additionalInterestIds,
       });
       toast({
-        title: "Meetup updated",
+        title: cover.clearCover
+          ? "Meetup cover removed"
+          : cover.dirty
+            ? "Meetup cover updated"
+            : "Meetup updated",
         description: "Attendees will be notified of meaningful changes.",
       });
-      await qc.invalidateQueries({ queryKey: ["managed-meetup", meetup.id] });
-      await qc.invalidateQueries({ queryKey: ["meetup-membership", meetup.id] });
+      setCoverDraft(COVER_DRAFT_UNCHANGED);
+      // WO-133 — every surface that renders a Meetup cover must drop its cache
+      // so the old image can never linger: Manage summary + member detail
+      // (managed-meetup / meetup-membership), Today, Community, My Plans,
+      // invitations and search results.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["managed-meetup", meetup.id] }),
+        qc.invalidateQueries({ queryKey: ["meetup-membership", meetup.id] }),
+        qc.invalidateQueries({ queryKey: ["today-experience"] }),
+        qc.invalidateQueries({ queryKey: ["community-feed"] }),
+        qc.invalidateQueries({ queryKey: ["my-plans"] }),
+        qc.invalidateQueries({ queryKey: ["meetup-invitations"] }),
+        qc.invalidateQueries({ queryKey: ["search"] }),
+      ]);
     } catch (e: any) {
+      // The row update is atomic, so a failure leaves the published cover
+      // exactly as it was. The staged draft is kept so the host doesn't lose
+      // their pick — and no unrelated field is reset.
+      if (cover.dirty) setCoverSaveError(coverSaveErrorMessage(e));
       toast({
         title: "Couldn't update Meetup",
-        description: e?.message ?? "Please try again.",
+        description: cover.dirty
+          ? coverSaveErrorMessage(e)
+          : (e?.message ?? "Please try again."),
         variant: "destructive",
       });
     } finally {
       setSaving(false);
     }
   }
+
 
   async function handleRemoveConfirm() {
     if (!meetup || !removeTarget) return;
