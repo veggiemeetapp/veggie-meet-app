@@ -825,7 +825,7 @@ export default function Host() {
 
         {/* Date, start time & optional end time (WO-112) */}
         <section className="space-y-3">
-          <div>
+          <div data-host-field="date">
             <label
               htmlFor="host-date"
               className="block text-sm font-semibold text-charcoal mb-2"
@@ -837,9 +837,16 @@ export default function Host() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-invalid={fieldErrors.date ? true : undefined}
+              aria-describedby={fieldErrors.date ? "host-date-error" : undefined}
+              className={cn(
+                "w-full h-12 rounded-control border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring",
+                fieldErrors.date ? "border-destructive" : "border-border",
+              )}
             />
+            <FieldError id="host-date-error" message={fieldErrors.date} />
           </div>
+
           {/* WO-112B: rem-based flex basis instead of a viewport breakpoint, so
               the pair sits side by side when there is room and wraps to a stack
               on very narrow phones AND at large text sizes (200% zoom), where a
