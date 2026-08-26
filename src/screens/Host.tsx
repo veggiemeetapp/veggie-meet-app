@@ -1021,6 +1021,25 @@ export default function Host() {
           <FieldError id="host-description-error" message={fieldErrors.description} />
         </section>
 
+        {/* WO-131 — publish-level failure. Never generic: it names the reason,
+            says the entered details are still here, and what to do next. */}
+        {publishError && (
+          <div
+            role="alert"
+            data-testid="host-publish-error"
+            className="rounded-card border border-destructive/40 bg-destructive/5 p-4"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <div>
+                <p className="text-sm font-semibold text-destructive">{publishError.title}</p>
+                {publishError.description && (
+                  <p className="mt-1 text-xs text-charcoal copy">{publishError.description}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
 
@@ -1029,9 +1048,9 @@ export default function Host() {
         <div className="px-5 py-4">
           <PrimaryButton
             fullWidth
-            onClick={() => {
-              if (canSubmit) setConfirmOpen(true);
-            }}
+            // WO-131 §22: deterministic problems are surfaced here — before the
+            // confirmation modal — and never silently swallowed by a no-op tap.
+            onClick={reviewAndPublish}
             aria-disabled={!canSubmit}
             aria-describedby={canSubmit ? undefined : "host-cta-requirements"}
             className={canSubmit ? undefined : "opacity-50"}
@@ -1051,6 +1070,7 @@ export default function Host() {
           </p>
         </div>
       </div>
+
 
       {/* Confirmation dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
