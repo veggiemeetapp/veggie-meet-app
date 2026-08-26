@@ -40,6 +40,8 @@ import {
   toGoogleIdentityPatch,
 } from "@/lib/candidatePublish";
 import { classifyPlacePublishError } from "@/lib/placePublishErrors";
+import { logAnalyticsEvent } from "@/lib/analytics";
+
 
 import {
   CANDIDATE_GROUP_DEFAULT_OPEN,
