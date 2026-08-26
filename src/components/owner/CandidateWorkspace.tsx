@@ -39,6 +39,8 @@ import {
   publishBlockers,
   toGoogleIdentityPatch,
 } from "@/lib/candidatePublish";
+import { classifyPlacePublishError } from "@/lib/placePublishErrors";
+
 import {
   CANDIDATE_GROUP_DEFAULT_OPEN,
   CANDIDATE_GROUP_EMPTY,
@@ -151,14 +153,25 @@ export default function OwnerPlaceVerification() {
       qc.invalidateQueries({ queryKey: ["place-candidates"] });
       toast.success("Published to Community Places.");
     },
-    // Lifecycle copy (WO-104) is already owner-safe; only raw DB vocabulary
-    // violations are re-mapped here.
-    onError: (e: Error) =>
+    // WO-132: every known failure becomes an actionable owner message. Raw DB
+    // vocabulary violations keep their existing field-level mapping.
+    onError: (e: Error) => {
+      const classified = classifyPlacePublishError(e);
+      // Bounded, non-PII failure telemetry only.
+      logAnalyticsEvent("request_failed", {
+        surface: "owner_candidate_publish",
+        category: classified.code,
+        code: classified.code,
+        retryable: classified.retryable,
+      });
       toast.error(
         /violates|constraint|invalid input value for enum/i.test(e.message)
           ? mapCandidateConstraintError(e.message)
-          : e.message,
-      ),
+          : classified.message,
+      );
+    },
+
+
 
   });
 
@@ -692,10 +705,18 @@ export default function OwnerPlaceVerification() {
                     : ""}
               </p>
               {publishM.isError && (
-                <p role="alert" className="text-xs text-destructive">
-                  {(publishM.error as Error).message}
-                </p>
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="rounded-control border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-1"
+                >
+                  <p className="font-medium text-destructive">Couldn’t publish this place</p>
+                  <p className="text-muted-foreground [overflow-wrap:anywhere]">
+                    {classifyPlacePublishError(publishM.error as Error).message}
+                  </p>
+                </div>
               )}
+
             </section>
           </>
         )}

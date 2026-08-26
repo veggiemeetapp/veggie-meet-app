@@ -123,9 +123,12 @@ export async function verifyAndPublishCandidate(id: string): Promise<string> {
   const { data, error } = await supabase.rpc("verify_and_publish_place_candidate", {
     _candidate_id: id,
   });
-  if (error) throw new Error(mapLifecycleError(error.message));
+  // WO-132: preserve the server's taxonomy code so the owner UI can render the
+  // precise, actionable reason. Classification happens at the call site.
+  if (error) throw new Error(error.message);
   return data as unknown as string;
 }
+
 
 export async function rejectCandidate(id: string, notes?: string): Promise<void> {
   const { error } = await supabase.rpc("reject_place_candidate", {
