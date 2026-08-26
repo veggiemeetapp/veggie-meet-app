@@ -381,9 +381,46 @@ export default function Host() {
     .map((id) => labelForId(catalogueOptions, id))
     .filter((l): l is string => !!l);
 
+  /** Move focus to the first field that has an error, so it is reachable. */
+  function focusField(field: MeetupField | null) {
+    if (!field) return;
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>(`[data-host-field="${field}"]`);
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      const focusable = el.matches("input,textarea,button")
+        ? el
+        : el.querySelector<HTMLElement>("input,textarea,button,[tabindex]");
+      focusable?.focus();
+    });
+  }
+
+  /** Review & publish — deterministic problems are surfaced before the modal. */
+  function reviewAndPublish() {
+    setPublishError(null);
+    if (!canSubmit) {
+      setShowIssues(true);
+      const first = draftIssues[0];
+      logAnalyticsEvent("request_failed", {
+        category: "domain",
+        surface: "host_review",
+        code: first?.code ?? "MEETUP_UNKNOWN",
+        retryable: false,
+      });
+      focusField(first?.field ?? "place");
+      return;
+    }
+    setConfirmOpen(true);
+  }
+
   async function submit() {
+    // WO-131 §24: while the mutation is pending a second tap must not create a
+    // second Meetup.
+    if (saving) return;
     if (!canSubmit || !resolved || !profile?.id) return;
+    setPublishError(null);
     setSaving(true);
+
     try {
       // WO-076: creation is server-authoritative. Host identity is derived
       // from auth inside `create_hosted_meetup` — never sent from the client —
