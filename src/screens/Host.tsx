@@ -35,6 +35,19 @@ import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
 import { labelForId } from "@/lib/interests";
+import {
+  validateMeetupDraft,
+  classifyMeetupPublishError,
+  publishFailureAnalytics,
+  MEETUP_TITLE_MAX,
+  MEETUP_DESCRIPTION_MAX,
+  MEETUP_CAPACITY_MIN,
+  MEETUP_CAPACITY_MAX,
+  MEETUP_COVER_TARGET_CHARS,
+  type FieldIssue,
+  type MeetupField,
+  type MeetupPublishError,
+} from "@/lib/meetupPublishErrors";
 
 import {
   Dialog,
@@ -55,6 +68,20 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     <label className="block text-sm font-semibold text-charcoal mb-2">
       {children}
     </label>
+  );
+}
+
+/**
+ * WO-131 — inline, field-level publish error. Announced politely so a host
+ * using a screen reader hears what to fix without losing their place, and tied
+ * to the input via `aria-describedby` / `aria-invalid` at each call site.
+ */
+function FieldError({ id, message }: { id: string; message?: string | null }) {
+  if (!message) return null;
+  return (
+    <p id={id} role="status" className="mt-1.5 text-xs font-medium text-destructive">
+      {message}
+    </p>
   );
 }
 
@@ -98,13 +125,19 @@ export default function Host() {
   const [startTime, setStartTime] = useState<string>("18:30");
   // WO-112: optional end time. "" means the host set no ending time (stored NULL).
   const [endTime, setEndTime] = useState<string>("");
-  const [capacity, setCapacity] = useState<number>(10);
+  // WO-131: `null` = no valid group size chosen yet (custom field empty or out
+  // of range), so the publish gate can name it instead of sending a stale value.
+  const [capacity, setCapacity] = useState<number | null>(10);
 
   const [isCustomCapacity, setIsCustomCapacity] = useState(false);
   const [customCapacity, setCustomCapacity] = useState<string>("");
   const [description, setDescription] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  // WO-131 — actionable publish feedback.
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [showIssues, setShowIssues] = useState(false);
+  const [publishError, setPublishError] = useState<MeetupPublishError | null>(null);
 
   // WO-051: location mode (Community Place vs Custom location).
   const [searchParams] = useSearchParams();
@@ -202,64 +235,118 @@ export default function Host() {
       ? "End time must be after the start time."
       : null;
 
-  const canSubmit =
-    title.trim().length > 0 &&
-    !!primaryInterestId &&
-    !!cityId &&
-    !endTimeError &&
-    (!isCustom
-      ? !!selectedPlace
-      : customName.trim().length > 0 && customAddress.trim().length > 0 && coordsValid);
+  // WO-131 — one client-side mirror of the server's create rules, so a host can
+  // never reach a publishable-looking confirmation modal with a payload the
+  // backend categorically rejects. The server stays authoritative.
+  const draftIssues: FieldIssue[] = useMemo(
+    () =>
+      validateMeetupDraft({
+        title,
+        description,
+        date,
+        startTime,
+        endTime,
+        capacity,
+        cityId,
+        primaryInterestId,
+        additionalInterestIds,
+        communityPlaceId: isCustom ? null : (selectedPlace?.id ?? null),
+        isCustomLocation: isCustom,
+        customName,
+        customAddress,
+        coverChars: cover?.length ?? 0,
+      }),
+    [
+      title, description, date, startTime, endTime, capacity, cityId,
+      primaryInterestId, additionalInterestIds, isCustom, selectedPlace,
+      customName, customAddress, cover,
+    ],
+  );
 
+  const coordsIssue = isCustom && !coordsValid;
+  const canSubmit = draftIssues.length === 0 && !coordsIssue;
 
-  // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA used to be a
-  // plain `disabled` button, so a keyboard or screen-reader host could neither
-  // focus it nor discover what was still missing. The same requirements are now
-  // named in a polite status message that the CTA points at with
-  // aria-describedby, and the button stays focusable via aria-disabled.
-  const missingRequirements: string[] = [
-    ...(title.trim().length === 0 ? ["a Meetup title"] : []),
-    ...(!primaryInterestId ? ["a main category"] : []),
-    ...(!cityId ? ["a city"] : []),
-    ...(!isCustom
-      ? !selectedPlace
-        ? ["a Community Place"]
-        : []
-      : [
-          ...(customName.trim().length === 0 ? ["a location name"] : []),
-          ...(customAddress.trim().length === 0 ? ["a location address"] : []),
-          ...(!coordsValid ? ["valid coordinates"] : []),
-        ]),
-  ];
+  // Field → message. Deterministic draft issues first; a publish failure that
+  // maps to one field is layered on top so the host sees it in context.
+  const fieldErrors = useMemo(() => {
+    const map: Partial<Record<MeetupField, string>> = {};
+    if (showIssues) {
+      for (const issue of draftIssues) {
+        if (!map[issue.field]) map[issue.field] = issue.message;
+      }
+    }
+    if (publishError?.field) map[publishError.field] = publishError.title;
+    if (coverError) map.cover = coverError;
+    return map;
+  }, [showIssues, draftIssues, publishError, coverError]);
 
-  // WO-112 §36: End time is optional, so it never appears in the missing
-  // required-fields list — an invalid range is reported as its own message.
+  // End time keeps its own always-live message (it is validated as you type).
+  const endTimeMessage = endTimeError ?? fieldErrors.endTime ?? null;
+
+  // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA stays focusable
+  // via aria-disabled and always names what is still needed — WO-131 keeps that
+  // list complete, so every knowable problem is named up front.
   const ctaStatusMessage = canSubmit
     ? "All required Meetup details are complete."
-    : missingRequirements.length > 0
-      ? `Still needed: ${missingRequirements.join(", ")}.`
-      : (endTimeError ?? "Please review the Meetup details.");
+    : draftIssues.length > 1
+      ? `Still needed: ${draftIssues.map((i) => i.message).join(" ")}`
+      : draftIssues.length === 1
+        ? `Still needed: ${draftIssues[0].message}`
+        : coordsIssue
+          ? "Still needed: search for the location again so we have its coordinates."
+          : "Please review the Meetup details.";
 
 
 
+
+  // WO-131 / DEF-131-01 root cause: the cover was stored as an unbounded
+  // base64 data URL, while `create_hosted_meetup` rejects anything over
+  // 500,000 characters. A normal phone photo re-encoded at 1280px/q0.8 can
+  // exceed that, so publishing failed after the host had filled the whole
+  // form. The cover is now re-encoded down until it fits the server limit,
+  // and a cover that still can't fit is reported as a cover problem — never
+  // as a Meetup-field problem.
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setCoverError(null);
     try {
       const bitmap = await createImageBitmap(file);
-      const MAX = 1280;
-      const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(bitmap.width * scale);
-      canvas.height = Math.round(bitmap.height * scale);
-      canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      setCover(canvas.toDataURL("image/jpeg", 0.8));
+      const attempts: Array<{ max: number; quality: number }> = [
+        { max: 1280, quality: 0.8 },
+        { max: 1280, quality: 0.65 },
+        { max: 1024, quality: 0.6 },
+        { max: 800, quality: 0.55 },
+        { max: 640, quality: 0.5 },
+      ];
+      for (const attempt of attempts) {
+        const scale = Math.min(1, attempt.max / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const url = canvas.toDataURL("image/jpeg", attempt.quality);
+        if (url.length <= MEETUP_COVER_TARGET_CHARS) {
+          setCover(url);
+          return;
+        }
+      }
+      setCover(null);
+      setCoverError(
+        "That cover photo is too large to attach. Choose a smaller image, or publish without a cover.",
+      );
+      logAnalyticsEvent("request_failed", {
+        category: "domain",
+        surface: "host_cover",
+        code: "MEETUP_COVER_TOO_LARGE",
+        retryable: false,
+      });
     } catch {
-      const reader = new FileReader();
-      reader.onload = () => setCover(reader.result as string);
-      reader.readAsDataURL(file);
+      setCover(null);
+      setCoverError("Your cover photo couldn’t be saved. Please try uploading it again.");
     }
   }
+
 
 
   // Resolve the persisted snapshot fields we send to the DB.
@@ -312,9 +399,46 @@ export default function Host() {
     .map((id) => labelForId(catalogueOptions, id))
     .filter((l): l is string => !!l);
 
+  /** Move focus to the first field that has an error, so it is reachable. */
+  function focusField(field: MeetupField | null) {
+    if (!field) return;
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>(`[data-host-field="${field}"]`);
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      const focusable = el.matches("input,textarea,button")
+        ? el
+        : el.querySelector<HTMLElement>("input,textarea,button,[tabindex]");
+      focusable?.focus();
+    });
+  }
+
+  /** Review & publish — deterministic problems are surfaced before the modal. */
+  function reviewAndPublish() {
+    setPublishError(null);
+    if (!canSubmit) {
+      setShowIssues(true);
+      const first = draftIssues[0];
+      logAnalyticsEvent("request_failed", {
+        category: "domain",
+        surface: "host_review",
+        code: first?.code ?? "MEETUP_UNKNOWN",
+        retryable: false,
+      });
+      focusField(first?.field ?? "place");
+      return;
+    }
+    setConfirmOpen(true);
+  }
+
   async function submit() {
+    // WO-131 §24: while the mutation is pending a second tap must not create a
+    // second Meetup.
+    if (saving) return;
     if (!canSubmit || !resolved || !profile?.id) return;
+    setPublishError(null);
     setSaving(true);
+
     try {
       // WO-076: creation is server-authoritative. Host identity is derived
       // from auth inside `create_hosted_meetup` — never sent from the client —
@@ -390,20 +514,25 @@ export default function Host() {
         return;
       }
     } catch (e) {
-      // WO-124F / DEF-124F-01: single normalization path — one member-safe
-      // toast plus exactly one non-PII `request_failed` event. A stale app
-      // shell (pre-WO-124 payload) additionally gets a Reload affordance.
-      // WO-124G / DEF-124G-01: the confirmation dialog must close first —
-      // a modal Radix dialog disables pointer events on the rest of the page
-      // and traps focus, which made the toast's Reload action unreachable by
-      // both pointer and keyboard. Nothing was saved, so closing is safe and
-      // the entered form details are still on the form behind it.
+      // WO-124G / DEF-124G-01: the confirmation dialog must close first — a
+      // modal Radix dialog traps focus, which made the toast action and the
+      // form behind it unreachable. Nothing was saved, so closing is safe and
+      // every detail the host entered is still on the form.
       setConfirmOpen(false);
       const stale = isStaleClientError(e);
 
+      // WO-131 / DEF-131-01: the previous `titleOverride: "Couldn't create
+      // Meetup"` replaced the server's own precise, member-safe rule with a
+      // headline that explained nothing. Failures are now classified into a
+      // stable code with actionable copy, and attached to a field when we know
+      // which one it is.
+      const classified = classifyMeetupPublishError(e);
+      setPublishError(classified);
+      if (classified.field) focusField(classified.field);
+
       showErrorToast(e, {
         surface: "host_create",
-        titleOverride: stale ? undefined : "Couldn't create Meetup",
+        titleOverride: classified.title,
         action: stale ? (
           <ToastAction
             altText="Reload VeggieMeet to get the latest version"
@@ -421,6 +550,12 @@ export default function Host() {
           </ToastAction>
         ) : undefined,
       });
+      // WO-131 §26: bounded diagnostic context only — taxonomy code, stage and
+      // field. Reuses the existing allowlisted `request_failed` vocabulary so
+      // no analytics schema change is needed and raw error text never leaves.
+      logAnalyticsEvent("request_failed", publishFailureAnalytics(classified, "rpc"));
+
+
 
     } finally {
       setSaving(false);
@@ -456,14 +591,17 @@ export default function Host() {
 
 
         {/* Cover */}
-        <section>
+        <section data-host-field="cover">
           <FieldLabel>Meetup cover</FieldLabel>
           {cover ? (
             <div className="relative rounded-card overflow-hidden">
               <img src={cover} alt="Meetup cover" className="w-full h-44 object-cover" />
               <button
                 type="button"
-                onClick={() => setCover(null)}
+                onClick={() => {
+                  setCover(null);
+                  setCoverError(null);
+                }}
                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/90 flex items-center justify-center shadow-soft"
               >
                 <X className="w-4 h-4 text-charcoal" />
@@ -473,13 +611,15 @@ export default function Host() {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
+              aria-describedby={fieldErrors.cover ? "host-cover-error" : undefined}
               className="w-full h-40 rounded-card border-2 border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2 text-charcoal-muted hover:bg-accent/40 transition"
             >
               <Camera className="w-6 h-6" />
               <span className="text-sm font-medium">Add a photo (optional)</span>
             </button>
           )}
-          {!cover && (
+          <FieldError id="host-cover-error" message={fieldErrors.cover} />
+          {!cover && !fieldErrors.cover && (
             <p className="mt-2 text-xs text-charcoal-muted text-center">
               Skip for now — you can add one later.
             </p>
@@ -494,19 +634,26 @@ export default function Host() {
         </section>
 
         {/* Title */}
-        <section>
+        <section data-host-field="title">
           <FieldLabel>Meetup title</FieldLabel>
           <input aria-label="Meetup title"
             type="text"
             value={title}
+            maxLength={MEETUP_TITLE_MAX}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Saturday Coffee Meetup"
-            className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-invalid={fieldErrors.title ? true : undefined}
+            aria-describedby={fieldErrors.title ? "host-title-error" : undefined}
+            className={cn(
+              "w-full h-12 rounded-control border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring",
+              fieldErrors.title ? "border-destructive" : "border-border",
+            )}
           />
+          <FieldError id="host-title-error" message={fieldErrors.title} />
         </section>
 
         {/* WO-126 — the canonical taxonomy is the only classification UI */}
-        <section>
+        <section data-host-field="category">
           <FieldLabel>Category</FieldLabel>
           <p className="mb-3 text-xs text-charcoal-muted">
             Pick one main category, plus up to two optional extras. We use these to
@@ -521,10 +668,12 @@ export default function Host() {
             onAdditionalChange={setAdditionalInterestIds}
             suggestFrom={`${title} ${description}`}
           />
+          <FieldError id="host-category-error" message={fieldErrors.category} />
         </section>
 
+
         {/* Location — required */}
-        <section>
+        <section data-host-field="place">
           <FieldLabel>
             <span className="inline-flex items-center gap-1">
               <MapPin className="w-4 h-4" /> Location
@@ -532,7 +681,7 @@ export default function Host() {
           </FieldLabel>
 
           <div className="rounded-card border border-border bg-card p-4 space-y-4">
-            <div>
+            <div data-host-field="city">
               <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5">
                 City
               </div>
@@ -548,12 +697,14 @@ export default function Host() {
 
                 }}
               />
-              {defaultCityId && cityId === defaultCityId && (
+              <FieldError id="host-city-error" message={fieldErrors.city} />
+              {defaultCityId && cityId === defaultCityId && !fieldErrors.city && (
                 <p className="mt-1.5 text-[11px] text-charcoal-muted">
                   Using your {selectedCity && selectedCity.id === cityId ? "Selected" : "Home"} City by default.
                 </p>
               )}
             </div>
+
 
             <div>
               <div
@@ -630,15 +781,16 @@ export default function Host() {
                         group needs it.
                       </p>
 
-                      {placeError && (
+                      {(fieldErrors.place ?? placeError) && (
                         <p
                           id="host-location-error"
                           role="alert"
-                          className="mt-2 text-xs text-destructive"
+                          className="mt-2 text-xs font-medium text-destructive"
                         >
-                          {placeError}
+                          {fieldErrors.place ?? placeError}
                         </p>
                       )}
+
                     </>
                   )
                 ) : null}
@@ -650,21 +802,25 @@ export default function Host() {
                 {/* WO-123: custom location = Google Places search-and-select,
                     with manual entry as the fallback. No coordinate fields. */}
                 {isCustom && (
-                  <CustomLocationSearch
-                    value={customLoc}
-                    onChange={setCustomLoc}
-                    region={
-                      selectedCity?.id === cityId
-                        ? selectedCity?.country_code
-                        : homeCity?.id === cityId
-                          ? homeCity?.country_code
-                          : null
-                    }
-                    onEvent={(event, detail) =>
-                      logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
-                    }
-                  />
+                  <>
+                    <CustomLocationSearch
+                      value={customLoc}
+                      onChange={setCustomLoc}
+                      region={
+                        selectedCity?.id === cityId
+                          ? selectedCity?.country_code
+                          : homeCity?.id === cityId
+                            ? homeCity?.country_code
+                            : null
+                      }
+                      onEvent={(event, detail) =>
+                        logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
+                      }
+                    />
+                    <FieldError id="host-custom-location-error" message={fieldErrors.place} />
+                  </>
                 )}
+
               </div>
             </div>
 
@@ -674,7 +830,7 @@ export default function Host() {
 
         {/* Date, start time & optional end time (WO-112) */}
         <section className="space-y-3">
-          <div>
+          <div data-host-field="date">
             <label
               htmlFor="host-date"
               className="block text-sm font-semibold text-charcoal mb-2"
@@ -686,15 +842,22 @@ export default function Host() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-invalid={fieldErrors.date ? true : undefined}
+              aria-describedby={fieldErrors.date ? "host-date-error" : undefined}
+              className={cn(
+                "w-full h-12 rounded-control border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring",
+                fieldErrors.date ? "border-destructive" : "border-border",
+              )}
             />
+            <FieldError id="host-date-error" message={fieldErrors.date} />
           </div>
+
           {/* WO-112B: rem-based flex basis instead of a viewport breakpoint, so
               the pair sits side by side when there is room and wraps to a stack
               on very narrow phones AND at large text sizes (200% zoom), where a
               two-column grid clipped the native time inputs. */}
           <div className="flex flex-wrap gap-3">
-            <div className="flex-1 basis-[10rem] min-w-0">
+            <div className="flex-1 basis-[10rem] min-w-0" data-host-field="startTime">
 
               <label
                 htmlFor="host-start-time"
@@ -708,10 +871,17 @@ export default function Host() {
                 required
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+                aria-invalid={fieldErrors.startTime ? true : undefined}
+                aria-describedby={fieldErrors.startTime ? "host-start-time-error" : undefined}
+                className={cn(
+                  "w-full h-12 rounded-control border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring",
+                  fieldErrors.startTime ? "border-destructive" : "border-border",
+                )}
               />
+              <FieldError id="host-start-time-error" message={fieldErrors.startTime} />
             </div>
-            <div className="flex-1 basis-[10rem] min-w-0">
+
+            <div className="flex-1 basis-[10rem] min-w-0" data-host-field="endTime">
 
               <label
                 htmlFor="host-end-time"
@@ -726,11 +896,14 @@ export default function Host() {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  aria-invalid={endTimeError ? true : undefined}
+                  aria-invalid={endTimeMessage ? true : undefined}
                   aria-describedby={
-                    endTimeError ? "host-end-time-error" : "host-end-time-hint"
+                    endTimeMessage ? "host-end-time-error" : "host-end-time-hint"
                   }
-                  className="w-full h-12 rounded-control border border-border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={cn(
+                    "w-full h-12 rounded-control border bg-card px-3 text-base text-charcoal focus:outline-none focus:ring-2 focus:ring-ring",
+                    endTimeMessage ? "border-destructive" : "border-border",
+                  )}
                 />
                 {endTime !== "" && (
                   <button
@@ -743,9 +916,9 @@ export default function Host() {
                   </button>
                 )}
               </div>
-              {endTimeError ? (
-                <p id="host-end-time-error" className="mt-1.5 text-xs text-destructive">
-                  {endTimeError}
+              {endTimeMessage ? (
+                <p id="host-end-time-error" className="mt-1.5 text-xs font-medium text-destructive">
+                  {endTimeMessage}
                 </p>
               ) : (
                 <p id="host-end-time-hint" className="mt-1.5 text-xs text-charcoal-muted">
@@ -753,12 +926,13 @@ export default function Host() {
                 </p>
               )}
             </div>
+
           </div>
         </section>
 
 
         {/* Capacity */}
-        <section>
+        <section data-host-field="capacity">
           <FieldLabel>Group size (including you)</FieldLabel>
           {/* WO-112B: wrap so the row never forces horizontal page overflow at
               large text sizes. */}
@@ -800,32 +974,72 @@ export default function Host() {
               aria-label="Custom group size"
               type="number"
               inputMode="numeric"
-              min={1}
-              max={500}
+              min={MEETUP_CAPACITY_MIN}
+              max={MEETUP_CAPACITY_MAX}
               value={customCapacity}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, "");
                 setCustomCapacity(raw);
                 const n = parseInt(raw, 10);
-                if (!Number.isNaN(n) && n > 0 && n <= 500) setCapacity(n);
+                // WO-131: an empty or out-of-range custom size must not silently
+                // keep the previously chosen number — it becomes "no size yet",
+                // so the same rule the server applies is visible before publish.
+                setCapacity(
+                  !Number.isNaN(n) && n >= MEETUP_CAPACITY_MIN && n <= MEETUP_CAPACITY_MAX
+                    ? n
+                    : null,
+                );
               }}
               placeholder="Enter a number"
-              className="mt-3 w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-invalid={fieldErrors.capacity ? true : undefined}
+              aria-describedby={fieldErrors.capacity ? "host-capacity-error" : undefined}
+              className={cn(
+                "mt-3 w-full h-12 rounded-control border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring",
+                fieldErrors.capacity ? "border-destructive" : "border-border",
+              )}
             />
           )}
+          <FieldError id="host-capacity-error" message={fieldErrors.capacity} />
         </section>
 
         {/* Description */}
-        <section>
+        <section data-host-field="description">
           <FieldLabel>Description</FieldLabel>
           <textarea aria-label="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Tell everyone what to expect."
             rows={4}
-            className="w-full rounded-control border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            maxLength={MEETUP_DESCRIPTION_MAX}
+            aria-invalid={fieldErrors.description ? true : undefined}
+            aria-describedby={fieldErrors.description ? "host-description-error" : undefined}
+            className={cn(
+              "w-full rounded-control border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none",
+              fieldErrors.description ? "border-destructive" : "border-border",
+            )}
           />
+          <FieldError id="host-description-error" message={fieldErrors.description} />
         </section>
+
+        {/* WO-131 — publish-level failure. Never generic: it names the reason,
+            says the entered details are still here, and what to do next. */}
+        {publishError && (
+          <div
+            role="alert"
+            data-testid="host-publish-error"
+            className="rounded-card border border-destructive/40 bg-destructive/5 p-4"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <div>
+                <p className="text-sm font-semibold text-destructive">{publishError.title}</p>
+                {publishError.description && (
+                  <p className="mt-1 text-xs text-charcoal copy">{publishError.description}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
 
@@ -834,9 +1048,9 @@ export default function Host() {
         <div className="px-5 py-4">
           <PrimaryButton
             fullWidth
-            onClick={() => {
-              if (canSubmit) setConfirmOpen(true);
-            }}
+            // WO-131 §22: deterministic problems are surfaced here — before the
+            // confirmation modal — and never silently swallowed by a no-op tap.
+            onClick={reviewAndPublish}
             aria-disabled={!canSubmit}
             aria-describedby={canSubmit ? undefined : "host-cta-requirements"}
             className={canSubmit ? undefined : "opacity-50"}
@@ -856,6 +1070,7 @@ export default function Host() {
           </p>
         </div>
       </div>
+
 
       {/* Confirmation dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>

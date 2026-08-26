@@ -17,10 +17,15 @@ describe("Host create payload contract", () => {
   });
 
   it("blocks publish until a Primary interest is selected", () => {
-    const guard = src.slice(src.indexOf("const canSubmit ="), src.indexOf("const canSubmit =") + 400);
-    expect(guard).toContain("!!primaryInterestId");
+    // WO-131: the publish gate is now the shared draft validator, which returns
+    // MEETUP_PRIMARY_INTEREST_REQUIRED when no main category is chosen.
+    expect(src).toContain("validateMeetupDraft({");
+    expect(src).toContain("primaryInterestId,");
+    const guard = src.slice(src.indexOf("const canSubmit ="), src.indexOf("const canSubmit =") + 200);
+    expect(guard).toContain("draftIssues.length === 0");
     expect(src).toContain("if (!canSubmit");
   });
+
 
   it("routes create failures through the single normalization path", () => {
     expect(src).toContain('showErrorToast(e, {');
@@ -76,8 +81,12 @@ describe("WO-126 consolidated Host category contract", () => {
   });
 
   it("blocks publish until a main category is chosen", () => {
-    expect(src).toContain('["a main category"]');
+    // WO-131: named by the shared validator and shown inline on the Category
+    // section instead of only in the CTA requirements list.
+    expect(src).toContain('<FieldError id="host-category-error"');
+    expect(src).toContain("validateMeetupDraft({");
   });
+
 
   it("shows canonical category labels in Review & publish", () => {
     expect(src).toContain("primaryCategoryLabel");
