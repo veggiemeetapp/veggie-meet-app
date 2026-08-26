@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
-import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById } from "@/lib/backend";
+import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById, FALLBACK_COVER } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import {
   CustomLocationSearch,
@@ -56,6 +56,14 @@ import {
 import { logAnalyticsEvent } from "@/lib/analytics";
 
 import { MeetupLocationStatus } from "@/components/meetup";
+import { MeetupCoverEditor } from "@/components/meetup/MeetupCoverEditor";
+import {
+  COVER_DRAFT_UNCHANGED,
+  coverSaveErrorMessage,
+  previewCover,
+  resolveCoverUpdate,
+  type CoverDraft,
+} from "@/lib/meetupCover";
 import { CitySelector } from "@/components/location/CitySelector";
 import { useLocationContext } from "@/hooks/useLocation";
 import { useAuth } from "@/hooks/useAuth";
@@ -631,7 +639,7 @@ export default function MeetupManagement() {
         {/* Summary */}
         <section className="rounded-card border border-border bg-card p-4 flex gap-4">
           <img
-            src={meetup.coverImageUrl}
+            src={coverPreview ?? FALLBACK_COVER}
             alt=""
             className="w-20 h-20 rounded-control object-cover shrink-0"
           />
