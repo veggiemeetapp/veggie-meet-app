@@ -797,21 +797,25 @@ export default function Host() {
                 {/* WO-123: custom location = Google Places search-and-select,
                     with manual entry as the fallback. No coordinate fields. */}
                 {isCustom && (
-                  <CustomLocationSearch
-                    value={customLoc}
-                    onChange={setCustomLoc}
-                    region={
-                      selectedCity?.id === cityId
-                        ? selectedCity?.country_code
-                        : homeCity?.id === cityId
-                          ? homeCity?.country_code
-                          : null
-                    }
-                    onEvent={(event, detail) =>
-                      logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
-                    }
-                  />
+                  <>
+                    <CustomLocationSearch
+                      value={customLoc}
+                      onChange={setCustomLoc}
+                      region={
+                        selectedCity?.id === cityId
+                          ? selectedCity?.country_code
+                          : homeCity?.id === cityId
+                            ? homeCity?.country_code
+                            : null
+                      }
+                      onEvent={(event, detail) =>
+                        logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
+                      }
+                    />
+                    <FieldError id="host-custom-location-error" message={fieldErrors.place} />
+                  </>
                 )}
+
               </div>
             </div>
 
