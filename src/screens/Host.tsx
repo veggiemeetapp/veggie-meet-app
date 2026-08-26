@@ -648,7 +648,7 @@ export default function Host() {
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept={MEETUP_COVER_ALLOWED_MIME.join(",")}
             className="hidden"
             onChange={handleImage}
           />
