@@ -3559,6 +3559,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_allowed_meetup_cover: { Args: { _url: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
       is_blocked_with_me: { Args: { _profile_id: string }; Returns: boolean }
       is_chat_participant: { Args: { _chat_id: string }; Returns: boolean }
