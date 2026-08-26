@@ -71,6 +71,20 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * WO-131 — inline, field-level publish error. Announced politely so a host
+ * using a screen reader hears what to fix without losing their place, and tied
+ * to the input via `aria-describedby` / `aria-invalid` at each call site.
+ */
+function FieldError({ id, message }: { id: string; message?: string | null }) {
+  if (!message) return null;
+  return (
+    <p id={id} role="status" className="mt-1.5 text-xs font-medium text-destructive">
+      {message}
+    </p>
+  );
+}
+
 export default function Host() {
   const navigate = useNavigate();
   const { profile } = useAuth();
