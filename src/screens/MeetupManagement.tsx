@@ -158,6 +158,9 @@ export default function MeetupManagement() {
     setCapacity(meetup.capacity);
     setPrimaryInterestId(meetup.primaryInterestId ?? null);
     setAdditionalInterestIds(meetup.additionalInterestIds ?? []);
+    setCoverDraft(COVER_DRAFT_UNCHANGED);
+    setCoverSaveError(null);
+
 
     // Hydrate location editor from persisted snapshot.
     setLocCityId(meetup.location?.cityId ?? null);
