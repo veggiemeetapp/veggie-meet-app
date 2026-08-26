@@ -266,11 +266,17 @@ export default function Host() {
   }, [showIssues, draftIssues, publishError, coverError]);
 
   // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA stays focusable
-  // via aria-disabled and always names what is still needed.
+  // via aria-disabled and always names what is still needed — WO-131 keeps that
+  // list complete, so every knowable problem is named up front.
   const ctaStatusMessage = canSubmit
     ? "All required Meetup details are complete."
-    : (issueSummary(draftIssues) ??
-      (coordsIssue ? "Search for the location again so we have its coordinates." : "Please review the Meetup details."));
+    : draftIssues.length > 1
+      ? `Still needed: ${draftIssues.map((i) => i.message).join(" ")}`
+      : draftIssues.length === 1
+        ? `Still needed: ${draftIssues[0].message}`
+        : coordsIssue
+          ? "Still needed: search for the location again so we have its coordinates."
+          : "Please review the Meetup details.";
 
 
 
