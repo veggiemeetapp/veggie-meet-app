@@ -496,20 +496,25 @@ export default function Host() {
         return;
       }
     } catch (e) {
-      // WO-124F / DEF-124F-01: single normalization path — one member-safe
-      // toast plus exactly one non-PII `request_failed` event. A stale app
-      // shell (pre-WO-124 payload) additionally gets a Reload affordance.
-      // WO-124G / DEF-124G-01: the confirmation dialog must close first —
-      // a modal Radix dialog disables pointer events on the rest of the page
-      // and traps focus, which made the toast's Reload action unreachable by
-      // both pointer and keyboard. Nothing was saved, so closing is safe and
-      // the entered form details are still on the form behind it.
+      // WO-124G / DEF-124G-01: the confirmation dialog must close first — a
+      // modal Radix dialog traps focus, which made the toast action and the
+      // form behind it unreachable. Nothing was saved, so closing is safe and
+      // every detail the host entered is still on the form.
       setConfirmOpen(false);
       const stale = isStaleClientError(e);
 
+      // WO-131 / DEF-131-01: the previous `titleOverride: "Couldn't create
+      // Meetup"` replaced the server's own precise, member-safe rule with a
+      // headline that explained nothing. Failures are now classified into a
+      // stable code with actionable copy, and attached to a field when we know
+      // which one it is.
+      const classified = classifyMeetupPublishError(e);
+      setPublishError(classified);
+      if (classified.field) focusField(classified.field);
+
       showErrorToast(e, {
         surface: "host_create",
-        titleOverride: stale ? undefined : "Couldn't create Meetup",
+        titleOverride: classified.title,
         action: stale ? (
           <ToastAction
             altText="Reload VeggieMeet to get the latest version"
@@ -527,6 +532,13 @@ export default function Host() {
           </ToastAction>
         ) : undefined,
       });
+      // WO-131 §26: bounded diagnostic context only — code, stage and field.
+      logAnalyticsEvent(
+        "meetup_publish_failed",
+        publishFailureAnalytics(classified, "rpc"),
+      );
+
+
 
     } finally {
       setSaving(false);
