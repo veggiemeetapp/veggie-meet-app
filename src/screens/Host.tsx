@@ -256,24 +256,54 @@ export default function Host() {
 
 
 
+  // WO-131 / DEF-131-01 root cause: the cover was stored as an unbounded
+  // base64 data URL, while `create_hosted_meetup` rejects anything over
+  // 500,000 characters. A normal phone photo re-encoded at 1280px/q0.8 can
+  // exceed that, so publishing failed after the host had filled the whole
+  // form. The cover is now re-encoded down until it fits the server limit,
+  // and a cover that still can't fit is reported as a cover problem — never
+  // as a Meetup-field problem.
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setCoverError(null);
     try {
       const bitmap = await createImageBitmap(file);
-      const MAX = 1280;
-      const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(bitmap.width * scale);
-      canvas.height = Math.round(bitmap.height * scale);
-      canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      setCover(canvas.toDataURL("image/jpeg", 0.8));
+      const attempts: Array<{ max: number; quality: number }> = [
+        { max: 1280, quality: 0.8 },
+        { max: 1280, quality: 0.65 },
+        { max: 1024, quality: 0.6 },
+        { max: 800, quality: 0.55 },
+        { max: 640, quality: 0.5 },
+      ];
+      for (const attempt of attempts) {
+        const scale = Math.min(1, attempt.max / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const url = canvas.toDataURL("image/jpeg", attempt.quality);
+        if (url.length <= MEETUP_COVER_TARGET_CHARS) {
+          setCover(url);
+          return;
+        }
+      }
+      setCover(null);
+      setCoverError(
+        "That cover photo is too large to attach. Choose a smaller image, or publish without a cover.",
+      );
+      logAnalyticsEvent("request_failed", {
+        category: "domain",
+        surface: "host_cover",
+        code: "MEETUP_COVER_TOO_LARGE",
+        retryable: false,
+      });
     } catch {
-      const reader = new FileReader();
-      reader.onload = () => setCover(reader.result as string);
-      reader.readAsDataURL(file);
+      setCover(null);
+      setCoverError("Your cover photo couldn’t be saved. Please try uploading it again.");
     }
   }
+
 
 
   // Resolve the persisted snapshot fields we send to the DB.
