@@ -119,6 +119,10 @@ export default function Host() {
   const [description, setDescription] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  // WO-131 — actionable publish feedback.
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [showIssues, setShowIssues] = useState(false);
+  const [publishError, setPublishError] = useState<MeetupPublishError | null>(null);
 
   // WO-051: location mode (Community Place vs Custom location).
   const [searchParams] = useSearchParams();
