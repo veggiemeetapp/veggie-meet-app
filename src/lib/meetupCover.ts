@@ -60,11 +60,11 @@ export const COVER_ERROR_COPY: Record<CoverErrorCode, string> = {
 };
 
 export type CoverProcessResult =
-  | { ok: true; dataUrl: string }
-  | { ok: false; code: CoverErrorCode; message: string };
+  | { status: "ok"; dataUrl: string }
+  | { status: "error"; code: CoverErrorCode; message: string };
 
 function fail(code: CoverErrorCode): CoverProcessResult {
-  return { ok: false, code, message: COVER_ERROR_COPY[code] };
+  return { status: "error", code, message: COVER_ERROR_COPY[code] };
 }
 
 /**
@@ -92,7 +92,7 @@ export async function processMeetupCoverFile(file: File): Promise<CoverProcessRe
       canvas.height = Math.max(1, Math.round(bitmap.height * scale));
       canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
       const url = canvas.toDataURL("image/jpeg", attempt.quality);
-      if (url.length <= MEETUP_COVER_TARGET_CHARS) return { ok: true, dataUrl: url };
+      if (url.length <= MEETUP_COVER_TARGET_CHARS) return { status: "ok", dataUrl: url };
     }
     return fail("COVER_TOO_LARGE");
   } catch {

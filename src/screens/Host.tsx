@@ -318,7 +318,7 @@ export default function Host() {
     // so the WO-131B intake allowlist and the downscale ladder can never
     // diverge between the two flows.
     const result = await processMeetupCoverFile(file);
-    if (result.ok) {
+    if (result.status === "ok") {
       setCover(result.dataUrl);
       return;
     }

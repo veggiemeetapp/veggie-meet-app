@@ -50,7 +50,7 @@ export function MeetupCoverEditor({
     setBusy(true);
     try {
       const result = await processMeetupCoverFile(file);
-      if (result.ok) {
+      if (result.status === "ok") {
         // A successful pick always wins over a pending removal.
         onDraftChange({ kind: "replaced", dataUrl: result.dataUrl });
       } else {
