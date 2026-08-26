@@ -79,11 +79,12 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 function FieldError({ id, message }: { id: string; message?: string | null }) {
   if (!message) return null;
   return (
-    <p id={id} role="status" className="mt-1.5 text-xs font-medium text-destructive">
+    <p id={id} role="alert" className="mt-1.5 text-xs font-medium text-destructive">
       {message}
     </p>
   );
 }
+
 
 export default function Host() {
   const navigate = useNavigate();
@@ -958,7 +959,19 @@ export default function Host() {
             ))}
             <button
               type="button"
-              onClick={() => setIsCustomCapacity(true)}
+              onClick={() => {
+                setIsCustomCapacity(true);
+                // WO-131A: switching to Custom must not publish the previously
+                // highlighted preset while the box reads empty — the size is
+                // whatever is actually typed here.
+                const n = parseInt(customCapacity, 10);
+                setCapacity(
+                  !Number.isNaN(n) && n >= MEETUP_CAPACITY_MIN && n <= MEETUP_CAPACITY_MAX
+                    ? n
+                    : null,
+                );
+              }}
+
               className={cn(
                 "flex-1 h-11 rounded-control border font-semibold transition-all",
                 isCustomCapacity
