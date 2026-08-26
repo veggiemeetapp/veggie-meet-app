@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   classifyMeetupPublishError,
   validateMeetupDraft,
+  isAllowedCoverFile,
   MEETUP_COVER_MAX_CHARS,
+  MEETUP_COVER_MAX_INPUT_BYTES,
   MEETUP_TITLE_MAX,
   type MeetupDraft,
 } from "@/lib/meetupPublishErrors";
+
 
 /**
  * WO-131 — the publish contract must stay honest in both directions:
