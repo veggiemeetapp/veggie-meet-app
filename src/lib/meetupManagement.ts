@@ -47,6 +47,11 @@ export interface UpdateHostedMeetupInput {
   customLocationName: string | null;
   customLocationAddress: string | null;
   coverImageUrl: string | null;
+  /**
+   * WO-133 — true removes the cover (persists NULL). A NULL `coverImageUrl`
+   * without this flag leaves the existing cover untouched server-side.
+   */
+  clearCover?: boolean;
   /** WO-124 — null leaves the existing interest tags untouched. */
   primaryInterestId?: string | null;
   additionalInterestIds?: string[];
@@ -65,11 +70,13 @@ export async function updateHostedMeetup(input: UpdateHostedMeetupInput): Promis
     _custom_location_name: input.customLocationName,
     _custom_location_address: input.customLocationAddress,
     _cover_image_url: input.coverImageUrl,
+    _clear_cover: input.clearCover ?? false,
     _primary_interest_id: input.primaryInterestId ?? null,
     _additional_interest_ids: input.additionalInterestIds ?? [],
   });
   if (error) throw new Error(error.message);
 }
+
 
 export async function cancelMeetup(meetupId: string, reason: string): Promise<void> {
   const { error } = await supabase.rpc("cancel_meetup", {
