@@ -520,7 +520,9 @@ export function publishFailureAnalytics(
   stage: "validation" | "rpc" | "cover",
 ) {
   return {
-    error_code: err.code,
+    surface: "host_create",
+    category: "domain",
+    code: err.code,
     stage,
     field: err.field ?? "none",
     retryable: err.retryable,
