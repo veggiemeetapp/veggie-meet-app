@@ -586,14 +586,17 @@ export default function Host() {
 
 
         {/* Cover */}
-        <section>
+        <section data-host-field="cover">
           <FieldLabel>Meetup cover</FieldLabel>
           {cover ? (
             <div className="relative rounded-card overflow-hidden">
               <img src={cover} alt="Meetup cover" className="w-full h-44 object-cover" />
               <button
                 type="button"
-                onClick={() => setCover(null)}
+                onClick={() => {
+                  setCover(null);
+                  setCoverError(null);
+                }}
                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/90 flex items-center justify-center shadow-soft"
               >
                 <X className="w-4 h-4 text-charcoal" />
@@ -603,13 +606,15 @@ export default function Host() {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
+              aria-describedby={fieldErrors.cover ? "host-cover-error" : undefined}
               className="w-full h-40 rounded-card border-2 border-dashed border-border bg-muted/40 flex flex-col items-center justify-center gap-2 text-charcoal-muted hover:bg-accent/40 transition"
             >
               <Camera className="w-6 h-6" />
               <span className="text-sm font-medium">Add a photo (optional)</span>
             </button>
           )}
-          {!cover && (
+          <FieldError id="host-cover-error" message={fieldErrors.cover} />
+          {!cover && !fieldErrors.cover && (
             <p className="mt-2 text-xs text-charcoal-muted text-center">
               Skip for now — you can add one later.
             </p>
@@ -624,19 +629,26 @@ export default function Host() {
         </section>
 
         {/* Title */}
-        <section>
+        <section data-host-field="title">
           <FieldLabel>Meetup title</FieldLabel>
           <input aria-label="Meetup title"
             type="text"
             value={title}
+            maxLength={MEETUP_TITLE_MAX}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Saturday Coffee Meetup"
-            className="w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-invalid={fieldErrors.title ? true : undefined}
+            aria-describedby={fieldErrors.title ? "host-title-error" : undefined}
+            className={cn(
+              "w-full h-12 rounded-control border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring",
+              fieldErrors.title ? "border-destructive" : "border-border",
+            )}
           />
+          <FieldError id="host-title-error" message={fieldErrors.title} />
         </section>
 
         {/* WO-126 — the canonical taxonomy is the only classification UI */}
-        <section>
+        <section data-host-field="category">
           <FieldLabel>Category</FieldLabel>
           <p className="mb-3 text-xs text-charcoal-muted">
             Pick one main category, plus up to two optional extras. We use these to
@@ -651,7 +663,9 @@ export default function Host() {
             onAdditionalChange={setAdditionalInterestIds}
             suggestFrom={`${title} ${description}`}
           />
+          <FieldError id="host-category-error" message={fieldErrors.category} />
         </section>
+
 
         {/* Location — required */}
         <section>
