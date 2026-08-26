@@ -668,7 +668,7 @@ export default function Host() {
 
 
         {/* Location — required */}
-        <section>
+        <section data-host-field="place">
           <FieldLabel>
             <span className="inline-flex items-center gap-1">
               <MapPin className="w-4 h-4" /> Location
@@ -676,7 +676,7 @@ export default function Host() {
           </FieldLabel>
 
           <div className="rounded-card border border-border bg-card p-4 space-y-4">
-            <div>
+            <div data-host-field="city">
               <div className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1.5">
                 City
               </div>
@@ -692,12 +692,14 @@ export default function Host() {
 
                 }}
               />
-              {defaultCityId && cityId === defaultCityId && (
+              <FieldError id="host-city-error" message={fieldErrors.city} />
+              {defaultCityId && cityId === defaultCityId && !fieldErrors.city && (
                 <p className="mt-1.5 text-[11px] text-charcoal-muted">
                   Using your {selectedCity && selectedCity.id === cityId ? "Selected" : "Home"} City by default.
                 </p>
               )}
             </div>
+
 
             <div>
               <div
