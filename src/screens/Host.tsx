@@ -35,6 +35,20 @@ import { fetchPublishedCommunityPlaces } from "@/lib/backend";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
 import { labelForId } from "@/lib/interests";
+import {
+  validateMeetupDraft,
+  classifyMeetupPublishError,
+  issueSummary,
+  publishFailureAnalytics,
+  MEETUP_TITLE_MAX,
+  MEETUP_DESCRIPTION_MAX,
+  MEETUP_CAPACITY_MIN,
+  MEETUP_CAPACITY_MAX,
+  MEETUP_COVER_TARGET_CHARS,
+  type FieldIssue,
+  type MeetupField,
+  type MeetupPublishError,
+} from "@/lib/meetupPublishErrors";
 
 import {
   Dialog,
