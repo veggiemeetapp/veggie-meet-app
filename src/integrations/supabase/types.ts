@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      _wo131_diag: {
+        Row: {
+          at: string | null
+          id: number
+          label: string | null
+          msg: string | null
+          nid: string | null
+          ok: boolean | null
+          state: string | null
+        }
+        Insert: {
+          at?: string | null
+          id?: number
+          label?: string | null
+          msg?: string | null
+          nid?: string | null
+          ok?: boolean | null
+          state?: string | null
+        }
+        Update: {
+          at?: string | null
+          id?: number
+          label?: string | null
+          msg?: string | null
+          nid?: string | null
+          ok?: boolean | null
+          state?: string | null
+        }
+        Relationships: []
+      }
       account_deletion_requests: {
         Row: {
           blockers: Json
