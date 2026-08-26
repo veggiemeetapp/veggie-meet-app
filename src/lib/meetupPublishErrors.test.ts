@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   classifyMeetupPublishError,
   validateMeetupDraft,
+  isAllowedCoverFile,
   MEETUP_COVER_MAX_CHARS,
+  MEETUP_COVER_MAX_INPUT_BYTES,
   MEETUP_TITLE_MAX,
   type MeetupDraft,
 } from "@/lib/meetupPublishErrors";
+
 
 /**
  * WO-131 — the publish contract must stay honest in both directions:
@@ -168,5 +171,45 @@ describe("classifyMeetupPublishError", () => {
   it("always tells the host their details are preserved", () => {
     const err = classifyMeetupPublishError({ message: "boom", status: 500 });
     expect(err.description.toLowerCase()).toContain("still saved");
+  });
+});
+
+// WO-131B — cover intake allowlist + server-side format rejection.
+describe("WO-131B cover hardening", () => {
+  it("accepts jpeg, png and webp within the size ceiling", () => {
+    for (const type of ["image/jpeg", "image/png", "image/webp"]) {
+      expect(isAllowedCoverFile({ type, size: 1024 })).toBe(true);
+    }
+  });
+
+  it("rejects svg and other document-ish formats", () => {
+    for (const type of ["image/svg+xml", "text/html", "application/pdf", ""]) {
+      expect(isAllowedCoverFile({ type, size: 1024 })).toBe(false);
+    }
+  });
+
+  it("rejects an input file too large to decode safely", () => {
+    expect(
+      isAllowedCoverFile({ type: "image/jpeg", size: MEETUP_COVER_MAX_INPUT_BYTES + 1 }),
+    ).toBe(false);
+  });
+
+  it("is case-insensitive about the declared type", () => {
+    expect(isAllowedCoverFile({ type: "IMAGE/JPEG", size: 10 })).toBe(true);
+  });
+
+  it("maps the server cover-format rejection to actionable cover copy", () => {
+    const classified = classifyMeetupPublishError(
+      new Error("That cover photo format isn't supported. Use a JPG, PNG, or WebP photo."),
+    );
+    expect(classified.code).toBe("MEETUP_COVER_UPLOAD_FAILED");
+    expect(classified.field).toBe("cover");
+    expect(classified.description).toMatch(/JPG, PNG, or WebP/);
+  });
+
+  it("still maps the oversize server rejection separately", () => {
+    expect(classifyMeetupPublishError(new Error("Cover image is too large")).code).toBe(
+      "MEETUP_COVER_TOO_LARGE",
+    );
   });
 });

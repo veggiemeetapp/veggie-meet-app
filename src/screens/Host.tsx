@@ -44,6 +44,9 @@ import {
   MEETUP_CAPACITY_MIN,
   MEETUP_CAPACITY_MAX,
   MEETUP_COVER_TARGET_CHARS,
+  MEETUP_COVER_ALLOWED_MIME,
+  isAllowedCoverFile,
+
   type FieldIssue,
   type MeetupField,
   type MeetupPublishError,
@@ -311,8 +314,25 @@ export default function Host() {
     const file = e.target.files?.[0];
     if (!file) return;
     setCoverError(null);
+    // WO-131B: intake allowlist before we decode anything. The declared type is
+    // checked (never the filename), SVG and other document formats are refused,
+    // and an oversized input never reaches the decoder.
+    if (!isAllowedCoverFile(file)) {
+      setCover(null);
+      setCoverError(
+        "Please choose a JPG, PNG, or WebP photo under 25 MB, or publish without a cover.",
+      );
+      logAnalyticsEvent("request_failed", {
+        category: "domain",
+        surface: "host_cover",
+        code: "MEETUP_COVER_UPLOAD_FAILED",
+        retryable: false,
+      });
+      return;
+    }
     try {
       const bitmap = await createImageBitmap(file);
+
       const attempts: Array<{ max: number; quality: number }> = [
         { max: 1280, quality: 0.8 },
         { max: 1280, quality: 0.65 },
@@ -628,7 +648,7 @@ export default function Host() {
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept={MEETUP_COVER_ALLOWED_MIME.join(",")}
             className="hidden"
             onChange={handleImage}
           />

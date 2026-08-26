@@ -32,8 +32,37 @@ export const MEETUP_ADDRESS_MAX = 300;
 export const MEETUP_COVER_MAX_CHARS = 500_000;
 /** Kept a little under the server ceiling so re-encoding always lands inside. */
 export const MEETUP_COVER_TARGET_CHARS = 460_000;
+/**
+ * WO-131B — cover intake allowlist. Only raster formats the browser can decode
+ * and re-encode are accepted. SVG is deliberately excluded: it is a document
+ * format that can carry script, and it must never reach the cover pipeline.
+ */
+export const MEETUP_COVER_ALLOWED_MIME = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+/**
+ * Upper bound on the *input* file we are willing to decode, so a huge file can
+ * never drive unbounded decode memory before the downscale ladder runs.
+ */
+export const MEETUP_COVER_MAX_INPUT_BYTES = 25 * 1024 * 1024;
 export const MEETUP_MAX_ADDITIONAL_CATEGORIES = 2;
 export const MEETUP_MAX_DAYS_AHEAD = 365;
+
+/**
+ * True when a file is an acceptable cover *candidate*. The real gate is still
+ * the decode + canvas re-encode in Host: this only rejects obvious non-images
+ * early. The declared type is checked, never the filename extension.
+ */
+export function isAllowedCoverFile(file: { type?: string; size?: number }): boolean {
+  const type = (file.type ?? "").toLowerCase();
+  if (!MEETUP_COVER_ALLOWED_MIME.includes(type as (typeof MEETUP_COVER_ALLOWED_MIME)[number])) {
+    return false;
+  }
+  return typeof file.size !== "number" || file.size <= MEETUP_COVER_MAX_INPUT_BYTES;
+}
+
 
 export type MeetupField =
   | "title"
@@ -305,6 +334,17 @@ const SERVER_RULES: Array<{
     description:
       "The image is too large to attach. Choose a smaller photo and try publishing again, or publish without a cover.",
   },
+  {
+    // WO-131B: server-side cover allowlist (raster image data URLs or https
+    // URLs only). Reached only if something bypasses the client re-encode.
+    test: /cover photo format isn'?t supported/i,
+    code: "MEETUP_COVER_UPLOAD_FAILED",
+    field: "cover",
+    title: "That cover photo format isn’t supported",
+    description:
+      "Choose a JPG, PNG, or WebP photo, or publish without a cover. Your other details are still here.",
+  },
+
   {
     test: /title is required/i,
     code: "MEETUP_TITLE_REQUIRED",

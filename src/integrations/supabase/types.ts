@@ -14,36 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _wo131_diag: {
-        Row: {
-          at: string | null
-          id: number
-          label: string | null
-          msg: string | null
-          nid: string | null
-          ok: boolean | null
-          state: string | null
-        }
-        Insert: {
-          at?: string | null
-          id?: number
-          label?: string | null
-          msg?: string | null
-          nid?: string | null
-          ok?: boolean | null
-          state?: string | null
-        }
-        Update: {
-          at?: string | null
-          id?: number
-          label?: string | null
-          msg?: string | null
-          nid?: string | null
-          ok?: boolean | null
-          state?: string | null
-        }
-        Relationships: []
-      }
       account_deletion_requests: {
         Row: {
           blockers: Json
@@ -3589,6 +3559,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_allowed_meetup_cover: { Args: { _url: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
       is_blocked_with_me: { Args: { _profile_id: string }; Returns: boolean }
       is_chat_participant: { Args: { _chat_id: string }; Returns: boolean }
