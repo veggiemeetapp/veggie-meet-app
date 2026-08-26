@@ -220,43 +220,58 @@ export default function Host() {
       ? "End time must be after the start time."
       : null;
 
-  const canSubmit =
-    title.trim().length > 0 &&
-    !!primaryInterestId &&
-    !!cityId &&
-    !endTimeError &&
-    (!isCustom
-      ? !!selectedPlace
-      : customName.trim().length > 0 && customAddress.trim().length > 0 && coordsValid);
+  // WO-131 — one client-side mirror of the server's create rules, so a host can
+  // never reach a publishable-looking confirmation modal with a payload the
+  // backend categorically rejects. The server stays authoritative.
+  const draftIssues: FieldIssue[] = useMemo(
+    () =>
+      validateMeetupDraft({
+        title,
+        description,
+        date,
+        startTime,
+        endTime,
+        capacity,
+        cityId,
+        primaryInterestId,
+        additionalInterestIds,
+        communityPlaceId: isCustom ? null : (selectedPlace?.id ?? null),
+        isCustomLocation: isCustom,
+        customName,
+        customAddress,
+        coverChars: cover?.length ?? 0,
+      }),
+    [
+      title, description, date, startTime, endTime, capacity, cityId,
+      primaryInterestId, additionalInterestIds, isCustom, selectedPlace,
+      customName, customAddress, cover,
+    ],
+  );
 
+  const coordsIssue = isCustom && !coordsValid;
+  const canSubmit = draftIssues.length === 0 && !coordsIssue;
 
-  // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA used to be a
-  // plain `disabled` button, so a keyboard or screen-reader host could neither
-  // focus it nor discover what was still missing. The same requirements are now
-  // named in a polite status message that the CTA points at with
-  // aria-describedby, and the button stays focusable via aria-disabled.
-  const missingRequirements: string[] = [
-    ...(title.trim().length === 0 ? ["a Meetup title"] : []),
-    ...(!primaryInterestId ? ["a main category"] : []),
-    ...(!cityId ? ["a city"] : []),
-    ...(!isCustom
-      ? !selectedPlace
-        ? ["a Community Place"]
-        : []
-      : [
-          ...(customName.trim().length === 0 ? ["a location name"] : []),
-          ...(customAddress.trim().length === 0 ? ["a location address"] : []),
-          ...(!coordsValid ? ["valid coordinates"] : []),
-        ]),
-  ];
+  // Field → message. Deterministic draft issues first; a publish failure that
+  // maps to one field is layered on top so the host sees it in context.
+  const fieldErrors = useMemo(() => {
+    const map: Partial<Record<MeetupField, string>> = {};
+    if (showIssues) {
+      for (const issue of draftIssues) {
+        if (!map[issue.field]) map[issue.field] = issue.message;
+      }
+    }
+    if (publishError?.field) map[publishError.field] = publishError.title;
+    if (coverError) map.cover = coverError;
+    return map;
+  }, [showIssues, draftIssues, publishError, coverError]);
 
-  // WO-112 §36: End time is optional, so it never appears in the missing
-  // required-fields list — an invalid range is reported as its own message.
+  // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA stays focusable
+  // via aria-disabled and always names what is still needed.
   const ctaStatusMessage = canSubmit
     ? "All required Meetup details are complete."
-    : missingRequirements.length > 0
-      ? `Still needed: ${missingRequirements.join(", ")}.`
-      : (endTimeError ?? "Please review the Meetup details.");
+    : (issueSummary(draftIssues) ??
+      (coordsIssue ? "Search for the location again so we have its coordinates." : "Please review the Meetup details."));
+
 
 
 
