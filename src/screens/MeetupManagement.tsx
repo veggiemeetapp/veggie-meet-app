@@ -651,6 +651,20 @@ export default function MeetupManagement() {
           )}
         >
 
+          {/* WO-133 — Meetup cover. Staged: saved with the rest of the form. */}
+          <MeetupCoverEditor
+            currentCover={currentCustomCover}
+            draft={coverDraft}
+            onDraftChange={(next) => {
+              setCoverSaveError(null);
+              setCoverDraft(next);
+            }}
+            disabled={locked || isEnded || saving}
+            saveError={coverSaveError}
+          />
+
+
+
           <div>
             <FieldLabel>Title</FieldLabel>
             <input aria-label="Title"
