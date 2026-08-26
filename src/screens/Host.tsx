@@ -930,7 +930,7 @@ export default function Host() {
 
 
         {/* Capacity */}
-        <section>
+        <section data-host-field="capacity">
           <FieldLabel>Group size (including you)</FieldLabel>
           {/* WO-112B: wrap so the row never forces horizontal page overflow at
               large text sizes. */}
@@ -972,32 +972,53 @@ export default function Host() {
               aria-label="Custom group size"
               type="number"
               inputMode="numeric"
-              min={1}
-              max={500}
+              min={MEETUP_CAPACITY_MIN}
+              max={MEETUP_CAPACITY_MAX}
               value={customCapacity}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, "");
                 setCustomCapacity(raw);
                 const n = parseInt(raw, 10);
-                if (!Number.isNaN(n) && n > 0 && n <= 500) setCapacity(n);
+                // WO-131: an empty or out-of-range custom size must not silently
+                // keep the previously chosen number — it becomes "no size yet",
+                // so the same rule the server applies is visible before publish.
+                setCapacity(
+                  !Number.isNaN(n) && n >= MEETUP_CAPACITY_MIN && n <= MEETUP_CAPACITY_MAX
+                    ? n
+                    : null,
+                );
               }}
               placeholder="Enter a number"
-              className="mt-3 w-full h-12 rounded-control border border-border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-invalid={fieldErrors.capacity ? true : undefined}
+              aria-describedby={fieldErrors.capacity ? "host-capacity-error" : undefined}
+              className={cn(
+                "mt-3 w-full h-12 rounded-control border bg-card px-4 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring",
+                fieldErrors.capacity ? "border-destructive" : "border-border",
+              )}
             />
           )}
+          <FieldError id="host-capacity-error" message={fieldErrors.capacity} />
         </section>
 
         {/* Description */}
-        <section>
+        <section data-host-field="description">
           <FieldLabel>Description</FieldLabel>
           <textarea aria-label="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Tell everyone what to expect."
             rows={4}
-            className="w-full rounded-control border border-border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            maxLength={MEETUP_DESCRIPTION_MAX}
+            aria-invalid={fieldErrors.description ? true : undefined}
+            aria-describedby={fieldErrors.description ? "host-description-error" : undefined}
+            className={cn(
+              "w-full rounded-control border bg-card px-4 py-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none",
+              fieldErrors.description ? "border-destructive" : "border-border",
+            )}
           />
+          <FieldError id="host-description-error" message={fieldErrors.description} />
         </section>
+
 
       </div>
 
