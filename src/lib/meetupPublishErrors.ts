@@ -335,6 +335,17 @@ const SERVER_RULES: Array<{
       "The image is too large to attach. Choose a smaller photo and try publishing again, or publish without a cover.",
   },
   {
+    // WO-131B: server-side cover allowlist (raster image data URLs or https
+    // URLs only). Reached only if something bypasses the client re-encode.
+    test: /cover photo format isn'?t supported/i,
+    code: "MEETUP_COVER_UPLOAD_FAILED",
+    field: "cover",
+    title: "That cover photo format isn’t supported",
+    description:
+      "Choose a JPG, PNG, or WebP photo, or publish without a cover. Your other details are still here.",
+  },
+
+  {
     test: /title is required/i,
     code: "MEETUP_TITLE_REQUIRED",
     field: "title",
