@@ -312,61 +312,38 @@ export default function Host() {
   // as a Meetup-field problem.
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     setCoverError(null);
-    // WO-131B: intake allowlist before we decode anything. The declared type is
-    // checked (never the filename), SVG and other document formats are refused,
-    // and an oversized input never reaches the decoder.
-    if (!isAllowedCoverFile(file)) {
-      setCover(null);
-      setCoverError(
-        "Please choose a JPG, PNG, or WebP photo under 25 MB, or publish without a cover.",
-      );
-      logAnalyticsEvent("request_failed", {
-        category: "domain",
-        surface: "host_cover",
-        code: "MEETUP_COVER_UPLOAD_FAILED",
-        retryable: false,
-      });
+    // WO-133: create and edit share one pipeline (`processMeetupCoverFile`),
+    // so the WO-131B intake allowlist and the downscale ladder can never
+    // diverge between the two flows.
+    const result = await processMeetupCoverFile(file);
+    if (result.ok) {
+      setCover(result.dataUrl);
       return;
     }
-    try {
-      const bitmap = await createImageBitmap(file);
-
-      const attempts: Array<{ max: number; quality: number }> = [
-        { max: 1280, quality: 0.8 },
-        { max: 1280, quality: 0.65 },
-        { max: 1024, quality: 0.6 },
-        { max: 800, quality: 0.55 },
-        { max: 640, quality: 0.5 },
-      ];
-      for (const attempt of attempts) {
-        const scale = Math.min(1, attempt.max / Math.max(bitmap.width, bitmap.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-        canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        const url = canvas.toDataURL("image/jpeg", attempt.quality);
-        if (url.length <= MEETUP_COVER_TARGET_CHARS) {
-          setCover(url);
-          return;
-        }
-      }
-      setCover(null);
-      setCoverError(
-        "That cover photo is too large to attach. Choose a smaller image, or publish without a cover.",
-      );
+    setCover(null);
+    setCoverError(
+      result.code === "COVER_UNSUPPORTED_TYPE"
+        ? "Please choose a JPG, PNG, or WebP photo under 25 MB, or publish without a cover."
+        : result.code === "COVER_TOO_LARGE"
+          ? "That cover photo is too large to attach. Choose a smaller image, or publish without a cover."
+          : "Your cover photo couldn’t be saved. Please try uploading it again.",
+    );
+    if (result.code !== "COVER_PROCESSING_FAILED") {
       logAnalyticsEvent("request_failed", {
         category: "domain",
         surface: "host_cover",
-        code: "MEETUP_COVER_TOO_LARGE",
+        code:
+          result.code === "COVER_TOO_LARGE"
+            ? "MEETUP_COVER_TOO_LARGE"
+            : "MEETUP_COVER_UPLOAD_FAILED",
         retryable: false,
       });
-    } catch {
-      setCover(null);
-      setCoverError("Your cover photo couldn’t be saved. Please try uploading it again.");
     }
   }
+
 
 
 
