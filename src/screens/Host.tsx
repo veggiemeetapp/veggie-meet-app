@@ -532,11 +532,10 @@ export default function Host() {
           </ToastAction>
         ) : undefined,
       });
-      // WO-131 §26: bounded diagnostic context only — code, stage and field.
-      logAnalyticsEvent(
-        "meetup_publish_failed",
-        publishFailureAnalytics(classified, "rpc"),
-      );
+      // WO-131 §26: bounded diagnostic context only — taxonomy code, stage and
+      // field. Reuses the existing allowlisted `request_failed` vocabulary so
+      // no analytics schema change is needed and raw error text never leaves.
+      logAnalyticsEvent("request_failed", publishFailureAnalytics(classified, "rpc"));
 
 
 
