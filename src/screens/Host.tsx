@@ -278,6 +278,9 @@ export default function Host() {
     return map;
   }, [showIssues, draftIssues, publishError, coverError]);
 
+  // End time keeps its own always-live message (it is validated as you type).
+  const endTimeMessage = endTimeError ?? fieldErrors.endTime ?? null;
+
   // WO-085A DEF-085A-06 (WCAG 3.3.1 / 3.3.2): the publish CTA stays focusable
   // via aria-disabled and always names what is still needed — WO-131 keeps that
   // list complete, so every knowable problem is named up front.
