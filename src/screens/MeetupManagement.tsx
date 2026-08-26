@@ -376,6 +376,14 @@ export default function MeetupManagement() {
   }
 
   const isCancelled = meetup.status === "cancelled";
+  // `fetchMeetupById` already maps a NULL cover to the stock fallback, so the
+  // fallback URL is exactly what "this Meetup has no custom cover" looks like.
+  const currentCustomCover =
+    meetup.coverImageUrl && meetup.coverImageUrl !== FALLBACK_COVER
+      ? meetup.coverImageUrl
+      : null;
+  const coverPreview = previewCover(coverDraft, currentCustomCover);
+
 
   // WO-063 — completion is decided by the server; the UI only mirrors it.
   const lifecycle = lifecycleQuery.data;
