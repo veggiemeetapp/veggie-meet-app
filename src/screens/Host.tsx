@@ -125,7 +125,9 @@ export default function Host() {
   const [startTime, setStartTime] = useState<string>("18:30");
   // WO-112: optional end time. "" means the host set no ending time (stored NULL).
   const [endTime, setEndTime] = useState<string>("");
-  const [capacity, setCapacity] = useState<number>(10);
+  // WO-131: `null` = no valid group size chosen yet (custom field empty or out
+  // of range), so the publish gate can name it instead of sending a stale value.
+  const [capacity, setCapacity] = useState<number | null>(10);
 
   const [isCustomCapacity, setIsCustomCapacity] = useState(false);
   const [customCapacity, setCustomCapacity] = useState<string>("");
