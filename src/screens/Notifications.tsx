@@ -122,7 +122,7 @@ export default function Notifications() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const query = useInfiniteQuery<NotificationsPage>({
-    queryKey: ["notifications", profile?.id],
+    queryKey: notificationsListKey(profile?.id),
     enabled: !!profile?.id,
     initialPageParam: null as { createdAt: string; id: string } | null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
