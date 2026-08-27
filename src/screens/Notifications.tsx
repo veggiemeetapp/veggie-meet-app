@@ -204,7 +204,7 @@ export default function Notifications() {
     async (n: NotificationItem) => {
       if (!n.read_at) {
         // Optimistic mark read across all cached pages.
-        const key = ["notifications", profile?.id];
+        const key = notificationsListKey(profile?.id);
         const setReadAt = (value: string | null) =>
           qc.setQueryData<{ pages: NotificationsPage[]; pageParams: unknown[] }>(
             key,
@@ -222,12 +222,17 @@ export default function Notifications() {
             },
           );
         setReadAt(new Date().toISOString());
+        // WO-135: the badge count is a separate query, so the optimistic list
+        // write must be mirrored onto the canonical unread count immediately —
+        // otherwise the bell stays stale after navigating away.
+        decrementUnreadCount(qc, profile?.id, 1);
         // WO-083 DEF-083-05: a failed write must not permanently clear the
         // unread indicator. Roll back and let canonical server state decide.
         markNotificationRead(n.id).catch(() => {
           setReadAt(null);
-          qc.invalidateQueries({ queryKey: key });
+          invalidateNotificationReadState(qc, profile?.id);
         });
+
       }
 
       if (PLACE_SUGGESTION_TYPES.includes(n.type)) {
