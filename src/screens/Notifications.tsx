@@ -334,8 +334,6 @@ export default function Notifications() {
         {announcement}
       </p>
 
-      />
-
       {query.isLoading ? (
         <div className="px-5 pt-4 space-y-2" aria-label="Loading notifications">
           {[0, 1, 2, 3].map((i) => (
