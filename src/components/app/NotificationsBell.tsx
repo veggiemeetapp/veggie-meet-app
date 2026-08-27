@@ -17,10 +17,15 @@ export function NotificationsBell({ className }: Props) {
 
   // WO-086 DEF-086-03: shared, actor-scoped cache so the bell does not refetch
   // on every surface that renders it (Today, Community, Plans, You).
+  // WO-135 DEF-135-01: the key is produced by the canonical helper so read
+  // mutations on the Notifications screen write to exactly this entry, and the
+  // bell revalidates on mount/focus so background resume stays fresh.
   const { data: count = 0 } = useQuery({
-    queryKey: ["notifications-unread-count", profile?.id ?? null],
+    queryKey: unreadCountKey(profile?.id),
     enabled: !!profile?.id,
     staleTime: 30_000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     queryFn: fetchUnreadCount,
   });
 
@@ -36,13 +41,14 @@ export function NotificationsBell({ className }: Props) {
           table: "notifications",
           filter: `recipient_id=eq.${profile.id}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["notifications-unread-count"] }),
+        () => qc.invalidateQueries({ queryKey: [UNREAD_COUNT_KEY] }),
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [profile?.id, qc]);
+
 
   const label =
     count > 0
