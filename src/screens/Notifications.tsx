@@ -148,7 +148,7 @@ export default function Notifications() {
           table: "notifications",
           filter: `recipient_id=eq.${profile.id}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["notifications", profile.id] }),
+        () => invalidateNotificationReadState(qc, profile.id),
       )
       .subscribe();
     return () => {
