@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchUnreadCount } from "@/lib/notifications";
+import { UNREAD_COUNT_KEY, unreadCountKey } from "@/lib/notificationsCache";
 import { cn } from "@/lib/utils";
 
 interface Props {
