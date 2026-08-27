@@ -58,4 +58,31 @@ describe("WO-134 / DEF-134-01 — saved custom location visibility", () => {
     );
     expect(screen.getByLabelText("Search for a place")).toBeInTheDocument();
   });
+
+  /** WO-134A step 7 — empty-name validation while editing a saved location. */
+  it("blocks Done editing location and alerts when the name is cleared", () => {
+    function Harness() {
+      const [value, setValue] = useState<CustomLocationValue>(legacy);
+      return <CustomLocationSearch value={value} onChange={setValue} />;
+    }
+    render(<Harness />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit Highland coffee name and address" }),
+    );
+    fireEvent.change(screen.getByLabelText("Location name"), { target: { value: "" } });
+
+    const done = screen.getByRole("button", { name: "Done editing location" });
+    expect(done).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Add a location name so attendees know where to go.",
+    );
+
+    // Restoring the name re-enables the action and drops the alert.
+    fireEvent.change(screen.getByLabelText("Location name"), {
+      target: { value: "Highland coffee" },
+    });
+    expect(screen.getByRole("button", { name: "Done editing location" })).toBeEnabled();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });
+
