@@ -45,6 +45,12 @@ import {
   type NotificationsPage,
   type NotificationType,
 } from "@/lib/notifications";
+import {
+  decrementUnreadCount,
+  invalidateNotificationReadState,
+  notificationsListKey,
+  setUnreadCount,
+} from "@/lib/notificationsCache";
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -119,6 +125,7 @@ export default function Notifications() {
   const { profile } = useAuth();
   const qc = useQueryClient();
   const [marking, setMarking] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const query = useInfiniteQuery<NotificationsPage>({
