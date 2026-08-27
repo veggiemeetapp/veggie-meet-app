@@ -43,6 +43,67 @@ function MapsLink({ url, placeName }: { url: string; placeName: string }) {
   );
 }
 
+/**
+ * Manual name/address fields. Used both as the "can't find it" fallback during
+ * search and as the edit form for an already-saved custom location (WO-134).
+ */
+function ManualLocationFields({
+  value,
+  onChange,
+}: {
+  value: CustomLocationValue;
+  onChange: (next: CustomLocationValue) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label
+          htmlFor="custom-location-name"
+          className="block text-sm font-semibold text-charcoal mb-2"
+        >
+          Location name
+        </label>
+        <input
+          id="custom-location-name"
+          type="text"
+          value={value.name}
+          onChange={(e) =>
+            onChange({
+              ...value,
+              name: e.target.value,
+              latitude: null,
+              longitude: null,
+              googlePlaceId: null,
+              googleMapsUrl: null,
+            })
+          }
+          placeholder="e.g. Riverside Park pavilion"
+          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+      <div>
+        <label
+          htmlFor="custom-location-address"
+          className="block text-sm font-semibold text-charcoal mb-2"
+        >
+          Street address
+        </label>
+        <input
+          id="custom-location-address"
+          type="text"
+          value={value.address}
+          onChange={(e) => onChange({ ...value, address: e.target.value })}
+          placeholder="Street, District, City"
+          className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+      <p className="text-[11px] text-charcoal-muted">
+        Timezone is set from the city automatically.
+      </p>
+    </div>
+  );
+}
+
 
 export interface CustomLocationValue {
   name: string;
@@ -80,8 +141,16 @@ export function CustomLocationSearch({
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
+  /** WO-134 — editing the name/address of an already-saved custom location. */
+  const [editing, setEditing] = useState(false);
 
-  const hasSelection = value.googlePlaceId !== null;
+  const googleConfirmed = value.googlePlaceId !== null;
+  /**
+   * DEF-134-01 — a saved custom location must stay visible even when it has no
+   * Google reference (manual or legacy rows), instead of being hidden behind an
+   * empty search field.
+   */
+  const hasSelection = googleConfirmed || value.name.trim().length > 0;
 
   async function runSearch() {
     const q = query.trim();
@@ -112,10 +181,13 @@ export function CustomLocationSearch({
     setResults(null);
     setQuery("");
     setManual(false);
+    setEditing(false);
     onEvent?.("selected", { has_coordinates: r.latitude !== null });
   }
 
   function clearSelection() {
+    setEditing(false);
+    setManual(false);
     onChange({
       name: "",
       address: "",
@@ -134,11 +206,16 @@ export function CustomLocationSearch({
         <div className="flex items-start gap-2">
           <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden />
           <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-charcoal-muted">
+              Current location
+            </p>
             <p className="font-semibold text-charcoal [overflow-wrap:anywhere]">{value.name}</p>
-            {value.address && (
+            {value.address ? (
               <p className="mt-0.5 text-xs text-charcoal-muted [overflow-wrap:anywhere]">
                 {value.address}
               </p>
+            ) : (
+              <p className="mt-0.5 text-xs text-charcoal-muted">No street address saved yet.</p>
             )}
             {selectedMapsUrl && (
               <p className="mt-1.5">
@@ -146,13 +223,55 @@ export function CustomLocationSearch({
               </p>
             )}
             <p className="mt-1.5 text-[11px] text-charcoal-muted">
-              Location confirmed from Google Maps. Timezone comes from the city.
+              {googleConfirmed
+                ? "Location confirmed from Google Maps. Timezone comes from the city."
+                : "Saved as a custom location. Timezone comes from the city."}
             </p>
 
+            {editing ? (
+              <div className="mt-3 border-t border-border pt-3">
+                <ManualLocationFields value={value} onChange={onChange} />
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  disabled={value.name.trim().length === 0}
+                  className={cn(
+                    "mt-3 min-h-11 px-4 rounded-control text-sm font-semibold",
+                    value.name.trim().length === 0
+                      ? "bg-muted text-charcoal-muted"
+                      : "bg-primary text-primary-foreground",
+                  )}
+                >
+                  Done editing location
+                </button>
+                {value.name.trim().length === 0 && (
+                  <p role="alert" className="mt-2 text-xs text-destructive">
+                    Add a location name so attendees know where to go.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(true);
+                  onEvent?.("manual", { mode: "edit_saved" });
+                }}
+                aria-label={
+                  value.name
+                    ? `Edit ${value.name} name and address`
+                    : "Edit location name and address"
+                }
+                className="mt-2 min-h-11 inline-flex items-center text-xs font-semibold text-primary"
+              >
+                Edit name or address
+              </button>
+            )}
           </div>
           <button
             type="button"
             onClick={clearSelection}
+            aria-label="Change location — search for a different place"
             className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary"
           >
             <X className="w-3 h-3" aria-hidden />
@@ -162,6 +281,7 @@ export function CustomLocationSearch({
       </div>
     );
   }
+
 
   return (
     <div className="mt-2 space-y-3 rounded-card border border-border bg-muted/30 p-3">
@@ -280,51 +400,8 @@ export function CustomLocationSearch({
           Can’t find it? Enter the location manually
         </button>
       ) : (
-        <div className="space-y-3 border-t border-border pt-3">
-          <div>
-            <label
-              htmlFor="custom-location-name"
-              className="block text-sm font-semibold text-charcoal mb-2"
-            >
-              Location name
-            </label>
-            <input
-              id="custom-location-name"
-              type="text"
-              value={value.name}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  name: e.target.value,
-                  latitude: null,
-                  longitude: null,
-                  googlePlaceId: null,
-                  googleMapsUrl: null,
-                })
-              }
-              placeholder="e.g. Riverside Park pavilion"
-              className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="custom-location-address"
-              className="block text-sm font-semibold text-charcoal mb-2"
-            >
-              Street address
-            </label>
-            <input
-              id="custom-location-address"
-              type="text"
-              value={value.address}
-              onChange={(e) => onChange({ ...value, address: e.target.value })}
-              placeholder="Street, District, City"
-              className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <p className="text-[11px] text-charcoal-muted">
-            Timezone is set from the city automatically.
-          </p>
+        <div className="border-t border-border pt-3">
+          <ManualLocationFields value={value} onChange={onChange} />
         </div>
       )}
     </div>

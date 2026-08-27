@@ -1,5 +1,5 @@
 import { safeBack } from "@/lib/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
+import { recoverPrimaryInterest } from "@/lib/meetupLegacyInterest";
 import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById, FALLBACK_COVER } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import {
@@ -199,6 +200,33 @@ export default function MeetupManagement() {
     staleTime: 60 * 60 * 1000,
   });
 
+  const interestOptions = interestCatalogue.data ?? [];
+
+  /**
+   * DEF-134-02 — older Meetups can open with no usable Main category. Once the
+   * catalogue is available, recover one from the legacy compatibility value when
+   * the mapping is unambiguous; otherwise flag the picker for host recovery.
+   * Runs once per Meetup so it never overwrites a host's own choice.
+   */
+  const interestRecoveredRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!meetup || interestOptions.length === 0) return;
+    if (interestRecoveredRef.current === meetup.id) return;
+    interestRecoveredRef.current = meetup.id;
+    const recovered = recoverPrimaryInterest(
+      meetup.primaryInterestId,
+      meetup.category,
+      interestOptions,
+    );
+    setPrimaryInterestId(recovered.primaryId);
+  }, [meetup?.id, interestOptions.length]);
+
+  const primaryInterestSelectable =
+    !!primaryInterestId && interestOptions.some((o) => o.id === primaryInterestId);
+  const needsInterestRecovery =
+    !interestCatalogue.isLoading && interestOptions.length > 0 && !primaryInterestSelectable;
+
+
   const placesQuery = useQuery({
     queryKey: ["manage-places", locCityId],
     enabled: !!locCityId,
@@ -265,7 +293,7 @@ export default function MeetupManagement() {
     !!startTime &&
     !endTimeError &&
     capacity >= 1 &&
-    !!primaryInterestId &&
+    primaryInterestSelectable &&
     !capacityBelowAttendance &&
     !startsInPast &&
     !saving &&
@@ -750,8 +778,9 @@ export default function MeetupManagement() {
             </p>
 
             <MeetupInterestPicker
-              options={interestCatalogue.data ?? []}
+              options={interestOptions}
               loading={interestCatalogue.isLoading}
+              recovery={needsInterestRecovery}
               primaryId={primaryInterestId}
               additionalIds={additionalInterestIds}
               onPrimaryChange={setPrimaryInterestId}
@@ -987,6 +1016,12 @@ export default function MeetupManagement() {
                 logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
               }
             />
+          )}
+
+          {locIsCustom && locCustom.name.trim().length === 0 && (
+            <p role="alert" className="text-xs text-destructive">
+              Add a location name before updating the location.
+            </p>
           )}
 
 
