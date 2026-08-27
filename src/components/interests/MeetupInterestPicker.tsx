@@ -20,11 +20,12 @@ import {
 export function MeetupInterestPicker({
   options,
   loading,
-  primaryId,
+  primaryId: rawPrimaryId,
   additionalIds,
   onPrimaryChange,
   onAdditionalChange,
   suggestFrom,
+  recovery = false,
 }: {
   options: InterestOption[];
   loading?: boolean;
@@ -34,11 +35,26 @@ export function MeetupInterestPicker({
   onAdditionalChange: (ids: string[]) => void;
   /** Free text (title/description) used to offer optional suggestions. */
   suggestFrom?: string;
+  /**
+   * WO-134 — true when this Meetup has no usable Main category yet (older
+   * Meetup). Shows an explicit hint so the host knows the next tap sets it.
+   */
+  recovery?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const groups = useMemo(
     () => groupInterests(filterInterests(options, query)),
     [options, query],
+  );
+
+  /**
+   * DEF-134-02 — a stored Main category that is not selectable (retired or
+   * legacy value) must behave as "not chosen", otherwise every tap would be
+   * treated as an Additional category and the host could never set a Main one.
+   */
+  const primaryId = useMemo(
+    () => (rawPrimaryId && options.some((o) => o.id === rawPrimaryId) ? rawPrimaryId : null),
+    [rawPrimaryId, options],
   );
 
   const suggestions = useMemo(() => {
@@ -47,6 +63,7 @@ export function MeetupInterestPicker({
       (id) => id !== primaryId && !additionalIds.includes(id),
     );
   }, [options, suggestFrom, primaryId, additionalIds]);
+
 
   function selectPrimary(id: string) {
     if (primaryId === id) {
@@ -83,6 +100,17 @@ export function MeetupInterestPicker({
 
   return (
     <div>
+      {recovery && !primaryId && (
+        <div
+          role="status"
+          className="mb-3 rounded-control border border-warning/50 bg-warning/10 p-3 text-xs text-charcoal"
+        >
+          <span className="block font-semibold">Main category needs to be set</span>
+          This Meetup was created before categories were updated. Tap any category below to
+          make it the Main category — the next taps add optional extras.
+        </div>
+      )}
+
       <div className="relative mb-3">
         <Search
           className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-muted"
