@@ -45,6 +45,12 @@ import {
   type NotificationsPage,
   type NotificationType,
 } from "@/lib/notifications";
+import {
+  decrementUnreadCount,
+  invalidateNotificationReadState,
+  notificationsListKey,
+  setUnreadCount,
+} from "@/lib/notificationsCache";
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -119,10 +125,11 @@ export default function Notifications() {
   const { profile } = useAuth();
   const qc = useQueryClient();
   const [marking, setMarking] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const query = useInfiniteQuery<NotificationsPage>({
-    queryKey: ["notifications", profile?.id],
+    queryKey: notificationsListKey(profile?.id),
     enabled: !!profile?.id,
     initialPageParam: null as { createdAt: string; id: string } | null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
@@ -148,7 +155,7 @@ export default function Notifications() {
           table: "notifications",
           filter: `recipient_id=eq.${profile.id}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["notifications", profile.id] }),
+        () => invalidateNotificationReadState(qc, profile.id),
       )
       .subscribe();
     return () => {
@@ -204,7 +211,7 @@ export default function Notifications() {
     async (n: NotificationItem) => {
       if (!n.read_at) {
         // Optimistic mark read across all cached pages.
-        const key = ["notifications", profile?.id];
+        const key = notificationsListKey(profile?.id);
         const setReadAt = (value: string | null) =>
           qc.setQueryData<{ pages: NotificationsPage[]; pageParams: unknown[] }>(
             key,
@@ -222,12 +229,17 @@ export default function Notifications() {
             },
           );
         setReadAt(new Date().toISOString());
+        // WO-135: the badge count is a separate query, so the optimistic list
+        // write must be mirrored onto the canonical unread count immediately —
+        // otherwise the bell stays stale after navigating away.
+        decrementUnreadCount(qc, profile?.id, 1);
         // WO-083 DEF-083-05: a failed write must not permanently clear the
         // unread indicator. Roll back and let canonical server state decide.
         markNotificationRead(n.id).catch(() => {
           setReadAt(null);
-          qc.invalidateQueries({ queryKey: key });
+          invalidateNotificationReadState(qc, profile?.id);
         });
+
       }
 
       if (PLACE_SUGGESTION_TYPES.includes(n.type)) {
@@ -261,13 +273,36 @@ export default function Notifications() {
   );
 
   async function onMarkAll() {
+    // WO-135 §16: one mutation only — the pending guard blocks rapid re-taps.
     if (!hasUnread || marking) return;
     setMarking(true);
     try {
       await markAllNotificationsRead();
-      qc.invalidateQueries({ queryKey: ["notifications", profile?.id] });
+      // WO-135 §6/§9: server-confirmed, then write both caches synchronously so
+      // the list dots and the bell badge clear in the same render — even if the
+      // member navigates back to Today in the very next frame (§17).
+      qc.setQueryData<{ pages: NotificationsPage[]; pageParams: unknown[] }>(
+        notificationsListKey(profile?.id),
+        (old) => {
+          if (!old) return old;
+          const now = new Date().toISOString();
+          return {
+            ...old,
+            pages: old.pages.map((p) => ({
+              ...p,
+              items: p.items.map((x) => (x.read_at ? x : { ...x, read_at: now })),
+            })),
+          };
+        },
+      );
+      setUnreadCount(qc, profile?.id, 0);
+      setAnnouncement("All notifications marked as read.");
+      // Background revalidation; the caches above already show the truth.
+      invalidateNotificationReadState(qc, profile?.id);
     } catch {
-      toast.error("Couldn't mark all as read");
+      // WO-135 §7/§30: nothing was written optimistically, so the prior unread
+      // state is preserved as-is and the action stays retryable.
+      toast.error("Couldn't mark all as read. Check your connection and try again.");
     } finally {
       setMarking(false);
     }
@@ -281,18 +316,23 @@ export default function Notifications() {
           <BackButton fallback="/" />
         }
         right={
-          hasUnread ? (
-            <button
-              onClick={onMarkAll}
-              disabled={marking}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 disabled:opacity-50"
-            >
-              <CheckCheck className="w-4 h-4" />
-              Mark all as read
-            </button>
-          ) : null
+          /* WO-135 §14/§34: the control stays mounted and becomes disabled once
+             nothing is unread, so keyboard focus is never dropped and there is
+             no active no-op action. */
+          <button
+            onClick={onMarkAll}
+            disabled={marking || !hasUnread}
+            aria-label="Mark all notifications as read"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 disabled:opacity-50 disabled:hover:text-primary"
+          >
+            <CheckCheck className="w-4 h-4" />
+            Mark all as read
+          </button>
         }
       />
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
 
       {query.isLoading ? (
         <div className="px-5 pt-4 space-y-2" aria-label="Loading notifications">
