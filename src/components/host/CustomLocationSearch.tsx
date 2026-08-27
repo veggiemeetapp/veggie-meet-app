@@ -200,7 +200,12 @@ export function CustomLocationSearch({
 
   const selectedMapsUrl = safeMapsUrl(value.googleMapsUrl);
 
-  if (hasSelection) {
+  /**
+   * DEF-134A-02 — while the host is editing, the card must stay mounted even if
+   * the name field is momentarily empty, so the blocking alert is reachable
+   * instead of the UI collapsing back to the search-first state.
+   */
+  if (hasSelection || editing) {
     return (
       <div className="mt-2 rounded-card border border-primary bg-accent/30 p-3">
         <div className="flex items-start gap-2">
