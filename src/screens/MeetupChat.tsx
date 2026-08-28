@@ -2,8 +2,35 @@ import { memberSafeMessage } from "@/lib/errors";
 import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Send, Calendar, Clock, MapPin, Users, EyeOff } from "lucide-react";
+import {
+  Send,
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  EyeOff,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   formatMeetupDate,
   formatTime12h,
@@ -14,14 +41,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
 import { useSendToken } from "@/hooks/useSendToken";
+import { MESSAGE_DELETED_LABEL } from "@/lib/directMessages";
 import {
   fetchMeetupChatContext,
   fetchMeetupChatThread,
   sendMeetupChatMessage,
+  editMeetupChatMessage,
+  deleteMeetupChatMessage,
+  isDeletedChatMessage,
   postBlockedCopy,
+  CHAT_MESSAGE_MAX,
   type ChatMessage,
   type MeetupChatContext,
 } from "@/lib/meetupChat";
+
 
 export default function MeetupChat() {
   const { id } = useParams();
@@ -40,6 +73,14 @@ export default function MeetupChat() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   // WO-083: idempotency token so an ambiguous retry cannot duplicate a post.
   const sendToken = useSendToken();
+  // WO-136: author-only edit/delete state.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [mutationStatus, setMutationStatus] = useState("");
+
 
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
     setMessages((prev) => {
@@ -88,24 +129,32 @@ export default function MeetupChat() {
 
   // Realtime: RLS-scoped inserts for this chat. Re-read the row via the RPC
   // page so blocking suppression and sender identity stay server-derived.
+  // WO-136: UPDATEs (edits and deletions) converge the same way.
   useEffect(() => {
     if (!isDb || !id || authLoading || !context?.can_read) return;
+    const refresh = () => {
+      fetchMeetupChatThread(id)
+        .then((page) => mergeMessages(page.messages))
+        .catch(() => undefined);
+    };
     const channel = supabase
       .channel(`meetup-chat:${id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${id}` },
-        () => {
-          fetchMeetupChatThread(id)
-            .then((page) => mergeMessages(page.messages))
-            .catch(() => undefined);
-        },
+        refresh,
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `chat_id=eq.${id}` },
+        refresh,
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [id, isDb, authLoading, context?.can_read, mergeMessages]);
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -135,6 +184,64 @@ export default function MeetupChat() {
       setLoadingOlder(false);
     }
   };
+
+  /* -------- WO-136: edit / delete own group messages -------- */
+
+  const startEdit = (m: ChatMessage) => {
+    setEditingId(m.id);
+    setEditDraft(m.body ?? "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditDraft("");
+  };
+
+  const saveEdit = async () => {
+    const mid = editingId;
+    if (!mid || savingEdit) return;
+    const trimmed = editDraft.trim();
+    if (!trimmed || trimmed.length > CHAT_MESSAGE_MAX) return;
+    setSavingEdit(true);
+    try {
+      const saved = await editMeetupChatMessage(mid, trimmed);
+      mergeMessages([saved]);
+      cancelEdit();
+      setMutationStatus("Message edited.");
+    } catch (err) {
+      // Editor stays open with the draft; the bubble keeps server truth.
+      toast({
+        title: "Message not updated",
+        description: memberSafeMessage(err),
+        variant: "destructive",
+      });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    const target = deleteTarget;
+    if (!target || deleting) return;
+    setDeleting(true);
+    try {
+      const saved = await deleteMeetupChatMessage(target.id);
+      mergeMessages([saved]);
+      if (editingId === target.id) cancelEdit();
+      setDeleteTarget(null);
+      setMutationStatus("Message deleted.");
+    } catch (err) {
+      toast({
+        title: "Message not deleted",
+        description: memberSafeMessage(err),
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -312,6 +419,79 @@ export default function MeetupChat() {
             );
           }
           const isMe = m.is_mine || (!!profile?.id && m.sender_id === profile.id);
+          const deleted = isDeletedChatMessage(m);
+          if (deleted) {
+            return (
+              <div
+                key={m.id}
+                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+              >
+                <div className="max-w-[75%] rounded-card border border-dashed border-border px-3.5 py-2 text-sm italic text-charcoal-muted">
+                  {MESSAGE_DELETED_LABEL}
+                </div>
+              </div>
+            );
+          }
+          if (isMe && editingId === m.id) {
+            const trimmed = editDraft.trim();
+            const tooLong = trimmed.length > CHAT_MESSAGE_MAX;
+            return (
+              <div key={m.id} className="flex justify-end">
+                <div className="w-full max-w-[85%] rounded-card border border-primary/40 bg-background p-2">
+                  <Textarea
+                    autoFocus
+                    aria-label="Edit message"
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    rows={2}
+                    className="min-h-[52px] max-h-40 resize-none text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        cancelEdit();
+                      }
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (trimmed && !tooLong) saveEdit();
+                      }
+                    }}
+                  />
+                  {tooLong && (
+                    <p className="mt-1 text-[11px] text-destructive">
+                      Messages must be under {CHAT_MESSAGE_MAX} characters.
+                    </p>
+                  )}
+                  {!trimmed && (
+                    <p className="mt-1 text-[11px] text-charcoal-muted">
+                      A message can't be empty. Use Delete message instead.
+                    </p>
+                  )}
+                  <div className="mt-2 flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={cancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!trimmed || tooLong || savingEdit}
+                      onClick={saveEdit}
+                    >
+                      {savingEdit ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
           return (
             <div
               key={m.id}
@@ -337,10 +517,48 @@ export default function MeetupChat() {
                   </div>
                 )}
                 {m.body}
+                {m.edited_at && (
+                  <span
+                    className={`ml-1.5 align-baseline text-[10px] ${
+                      isMe ? "text-primary-foreground/80" : "text-charcoal-muted"
+                    }`}
+                  >
+                    (Edited)
+                  </span>
+                )}
               </div>
+              {isMe && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label={`Message options for your message sent ${new Date(m.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => startEdit(m)}>
+                      <Pencil className="w-4 h-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setDeleteTarget(m)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete message
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           );
         })}
+        <p role="status" aria-live="polite" className="sr-only">
+          {mutationStatus}
+        </p>
+
         <div ref={bottomRef} />
       </div>
 
@@ -373,6 +591,45 @@ export default function MeetupChat() {
           </p>
         </div>
       )}
+
+      {/* WO-136: deletion removes the message for everyone in the group. */}
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete this message?</DialogTitle>
+            <DialogDescription>
+              It will be removed for everyone in this Meetup chat and replaced
+              with “{MESSAGE_DELETED_LABEL}”. This can't be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Delete message"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }

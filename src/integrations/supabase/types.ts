@@ -204,6 +204,36 @@ export type Database = {
           },
         ]
       }
+      chat_message_deletions: {
+        Row: {
+          created_at: string
+          deleted_by: string
+          id: string
+          message_id: string
+          original_body: string
+          sender_id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_by: string
+          id?: string
+          message_id: string
+          original_body: string
+          sender_id: string
+          source: string
+        }
+        Update: {
+          created_at?: string
+          deleted_by?: string
+          id?: string
+          message_id?: string
+          original_body?: string
+          sender_id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       chat_participants: {
         Row: {
           chat_id: string
@@ -1368,6 +1398,8 @@ export type Database = {
           client_token: string | null
           conversation_id: string
           created_at: string
+          deleted_at: string | null
+          edited_at: string | null
           id: string
           invitation_id: string | null
           read_at: string | null
@@ -1378,6 +1410,8 @@ export type Database = {
           client_token?: string | null
           conversation_id: string
           created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           invitation_id?: string | null
           read_at?: string | null
@@ -1388,6 +1422,8 @@ export type Database = {
           client_token?: string | null
           conversation_id?: string
           created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           invitation_id?: string | null
           read_at?: string | null
@@ -2199,6 +2235,8 @@ export type Database = {
           chat_id: string
           client_token: string | null
           created_at: string
+          deleted_at: string | null
+          edited_at: string | null
           id: string
           sender_id: string | null
           type: Database["public"]["Enums"]["message_type"]
@@ -2208,6 +2246,8 @@ export type Database = {
           chat_id: string
           client_token?: string | null
           created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           sender_id?: string | null
           type?: Database["public"]["Enums"]["message_type"]
@@ -2217,6 +2257,8 @@ export type Database = {
           chat_id?: string
           client_token?: string | null
           created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           sender_id?: string | null
           type?: Database["public"]["Enums"]["message_type"]
@@ -3295,6 +3337,11 @@ export type Database = {
         Args: { _photo_id: string }
         Returns: Json
       }
+      delete_dm_message: { Args: { _message_id: string }; Returns: Json }
+      delete_meetup_chat_message: {
+        Args: { _message_id: string }
+        Returns: Json
+      }
       discovery_eligible_profile_ids: {
         Args: { _include_related?: boolean; _me: string }
         Returns: string[]
@@ -3302,6 +3349,14 @@ export type Database = {
       dismiss_meetup_follow_up: {
         Args: { _meetup_id: string }
         Returns: undefined
+      }
+      edit_dm_message: {
+        Args: { _body: string; _message_id: string }
+        Returns: Json
+      }
+      edit_meetup_chat_message: {
+        Args: { _body: string; _message_id: string }
+        Returns: Json
       }
       eligible_upcoming_meetups_for_viewer: {
         Args: { _city_id: string; _me: string }

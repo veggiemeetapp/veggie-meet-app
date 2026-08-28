@@ -1,0 +1,10 @@
+REVOKE ALL ON FUNCTION public.move_community_place_photo(uuid, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.delete_community_place_photo(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.normalize_community_place_photos(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.add_community_place_photo(uuid, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.set_community_place_photo_cover(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.move_community_place_photo(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_community_place_photo(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.normalize_community_place_photos(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.add_community_place_photo(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_community_place_photo_cover(uuid) TO authenticated;

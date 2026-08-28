@@ -4,11 +4,27 @@ export interface DMMessage {
   id: string;
   conversation_id: string;
   sender_id: string;
-  body: string;
+  /** Null once the author deletes the message (member-facing tombstone). */
+  body: string | null;
   created_at: string;
   read_at: string | null;
   invitation_id?: string | null;
+  /** WO-136: set when the author edited the message; never set on tombstones. */
+  edited_at?: string | null;
+  deleted_at?: string | null;
+  is_deleted?: boolean;
 }
+
+/** WO-136 neutral tombstone copy, shared by the thread and the inbox preview. */
+export const MESSAGE_DELETED_LABEL = "Message deleted";
+
+export function isDeletedMessage(m: {
+  deleted_at?: string | null;
+  is_deleted?: boolean;
+}): boolean {
+  return !!m.is_deleted || !!m.deleted_at;
+}
+
 
 export interface DMOther {
   profileId: string;
@@ -33,6 +49,9 @@ export interface DMInboxItem {
   conversationId: string;
   other: DMOther;
   lastMessageBody: string | null;
+  /** WO-136: the latest message is a tombstone, so show neutral preview copy. */
+  lastMessageIsDeleted: boolean;
+
   lastMessageAt: string | null;
   lastSenderId: string | null;
   unreadCount: number;
@@ -90,6 +109,47 @@ export async function sendDirectMessage(
   if (error) throw error;
   return data as DMMessage;
 }
+
+/**
+ * WO-136 — edit own direct message.
+ * Ownership, membership, block state and validation are enforced by
+ * `edit_dm_message` (SECURITY DEFINER). `authenticated` has no UPDATE grant on
+ * `dm_messages`, so this RPC is the only mutation path.
+ */
+export async function editDirectMessage(
+  messageId: string,
+  body: string,
+): Promise<DMMessage> {
+  const trimmed = body.trim();
+  if (!trimmed) throw new Error("Message can't be empty");
+  if (trimmed.length > MESSAGE_MAX)
+    throw new Error(`Messages must be under ${MESSAGE_MAX} characters`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("edit_dm_message", {
+    _message_id: messageId,
+    _body: trimmed,
+  });
+  if (error) throw error;
+  return data as DMMessage;
+}
+
+/**
+ * WO-136 — delete own direct message. The row stays in place as a tombstone so
+ * ordering, read state and safety references survive; the body is cleared
+ * server-side (also for realtime subscribers).
+ */
+export async function deleteDirectMessage(
+  messageId: string,
+): Promise<DMMessage> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("delete_dm_message", {
+    _message_id: messageId,
+  });
+  if (error) throw error;
+  return data as DMMessage;
+}
+
+
 
 /**
  * Bounded thread page. Pass the oldest loaded message as the cursor to page
@@ -151,6 +211,8 @@ export async function fetchInbox(): Promise<DMInboxItem[]> {
         isVerifiedConnection: !!r.is_verified_connection,
       },
       lastMessageBody: r.last_message_body ?? null,
+      lastMessageIsDeleted: !!r.last_message_is_deleted,
+
       lastMessageAt: r.last_message_at ?? null,
       lastSenderId: r.last_sender_id ?? null,
       unreadCount: Number(r.unread_count ?? 0),

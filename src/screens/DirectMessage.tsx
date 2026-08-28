@@ -10,7 +10,9 @@ import {
   Leaf,
   Loader2,
   MoreVertical,
+  Pencil,
   Send,
+  Trash2,
   User as UserIcon,
 } from "lucide-react";
 import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
@@ -35,9 +37,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  deleteDirectMessage,
+  editDirectMessage,
   fetchThread,
   getOrCreateConversation,
+  isDeletedMessage,
   markConversationRead,
+  MESSAGE_DELETED_LABEL,
   MESSAGE_MAX,
   sendDirectMessage,
   type DMMessage,
@@ -49,6 +55,7 @@ import {
   submitMessageReport,
   MESSAGE_REPORT_REASONS,
 } from "@/lib/safety";
+
 import {
   fetchInvitationsBundle,
   joinFromInvitation,
@@ -243,6 +250,15 @@ function DMScreen({
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  // WO-136: edit/delete of own messages. The server is authoritative; these
+  // states only drive the surface and optimistic rendering.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DMMessage | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [mutationStatus, setMutationStatus] = useState("");
+
 
   // Bounded initial page via get_dm_thread(): peer identity, eligibility and the
   // most recent page of messages in a single RPC (no per-row queries).
@@ -295,6 +311,76 @@ function DMScreen({
     }
   }
 
+  /* -------- WO-136: edit / delete own messages -------- */
+
+  function startEdit(m: DMMessage) {
+    setEditingId(m.id);
+    setEditDraft(m.body ?? "");
+  }
+
+  function cancelEdit() {
+    // The original bubble content is untouched — nothing was mutated locally.
+    setEditingId(null);
+    setEditDraft("");
+  }
+
+  async function saveEdit() {
+    const id = editingId;
+    if (!id || savingEdit) return;
+    const trimmed = editDraft.trim();
+    if (!trimmed || trimmed.length > MESSAGE_MAX) return;
+    const original = messages.find((m) => m.id === id) ?? null;
+    setSavingEdit(true);
+    // Optimistic: keep created_at and position; only body + edited marker move.
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, body: trimmed, edited_at: new Date().toISOString() } : m,
+      ),
+    );
+    try {
+      const saved = await editDirectMessage(id, trimmed);
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...saved } : m)));
+      setEditingId(null);
+      setEditDraft("");
+      setMutationStatus("Message edited.");
+      qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
+    } catch (e) {
+      // Roll back to server truth and keep the editor open with the draft.
+      if (original) {
+        setMessages((prev) => prev.map((m) => (m.id === id ? original : m)));
+      }
+      toast.error(memberSafeMessage(e));
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function confirmDelete() {
+    const target = deleteTarget;
+    if (!target || deleting) return;
+    setDeleting(true);
+    try {
+      const saved = await deleteDirectMessage(target.id);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === target.id
+            ? { ...m, ...saved, body: null, invitation_id: null, is_deleted: true }
+            : m,
+        ),
+      );
+      if (editingId === target.id) cancelEdit();
+      setDeleteTarget(null);
+      setMutationStatus("Message deleted.");
+      qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
+    } catch (e) {
+      toast.error(memberSafeMessage(e));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+
+
   // Check block state — pair-aware so the blocked party also gets a closed
   // composer with neutral wording instead of a failing send.
   useEffect(() => {
@@ -339,15 +425,37 @@ function DMScreen({
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
+          // WO-136: UPDATEs now carry read receipts *and* edit/delete state.
+          // The server clears `body` on delete, so the tombstone converges for
+          // every participant without a reload.
           const m = payload.new as DMMessage;
-          setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, read_at: m.read_at } : x)));
+          setMessages((prev) =>
+            prev.map((x) =>
+              x.id === m.id
+                ? {
+                    ...x,
+                    read_at: m.read_at,
+                    body: m.deleted_at ? null : (m.body ?? x.body),
+                    edited_at: m.edited_at ?? null,
+                    deleted_at: m.deleted_at ?? null,
+                    is_deleted: !!m.deleted_at,
+                    invitation_id: m.deleted_at ? null : x.invitation_id,
+                  }
+                : x,
+            ),
+          );
+          if (m.deleted_at || m.edited_at) {
+            qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
+          }
         },
+
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, qc, meProfileId]);
+
 
   // Hydrate invitations referenced by messages, refetch whenever messages change.
   const invitationIdsKey = useMemo(
@@ -642,12 +750,27 @@ function DMScreen({
                       onJoinInvitation={handleJoinInvitation}
                       joiningId={joiningId}
                       onReportMessage={setReportMessage}
+                      actions={{
+                        editingId,
+                        editDraft,
+                        setEditDraft,
+                        savingEdit,
+                        onStartEdit: startEdit,
+                        onCancelEdit: cancelEdit,
+                        onSaveEdit: saveEdit,
+                        onRequestDelete: setDeleteTarget,
+                      }}
                     />
                   ))}
                 </div>
               ))
             )}
+            {/* WO-136: screen-reader announcement for edit/delete results. */}
+            <p role="status" aria-live="polite" className="sr-only">
+              {mutationStatus}
+            </p>
             <div ref={bottomRef} />
+
           </div>
         </div>
 
@@ -723,7 +846,7 @@ function DMScreen({
           open={!!reportMessage}
           onOpenChange={(o) => { if (!o) setReportMessage(null); }}
           otherName={other.firstName}
-          messagePreview={reportMessage.body}
+          messagePreview={reportMessage.body ?? undefined}
           messageTimestamp={reportMessage.created_at}
           onSubmit={async (reason, details) => {
             try {
@@ -740,6 +863,46 @@ function DMScreen({
           }}
         />
       )}
+
+      {/* WO-136: destructive confirmation — deletion affects both participants. */}
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete this message?</DialogTitle>
+            <DialogDescription>
+              It will be removed for everyone in this conversation and replaced
+              with “{MESSAGE_DELETED_LABEL}”. This can't be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Delete message"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
       {other && (
         <MeetupInvitationSheet
@@ -834,6 +997,17 @@ function groupByDate(msgs: DMMessage[]): DayBucket[] {
   });
 }
 
+interface MessageActions {
+  editingId: string | null;
+  editDraft: string;
+  setEditDraft: (v: string) => void;
+  savingEdit: boolean;
+  onStartEdit: (m: DMMessage) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
+  onRequestDelete: (m: DMMessage) => void;
+}
+
 function MessageGroup({
   group,
   isMe,
@@ -843,6 +1017,7 @@ function MessageGroup({
   onJoinInvitation,
   joiningId,
   onReportMessage,
+  actions,
 }: {
   group: Group;
   isMe: boolean;
@@ -852,6 +1027,7 @@ function MessageGroup({
   onJoinInvitation: (invitationId: string) => void;
   joiningId: string | null;
   onReportMessage?: (m: DMMessage) => void;
+  actions?: MessageActions;
 }) {
   const last = group.messages[group.messages.length - 1];
   const showRead = isMe && isLastInConv;
@@ -872,6 +1048,87 @@ function MessageGroup({
               />
             );
           }
+
+          // WO-136: tombstone — the server clears the body, so there is no
+          // original text to leak here.
+          if (isDeletedMessage(m)) {
+            return (
+              <div
+                key={m.id}
+                className={cn(
+                  "px-3.5 py-2 rounded-card text-sm italic text-charcoal-muted border border-dashed border-border",
+                  isMe ? "self-end rounded-br-md" : "self-start rounded-bl-md",
+                )}
+              >
+                {MESSAGE_DELETED_LABEL}
+              </div>
+            );
+          }
+
+          // WO-136: inline edit surface for the author's own message.
+          if (actions && actions.editingId === m.id) {
+            const trimmed = actions.editDraft.trim();
+            const tooLong = trimmed.length > MESSAGE_MAX;
+            return (
+              <div
+                key={m.id}
+                className="self-end w-full rounded-card border border-primary/40 bg-background p-2"
+              >
+                <Textarea
+                  autoFocus
+                  aria-label="Edit message"
+                  value={actions.editDraft}
+                  onChange={(e) => actions.setEditDraft(e.target.value)}
+                  rows={2}
+                  className="min-h-[52px] max-h-40 resize-none text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      actions.onCancelEdit();
+                    }
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (trimmed && !tooLong) actions.onSaveEdit();
+                    }
+                  }}
+                />
+                {tooLong && (
+                  <p className="mt-1 text-[11px] text-destructive">
+                    Messages must be under {MESSAGE_MAX} characters.
+                  </p>
+                )}
+                {!trimmed && (
+                  <p className="mt-1 text-[11px] text-charcoal-muted">
+                    A message can't be empty. Use Delete message instead.
+                  </p>
+                )}
+                <div className="mt-2 flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={actions.onCancelEdit}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!trimmed || tooLong || actions.savingEdit}
+                    onClick={actions.onSaveEdit}
+                  >
+                    {actions.savingEdit ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      "Save"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+
+          const menuLabel = `Message options for your message sent ${formatTime(m.created_at)}`;
           return (
             <div key={m.id} className="group/msg relative flex items-start gap-1.5">
               <div
@@ -883,13 +1140,43 @@ function MessageGroup({
                 )}
               >
                 {m.body}
+                {m.edited_at && (
+                  <span className="ml-1.5 align-baseline text-[10px] text-charcoal-muted">
+                    (Edited)
+                  </span>
+                )}
               </div>
+              {isMe && actions && !m.invitation_id && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label={menuLabel}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted opacity-70 hover:opacity-100"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => actions.onStartEdit(m)}>
+                      <Pencil className="w-4 h-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => actions.onRequestDelete(m)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete message
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {!isMe && onReportMessage && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      aria-label="Message options"
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted opacity-60 hover:opacity-100"
+                      aria-label={`Message options for message sent ${formatTime(m.created_at)}`}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted opacity-60 hover:opacity-100"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
@@ -912,7 +1199,7 @@ function MessageGroup({
           )}
         >
           {formatTime(last.created_at)}
-          {showRead && (
+          {showRead && !isDeletedMessage(last) && (
             <span className="ml-1.5">· {last.read_at ? "Read" : "Sent"}</span>
           )}
         </div>
@@ -920,6 +1207,7 @@ function MessageGroup({
     </div>
   );
 }
+
 
 function ReportDialog({
   open,

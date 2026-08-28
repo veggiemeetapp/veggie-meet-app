@@ -46,6 +46,10 @@ export interface ChatMessage {
   body: string | null;
   sender_name: string | null;
   sender_avatar_url: string | null;
+  /** WO-136 */
+  edited_at?: string | null;
+  deleted_at?: string | null;
+  is_deleted?: boolean;
 }
 
 export interface ChatThreadPage {
@@ -54,6 +58,8 @@ export interface ChatThreadPage {
 }
 
 export const CHAT_PAGE_SIZE = 40;
+export const CHAT_MESSAGE_MAX = 2000;
+
 
 export async function fetchMeetupChatContext(
   chatId: string,
@@ -110,4 +116,41 @@ export function postBlockedCopy(reason: ChatPostBlockReason): string | null {
     default:
       return null;
   }
+}
+
+/**
+ * WO-136 — edit own group-chat message. `edit_meetup_chat_message` re-checks the
+ * author, chat membership and the posting window server-side; `authenticated`
+ * has no UPDATE grant on `messages`.
+ */
+export async function editMeetupChatMessage(
+  messageId: string,
+  body: string,
+): Promise<ChatMessage> {
+  const trimmed = body.trim();
+  if (!trimmed) throw new Error("Message can't be empty");
+  if (trimmed.length > CHAT_MESSAGE_MAX)
+    throw new Error(`Messages must be under ${CHAT_MESSAGE_MAX} characters`);
+  const { data, error } = await (supabase.rpc as any)("edit_meetup_chat_message", {
+    _message_id: messageId,
+    _body: trimmed,
+  });
+  if (error) throw new Error(error.message);
+  return data as ChatMessage;
+}
+
+/** WO-136 — delete own group-chat message, leaving a neutral tombstone. */
+export async function deleteMeetupChatMessage(
+  messageId: string,
+): Promise<ChatMessage> {
+  const { data, error } = await (supabase.rpc as any)("delete_meetup_chat_message", {
+    _message_id: messageId,
+  });
+  if (error) throw new Error(error.message);
+  return data as ChatMessage;
+}
+
+/** True when a message is a member-facing tombstone. */
+export function isDeletedChatMessage(m: ChatMessage): boolean {
+  return !!m.is_deleted || !!m.deleted_at;
 }
