@@ -78,6 +78,8 @@ export default function MeetupChat() {
   const [editDraft, setEditDraft] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
+  // DEF-136A-02: remembers the originating menu for focus restoration.
+  const deleteTriggerIdRef = useRef<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [mutationStatus, setMutationStatus] = useState("");
 
@@ -531,7 +533,9 @@ export default function MeetupChat() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
+                      data-msg-menu={m.id}
                       aria-label={`Message options for your message sent ${new Date(m.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
+
                       className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted"
                     >
                       <MoreVertical className="w-4 h-4" />
@@ -544,7 +548,10 @@ export default function MeetupChat() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
-                      onClick={() => setDeleteTarget(m)}
+                      onClick={() => {
+                        deleteTriggerIdRef.current = m.id;
+                        setDeleteTarget(m);
+                      }}
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete message
@@ -599,7 +606,20 @@ export default function MeetupChat() {
           if (!o && !deleting) setDeleteTarget(null);
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent
+          className="max-w-sm"
+          onCloseAutoFocus={(e) => {
+            // DEF-136A-02: restore focus to the originating message menu.
+            const id = deleteTriggerIdRef.current;
+            const trigger = id
+              ? document.querySelector<HTMLElement>(`[data-msg-menu="${id}"]`)
+              : null;
+            if (trigger) {
+              e.preventDefault();
+              trigger.focus();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Delete this message?</DialogTitle>
             <DialogDescription>

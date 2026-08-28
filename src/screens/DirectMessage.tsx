@@ -256,6 +256,9 @@ function DMScreen({
   const [editDraft, setEditDraft] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DMMessage | null>(null);
+  // DEF-136A-02: remembers which message menu opened the confirmation so focus
+  // can return there after the dialog closes (state is cleared on close).
+  const deleteTriggerIdRef = useRef<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [mutationStatus, setMutationStatus] = useState("");
 
@@ -758,7 +761,10 @@ function DMScreen({
                         onStartEdit: startEdit,
                         onCancelEdit: cancelEdit,
                         onSaveEdit: saveEdit,
-                        onRequestDelete: setDeleteTarget,
+                        onRequestDelete: (m: DMMessage) => {
+                          deleteTriggerIdRef.current = m.id;
+                          setDeleteTarget(m);
+                        },
                       }}
                     />
                   ))}
@@ -871,7 +877,23 @@ function DMScreen({
           if (!o && !deleting) setDeleteTarget(null);
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent
+          className="max-w-sm"
+          onCloseAutoFocus={(e) => {
+            // DEF-136A-02: return focus to the originating message menu when the
+            // confirmation closes without deleting (the trigger still exists).
+            const id = deleteTriggerIdRef.current;
+            const trigger = id
+              ? document.querySelector<HTMLElement>(
+                  `[data-msg-menu="${id}"]`,
+                )
+              : null;
+            if (trigger) {
+              e.preventDefault();
+              trigger.focus();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Delete this message?</DialogTitle>
             <DialogDescription>
@@ -1151,6 +1173,8 @@ function MessageGroup({
                   <DropdownMenuTrigger asChild>
                     <button
                       aria-label={menuLabel}
+                      data-msg-menu={m.id}
+
                       className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted opacity-70 hover:opacity-100"
                     >
                       <MoreVertical className="w-4 h-4" />
