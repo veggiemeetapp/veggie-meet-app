@@ -576,6 +576,8 @@ export default function MeetupChat() {
         >
           <input
             aria-label="Message"
+            data-chat-composer="group"
+
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             maxLength={2000}
