@@ -601,7 +601,20 @@ export default function MeetupChat() {
           if (!o && !deleting) setDeleteTarget(null);
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent
+          className="max-w-sm"
+          onCloseAutoFocus={(e) => {
+            // DEF-136A-02: restore focus to the originating message menu.
+            const id = deleteTarget?.id;
+            const trigger = id
+              ? document.querySelector<HTMLElement>(`[data-msg-menu="${id}"]`)
+              : null;
+            if (trigger) {
+              e.preventDefault();
+              trigger.focus();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Delete this message?</DialogTitle>
             <DialogDescription>
