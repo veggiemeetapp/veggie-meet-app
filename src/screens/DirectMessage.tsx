@@ -1167,6 +1167,8 @@ function MessageGroup({
                   <DropdownMenuTrigger asChild>
                     <button
                       aria-label={menuLabel}
+                      data-msg-menu={m.id}
+
                       className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted opacity-70 hover:opacity-100"
                     >
                       <MoreVertical className="w-4 h-4" />
