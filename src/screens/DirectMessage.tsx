@@ -891,8 +891,19 @@ function DMScreen({
             if (trigger) {
               e.preventDefault();
               trigger.focus();
+              return;
+            }
+            // DEF-136A-03: after a successful deletion the trigger is gone, so
+            // land focus on the composer instead of falling back to <body>.
+            const composer = document.querySelector<HTMLElement>(
+              '[data-chat-composer="dm"]',
+            );
+            if (composer) {
+              e.preventDefault();
+              composer.focus();
             }
           }}
+
         >
           <DialogHeader>
             <DialogTitle>Delete this message?</DialogTitle>
