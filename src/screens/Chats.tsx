@@ -12,7 +12,12 @@ import {
 } from "@/components/app";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchInbox, type DMInboxItem } from "@/lib/directMessages";
+import {
+  fetchInbox,
+  MESSAGE_DELETED_LABEL,
+  type DMInboxItem,
+} from "@/lib/directMessages";
+
 import { supabase } from "@/integrations/supabase/client";
 
 function formatInboxTime(iso: string | null): string {
@@ -182,10 +187,17 @@ function InboxRow({ item, meId }: { item: DMInboxItem; meId: string }) {
                     : "text-sm text-charcoal-muted truncate flex-1"
                 }
               >
-                {item.lastMessageBody
-                  ? `${previewPrefix}${item.lastMessageBody}`
-                  : "Say hello 👋"}
+                {/* WO-136: a deleted latest message shows a neutral tombstone
+                    preview instead of the original content. */}
+                {item.lastMessageIsDeleted ? (
+                  <span className="italic">{MESSAGE_DELETED_LABEL}</span>
+                ) : item.lastMessageBody ? (
+                  `${previewPrefix}${item.lastMessageBody}`
+                ) : (
+                  "Say hello 👋"
+                )}
               </p>
+
               {isUnread && (
                 <span
                   className="shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center"
