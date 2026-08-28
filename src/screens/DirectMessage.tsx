@@ -795,6 +795,8 @@ function DMScreen({
                 placeholder="Write a message…"
                 rows={1}
                 aria-label="Message"
+                data-chat-composer="dm"
+
                 className="min-h-[42px] max-h-32 resize-none bg-muted/60 border-transparent focus-visible:bg-background"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
