@@ -256,6 +256,9 @@ function DMScreen({
   const [editDraft, setEditDraft] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DMMessage | null>(null);
+  // DEF-136A-02: remembers which message menu opened the confirmation so focus
+  // can return there after the dialog closes (state is cleared on close).
+  const deleteTriggerIdRef = useRef<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [mutationStatus, setMutationStatus] = useState("");
 
@@ -758,7 +761,10 @@ function DMScreen({
                         onStartEdit: startEdit,
                         onCancelEdit: cancelEdit,
                         onSaveEdit: saveEdit,
-                        onRequestDelete: setDeleteTarget,
+                        onRequestDelete: (m: DMMessage) => {
+                          deleteTriggerIdRef.current = m.id;
+                          setDeleteTarget(m);
+                        },
                       }}
                     />
                   ))}
@@ -876,7 +882,7 @@ function DMScreen({
           onCloseAutoFocus={(e) => {
             // DEF-136A-02: return focus to the originating message menu when the
             // confirmation closes without deleting (the trigger still exists).
-            const id = deleteTarget?.id;
+            const id = deleteTriggerIdRef.current;
             const trigger = id
               ? document.querySelector<HTMLElement>(
                   `[data-msg-menu="${id}"]`,
