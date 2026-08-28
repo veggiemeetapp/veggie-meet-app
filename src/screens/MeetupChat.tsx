@@ -576,6 +576,8 @@ export default function MeetupChat() {
         >
           <input
             aria-label="Message"
+            data-chat-composer="group"
+
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             maxLength={2000}
@@ -617,8 +619,19 @@ export default function MeetupChat() {
             if (trigger) {
               e.preventDefault();
               trigger.focus();
+              return;
+            }
+            // DEF-136A-03: deleted message removes its trigger; land focus on
+            // the composer rather than <body>.
+            const composer = document.querySelector<HTMLElement>(
+              '[data-chat-composer="group"]',
+            );
+            if (composer) {
+              e.preventDefault();
+              composer.focus();
             }
           }}
+
         >
           <DialogHeader>
             <DialogTitle>Delete this message?</DialogTitle>

@@ -795,6 +795,8 @@ function DMScreen({
                 placeholder="Write a message…"
                 rows={1}
                 aria-label="Message"
+                data-chat-composer="dm"
+
                 className="min-h-[42px] max-h-32 resize-none bg-muted/60 border-transparent focus-visible:bg-background"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -891,8 +893,19 @@ function DMScreen({
             if (trigger) {
               e.preventDefault();
               trigger.focus();
+              return;
+            }
+            // DEF-136A-03: after a successful deletion the trigger is gone, so
+            // land focus on the composer instead of falling back to <body>.
+            const composer = document.querySelector<HTMLElement>(
+              '[data-chat-composer="dm"]',
+            );
+            if (composer) {
+              e.preventDefault();
+              composer.focus();
             }
           }}
+
         >
           <DialogHeader>
             <DialogTitle>Delete this message?</DialogTitle>
