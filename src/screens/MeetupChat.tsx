@@ -531,7 +531,9 @@ export default function MeetupChat() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
+                      data-msg-menu={m.id}
                       aria-label={`Message options for your message sent ${new Date(m.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
+
                       className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted"
                     >
                       <MoreVertical className="w-4 h-4" />
