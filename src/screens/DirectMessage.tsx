@@ -871,7 +871,23 @@ function DMScreen({
           if (!o && !deleting) setDeleteTarget(null);
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent
+          className="max-w-sm"
+          onCloseAutoFocus={(e) => {
+            // DEF-136A-02: return focus to the originating message menu when the
+            // confirmation closes without deleting (the trigger still exists).
+            const id = deleteTarget?.id;
+            const trigger = id
+              ? document.querySelector<HTMLElement>(
+                  `[data-msg-menu="${id}"]`,
+                )
+              : null;
+            if (trigger) {
+              e.preventDefault();
+              trigger.focus();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Delete this message?</DialogTitle>
             <DialogDescription>
