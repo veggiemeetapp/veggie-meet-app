@@ -24,11 +24,17 @@ export function ReactionPills({
   onToggle,
   messageLabel,
   align = "start",
+  interactive = true,
 }: {
   reactions: MessageReaction[];
   onToggle: (emoji: string) => void;
   messageLabel: string;
   align?: "start" | "end";
+  /**
+   * WO-137 QA: false in read-only surfaces (closed/archived Meetup chats,
+   * blocked conversations) where the server also rejects the toggle.
+   */
+  interactive?: boolean;
 }) {
   if (reactions.length === 0) return null;
   return (
@@ -38,7 +44,33 @@ export function ReactionPills({
         align === "end" ? "justify-end" : "justify-start",
       )}
     >
-      {reactions.map((r) => (
+      {!interactive &&
+        reactions.map((r) => (
+          <span
+            key={r.emoji}
+            data-reaction-pill={r.emoji}
+            aria-label={`${reactionPillLabel(r)}. ${messageLabel}`}
+            className={cn(
+              "inline-flex items-center gap-1 min-h-[28px] px-2 rounded-full border text-xs font-semibold",
+              r.mine
+                ? "border-primary bg-soft-green text-primary"
+                : "border-border bg-card text-charcoal-muted",
+            )}
+          >
+            <span aria-hidden="true" className="text-sm leading-none">
+              {r.emoji}
+            </span>
+            <span aria-hidden="true">{r.count}</span>
+            {r.mine && (
+              <span aria-hidden="true" className="text-[10px] font-bold">
+                ✓
+              </span>
+            )}
+          </span>
+        ))}
+      {interactive &&
+        reactions.map((r) => (
+
         <button
           key={r.emoji}
           type="button"
