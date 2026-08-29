@@ -153,6 +153,33 @@ export async function deleteDirectMessage(
   return data as DMMessage;
 }
 
+/**
+ * WO-139 — per-participant "Delete chat" (delete for me).
+ *
+ * Server-authoritative: `delete_dm_conversation_for_me` (SECURITY DEFINER)
+ * derives the actor from the session, rejects non-participants and
+ * unauthenticated callers, and records a per-member clear boundary. Nothing is
+ * destroyed — messages, reactions, reports, retention rows and the other
+ * participant's inbox/unread state are untouched. The call is idempotent.
+ * `authenticated` has no write grant on `dm_conversation_clears`.
+ */
+export async function deleteConversationForMe(
+  conversationId: string,
+): Promise<{ conversationId: string; clearedAt: string }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)(
+    "delete_dm_conversation_for_me",
+    { _conversation_id: conversationId },
+  );
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = (data ?? {}) as any;
+  return {
+    conversationId: d.conversation_id ?? conversationId,
+    clearedAt: d.cleared_at ?? new Date().toISOString(),
+  };
+}
+
 
 
 /**
