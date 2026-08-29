@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeReactions, type MessageReaction } from "@/lib/chatReactions";
+
 
 /**
  * WO-070 — Meetup group chat privacy & membership integrity.

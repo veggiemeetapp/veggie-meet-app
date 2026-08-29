@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeReactions, type MessageReaction } from "@/lib/chatReactions";
 
 export interface DMMessage {
   id: string;
@@ -13,7 +14,10 @@ export interface DMMessage {
   edited_at?: string | null;
   deleted_at?: string | null;
   is_deleted?: boolean;
+  /** WO-137: aggregate emoji reactions (no reactor identities). */
+  reactions?: MessageReaction[];
 }
+
 
 /** WO-136 neutral tombstone copy, shared by the thread and the inbox preview. */
 export const MESSAGE_DELETED_LABEL = "Message deleted";
