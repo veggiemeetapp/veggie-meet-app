@@ -54,6 +54,27 @@ import {
   type ChatMessage,
   type MeetupChatContext,
 } from "@/lib/meetupChat";
+import {
+  ReactionPills,
+  AddReactionButton,
+} from "@/components/chat/MessageReactions";
+import {
+  optimisticToggle,
+  reactionName,
+  toggleMeetupMessageReaction,
+} from "@/lib/chatReactions";
+
+/** WO-137: message-specific accessible name for reaction controls. */
+function reactionMessageLabel(m: ChatMessage, isMe: boolean): string {
+  const time = new Date(m.created_at).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return isMe
+    ? `your message sent ${time}`
+    : `message from ${m.sender_name ?? "a Veggie"} sent ${time}`;
+}
+
 
 
 export default function MeetupChat() {
