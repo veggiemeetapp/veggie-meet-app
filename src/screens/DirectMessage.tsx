@@ -78,6 +78,7 @@ import { InvitationCard } from "@/components/invitations/InvitationCard";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSendToken } from "@/hooks/useSendToken";
+import { messageRowAlignment } from "@/lib/chatMessageLayout";
 
 
 const STARTER_PROMPTS = [
@@ -1243,7 +1244,15 @@ function MessageGroup({
 
           const menuLabel = `Message options for your message sent ${formatTime(m.created_at)}`;
           return (
-            <div key={m.id} className="group/msg relative flex items-start gap-1.5">
+            <div
+              key={m.id}
+              data-message-row={m.id}
+              data-message-owner={isMe ? "self" : "other"}
+              className={cn(
+                "group/msg relative flex items-start gap-1.5",
+                messageRowAlignment(isMe),
+              )}
+            >
               <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
                 <div
                   className={cn(
