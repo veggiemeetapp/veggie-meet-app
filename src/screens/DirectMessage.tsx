@@ -1244,21 +1244,48 @@ function MessageGroup({
           const menuLabel = `Message options for your message sent ${formatTime(m.created_at)}`;
           return (
             <div key={m.id} className="group/msg relative flex items-start gap-1.5">
-              <div
-                className={cn(
-                  "px-3.5 py-2 rounded-card text-sm break-words whitespace-pre-wrap",
-                  isMe
-                    ? "bg-soft-green text-charcoal rounded-br-md self-end"
-                    : "bg-muted text-charcoal rounded-bl-md self-start",
-                )}
-              >
-                {m.body}
-                {m.edited_at && (
-                  <span className="ml-1.5 align-baseline text-[10px] text-charcoal-muted">
-                    (Edited)
-                  </span>
-                )}
+              <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                <div
+                  className={cn(
+                    "px-3.5 py-2 rounded-card text-sm break-words whitespace-pre-wrap",
+                    isMe
+                      ? "bg-soft-green text-charcoal rounded-br-md"
+                      : "bg-muted text-charcoal rounded-bl-md",
+                  )}
+                >
+                  {m.body}
+                  {m.edited_at && (
+                    <span className="ml-1.5 align-baseline text-[10px] text-charcoal-muted">
+                      (Edited)
+                    </span>
+                  )}
+                </div>
+                {/* WO-137: aggregate reaction pills (never on tombstones). */}
+                <ReactionPills
+                  reactions={m.reactions ?? []}
+                  align={isMe ? "end" : "start"}
+                  messageLabel={
+                    isMe
+                      ? `your message sent ${formatTime(m.created_at)}`
+                      : `message from ${otherName ?? "this Veggie"} sent ${formatTime(m.created_at)}`
+                  }
+                  onToggle={(emoji) => onToggleReaction?.(m, emoji)}
+                />
               </div>
+              {canReact && onToggleReaction && (
+                <AddReactionButton
+                  messageLabel={
+                    isMe
+                      ? `your message sent ${formatTime(m.created_at)}`
+                      : `message from ${otherName ?? "this Veggie"} sent ${formatTime(m.created_at)}`
+                  }
+                  selected={(m.reactions ?? [])
+                    .filter((r) => r.mine)
+                    .map((r) => r.emoji)}
+                  onSelect={(emoji) => onToggleReaction(m, emoji)}
+                />
+              )}
+
               {isMe && actions && !m.invitation_id && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
