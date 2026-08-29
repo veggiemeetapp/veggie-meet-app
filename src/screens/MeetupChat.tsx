@@ -506,29 +506,46 @@ export default function MeetupChat() {
                   size="sm"
                 />
               )}
-              <div
-                className={`max-w-[75%] rounded-card px-3.5 py-2 text-sm leading-snug ${
-                  isMe
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-card text-charcoal border border-border/60 rounded-bl-md"
-                }`}
-              >
-                {!isMe && m.sender_name && (
-                  <div className="text-[11px] font-semibold mb-0.5 text-primary">
-                    {m.sender_name}
-                  </div>
-                )}
-                {m.body}
-                {m.edited_at && (
-                  <span
-                    className={`ml-1.5 align-baseline text-[10px] ${
-                      isMe ? "text-primary-foreground/80" : "text-charcoal-muted"
-                    }`}
-                  >
-                    (Edited)
-                  </span>
-                )}
+              <div className="max-w-[75%] flex flex-col">
+                <div
+                  className={`rounded-card px-3.5 py-2 text-sm leading-snug ${
+                    isMe
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-card text-charcoal border border-border/60 rounded-bl-md"
+                  }`}
+                >
+                  {!isMe && m.sender_name && (
+                    <div className="text-[11px] font-semibold mb-0.5 text-primary">
+                      {m.sender_name}
+                    </div>
+                  )}
+                  {m.body}
+                  {m.edited_at && (
+                    <span
+                      className={`ml-1.5 align-baseline text-[10px] ${
+                        isMe ? "text-primary-foreground/80" : "text-charcoal-muted"
+                      }`}
+                    >
+                      (Edited)
+                    </span>
+                  )}
+                </div>
+                {/* WO-137: aggregate reaction pills (never on tombstones). */}
+                <ReactionPills
+                  reactions={m.reactions ?? []}
+                  align={isMe ? "end" : "start"}
+                  messageLabel={reactionMessageLabel(m, isMe)}
+                  onToggle={(emoji) => toggleReaction(m, emoji)}
+                />
               </div>
+              {canPost && (
+                <AddReactionButton
+                  messageLabel={reactionMessageLabel(m, isMe)}
+                  selected={(m.reactions ?? []).filter((r) => r.mine).map((r) => r.emoji)}
+                  onSelect={(emoji) => toggleReaction(m, emoji)}
+                />
+              )}
+
               {isMe && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
