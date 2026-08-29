@@ -1124,6 +1124,9 @@ function MessageGroup({
   joiningId,
   onReportMessage,
   actions,
+  onToggleReaction,
+  canReact,
+  otherName,
 }: {
   group: Group;
   isMe: boolean;
@@ -1134,7 +1137,11 @@ function MessageGroup({
   joiningId: string | null;
   onReportMessage?: (m: DMMessage) => void;
   actions?: MessageActions;
+  onToggleReaction?: (m: DMMessage, emoji: string) => void;
+  canReact?: boolean;
+  otherName?: string;
 }) {
+
   const last = group.messages[group.messages.length - 1];
   const showRead = isMe && isLastInConv;
   return (
