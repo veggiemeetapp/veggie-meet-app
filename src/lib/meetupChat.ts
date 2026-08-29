@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeReactions, type MessageReaction } from "@/lib/chatReactions";
+
 
 /**
  * WO-070 — Meetup group chat privacy & membership integrity.
@@ -50,7 +52,10 @@ export interface ChatMessage {
   edited_at?: string | null;
   deleted_at?: string | null;
   is_deleted?: boolean;
+  /** WO-137: aggregate emoji reactions (no reactor identities). */
+  reactions?: MessageReaction[];
 }
+
 
 export interface ChatThreadPage {
   messages: ChatMessage[];
@@ -83,7 +88,14 @@ export async function fetchMeetupChatThread(
   });
   if (error) throw new Error(error.message);
   const page = data as ChatThreadPage;
-  return { messages: page?.messages ?? [], has_more: !!page?.has_more };
+  return {
+    messages: (page?.messages ?? []).map((m) => ({
+      ...m,
+      reactions: normalizeReactions(m.reactions),
+    })),
+    has_more: !!page?.has_more,
+  };
+
 }
 
 export async function sendMeetupChatMessage(

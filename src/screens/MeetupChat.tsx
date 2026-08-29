@@ -54,6 +54,27 @@ import {
   type ChatMessage,
   type MeetupChatContext,
 } from "@/lib/meetupChat";
+import {
+  ReactionPills,
+  AddReactionButton,
+} from "@/components/chat/MessageReactions";
+import {
+  optimisticToggle,
+  reactionName,
+  toggleMeetupMessageReaction,
+} from "@/lib/chatReactions";
+
+/** WO-137: message-specific accessible name for reaction controls. */
+function reactionMessageLabel(m: ChatMessage, isMe: boolean): string {
+  const time = new Date(m.created_at).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return isMe
+    ? `your message sent ${time}`
+    : `message from ${m.sender_name ?? "a Veggie"} sent ${time}`;
+}
+
 
 
 export default function MeetupChat() {
@@ -222,7 +243,37 @@ export default function MeetupChat() {
     }
   };
 
+  /* -------- WO-137: emoji reactions (server-authoritative) -------- */
+  const toggleReaction = async (m: ChatMessage, emoji: string) => {
+    const previous = m.reactions ?? [];
+    setMessages((list) =>
+      list.map((x) =>
+        x.id === m.id ? { ...x, reactions: optimisticToggle(previous, emoji) } : x,
+      ),
+    );
+    try {
+      const res = await toggleMeetupMessageReaction(m.id, emoji);
+      setMessages((list) =>
+        list.map((x) => (x.id === m.id ? { ...x, reactions: res.reactions } : x)),
+      );
+      setMutationStatus(
+        `${reactionName(emoji)} reaction ${res.reacted ? "added" : "removed"}.`,
+      );
+    } catch (err) {
+      // Rollback to the last known server truth.
+      setMessages((list) =>
+        list.map((x) => (x.id === m.id ? { ...x, reactions: previous } : x)),
+      );
+      toast({
+        title: "Reaction not saved",
+        description: memberSafeMessage(err),
+        variant: "destructive",
+      });
+    }
+  };
+
   const confirmDelete = async () => {
+
     const target = deleteTarget;
     if (!target || deleting) return;
     setDeleting(true);
@@ -506,29 +557,46 @@ export default function MeetupChat() {
                   size="sm"
                 />
               )}
-              <div
-                className={`max-w-[75%] rounded-card px-3.5 py-2 text-sm leading-snug ${
-                  isMe
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-card text-charcoal border border-border/60 rounded-bl-md"
-                }`}
-              >
-                {!isMe && m.sender_name && (
-                  <div className="text-[11px] font-semibold mb-0.5 text-primary">
-                    {m.sender_name}
-                  </div>
-                )}
-                {m.body}
-                {m.edited_at && (
-                  <span
-                    className={`ml-1.5 align-baseline text-[10px] ${
-                      isMe ? "text-primary-foreground/80" : "text-charcoal-muted"
-                    }`}
-                  >
-                    (Edited)
-                  </span>
-                )}
+              <div className="max-w-[75%] flex flex-col">
+                <div
+                  className={`rounded-card px-3.5 py-2 text-sm leading-snug ${
+                    isMe
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-card text-charcoal border border-border/60 rounded-bl-md"
+                  }`}
+                >
+                  {!isMe && m.sender_name && (
+                    <div className="text-[11px] font-semibold mb-0.5 text-primary">
+                      {m.sender_name}
+                    </div>
+                  )}
+                  {m.body}
+                  {m.edited_at && (
+                    <span
+                      className={`ml-1.5 align-baseline text-[10px] ${
+                        isMe ? "text-primary-foreground/80" : "text-charcoal-muted"
+                      }`}
+                    >
+                      (Edited)
+                    </span>
+                  )}
+                </div>
+                {/* WO-137: aggregate reaction pills (never on tombstones). */}
+                <ReactionPills
+                  reactions={m.reactions ?? []}
+                  align={isMe ? "end" : "start"}
+                  messageLabel={reactionMessageLabel(m, isMe)}
+                  onToggle={(emoji) => toggleReaction(m, emoji)}
+                />
               </div>
+              {canPost && (
+                <AddReactionButton
+                  messageLabel={reactionMessageLabel(m, isMe)}
+                  selected={(m.reactions ?? []).filter((r) => r.mine).map((r) => r.emoji)}
+                  onSelect={(emoji) => toggleReaction(m, emoji)}
+                />
+              )}
+
               {isMe && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

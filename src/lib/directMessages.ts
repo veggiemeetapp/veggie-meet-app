@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeReactions, type MessageReaction } from "@/lib/chatReactions";
 
 export interface DMMessage {
   id: string;
@@ -13,7 +14,10 @@ export interface DMMessage {
   edited_at?: string | null;
   deleted_at?: string | null;
   is_deleted?: boolean;
+  /** WO-137: aggregate emoji reactions (no reactor identities). */
+  reactions?: MessageReaction[];
 }
+
 
 /** WO-136 neutral tombstone copy, shared by the thread and the inbox preview. */
 export const MESSAGE_DELETED_LABEL = "Message deleted";
@@ -180,7 +184,12 @@ export async function fetchThread(
       city: d.peer.city ?? null,
       isVerifiedConnection: !!d.peer.is_verified_connection,
     },
-    messages: (d.messages ?? []) as DMMessage[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages: ((d.messages ?? []) as any[]).map((m) => ({
+      ...(m as DMMessage),
+      reactions: normalizeReactions(m.reactions),
+    })),
+
     hasMore: !!d.has_more,
     canSend: !!d.can_send,
     isBlocked: !!d.is_blocked,

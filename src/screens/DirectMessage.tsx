@@ -55,6 +55,17 @@ import {
   submitMessageReport,
   MESSAGE_REPORT_REASONS,
 } from "@/lib/safety";
+import {
+  ReactionPills,
+  AddReactionButton,
+} from "@/components/chat/MessageReactions";
+import {
+  fetchDirectMessageReactions,
+  optimisticToggle,
+  reactionName,
+  toggleDirectMessageReaction,
+} from "@/lib/chatReactions";
+
 
 import {
   fetchInvitationsBundle,
@@ -367,7 +378,15 @@ function DMScreen({
       setMessages((prev) =>
         prev.map((m) =>
           m.id === target.id
-            ? { ...m, ...saved, body: null, invitation_id: null, is_deleted: true }
+            ? {
+                ...m,
+                ...saved,
+                body: null,
+                invitation_id: null,
+                is_deleted: true,
+                // WO-137: the server removed the reaction rows too.
+                reactions: [],
+              }
             : m,
         ),
       );
@@ -381,6 +400,33 @@ function DMScreen({
       setDeleting(false);
     }
   }
+
+  /* -------- WO-137: emoji reactions -------- */
+
+  async function toggleReaction(m: DMMessage, emoji: string) {
+    const previous = m.reactions ?? [];
+    setMessages((prev) =>
+      prev.map((x) =>
+        x.id === m.id ? { ...x, reactions: optimisticToggle(previous, emoji) } : x,
+      ),
+    );
+    try {
+      const res = await toggleDirectMessageReaction(m.id, emoji);
+      setMessages((prev) =>
+        prev.map((x) => (x.id === m.id ? { ...x, reactions: res.reactions } : x)),
+      );
+      setMutationStatus(
+        `${reactionName(emoji)} reaction ${res.reacted ? "added" : "removed"}.`,
+      );
+    } catch (e) {
+      setMessages((prev) =>
+        prev.map((x) => (x.id === m.id ? { ...x, reactions: previous } : x)),
+      );
+      toast.error(memberSafeMessage(e));
+    }
+  }
+
+
 
 
 
@@ -443,6 +489,7 @@ function DMScreen({
                     deleted_at: m.deleted_at ?? null,
                     is_deleted: !!m.deleted_at,
                     invitation_id: m.deleted_at ? null : x.invitation_id,
+                    reactions: m.deleted_at ? [] : x.reactions,
                   }
                 : x,
             ),
@@ -450,7 +497,24 @@ function DMScreen({
           if (m.deleted_at || m.edited_at) {
             qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
           }
+          // WO-137: reaction changes bump `reactions_updated_at`; re-read the
+          // authoritative summaries (never reactor identities) so counts
+          // converge for every participant without a reload.
+          const bumped = (m as { reactions_updated_at?: string | null })
+            .reactions_updated_at;
+          if (bumped && !m.deleted_at) {
+            fetchDirectMessageReactions(conversationId)
+              .then((map) =>
+                setMessages((prev) =>
+                  prev.map((x) =>
+                    map[x.id] ? { ...x, reactions: map[x.id] } : x,
+                  ),
+                ),
+              )
+              .catch(() => undefined);
+          }
         },
+
 
       )
       .subscribe();
@@ -570,6 +634,9 @@ function DMScreen({
   const overLimit = draft.length > MESSAGE_MAX;
   const canSend =
     draft.trim().length > 0 && !sending && !blockedByMe && !overLimit;
+  // WO-137: reacting requires an open conversation, same as posting.
+  const canReact = !blockedByMe;
+
 
   async function handleSend() {
     if (!other || !canSend) return;
@@ -753,6 +820,10 @@ function DMScreen({
                       onJoinInvitation={handleJoinInvitation}
                       joiningId={joiningId}
                       onReportMessage={setReportMessage}
+                      onToggleReaction={toggleReaction}
+                      canReact={canReact}
+                      otherName={other?.firstName ?? "this Veggie"}
+
                       actions={{
                         editingId,
                         editDraft,
@@ -1053,6 +1124,9 @@ function MessageGroup({
   joiningId,
   onReportMessage,
   actions,
+  onToggleReaction,
+  canReact,
+  otherName,
 }: {
   group: Group;
   isMe: boolean;
@@ -1063,7 +1137,11 @@ function MessageGroup({
   joiningId: string | null;
   onReportMessage?: (m: DMMessage) => void;
   actions?: MessageActions;
+  onToggleReaction?: (m: DMMessage, emoji: string) => void;
+  canReact?: boolean;
+  otherName?: string;
 }) {
+
   const last = group.messages[group.messages.length - 1];
   const showRead = isMe && isLastInConv;
   return (
@@ -1166,21 +1244,48 @@ function MessageGroup({
           const menuLabel = `Message options for your message sent ${formatTime(m.created_at)}`;
           return (
             <div key={m.id} className="group/msg relative flex items-start gap-1.5">
-              <div
-                className={cn(
-                  "px-3.5 py-2 rounded-card text-sm break-words whitespace-pre-wrap",
-                  isMe
-                    ? "bg-soft-green text-charcoal rounded-br-md self-end"
-                    : "bg-muted text-charcoal rounded-bl-md self-start",
-                )}
-              >
-                {m.body}
-                {m.edited_at && (
-                  <span className="ml-1.5 align-baseline text-[10px] text-charcoal-muted">
-                    (Edited)
-                  </span>
-                )}
+              <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                <div
+                  className={cn(
+                    "px-3.5 py-2 rounded-card text-sm break-words whitespace-pre-wrap",
+                    isMe
+                      ? "bg-soft-green text-charcoal rounded-br-md"
+                      : "bg-muted text-charcoal rounded-bl-md",
+                  )}
+                >
+                  {m.body}
+                  {m.edited_at && (
+                    <span className="ml-1.5 align-baseline text-[10px] text-charcoal-muted">
+                      (Edited)
+                    </span>
+                  )}
+                </div>
+                {/* WO-137: aggregate reaction pills (never on tombstones). */}
+                <ReactionPills
+                  reactions={m.reactions ?? []}
+                  align={isMe ? "end" : "start"}
+                  messageLabel={
+                    isMe
+                      ? `your message sent ${formatTime(m.created_at)}`
+                      : `message from ${otherName ?? "this Veggie"} sent ${formatTime(m.created_at)}`
+                  }
+                  onToggle={(emoji) => onToggleReaction?.(m, emoji)}
+                />
               </div>
+              {canReact && onToggleReaction && (
+                <AddReactionButton
+                  messageLabel={
+                    isMe
+                      ? `your message sent ${formatTime(m.created_at)}`
+                      : `message from ${otherName ?? "this Veggie"} sent ${formatTime(m.created_at)}`
+                  }
+                  selected={(m.reactions ?? [])
+                    .filter((r) => r.mine)
+                    .map((r) => r.emoji)}
+                  onSelect={(emoji) => onToggleReaction(m, emoji)}
+                />
+              )}
+
               {isMe && actions && !m.invitation_id && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

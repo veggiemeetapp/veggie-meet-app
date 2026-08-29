@@ -1392,6 +1392,45 @@ export type Database = {
           },
         ]
       }
+      dm_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dm_messages: {
         Row: {
           body: string
@@ -1402,6 +1441,7 @@ export type Database = {
           edited_at: string | null
           id: string
           invitation_id: string | null
+          reactions_updated_at: string | null
           read_at: string | null
           sender_id: string
         }
@@ -1414,6 +1454,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           invitation_id?: string | null
+          reactions_updated_at?: string | null
           read_at?: string | null
           sender_id: string
         }
@@ -1426,6 +1467,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           invitation_id?: string | null
+          reactions_updated_at?: string | null
           read_at?: string | null
           sender_id?: string
         }
@@ -1931,6 +1973,45 @@ export type Database = {
           },
         ]
       }
+      meetup_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetup_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetup_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetup_qr_tokens: {
         Row: {
           created_at: string
@@ -2238,6 +2319,7 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          reactions_updated_at: string | null
           sender_id: string | null
           type: Database["public"]["Enums"]["message_type"]
         }
@@ -2249,6 +2331,7 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          reactions_updated_at?: string | null
           sender_id?: string | null
           type?: Database["public"]["Enums"]["message_type"]
         }
@@ -2260,6 +2343,7 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          reactions_updated_at?: string | null
           sender_id?: string | null
           type?: Database["public"]["Enums"]["message_type"]
         }
@@ -3350,6 +3434,10 @@ export type Database = {
         Args: { _meetup_id: string }
         Returns: undefined
       }
+      dm_reaction_summary: {
+        Args: { _me: string; _message_id: string }
+        Returns: Json
+      }
       edit_dm_message: {
         Args: { _body: string; _message_id: string }
         Returns: Json
@@ -3441,6 +3529,10 @@ export type Database = {
         Args: { _city_id?: string; _include_all_cities?: boolean }
         Returns: Json
       }
+      get_dm_message_reactions: {
+        Args: { _conversation_id: string; _message_ids: string[] }
+        Returns: Json
+      }
       get_dm_thread: {
         Args: {
           _before_created_at?: string
@@ -3464,6 +3556,10 @@ export type Database = {
       }
       get_meetup_group: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_lifecycle: { Args: { _meetup_id: string }; Returns: Json }
+      get_meetup_message_reactions: {
+        Args: { _chat_id: string; _message_ids: string[] }
+        Returns: Json
+      }
       get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
       get_member_report_queue: { Args: { _status?: string }; Returns: Json }
       get_my_blocked_profiles: {
@@ -3615,6 +3711,7 @@ export type Database = {
         Returns: undefined
       }
       is_allowed_meetup_cover: { Args: { _url: string }; Returns: boolean }
+      is_approved_reaction_emoji: { Args: { _emoji: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
       is_blocked_with_me: { Args: { _profile_id: string }; Returns: boolean }
       is_chat_participant: { Args: { _chat_id: string }; Returns: boolean }
@@ -3684,6 +3781,10 @@ export type Database = {
           _viewer_interests: string[]
         }
         Returns: number
+      }
+      meetup_reaction_summary: {
+        Args: { _me: string; _message_id: string }
+        Returns: Json
       }
       meetup_start_at: {
         Args: { _date: string; _start_time: string; _timezone: string }
@@ -4004,6 +4105,14 @@ export type Database = {
         Returns: string
       }
       to_plan: { Args: { r: unknown }; Returns: Json }
+      toggle_dm_message_reaction: {
+        Args: { _emoji: string; _message_id: string }
+        Returns: Json
+      }
+      toggle_meetup_message_reaction: {
+        Args: { _emoji: string; _message_id: string }
+        Returns: Json
+      }
       unaccent: { Args: { "": string }; Returns: string }
       unaccent_fallback: { Args: { _t: string }; Returns: string }
       unblock_profile: { Args: { _blocked_profile_id: string }; Returns: Json }
