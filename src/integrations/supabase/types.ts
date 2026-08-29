@@ -1350,6 +1350,45 @@ export type Database = {
           },
         ]
       }
+      dm_conversation_clears: {
+        Row: {
+          cleared_at: string
+          conversation_id: string
+          created_at: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          cleared_at?: string
+          conversation_id: string
+          created_at?: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          cleared_at?: string
+          conversation_id?: string
+          created_at?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_conversation_clears_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "dm_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_conversation_clears_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dm_conversations: {
         Row: {
           created_at: string
@@ -3421,6 +3460,10 @@ export type Database = {
         Args: { _photo_id: string }
         Returns: Json
       }
+      delete_dm_conversation_for_me: {
+        Args: { _conversation_id: string }
+        Returns: Json
+      }
       delete_dm_message: { Args: { _message_id: string }; Returns: Json }
       delete_meetup_chat_message: {
         Args: { _message_id: string }
@@ -3433,6 +3476,10 @@ export type Database = {
       dismiss_meetup_follow_up: {
         Args: { _meetup_id: string }
         Returns: undefined
+      }
+      dm_cleared_at: {
+        Args: { _conversation_id: string; _profile_id: string }
+        Returns: string
       }
       dm_reaction_summary: {
         Args: { _me: string; _message_id: string }
