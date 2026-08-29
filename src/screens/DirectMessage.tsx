@@ -744,6 +744,14 @@ function DMScreen({
                   Block
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteChatOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete chat
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
                   onClick={() => {
                     const lastIncoming = [...messages].reverse().find(
                       (m) => m.sender_id !== meProfileId && !m.invitation_id,
