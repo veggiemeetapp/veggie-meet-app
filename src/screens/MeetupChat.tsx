@@ -586,8 +586,10 @@ export default function MeetupChat() {
                   reactions={m.reactions ?? []}
                   align={isMe ? "end" : "start"}
                   messageLabel={reactionMessageLabel(m, isMe)}
+                  interactive={canPost}
                   onToggle={(emoji) => toggleReaction(m, emoji)}
                 />
+
               </div>
               {canPost && (
                 <AddReactionButton

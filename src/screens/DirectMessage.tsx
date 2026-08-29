@@ -1264,6 +1264,7 @@ function MessageGroup({
                 <ReactionPills
                   reactions={m.reactions ?? []}
                   align={isMe ? "end" : "start"}
+                  interactive={!!canReact && !!onToggleReaction}
                   messageLabel={
                     isMe
                       ? `your message sent ${formatTime(m.created_at)}`
@@ -1271,6 +1272,7 @@ function MessageGroup({
                   }
                   onToggle={(emoji) => onToggleReaction?.(m, emoji)}
                 />
+
               </div>
               {canReact && onToggleReaction && (
                 <AddReactionButton
