@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  deleteConversationForMe,
   deleteDirectMessage,
   editDirectMessage,
   fetchThread,
@@ -77,6 +78,8 @@ import { MeetupInvitationSheet } from "@/components/invitations/MeetupInvitation
 import { InvitationCard } from "@/components/invitations/InvitationCard";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { showErrorToast } from "@/lib/errorToast";
+import { DeleteChatDialog } from "@/components/chat/DeleteChatDialog";
 import { useSendToken } from "@/hooks/useSendToken";
 import { messageRowAlignment } from "@/lib/chatMessageLayout";
 
@@ -252,6 +255,8 @@ function DMScreen({
   const sendToken = useSendToken();
   const [blockedByMe, setBlockedByMe] = useState(false);
   const [blockDialog, setBlockDialog] = useState(false);
+  // WO-139: conversation-level "Delete chat" (per-member) dialog state.
+  const [deleteChatOpen, setDeleteChatOpen] = useState(false);
   const [reportMessage, setReportMessage] = useState<DMMessage | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [invitations, setInvitations] = useState<Map<string, HydratedInvitation>>(
@@ -744,6 +749,14 @@ function DMScreen({
                   Block
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteChatOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete chat
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
                   onClick={() => {
                     const lastIncoming = [...messages].reverse().find(
                       (m) => m.sender_id !== meProfileId && !m.invitation_id,
@@ -901,8 +914,35 @@ function DMScreen({
         )}
       </div>
 
+      {/* WO-139: per-member "Delete chat" (delete for me) confirmation. */}
+      <DeleteChatDialog
+        open={deleteChatOpen}
+        onOpenChange={setDeleteChatOpen}
+        onConfirm={async () => {
+          try {
+            await deleteConversationForMe(conversationId);
+            setDeleteChatOpen(false);
+            qc.setQueryData<unknown>(["dm-inbox", meProfileId], (prev) =>
+              ((prev as { conversationId: string }[] | undefined) ?? []).filter(
+                (i) => i.conversationId !== conversationId,
+              ),
+            );
+            qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
+            toast.success("Chat deleted");
+            navigate("/chats", {
+              replace: true,
+              state: { focusChatsHeading: true },
+            });
+          } catch (error) {
+            setDeleteChatOpen(false);
+            showErrorToast(error, { surface: "dm_delete_conversation" });
+          }
+        }}
+      />
+
       {/* Block confirmation */}
       <Dialog open={blockDialog} onOpenChange={setBlockDialog}>
+
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Block {other?.firstName}?</DialogTitle>

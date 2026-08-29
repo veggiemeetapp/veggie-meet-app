@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Leaf, Search, MessageCircle } from "lucide-react";
+import { Leaf, Search, MessageCircle, MoreVertical, Trash2 } from "lucide-react";
 import {
   AppHeader,
   Card,
@@ -10,13 +10,23 @@ import {
   PrimaryButton,
   UserAvatar,
 } from "@/components/app";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DeleteChatDialog } from "@/components/chat/DeleteChatDialog";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  deleteConversationForMe,
   fetchInbox,
   MESSAGE_DELETED_LABEL,
   type DMInboxItem,
 } from "@/lib/directMessages";
+import { showErrorToast } from "@/lib/errorToast";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -39,17 +49,41 @@ function formatInboxTime(iso: string | null): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+/** WO-139: focus the Chats heading (redirect target + empty-state fallback). */
+function focusChatsHeading() {
+  const h = document.querySelector("h1");
+  if (!(h instanceof HTMLElement)) return;
+  h.setAttribute("tabindex", "-1");
+  h.focus();
+}
+
 export default function Chats() {
   const { profile } = useAuth();
   const [q, setQ] = useState("");
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const qc = useQueryClient();
+  // WO-139 per-member "Delete chat" state.
+  const [deleteTarget, setDeleteTarget] = useState<DMInboxItem | null>(null);
+  const [announcement, setAnnouncement] = useState("");
 
   const inboxQuery = useQuery({
     queryKey: ["dm-inbox", profile?.id],
     enabled: !!profile?.id,
     queryFn: () => fetchInbox(),
   });
+
+  // WO-139: arriving here after deleting from inside a conversation moves focus
+  // to the Chats heading so keyboard/screen-reader users are not left adrift.
+  const focusHeadingOnArrival = !!(
+    routerLocation.state as { focusChatsHeading?: boolean } | null
+  )?.focusChatsHeading;
+  useEffect(() => {
+    if (!focusHeadingOnArrival) return;
+    focusChatsHeading();
+    navigate(routerLocation.pathname, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusHeadingOnArrival]);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -84,6 +118,55 @@ export default function Chats() {
     });
   }, [items, q]);
 
+  const optionsButtonId = (conversationId: string) =>
+    `conversation-options-${conversationId}`;
+
+  /**
+   * WO-139: after a successful delete, move focus to the next conversation's
+   * options control, else the previous one, else the Chats heading.
+   */
+  const moveFocusAfterDelete = useCallback(
+    (deletedId: string) => {
+      const order = filtered.map((i) => i.conversationId);
+      const idx = order.indexOf(deletedId);
+      const nextId = order[idx + 1] ?? order[idx - 1] ?? null;
+      requestAnimationFrame(() => {
+        const el = nextId
+          ? document.getElementById(optionsButtonId(nextId))
+          : null;
+        if (el instanceof HTMLElement) el.focus();
+        else focusChatsHeading();
+      });
+    },
+    [filtered],
+  );
+
+  const confirmDelete = useCallback(async () => {
+    const target = deleteTarget;
+    if (!target) return;
+    try {
+      await deleteConversationForMe(target.conversationId);
+      setDeleteTarget(null);
+      // Only mutate local state once the server has confirmed, so a failure can
+      // never leave optimistic state out of sync.
+      qc.setQueryData<DMInboxItem[]>(["dm-inbox", profile?.id], (prev) =>
+        (prev ?? []).filter((i) => i.conversationId !== target.conversationId),
+      );
+      qc.invalidateQueries({ queryKey: ["dm-inbox", profile?.id] });
+      setAnnouncement(`Chat with ${target.other.firstName} deleted`);
+      toast.success("Chat deleted");
+      moveFocusAfterDelete(target.conversationId);
+    } catch (error) {
+      // Keep the conversation visible and the member on this screen.
+      showErrorToast(error, { surface: "chats_delete_conversation" });
+      setAnnouncement("Couldn't delete this chat. Please try again.");
+      const trigger = document.getElementById(
+        optionsButtonId(target.conversationId),
+      );
+      if (trigger instanceof HTMLElement) trigger.focus();
+    }
+  }, [deleteTarget, moveFocusAfterDelete, profile?.id, qc]);
+
   return (
     <>
       <AppHeader
@@ -91,6 +174,10 @@ export default function Chats() {
         subtitle="Conversations with your Veggie Network."
         right={<NotificationsBell />}
       />
+
+      <p className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </p>
 
       {items.length > 0 && (
         <div className="px-5 mt-1 mb-3">
@@ -127,7 +214,13 @@ export default function Chats() {
       ) : (
         <ul className="px-5 space-y-2">
           {filtered.map((c) => (
-            <InboxRow key={c.conversationId} item={c} meId={profile!.id} />
+            <InboxRow
+              key={c.conversationId}
+              item={c}
+              meId={profile!.id}
+              optionsButtonId={optionsButtonId(c.conversationId)}
+              onRequestDelete={() => setDeleteTarget(c)}
+            />
           ))}
           {filtered.length === 0 && (
             <p className="text-sm text-charcoal-muted text-center pt-6">
@@ -136,15 +229,41 @@ export default function Chats() {
           )}
         </ul>
       )}
+
+      <DeleteChatDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (open) return;
+          // WO-139: dismissing without deleting returns focus to the control
+          // that opened the dialog, since the dropdown trigger is gone by then.
+          const id = deleteTarget && optionsButtonId(deleteTarget.conversationId);
+          setDeleteTarget(null);
+          requestAnimationFrame(() => {
+            const el = id ? document.getElementById(id) : null;
+            if (el instanceof HTMLElement) el.focus();
+          });
+        }}
+        onConfirm={confirmDelete}
+      />
     </>
   );
 }
 
-function InboxRow({ item, meId }: { item: DMInboxItem; meId: string }) {
+function InboxRow({
+  item,
+  meId,
+  optionsButtonId,
+  onRequestDelete,
+}: {
+  item: DMInboxItem;
+  meId: string;
+  optionsButtonId: string;
+  onRequestDelete: () => void;
+}) {
   const isUnread = item.unreadCount > 0;
   const previewPrefix = item.lastSenderId === meId ? "You: " : "";
   return (
-    <li>
+    <li className="relative">
       <Link
         to={`/dm/${item.conversationId}`}
         className="block"
@@ -152,7 +271,7 @@ function InboxRow({ item, meId }: { item: DMInboxItem; meId: string }) {
           isUnread ? `, ${item.unreadCount} unread` : ""
         }`}
       >
-        <Card interactive className="flex items-center gap-3">
+        <Card interactive className="flex items-center gap-3 pr-12">
           <UserAvatar
             name={item.other.displayName}
             src={item.other.avatarUrl ?? undefined}
@@ -210,6 +329,32 @@ function InboxRow({ item, meId }: { item: DMInboxItem; meId: string }) {
           </div>
         </Card>
       </Link>
+
+      {/* WO-139: conversation options sit outside the Link so activating them
+          can never open the conversation. 44px touch target. */}
+      <div className="absolute right-1 top-1/2 -translate-y-1/2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              id={optionsButtonId}
+              type="button"
+              className="w-11 h-11 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Conversation options for ${item.other.firstName}`}
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={onRequestDelete}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete chat
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </li>
   );
 }
