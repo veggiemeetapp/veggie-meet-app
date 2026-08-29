@@ -23,7 +23,7 @@ describe("WO-139 delete chat for me", () => {
 
   it("never sends a client-supplied actor id", () => {
     const call = dmLib
-      .slice(dmLib.indexOf("delete_dm_conversation_for_me"))
+      .slice(dmLib.lastIndexOf("delete_dm_conversation_for_me"))
       .slice(0, 200);
     expect(call).toContain("_conversation_id: conversationId");
     expect(call).not.toMatch(/_profile_id:|_actor|user_id:/);
