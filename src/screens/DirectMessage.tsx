@@ -378,7 +378,15 @@ function DMScreen({
       setMessages((prev) =>
         prev.map((m) =>
           m.id === target.id
-            ? { ...m, ...saved, body: null, invitation_id: null, is_deleted: true }
+            ? {
+                ...m,
+                ...saved,
+                body: null,
+                invitation_id: null,
+                is_deleted: true,
+                // WO-137: the server removed the reaction rows too.
+                reactions: [],
+              }
             : m,
         ),
       );
@@ -392,6 +400,33 @@ function DMScreen({
       setDeleting(false);
     }
   }
+
+  /* -------- WO-137: emoji reactions -------- */
+
+  async function toggleReaction(m: DMMessage, emoji: string) {
+    const previous = m.reactions ?? [];
+    setMessages((prev) =>
+      prev.map((x) =>
+        x.id === m.id ? { ...x, reactions: optimisticToggle(previous, emoji) } : x,
+      ),
+    );
+    try {
+      const res = await toggleDirectMessageReaction(m.id, emoji);
+      setMessages((prev) =>
+        prev.map((x) => (x.id === m.id ? { ...x, reactions: res.reactions } : x)),
+      );
+      setMutationStatus(
+        `${reactionName(emoji)} reaction ${res.reacted ? "added" : "removed"}.`,
+      );
+    } catch (e) {
+      setMessages((prev) =>
+        prev.map((x) => (x.id === m.id ? { ...x, reactions: previous } : x)),
+      );
+      toast.error(memberSafeMessage(e));
+    }
+  }
+
+
 
 
 
