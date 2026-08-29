@@ -63,6 +63,7 @@ import {
   reactionName,
   toggleMeetupMessageReaction,
 } from "@/lib/chatReactions";
+import { messageRowAlignment } from "@/lib/chatMessageLayout";
 
 /** WO-137: message-specific accessible name for reaction controls. */
 function reactionMessageLabel(m: ChatMessage, isMe: boolean): string {
@@ -548,7 +549,9 @@ export default function MeetupChat() {
           return (
             <div
               key={m.id}
-              className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
+              data-message-row={m.id}
+              data-message-owner={isMe ? "self" : "other"}
+              className={`flex items-end gap-2 ${messageRowAlignment(isMe)}`}
             >
               {!isMe && m.sender_name && (
                 <UserAvatar
