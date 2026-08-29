@@ -29,7 +29,9 @@ export const REACTION_EMOJIS = [
   { emoji: "🙏", name: "Folded hands" },
 ] as const;
 
-const NAME_BY_EMOJI = new Map(REACTION_EMOJIS.map((r) => [r.emoji, r.name]));
+const NAME_BY_EMOJI = new Map<string, string>(
+  REACTION_EMOJIS.map((r) => [r.emoji as string, r.name as string]),
+);
 
 export function reactionName(emoji: string): string {
   return NAME_BY_EMOJI.get(emoji) ?? "Reaction";
@@ -40,7 +42,10 @@ export function isApprovedReactionEmoji(emoji: string): boolean {
 }
 
 /** Stable display order: the approved-set order, so pills never reshuffle. */
-const ORDER = new Map(REACTION_EMOJIS.map((r, i) => [r.emoji, i]));
+const ORDER = new Map<string, number>(
+  REACTION_EMOJIS.map((r, i) => [r.emoji as string, i]),
+);
+
 
 export function sortReactions(list: MessageReaction[]): MessageReaction[] {
   return [...list].sort(
