@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  deleteConversationForMe,
   deleteDirectMessage,
   editDirectMessage,
   fetchThread,
@@ -77,6 +78,8 @@ import { MeetupInvitationSheet } from "@/components/invitations/MeetupInvitation
 import { InvitationCard } from "@/components/invitations/InvitationCard";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { showErrorToast } from "@/lib/errorToast";
+import { DeleteChatDialog } from "@/components/chat/DeleteChatDialog";
 import { useSendToken } from "@/hooks/useSendToken";
 import { messageRowAlignment } from "@/lib/chatMessageLayout";
 
@@ -917,11 +920,11 @@ function DMScreen({
         onOpenChange={setDeleteChatOpen}
         onConfirm={async () => {
           try {
-            await deleteConversationForMe(convId!);
+            await deleteConversationForMe(conversationId);
             setDeleteChatOpen(false);
             qc.setQueryData<unknown>(["dm-inbox", meProfileId], (prev) =>
               ((prev as { conversationId: string }[] | undefined) ?? []).filter(
-                (i) => i.conversationId !== convId,
+                (i) => i.conversationId !== conversationId,
               ),
             );
             qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
