@@ -243,7 +243,37 @@ export default function MeetupChat() {
     }
   };
 
+  /* -------- WO-137: emoji reactions (server-authoritative) -------- */
+  const toggleReaction = async (m: ChatMessage, emoji: string) => {
+    const previous = m.reactions ?? [];
+    setMessages((list) =>
+      list.map((x) =>
+        x.id === m.id ? { ...x, reactions: optimisticToggle(previous, emoji) } : x,
+      ),
+    );
+    try {
+      const res = await toggleMeetupMessageReaction(m.id, emoji);
+      setMessages((list) =>
+        list.map((x) => (x.id === m.id ? { ...x, reactions: res.reactions } : x)),
+      );
+      setMutationStatus(
+        `${reactionName(emoji)} reaction ${res.reacted ? "added" : "removed"}.`,
+      );
+    } catch (err) {
+      // Rollback to the last known server truth.
+      setMessages((list) =>
+        list.map((x) => (x.id === m.id ? { ...x, reactions: previous } : x)),
+      );
+      toast({
+        title: "Reaction not saved",
+        description: memberSafeMessage(err),
+        variant: "destructive",
+      });
+    }
+  };
+
   const confirmDelete = async () => {
+
     const target = deleteTarget;
     if (!target || deleting) return;
     setDeleting(true);
