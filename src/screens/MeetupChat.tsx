@@ -574,8 +574,9 @@ export default function MeetupChat() {
                   {m.edited_at && (
                     <span
                       className={`ml-1.5 align-baseline text-[10px] ${
-                        isMe ? "text-primary-foreground/80" : "text-charcoal-muted"
+                        isMe ? "text-primary-foreground" : "text-charcoal-muted"
                       }`}
+
                     >
                       (Edited)
                     </span>
