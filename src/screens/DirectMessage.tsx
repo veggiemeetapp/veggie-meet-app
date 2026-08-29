@@ -252,6 +252,8 @@ function DMScreen({
   const sendToken = useSendToken();
   const [blockedByMe, setBlockedByMe] = useState(false);
   const [blockDialog, setBlockDialog] = useState(false);
+  // WO-139: conversation-level "Delete chat" (per-member) dialog state.
+  const [deleteChatOpen, setDeleteChatOpen] = useState(false);
   const [reportMessage, setReportMessage] = useState<DMMessage | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [invitations, setInvitations] = useState<Map<string, HydratedInvitation>>(
