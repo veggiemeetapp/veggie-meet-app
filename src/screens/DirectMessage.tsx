@@ -55,6 +55,17 @@ import {
   submitMessageReport,
   MESSAGE_REPORT_REASONS,
 } from "@/lib/safety";
+import {
+  ReactionPills,
+  AddReactionButton,
+} from "@/components/chat/MessageReactions";
+import {
+  fetchDirectMessageReactions,
+  optimisticToggle,
+  reactionName,
+  toggleDirectMessageReaction,
+} from "@/lib/chatReactions";
+
 
 import {
   fetchInvitationsBundle,
@@ -753,6 +764,10 @@ function DMScreen({
                       onJoinInvitation={handleJoinInvitation}
                       joiningId={joiningId}
                       onReportMessage={setReportMessage}
+                      onToggleReaction={toggleReaction}
+                      canReact={canReact}
+                      otherName={other?.firstName ?? "this Veggie"}
+
                       actions={{
                         editingId,
                         editDraft,
