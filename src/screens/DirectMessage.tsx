@@ -901,8 +901,35 @@ function DMScreen({
         )}
       </div>
 
+      {/* WO-139: per-member "Delete chat" (delete for me) confirmation. */}
+      <DeleteChatDialog
+        open={deleteChatOpen}
+        onOpenChange={setDeleteChatOpen}
+        onConfirm={async () => {
+          try {
+            await deleteConversationForMe(convId!);
+            setDeleteChatOpen(false);
+            qc.setQueryData<unknown>(["dm-inbox", meProfileId], (prev) =>
+              ((prev as { conversationId: string }[] | undefined) ?? []).filter(
+                (i) => i.conversationId !== convId,
+              ),
+            );
+            qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
+            toast.success("Chat deleted");
+            navigate("/chats", {
+              replace: true,
+              state: { focusChatsHeading: true },
+            });
+          } catch (error) {
+            setDeleteChatOpen(false);
+            showErrorToast(error, { surface: "dm_delete_conversation" });
+          }
+        }}
+      />
+
       {/* Block confirmation */}
       <Dialog open={blockDialog} onOpenChange={setBlockDialog}>
+
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Block {other?.firstName}?</DialogTitle>
