@@ -1,5 +1,5 @@
 import { safeBack } from "@/lib/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Flag, MessageCircle, MoreVertical, QrCode, Settings } from "lucide-react";
@@ -77,6 +77,10 @@ export default function MeetupDetail() {
   const queryClient = useQueryClient();
   const [dbHost, setDbHost] = useState<Veggie | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  // WO-140 DEF-140-01: the report dialog is opened from a dropdown item that
+  // unmounts, so Radix has no element to return focus to. Restore focus to the
+  // Meetup options button whenever the dialog closes (submit, Cancel, Escape).
+  const reportTriggerRef = useRef<HTMLButtonElement>(null);
   // WO-130 DEF-130-01: the action panel height varies by role/state and text
   // scaling, so content clearance is measured instead of hard-coded.
   const { ref: panelRef, height: panelHeight } = useStickyPanelHeight();
@@ -250,6 +254,7 @@ export default function MeetupDetail() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
+                  ref={reportTriggerRef}
                   type="button"
                   aria-label="Meetup options"
                   className="w-10 h-10 rounded-full flex items-center justify-center text-charcoal"
@@ -444,7 +449,13 @@ export default function MeetupDetail() {
         <ReportMeetupDialog
           meetupId={meetup.id}
           open={reportOpen}
-          onOpenChange={setReportOpen}
+          onOpenChange={(next) => {
+            setReportOpen(next);
+            if (!next) {
+              // Defer past Radix's own close/unmount focus handling.
+              setTimeout(() => reportTriggerRef.current?.focus(), 0);
+            }
+          }}
         />
       )}
     </div>
