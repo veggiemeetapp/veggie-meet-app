@@ -22,9 +22,11 @@ describe("WO-139 delete chat for me", () => {
   });
 
   it("never sends a client-supplied actor id", () => {
-    expect(dmLib).not.toMatch(/_profile_id:\s/);
-    const call = dmLib.slice(dmLib.indexOf("delete_dm_conversation_for_me"));
-    expect(call.slice(0, 200)).toContain("_conversation_id: conversationId");
+    const call = dmLib
+      .slice(dmLib.indexOf("delete_dm_conversation_for_me"))
+      .slice(0, 200);
+    expect(call).toContain("_conversation_id: conversationId");
+    expect(call).not.toMatch(/_profile_id:|_actor|user_id:/);
   });
 
   it("exposes a separate accessible conversation-options control per card", () => {
