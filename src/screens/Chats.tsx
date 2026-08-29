@@ -49,10 +49,17 @@ function formatInboxTime(iso: string | null): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-/** WO-139: focus the Chats heading (redirect target + empty-state fallback). */
-function focusChatsHeading() {
+/**
+ * WO-139: focus the Chats heading (redirect target + empty-state fallback).
+ * DEF-139-04: after a cross-route redirect the heading can mount a frame later
+ * than the arrival effect, so retry for a few frames before giving up.
+ */
+function focusChatsHeading(attempt = 0) {
   const h = document.querySelector("h1");
-  if (!(h instanceof HTMLElement)) return;
+  if (!(h instanceof HTMLElement)) {
+    if (attempt < 20) requestAnimationFrame(() => focusChatsHeading(attempt + 1));
+    return;
+  }
   h.setAttribute("tabindex", "-1");
   h.focus();
 }
@@ -80,7 +87,13 @@ export default function Chats() {
   )?.focusChatsHeading;
   useEffect(() => {
     if (!focusHeadingOnArrival) return;
-    focusChatsHeading();
+    // DEF-139-04: AppShell moves focus to <main> on every route change and that
+    // parent effect runs after this one, so defer a frame and claim the heading
+    // afterwards — otherwise the redirect would land focus on the container.
+    requestAnimationFrame(() => focusChatsHeading());
+    // DEF-139-05: the success announcement must survive the redirect from the
+    // conversation, where the deleted screen unmounts before it can be read.
+    setAnnouncement("Chat deleted");
     navigate(routerLocation.pathname, { replace: true, state: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusHeadingOnArrival]);
