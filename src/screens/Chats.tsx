@@ -233,7 +233,15 @@ export default function Chats() {
       <DeleteChatDialog
         open={!!deleteTarget}
         onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
+          if (open) return;
+          // WO-139: dismissing without deleting returns focus to the control
+          // that opened the dialog, since the dropdown trigger is gone by then.
+          const id = deleteTarget && optionsButtonId(deleteTarget.conversationId);
+          setDeleteTarget(null);
+          requestAnimationFrame(() => {
+            const el = id ? document.getElementById(id) : null;
+            if (el instanceof HTMLElement) el.focus();
+          });
         }}
         onConfirm={confirmDelete}
       />
