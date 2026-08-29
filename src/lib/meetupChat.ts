@@ -52,7 +52,10 @@ export interface ChatMessage {
   edited_at?: string | null;
   deleted_at?: string | null;
   is_deleted?: boolean;
+  /** WO-137: aggregate emoji reactions (no reactor identities). */
+  reactions?: MessageReaction[];
 }
+
 
 export interface ChatThreadPage {
   messages: ChatMessage[];
