@@ -489,6 +489,7 @@ function DMScreen({
                     deleted_at: m.deleted_at ?? null,
                     is_deleted: !!m.deleted_at,
                     invitation_id: m.deleted_at ? null : x.invitation_id,
+                    reactions: m.deleted_at ? [] : x.reactions,
                   }
                 : x,
             ),
@@ -496,7 +497,24 @@ function DMScreen({
           if (m.deleted_at || m.edited_at) {
             qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
           }
+          // WO-137: reaction changes bump `reactions_updated_at`; re-read the
+          // authoritative summaries (never reactor identities) so counts
+          // converge for every participant without a reload.
+          const bumped = (m as { reactions_updated_at?: string | null })
+            .reactions_updated_at;
+          if (bumped && !m.deleted_at) {
+            fetchDirectMessageReactions(conversationId)
+              .then((map) =>
+                setMessages((prev) =>
+                  prev.map((x) =>
+                    map[x.id] ? { ...x, reactions: map[x.id] } : x,
+                  ),
+                ),
+              )
+              .catch(() => undefined);
+          }
         },
+
 
       )
       .subscribe();
