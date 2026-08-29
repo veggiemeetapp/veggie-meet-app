@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      _wo139_qa_behavior: {
+        Row: {
+          case_name: string | null
+          detail: string | null
+          outcome: string | null
+          seq: number
+        }
+        Insert: {
+          case_name?: string | null
+          detail?: string | null
+          outcome?: string | null
+          seq?: number
+        }
+        Update: {
+          case_name?: string | null
+          detail?: string | null
+          outcome?: string | null
+          seq?: number
+        }
+        Relationships: []
+      }
+      _wo139_qa_race: {
+        Row: {
+          case_name: string | null
+          detail: string | null
+          outcome: string | null
+          seq: number
+        }
+        Insert: {
+          case_name?: string | null
+          detail?: string | null
+          outcome?: string | null
+          seq?: number
+        }
+        Update: {
+          case_name?: string | null
+          detail?: string | null
+          outcome?: string | null
+          seq?: number
+        }
+        Relationships: []
+      }
+      _wo139_qa_results: {
+        Row: {
+          case_name: string | null
+          detail: string | null
+          outcome: string | null
+          seq: number
+        }
+        Insert: {
+          case_name?: string | null
+          detail?: string | null
+          outcome?: string | null
+          seq?: number
+        }
+        Update: {
+          case_name?: string | null
+          detail?: string | null
+          outcome?: string | null
+          seq?: number
+        }
+        Relationships: []
+      }
       account_deletion_requests: {
         Row: {
           blockers: Json

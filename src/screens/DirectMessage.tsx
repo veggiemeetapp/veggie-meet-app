@@ -727,6 +727,7 @@ function DMScreen({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
+                  id="dm-conversation-options"
                   className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
                   aria-label="More options"
                 >
@@ -917,7 +918,16 @@ function DMScreen({
       {/* WO-139: per-member "Delete chat" (delete for me) confirmation. */}
       <DeleteChatDialog
         open={deleteChatOpen}
-        onOpenChange={setDeleteChatOpen}
+        onOpenChange={(open) => {
+          setDeleteChatOpen(open);
+          // DEF-139-03: the dropdown trigger has already unmounted the menu by
+          // the time the dialog closes, so restore focus to it explicitly.
+          if (!open)
+            requestAnimationFrame(() => {
+              const el = document.getElementById("dm-conversation-options");
+              if (el instanceof HTMLElement) el.focus();
+            });
+        }}
         onConfirm={async () => {
           try {
             await deleteConversationForMe(conversationId);
