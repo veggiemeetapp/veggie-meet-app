@@ -85,7 +85,14 @@ export async function fetchMeetupChatThread(
   });
   if (error) throw new Error(error.message);
   const page = data as ChatThreadPage;
-  return { messages: page?.messages ?? [], has_more: !!page?.has_more };
+  return {
+    messages: (page?.messages ?? []).map((m) => ({
+      ...m,
+      reactions: normalizeReactions(m.reactions),
+    })),
+    has_more: !!page?.has_more,
+  };
+
 }
 
 export async function sendMeetupChatMessage(

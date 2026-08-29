@@ -184,7 +184,12 @@ export async function fetchThread(
       city: d.peer.city ?? null,
       isVerifiedConnection: !!d.peer.is_verified_connection,
     },
-    messages: (d.messages ?? []) as DMMessage[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages: ((d.messages ?? []) as any[]).map((m) => ({
+      ...(m as DMMessage),
+      reactions: normalizeReactions(m.reactions),
+    })),
+
     hasMore: !!d.has_more,
     canSend: !!d.can_send,
     isBlocked: !!d.is_blocked,
