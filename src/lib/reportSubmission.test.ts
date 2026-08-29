@@ -30,7 +30,7 @@ describe("canonical reason codes", () => {
 
   it("rejects display labels (the WO-140 root cause)", () => {
     for (const r of MEETUP_REPORT_REASONS) {
-      if (r.id === r.label) continue;
+      if ((r.id as string) === (r.label as string)) continue;
       expect(isCanonicalReportReason("meetup", r.label)).toBe(false);
     }
     expect(isCanonicalReportReason("meetup", "Other")).toBe(false);
