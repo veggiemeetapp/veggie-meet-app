@@ -634,6 +634,9 @@ function DMScreen({
   const overLimit = draft.length > MESSAGE_MAX;
   const canSend =
     draft.trim().length > 0 && !sending && !blockedByMe && !overLimit;
+  // WO-137: reacting requires an open conversation, same as posting.
+  const canReact = !blockedByMe;
+
 
   async function handleSend() {
     if (!other || !canSend) return;
