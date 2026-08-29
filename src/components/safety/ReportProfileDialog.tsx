@@ -30,13 +30,13 @@ export function ReportProfileDialog({
   onBlocked?: () => void;
 }) {
   const [step, setStep] = useState<Step>("form");
-  const [reason, setReason] = useState<string>(PROFILE_REPORT_REASONS[0].label);
+  const [reason, setReason] = useState<string>(PROFILE_REPORT_REASONS[0].id);
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
 
   function reset() {
     setStep("form");
-    setReason(PROFILE_REPORT_REASONS[0].label);
+    setReason(PROFILE_REPORT_REASONS[0].id);
     setDetails("");
     setBusy(false);
   }
@@ -107,11 +107,12 @@ export function ReportProfileDialog({
                       <input
                         type="radio"
                         name="report-profile-reason"
-                        value={r.label}
-                        checked={reason === r.label}
-                        onChange={() => setReason(r.label)}
+                        value={r.id}
+                        checked={reason === r.id}
+                        onChange={() => setReason(r.id)}
                         className="accent-primary"
                       />
+
                       <span className="text-charcoal">{r.label}</span>
                     </label>
                   ))}
