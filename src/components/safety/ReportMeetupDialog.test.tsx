@@ -32,6 +32,9 @@ beforeEach(() => {
 });
 
 describe("ReportMeetupDialog", () => {
+  // WO-141A: this case drives seven sequential submit + waitFor cycles in a
+  // single test body. The default 5s budget is not enough under full-suite
+  // load (reproducible timeout), so the budget is stated explicitly here.
   it("sends the canonical reason code for every reason", async () => {
     setup();
     for (const r of MEETUP_REPORT_REASONS) {
@@ -41,7 +44,8 @@ describe("ReportMeetupDialog", () => {
       await waitFor(() => expect(reportMeetup).toHaveBeenCalled());
       expect(reportMeetup).toHaveBeenCalledWith("m-1", r.id, null);
     }
-  });
+  }, 30000);
+
 
   it("trims details and sends null when empty", async () => {
     setup();
