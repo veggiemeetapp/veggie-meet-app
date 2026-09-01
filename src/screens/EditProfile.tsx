@@ -189,8 +189,10 @@ export default function EditProfile() {
             <UserAvatar
               name={displayName || "You"}
               src={avatarUrl ?? undefined}
+              seed={profile?.id ?? displayName}
               size="xl"
             />
+
             <span className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-green">
               <Camera className="w-4 h-4" />
             </span>

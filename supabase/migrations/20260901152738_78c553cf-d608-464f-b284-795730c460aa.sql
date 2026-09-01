@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.platform_avatar_token(uuid) FROM anon;

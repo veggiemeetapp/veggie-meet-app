@@ -492,6 +492,7 @@ export default function Onboarding() {
             avatarUrl={avatarUrl}
             setAvatarUrl={setAvatarUrl}
             displayName={displayName}
+            seed={profile?.id ?? displayName}
             bio={bio}
             setBio={setBio}
             onContinue={() => handlePhotoContinue(false)}
@@ -504,6 +505,7 @@ export default function Onboarding() {
 
           />
         )}
+
         {step === "guidelines" && (
           <Guidelines
             accepted={guidelinesAccepted}
@@ -1333,6 +1335,7 @@ function Photo({
   avatarUrl,
   setAvatarUrl,
   displayName,
+  seed,
   bio,
   setBio,
   onContinue,
@@ -1341,11 +1344,15 @@ function Photo({
   avatarUrl: string | null;
   setAvatarUrl: (u: string | null) => void;
   displayName: string;
+  /** WO-143 QA: stable seed (profile id) so the client-side platform token
+   *  matches the token the server derives for the same member. */
+  seed: string;
   bio: string;
   setBio: (s: string) => void;
   onContinue: () => void;
   onSkip: () => void;
 }) {
+
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1515,7 +1522,7 @@ function Photo({
                     hint="Uses your VeggieMeet avatar instead"
                     destructive
                     onClick={() => {
-                      setAvatarUrl(platformAvatarTokenForSeed(displayName));
+                      setAvatarUrl(platformAvatarTokenForSeed(seed));
                       setSheetOpen(false);
                     }}
                   />
