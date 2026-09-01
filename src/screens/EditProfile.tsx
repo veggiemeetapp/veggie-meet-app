@@ -47,6 +47,8 @@ export default function EditProfile() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
+  const [avatarPicker, setAvatarPicker] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dirty, setDirty] = useState(false);
