@@ -68,9 +68,15 @@ import { PASSWORD_MIN_LENGTH, isPasswordLongEnough } from "@/lib/passwordPolicy"
 
 
 
-function makeAvatarUrl(seed: string) {
-  return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=c8e6c9`;
-}
+// WO-143: sample avatars are the bundled, approved VeggieMeet cartoon set —
+// no third-party generated images, and never an initial-letter fallback.
+import {
+  PLATFORM_AVATARS,
+  platformAvatarToken,
+  platformAvatarTokenForSeed,
+  isPlatformAvatarToken,
+} from "@/lib/avatar";
+
 
 // Public-facing action route for each starting-point option.
 function actionRoute(opt: StartingPointOption): string {
@@ -155,7 +161,10 @@ export default function Onboarding() {
     }
     setDisplayName((n) => n || profile.display_name || "");
     setBio((b) => b || profile.bio || "");
-    setAvatarUrl((a) => a || profile.avatar_url || null);
+    // WO-143: every member always has an avatar — fall back to the stable
+    // platform cartoon avatar derived from the profile id.
+    setAvatarUrl((a) => a || profile.avatar_url || platformAvatarTokenForSeed(profile.id));
+
     setInterests((i) => (i.length ? i : (profile.interests || []).slice(0, MAX_INTERESTS)));
     setHomeCityId((c) => c ?? profile.home_city_id ?? null);
     // Explicit resume-to-single-step (existing-user migration).
@@ -487,9 +496,12 @@ export default function Onboarding() {
             setBio={setBio}
             onContinue={() => handlePhotoContinue(false)}
             onSkip={() => {
-              setAvatarUrl(null);
+              // WO-143: skipping still leaves the member with a platform avatar.
+              const token = platformAvatarTokenForSeed(profile?.id ?? displayName);
+              setAvatarUrl(token);
               handlePhotoContinue(true);
             }}
+
           />
         )}
         {step === "guidelines" && (
@@ -1335,14 +1347,10 @@ function Photo({
   onSkip: () => void;
 }) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function pickSampleAvatar() {
-    const seed = `veggie-${Math.random().toString(36).slice(2, 8)}`;
-    setAvatarUrl(makeAvatarUrl(seed));
-    setSheetOpen(false);
-  }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -1441,36 +1449,88 @@ function Photo({
             </SheetDescription>
           </SheetHeader>
           <div className="page-x pb-6 pt-3 space-y-1">
-            <SheetAction
-              icon={<Shuffle className="w-5 h-5" />}
-              label="Choose sample avatar"
-              onClick={pickSampleAvatar}
-            />
-            <SheetAction
-              icon={<ImagePlus className="w-5 h-5" />}
-              label={uploading ? "Uploading…" : "Upload photo"}
-              hint="JPG, PNG or WebP, up to 5 MB"
-              onClick={() => fileRef.current?.click()}
-            />
-            {avatarUrl && (
-              <SheetAction
-                icon={<Trash2 className="w-5 h-5" />}
-                label="Remove photo"
-                destructive
-                onClick={() => {
-                  setAvatarUrl(null);
-                  setSheetOpen(false);
-                }}
-              />
+            {pickerOpen ? (
+              <div>
+                <p className="text-sm font-semibold text-charcoal mb-3">
+                  Pick a VeggieMeet avatar
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {PLATFORM_AVATARS.map((asset, i) => {
+                    const token = platformAvatarToken(i + 1);
+                    const selected = avatarUrl === token;
+                    return (
+                      <button
+                        key={token}
+                        type="button"
+                        aria-label={`VeggieMeet avatar ${i + 1}`}
+                        aria-pressed={selected}
+                        onClick={() => {
+                          setAvatarUrl(token);
+                          setPickerOpen(false);
+                          setSheetOpen(false);
+                        }}
+                        className={`rounded-full overflow-hidden aspect-square transition ${
+                          selected
+                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            : "ring-1 ring-border hover:ring-primary/60"
+                        }`}
+                      >
+                        <img
+                          src={asset}
+                          alt=""
+                          loading="lazy"
+                          width={512}
+                          height={512}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(false)}
+                  className="w-full mt-4 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+                >
+                  Back
+                </button>
+              </div>
+            ) : (
+              <>
+                <SheetAction
+                  icon={<Shuffle className="w-5 h-5" />}
+                  label="Choose a VeggieMeet avatar"
+                  onClick={() => setPickerOpen(true)}
+                />
+                <SheetAction
+                  icon={<ImagePlus className="w-5 h-5" />}
+                  label={uploading ? "Uploading…" : "Upload photo"}
+                  hint="JPG, PNG or WebP, up to 5 MB"
+                  onClick={() => fileRef.current?.click()}
+                />
+                {avatarUrl && !isPlatformAvatarToken(avatarUrl) && (
+                  <SheetAction
+                    icon={<Trash2 className="w-5 h-5" />}
+                    label="Remove photo"
+                    hint="Uses your VeggieMeet avatar instead"
+                    destructive
+                    onClick={() => {
+                      setAvatarUrl(platformAvatarTokenForSeed(displayName));
+                      setSheetOpen(false);
+                    }}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSheetOpen(false)}
+                  className="w-full mt-2 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+                >
+                  Cancel
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              onClick={() => setSheetOpen(false)}
-              className="w-full mt-2 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
-            >
-              Cancel
-            </button>
           </div>
+
         </SheetContent>
       </Sheet>
     </div>

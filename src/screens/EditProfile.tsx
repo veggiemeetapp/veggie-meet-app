@@ -27,10 +27,14 @@ import {
 } from "@/lib/interests";
 import { InterestPicker } from "@/components/interests/InterestPicker";
 
-function sampleAvatar() {
-  const seed = `veggie-${Math.random().toString(36).slice(2, 8)}`;
-  return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=c8e6c9`;
-}
+// WO-143: the sample avatars are the bundled, approved VeggieMeet cartoon set.
+import {
+  PLATFORM_AVATARS,
+  platformAvatarToken,
+  platformAvatarTokenForSeed,
+  isPlatformAvatarToken,
+} from "@/lib/avatar";
+
 
 
 export default function EditProfile() {
@@ -43,6 +47,8 @@ export default function EditProfile() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
+  const [avatarPicker, setAvatarPicker] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -65,7 +71,9 @@ export default function EditProfile() {
     if (!profile) return;
     setDisplayName(profile.display_name ?? "");
     setBio(profile.bio ?? "");
-    setAvatarUrl(profile.avatar_url ?? null);
+    // WO-143: a profile always has an avatar; fall back to the stable platform one.
+    setAvatarUrl(profile.avatar_url ?? platformAvatarTokenForSeed(profile.id));
+
     setInterests(profile.interests ?? []);
   }, [profile]);
 
@@ -310,27 +318,75 @@ export default function EditProfile() {
             </SheetDescription>
           </SheetHeader>
           <div className="page-x pb-6 pt-3 space-y-1">
+            {avatarPicker ? (
+              <div>
+                <p className="text-sm font-semibold text-charcoal mb-3">
+                  Pick a VeggieMeet avatar
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {PLATFORM_AVATARS.map((asset, i) => {
+                    const token = platformAvatarToken(i + 1);
+                    const selected = avatarUrl === token;
+                    return (
+                      <button
+                        key={token}
+                        type="button"
+                        aria-label={`VeggieMeet avatar ${i + 1}`}
+                        aria-pressed={selected}
+                        onClick={() => {
+                          setAvatarUrl(token);
+                          setDirty(true);
+                          setAvatarPicker(false);
+                          setAvatarSheet(false);
+                        }}
+                        className={cn(
+                          "rounded-full overflow-hidden aspect-square transition",
+                          selected
+                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            : "ring-1 ring-border hover:ring-primary/60",
+                        )}
+                      >
+                        <img
+                          src={asset}
+                          alt=""
+                          loading="lazy"
+                          width={512}
+                          height={512}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAvatarPicker(false)}
+                  className="w-full mt-4 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+                >
+                  Back
+                </button>
+              </div>
+            ) : (
+              <>
             <SheetRow
               icon={<Shuffle className="w-5 h-5" />}
-              label="Choose sample avatar"
-              onClick={() => {
-                setAvatarUrl(sampleAvatar());
-                setDirty(true);
-                setAvatarSheet(false);
-              }}
+              label="Choose a VeggieMeet avatar"
+              onClick={() => setAvatarPicker(true)}
             />
             <SheetRow
               icon={<ImagePlus className="w-5 h-5" />}
               label="Upload photo"
               onClick={() => fileRef.current?.click()}
             />
-            {avatarUrl && (
+            {avatarUrl && !isPlatformAvatarToken(avatarUrl) && (
               <SheetRow
                 icon={<Trash2 className="w-5 h-5" />}
                 label="Remove photo"
                 destructive
                 onClick={() => {
-                  setAvatarUrl(null);
+                  // WO-143: removing a photo returns the member to their stable
+                  // VeggieMeet avatar — never to an initial-letter placeholder.
+                  setAvatarUrl(platformAvatarTokenForSeed(profile?.id ?? displayName));
                   setDirty(true);
                   setAvatarSheet(false);
                 }}
@@ -343,6 +399,9 @@ export default function EditProfile() {
             >
               Cancel
             </button>
+              </>
+            )}
+
           </div>
         </SheetContent>
       </Sheet>
