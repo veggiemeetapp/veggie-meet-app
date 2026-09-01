@@ -858,7 +858,15 @@ function DMScreen({
               ))
             )}
             {/* WO-136: screen-reader announcement for edit/delete results. */}
-            <p role="status" aria-live="polite" className="sr-only">
+            {/* WO-141: anchor the absolute sr-only status to the viewport.
+                Its implicit static position followed the full message list and
+                extended the document below the 100dvh chat shell. */}
+            <p
+              role="status"
+              aria-live="polite"
+              data-chat-status="dm"
+              className="sr-only left-0 top-0"
+            >
               {mutationStatus}
             </p>
             <div ref={bottomRef} />

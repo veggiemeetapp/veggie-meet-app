@@ -35,4 +35,11 @@ describe("Chat viewport contracts", () => {
     expect(appShellSrc).toContain("data-route-announcer");
     expect(appShellSrc).toContain('className="sr-only left-0 top-0"');
   });
+
+  it("anchors chat status announcements instead of extending the document", () => {
+    expect(dmSrc).toContain('data-chat-status="dm"');
+    expect(meetupSrc).toContain('data-chat-status="group"');
+    expect(dmSrc).toMatch(/data-chat-status="dm"[\s\S]*?className="sr-only left-0 top-0"/);
+    expect(meetupSrc).toMatch(/data-chat-status="group"[\s\S]*?className="sr-only left-0 top-0"/);
+  });
 });
