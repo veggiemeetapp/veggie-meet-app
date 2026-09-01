@@ -66,7 +66,17 @@ export function AppShell({ children }: AppShellProps) {
         >
           <AppErrorBoundary>{children}</AppErrorBoundary>
         </main>
-        <p aria-live="polite" className="sr-only">
+        {/* WO-141: `sr-only` is absolutely positioned, but without explicit
+            coordinates its static position remained after the 100dvh chat.
+            That added a 1px element plus body line-height below the viewport,
+            exposing the shell's grey background when mobile Safari bounced or
+            the document was scrolled. Anchor the live region inside this
+            relative shell so it remains accessible without affecting bounds. */}
+        <p
+          aria-live="polite"
+          data-route-announcer
+          className="sr-only left-0 top-0"
+        >
           {announced}
         </p>
         {!hideNav && <BottomNav />}
