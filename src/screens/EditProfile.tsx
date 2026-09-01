@@ -71,7 +71,9 @@ export default function EditProfile() {
     if (!profile) return;
     setDisplayName(profile.display_name ?? "");
     setBio(profile.bio ?? "");
-    setAvatarUrl(profile.avatar_url ?? null);
+    // WO-143: a profile always has an avatar; fall back to the stable platform one.
+    setAvatarUrl(profile.avatar_url ?? platformAvatarTokenForSeed(profile.id));
+
     setInterests(profile.interests ?? []);
   }, [profile]);
 
