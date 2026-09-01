@@ -636,7 +636,14 @@ export default function MeetupChat() {
             </div>
           );
         })}
-        <p role="status" aria-live="polite" className="sr-only">
+        {/* WO-141: keep the status announcement accessible without allowing
+            its static position after the message list to enlarge the page. */}
+        <p
+          role="status"
+          aria-live="polite"
+          data-chat-status="group"
+          className="sr-only left-0 top-0"
+        >
           {mutationStatus}
         </p>
 
