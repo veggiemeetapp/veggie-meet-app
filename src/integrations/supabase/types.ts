@@ -3872,6 +3872,7 @@ export type Database = {
         Args: { _last_reverified_at: string; _verified_at: string }
         Returns: string
       }
+      platform_avatar_token: { Args: { _seed: string }; Returns: string }
       profile_is_eligible: { Args: { _profile_id: string }; Returns: boolean }
       promote_place_suggestion_to_candidate: {
         Args: { _suggestion_id: string }

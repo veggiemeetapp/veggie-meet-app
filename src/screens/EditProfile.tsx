@@ -27,10 +27,14 @@ import {
 } from "@/lib/interests";
 import { InterestPicker } from "@/components/interests/InterestPicker";
 
-function sampleAvatar() {
-  const seed = `veggie-${Math.random().toString(36).slice(2, 8)}`;
-  return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=c8e6c9`;
-}
+// WO-143: the sample avatars are the bundled, approved VeggieMeet cartoon set.
+import {
+  PLATFORM_AVATARS,
+  platformAvatarToken,
+  platformAvatarTokenForSeed,
+  isPlatformAvatarToken,
+} from "@/lib/avatar";
+
 
 
 export default function EditProfile() {
