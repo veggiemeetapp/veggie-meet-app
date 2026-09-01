@@ -390,9 +390,6 @@ export default function EditProfile() {
                 }}
               />
             )}
-              </>
-            )}
-
             <button
               type="button"
               onClick={() => setAvatarSheet(false)}
@@ -400,6 +397,9 @@ export default function EditProfile() {
             >
               Cancel
             </button>
+              </>
+            )}
+
           </div>
         </SheetContent>
       </Sheet>
