@@ -140,4 +140,69 @@ describe("WO-145C legacy activation bridge", () => {
     expect(reload).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
+
+  it("finishes as soon as the registration drops the waiting worker", async () => {
+    // Chromium promotes without firing an observable statechange on this
+    // reference, so the poll — not the event — is what completes the update.
+    vi.useFakeTimers();
+    const waiting = makeWorker("installed");
+    const registration: RegistrationLike = {
+      installing: null,
+      waiting,
+      active: makeWorker("activated"),
+      update: vi.fn(async () => {}),
+      addEventListener: () => {},
+    };
+    const reload = vi.fn();
+    const coordinator = new UpdateCoordinator({
+      container: { controller: makeWorker("activated"), addEventListener: () => {} },
+      reload,
+      log: vi.fn(),
+      now: () => 1_000,
+      hasUnsavedWork: () => false,
+      activationTimeoutMs: 5_000,
+      allowRecoveryReload: () => true,
+    });
+    coordinator.attach(registration);
+    coordinator.applyUpdate({ force: true });
+
+    registration.waiting = null; // promoted, no event delivered
+    await vi.advanceTimersByTimeAsync(300);
+    expect(reload).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("releases a stuck registration before reloading, never mid-activation", async () => {
+    // A plain reload while the activation is pending left the navigation
+    // hanging forever in a real Chromium run; the registration must be
+    // released first so the reload is served from the network.
+    vi.useFakeTimers();
+    const order: string[] = [];
+    const waiting = makeWorker("installed");
+    const coordinator = new UpdateCoordinator({
+      container: { controller: makeWorker("activated"), addEventListener: () => {} },
+      reload: () => order.push("reload"),
+      log: vi.fn(),
+      now: () => 1_000,
+      hasUnsavedWork: () => false,
+      activationTimeoutMs: 1_000,
+      allowRecoveryReload: () => true,
+      releaseRegistration: async () => {
+        order.push("release");
+      },
+    });
+    coordinator.attach({
+      installing: null,
+      waiting,
+      active: makeWorker("activated"),
+      update: vi.fn(async () => {}),
+      addEventListener: () => {},
+    });
+
+    coordinator.applyUpdate({ force: true });
+    await vi.advanceTimersByTimeAsync(1_200);
+    expect(order).toEqual(["release", "reload"]);
+    vi.useRealTimers();
+  });
 });
+
