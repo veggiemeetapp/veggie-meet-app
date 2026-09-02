@@ -31,6 +31,7 @@ import { InterestPicker } from "@/components/interests/InterestPicker";
 import {
   platformAvatarTokenForSeed,
   isPlatformAvatarToken,
+  isUploadedAvatarUrl,
 } from "@/lib/avatar";
 
 
@@ -364,7 +365,7 @@ export default function EditProfile() {
               label={uploading ? "Uploading…" : "Upload or replace photo"}
               onClick={() => fileRef.current?.click()}
             />
-            {avatarUrl && !isPlatformAvatarToken(avatarUrl) && (
+            {isUploadedAvatarUrl(avatarUrl) && (
               <SheetRow
                 icon={<Trash2 className="w-5 h-5" />}
                 label="Remove photo"
