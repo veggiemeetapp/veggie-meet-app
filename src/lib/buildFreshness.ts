@@ -127,3 +127,86 @@ export function isBuildMismatch(
 ): boolean {
   return !!deployedBuildId && deployedBuildId !== loaded;
 }
+
+/* ------------------------------------------------------------------ *
+ * WO-145B — account partitioning and same-build freshness.
+ *
+ * Trace (proved by src/lib/queryCacheIsolation.test.ts):
+ *  - React Query is NOT persisted. No `persistQueryClient`, no localStorage or
+ *    IndexedDB cache plugin: the cache is in-memory only (gcTime 5 min), so a
+ *    reload always starts empty. There is therefore no persisted cache key and
+ *    no maximum persisted age to bound.
+ *  - `useAuth` calls `queryClient.clear()` on every account change and on sign
+ *    out, so account B can never hydrate account A's cached reads.
+ *  - The markers below add defence in depth for the one case a memory cache
+ *    cannot cover on its own: an account change inside a single document.
+ *    They store only an opaque account marker — never tokens, email or names.
+ * ------------------------------------------------------------------ */
+
+const ACCOUNT_KEY = "veggiemeet_cache_account";
+
+export type AccountOutcome = "first-run" | "same-account" | "account-changed";
+
+/**
+ * Record which account the client-side cache belongs to. Returns
+ * `account-changed` when the caller must drop the previous account's protected
+ * cached reads. Never touches auth tokens: the session lives in its own storage
+ * key owned by the backend client.
+ */
+export function reconcileAccountMarker(
+  storage: StorageLike | null,
+  accountMarker: string | null,
+): AccountOutcome {
+  if (!storage) return "same-account";
+  let previous: string | null = null;
+  try {
+    previous = storage.getItem(ACCOUNT_KEY);
+  } catch {
+    return "same-account";
+  }
+  try {
+    if (accountMarker) storage.setItem(ACCOUNT_KEY, accountMarker);
+  } catch {
+    /* private mode: isolation still holds via the in-memory clear() */
+  }
+  if (previous === null) return "first-run";
+  if (accountMarker && previous !== accountMarker) return "account-changed";
+  return "same-account";
+}
+
+export interface RemoverLike {
+  removeQueries: (filters: { queryKey: readonly unknown[] }) => unknown;
+}
+
+/**
+ * Hard removal (not invalidation) of the previous account's protected reads, so
+ * no stale row can ever be rendered for one frame under a different account.
+ */
+export function removeProtectedQueries(client: RemoverLike): number {
+  let n = 0;
+  for (const key of CRITICAL_QUERY_KEYS) {
+    client.removeQueries({ queryKey: [key] });
+    n += 1;
+  }
+  return n;
+}
+
+/**
+ * Session-critical reads refetched on launch and on every foreground resume,
+ * even when the build id has not changed. This is what makes a server-side
+ * profile/avatar change visible without signing out.
+ */
+export const RESUME_REFRESH_QUERY_KEYS: readonly string[] = [
+  "profile",
+  "my-you-summary",
+  "notifications-unread-count",
+];
+
+export function refreshSessionCriticalQueries(client: InvalidatorLike): number {
+  let n = 0;
+  for (const key of RESUME_REFRESH_QUERY_KEYS) {
+    client.invalidateQueries({ queryKey: [key] });
+    n += 1;
+  }
+  return n;
+}

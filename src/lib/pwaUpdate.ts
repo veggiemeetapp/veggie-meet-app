@@ -32,7 +32,13 @@
  * lifecycle is unit-testable without a real service worker.
  */
 
-export type UpdateStatus = "idle" | "available" | "activating" | "failed";
+export type UpdateStatus =
+  | "idle"
+  | "available"
+  | "activating"
+  | "failed"
+  /** WO-145B: a newer build activated in the fleet; this client must reload. */
+  | "update-required";
 
 export interface UpdateState {
   status: UpdateStatus;
@@ -46,6 +52,10 @@ export interface UpdateState {
   blockedByUnsavedWork: boolean;
   /** Another VeggieMeet window/tab is open, so it will reload too. */
   otherClientsLikely: boolean;
+  /** WO-145B: this client is stale and blocked from version-sensitive work. */
+  updateRequired: boolean;
+  /** WO-145B: number of live sibling clients seen in the last census. */
+  peerCount: number;
   lastCheckAt: number | null;
 }
 
@@ -130,6 +140,8 @@ export class UpdateCoordinator {
     checking: false,
     blockedByUnsavedWork: false,
     otherClientsLikely: false,
+    updateRequired: false,
+    peerCount: 0,
     lastCheckAt: null,
   };
 
@@ -202,7 +214,12 @@ export class UpdateCoordinator {
   /** True when the accessible prompt should be visible right now. */
   shouldPrompt(): boolean {
     const s = this.state;
-    if (s.status === "activating" || s.status === "failed") return true;
+    if (
+      s.status === "activating" ||
+      s.status === "failed" ||
+      s.status === "update-required"
+    )
+      return true;
     return (
       s.status === "available" &&
       s.waitingToken !== null &&
@@ -283,12 +300,27 @@ export class UpdateCoordinator {
     this.set({ status: "activating", blockedByUnsavedWork: false });
     this.deps.broadcast?.({ type: "activating" });
 
+    // WO-145B: with `clientsClaim: false` the new worker activates without
+    // claiming this document, so `controllerchange` may never fire. The
+    // authoritative signal is the waiting worker reaching `activated`; a
+    // reload then boots this client wholly onto the new build.
+    const onActivated = () => {
+      if (waiting.state === "activated" || waiting.state === "redundant")
+        this.finishActivation("worker_activated");
+    };
+    try {
+      waiting.addEventListener("statechange", onActivated);
+    } catch {
+      /* structural worker without listeners (tests) */
+    }
+
     try {
       waiting.postMessage(SKIP_WAITING_MESSAGE);
     } catch {
       this.fail("post_message_failed");
       return "activating";
     }
+    onActivated();
 
     const timeout = this.deps.activationTimeoutMs ?? DEFAULT_ACTIVATION_TIMEOUT_MS;
     this.activationTimer = setTimeout(() => {
@@ -298,6 +330,66 @@ export class UpdateCoordinator {
 
     return "activating";
   }
+
+  /**
+   * WO-145B — the fleet leader activated a new build. Every other client must
+   * converge exactly once: reload immediately when it is safe, otherwise enter
+   * a visible `update-required` state that blocks version-sensitive work until
+   * the member saves or discards.
+   */
+  noteFleetCommit(info: { forced: boolean }): void {
+    if (this.reloaded) return;
+    if (info.forced || !this.deps.hasUnsavedWork()) {
+      this.finishActivation("fleet_commit");
+      return;
+    }
+    this.deps.log("app_update_blocked_unsaved", { phase: "fleet_commit" });
+    this.set({ status: "update-required", updateRequired: true });
+  }
+
+  /**
+   * Called when protected work is saved/discarded, or by the member from the
+   * update-required prompt. Reloads at most once, never in a loop.
+   */
+  reloadIfSafe(options: { force?: boolean } = {}): "reloaded" | "blocked" | "noop" {
+    if (!this.state.updateRequired && this.state.status !== "update-required")
+      return "noop";
+    if (!options.force && this.deps.hasUnsavedWork()) {
+      this.set({ blockedByUnsavedWork: true });
+      return "blocked";
+    }
+    this.finishActivation("update_required_resolved");
+    return "reloaded";
+  }
+
+  /**
+   * True while this client is knowingly running an old build under a newer
+   * deployment: version-sensitive operations (lazy chunk imports, writes that
+   * depend on the new contract) must be withheld until it reloads.
+   */
+  isVersionSensitiveBlocked(): boolean {
+    return this.state.updateRequired;
+  }
+
+  /** Mark this client as stale without a worker signal (chunk-load failure). */
+  enterUpdateRequired(cause: string): void {
+    if (this.state.updateRequired || this.reloaded) return;
+    this.deps.log("app_update_build_mismatch", { cause });
+    this.set({ status: "update-required", updateRequired: true });
+  }
+
+  /** Reload exactly once for this client, for any activation path. */
+  private finishActivation(cause: string): void {
+    if (this.activationTimer !== null) {
+      clearTimeout(this.activationTimer);
+      this.activationTimer = null;
+    }
+    if (this.reloaded) return;
+    this.reloaded = true;
+    this.deps.log("app_update_reload_completed", { cause });
+    this.deps.reload();
+  }
+
 
   private fail(cause: string): void {
     this.deps.log("app_update_failed", { cause });
@@ -318,14 +410,17 @@ export class UpdateCoordinator {
    */
   private onControllerChange(): void {
     this.deps.log("app_update_controller_changed", {});
-    if (this.activationTimer !== null) {
-      clearTimeout(this.activationTimer);
-      this.activationTimer = null;
-    }
+    // Only an activation THIS client asked for may reload it. A sibling tab's
+    // activation is handled through the fleet protocol instead, so a member is
+    // never yanked out of a form mid-edit.
     if (this.state.status !== "activating") return;
-    if (this.reloaded) return; // hard guard against reload loops
-    this.reloaded = true;
-    this.deps.reload();
+    this.finishActivation("controller_changed");
+  }
+
+  /** WO-145B: record the live sibling count from the last fleet census. */
+  notePeerCount(count: number): void {
+    if (this.state.peerCount !== count)
+      this.set({ peerCount: count, otherClientsLikely: count > 0 });
   }
 
   /** Test/inspection helper. */

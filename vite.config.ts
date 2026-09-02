@@ -85,8 +85,16 @@ export default defineConfig(({ mode }) => ({
 
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
+        // WO-145B — `clientsClaim: false` is required, not cosmetic. With it
+        // enabled, a newly activated worker immediately took control of the
+        // OLD documents, so build N's JavaScript kept running while its
+        // requests were served by build N+1's caches — the mixed-build state
+        // WO-145's closeout claimed to prevent. A client now stays with the
+        // worker that loaded it and only ever sees the new build after its own
+        // one-time, coordinated reload.
+        clientsClaim: false,
         skipWaiting: false,
+
         // Workbox registers a NavigationRoute BEFORE runtimeCaching, so the
         // plugin's default `navigateFallback: index.html` would shadow the
         // Network First HTML rule and pin every navigation to a cached

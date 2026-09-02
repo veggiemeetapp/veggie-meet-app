@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { clearStoredPermissions } from "@/lib/permissions";
 import { resetAnalyticsIdentity } from "@/lib/analytics";
+import { reconcileAccountMarker, removeProtectedQueries } from "@/lib/buildFreshness";
 
 
 export type Profile = {
@@ -91,6 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // WO-084: drop analytics view-dedupe state so member B's activity can
         // never be suppressed or attributed via member A's client state.
         resetAnalyticsIdentity();
+      }
+      // WO-145B: cross-document account partition marker. `qc.clear()` above
+      // covers this document; the marker covers the case where a different
+      // document (or a restored page) boots under a new account, and removes
+      // the previous account's protected reads before any render.
+      try {
+        const outcome = reconcileAccountMarker(window.localStorage, nextId);
+        if (outcome === "account-changed") removeProtectedQueries(qc);
+      } catch {
+        /* private mode: in-memory clear() above still guarantees isolation */
       }
       lastUserIdRef.current = nextId;
       setSession(s);

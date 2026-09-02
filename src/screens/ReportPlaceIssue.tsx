@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fetchCommunityPlaceById } from "@/lib/backend";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import {
+import { useUnsavedWork } from "@/lib/unsavedWork";
   REPORT_LIMITS,
   REPORT_REASONS,
   submitPlaceReport,
@@ -74,6 +75,18 @@ export default function ReportPlaceIssue() {
   const [done, setDone] = useState(false);
   const refs = useRef<Record<string, HTMLElement | null>>({});
   const startedRef = useRef(false);
+
+  // WO-145B: a part-completed place report is protected work.
+  useUnsavedWork(
+    "report-place",
+    "report_form",
+    !done &&
+      (submitting ||
+        reasonCode !== "" ||
+        explanation.trim().length > 0 ||
+        officialSourceUrl.trim().length > 0 ||
+        additionalDetails.trim().length > 0),
+  );
 
   useEffect(() => {
     if (startedRef.current || !id) return;

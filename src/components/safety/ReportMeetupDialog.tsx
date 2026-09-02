@@ -11,6 +11,7 @@ import {
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { reportMeetup } from "@/lib/postMeetup";
 import { MEETUP_REPORT_REASONS } from "@/lib/safety";
+import { useUnsavedWork } from "@/lib/unsavedWork";
 import {
   describeReportError,
   REPORT_DETAILS_MAX,
@@ -35,6 +36,9 @@ export function ReportMeetupDialog({
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<ReportErrorInfo | null>(null);
+
+  // WO-145B: an open report with member-entered content is protected work.
+  useUnsavedWork("report-meetup", "report_form", open && (busy || details.trim().length > 0));
 
   async function submit() {
     // Double-submit guard: a second click while a submission is in flight is a
