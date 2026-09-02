@@ -249,6 +249,7 @@ export function InviteVeggiesSheet({
                     >
                       <UserAvatar
                         src={c.avatarUrl ?? undefined}
+                        seed={c.profileId}
                         name={c.displayName}
                         size="sm"
                       />
