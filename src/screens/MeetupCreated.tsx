@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Sparkles, Calendar, Clock, MapPin, Share2, MessageCircle, UserPlus } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Sparkles, Calendar, Clock, MapPin, MessageCircle, UserPlus } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
 
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
