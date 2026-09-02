@@ -166,6 +166,16 @@ export const ANALYTICS_EVENTS = [
   "meetup_invite_sheet_opened",
   "meetup_invitations_sent",
   "meetup_invitations_failed",
+  // WO-145 — PWA update health (content-free: no tokens, no URLs, no profile).
+  "app_update_detected",
+  "app_update_prompt_shown",
+  "app_update_postponed",
+  "app_update_activation_requested",
+  "app_update_blocked_unsaved",
+  "app_update_controller_changed",
+  "app_update_reload_completed",
+  "app_update_failed",
+  "app_update_build_mismatch",
 ] as const;
 
 

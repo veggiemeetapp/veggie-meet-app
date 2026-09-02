@@ -53,6 +53,7 @@ import {
   updateProfileSettings,
 } from "@/lib/settings";
 import { logOnboardingEvent } from "@/lib/onboarding";
+import { usePwaUpdate } from "@/hooks/usePwaUpdate";
 
 type Section = "hub" | "profile" | "discovery" | "notifications" | "privacy" | "account";
 
@@ -231,7 +232,64 @@ function Hub({ data, go }: { data: AccountSettings; go: (s: Section) => void }) 
           ))}
         </div>
       </nav>
+
+      {/* WO-145: support-facing build identity + an explicit update check, so a
+          member never needs to sign out to receive a new build. */}
+      <AboutSection />
     </div>
+  );
+}
+
+/* ---------- About / updates (WO-145) ---------- */
+
+function AboutSection() {
+  const { buildId, state, checkNow, updateNow, visible, supported } = usePwaUpdate();
+  const [checked, setChecked] = useState(false);
+
+  async function onCheck() {
+    setChecked(false);
+    await checkNow();
+    setChecked(true);
+  }
+
+  return (
+    <section aria-labelledby="about-heading" className="pt-6">
+      <h2
+        id="about-heading"
+        className="px-1 text-xs uppercase tracking-wider text-charcoal-muted font-semibold"
+      >
+        About
+      </h2>
+      <div className="mt-2 rounded-card bg-card border border-border p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-semibold text-charcoal">Version</span>
+          <span className="text-xs text-charcoal-muted font-mono break-all">{buildId}</span>
+        </div>
+        <p className="text-xs text-charcoal-muted">
+          {visible || state.status === "available"
+            ? "An update is ready to install."
+            : checked
+              ? "You're on the latest version."
+              : "VeggieMeet updates itself. You can also check now."}
+        </p>
+        <div className="flex gap-2">
+          <SecondaryButton
+            fullWidth
+            disabled={state.checking || !supported}
+            onClick={() => {
+              void onCheck();
+            }}
+          >
+            {state.checking ? "Checking…" : "Check for updates"}
+          </SecondaryButton>
+          {state.status === "available" && (
+            <PrimaryButton fullWidth onClick={() => updateNow()}>
+              Update now
+            </PrimaryButton>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 

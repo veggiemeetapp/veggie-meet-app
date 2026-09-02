@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell, RouteLoading } from "@/components/app";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { PwaUpdateProvider } from "@/hooks/usePwaUpdate";
 import { sanitizeInternalPath } from "@/lib/authRedirect";
 import { NavigationBehavior } from "@/lib/navigation";
 import { RequireValidIds } from "@/components/app/ResourceUnavailable";
@@ -179,6 +180,10 @@ const RouteFallback = () => <RouteLoading />;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    {/* WO-145: the update coordinator lives inside the query client (it needs
+        in-flight mutation state) and outside auth, because discovering a new
+        build must never depend on session state. */}
+    <PwaUpdateProvider>
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
@@ -278,6 +283,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
+    </PwaUpdateProvider>
   </QueryClientProvider>
 );
 

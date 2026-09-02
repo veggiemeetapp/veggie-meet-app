@@ -5,14 +5,32 @@ import { componentTagger } from "lovable-tagger";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// WO-089/WO-145: one immutable, non-secret build identifier per build. It is a
+// UTC build timestamp only — no branch, token, credential or internal URL. The
+// same value is injected into the client (`__APP_VERSION__`) and emitted to
+// `/version.json`, so a client can always compare "what I loaded" with "what the
+// origin serves" and report a stale document instead of guessing.
+const BUILD_ID = new Date().toISOString().replace(/[-:]/g, "").slice(0, 13) + "Z";
+
+/** Emits an uncached, non-secret build marker consumed by the update coordinator. */
+function versionManifestPlugin() {
+  return {
+    name: "veggiemeet-version-manifest",
+    apply: "build" as const,
+    generateBundle(this: { emitFile: (f: unknown) => void }) {
+      this.emitFile({
+        type: "asset",
+        fileName: "version.json",
+        source: JSON.stringify({ buildId: BUILD_ID }),
+      });
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // WO-089: stable, non-secret build identifier for operational telemetry and
-  // beta feedback. UTC build timestamp only — no branch, token or internal URL.
   define: {
-    __APP_VERSION__: JSON.stringify(
-      new Date().toISOString().replace(/[-:]/g, "").slice(0, 13) + "Z",
-    ),
+    __APP_VERSION__: JSON.stringify(BUILD_ID),
   },
   server: {
     host: "::",
@@ -25,11 +43,18 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     mcpPlugin(),
+    versionManifestPlugin(),
     // WO-122 — production PWA. Exactly one generated worker at /sw.js,
     // registered only from src/lib/registerServiceWorker.ts.
+    // WO-145 — `prompt` (not `autoUpdate`) + `skipWaiting: false`. An
+    // unconditional skipWaiting activated a new worker underneath a running old
+    // document, so the member kept seeing the old build while its caches moved
+    // to the new one, and old HTML could request new lazy chunks. The new worker
+    // now waits until the client explicitly posts SKIP_WAITING and then reloads
+    // exactly once, so old and new code can never execute together.
     VitePWA({
       strategies: "generateSW",
-      registerType: "autoUpdate",
+      registerType: "prompt",
       injectRegister: null,
       filename: "sw.js",
       devOptions: { enabled: false },
@@ -61,7 +86,7 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: true,
+        skipWaiting: false,
         // Workbox registers a NavigationRoute BEFORE runtimeCaching, so the
         // plugin's default `navigateFallback: index.html` would shadow the
         // Network First HTML rule and pin every navigation to a cached
