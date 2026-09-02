@@ -9,6 +9,7 @@ export { MeetupCard } from "./MeetupCard";
 
 export { CommunityPlaceCard } from "./CommunityPlaceCard";
 export { UserAvatar, AvatarGroup } from "./UserAvatar";
+export { PlatformAvatarGallery } from "./PlatformAvatarGallery";
 export { HostBadge, ActiveHostBadge, StatusBadge } from "./Badges";
 
 export { SectionHeader } from "./SectionHeader";
