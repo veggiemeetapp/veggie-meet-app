@@ -40,7 +40,13 @@ import {
   randomClientId,
 } from "@/lib/updateFleet";
 import { startChunkRecovery } from "@/lib/chunkRecovery";
-import { consumeActivationRecoveryBudget } from "@/lib/activationRecovery";
+import {
+  PWA_BRIDGE_ID,
+  PWA_RELEASE,
+  allowsAutomaticActivation,
+  recordBridgeCrossing,
+} from "@/lib/pwaMigration";
+
 import {
   LOADED_BUILD_ID,
   fetchDeployedBuildId,
@@ -51,14 +57,15 @@ import {
 } from "@/lib/buildFreshness";
 import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
 
-/** sessionStorage is unavailable in private modes and inside some webviews. */
-function sessionStorageOrNull(): Storage | null {
+/** localStorage is unavailable in private modes and inside some webviews. */
+function localStorageOrNull(): Storage | null {
   try {
-    return window.sessionStorage;
+    return window.localStorage;
   } catch {
     return null;
   }
 }
+
 
 
 const IDLE_STATE: UpdateState = {
@@ -130,20 +137,14 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // Active mutations count as work in progress: a reload mid-write would
       // leave the member unsure whether their action landed.
       hasUnsavedWork: () => hasUnsavedWork() || qc.isMutating() > 0,
-      // WO-145C: bridge for clients still controlled by the previously
-      // published `skipWaiting: true` worker, which can hold the first
-      // prompt-mode worker in `waiting` for as long as this client lives.
-      allowRecoveryReload: () =>
-        consumeActivationRecoveryBudget(sessionStorageOrNull(), LOADED_BUILD_ID),
-      // Only the worker registration is released — caches, tokens and drafts
-      // are untouched, and the guarded registrar reinstalls on the next boot.
-      releaseRegistration: async () => {
-        const reg = await navigator.serviceWorker.getRegistration();
-        return reg ? reg.unregister() : false;
-      },
-
+      // WO-145D: there is deliberately no registration-release fallback here.
+      // The legacy boundary is crossed by the staged Bridge B release
+      // (`src/lib/pwaMigration.ts`), which activates automatically without
+      // claiming loaded documents and without ever unregistering the shared
+      // worker. Only the explicit `?sw=off` diagnostic path may unregister.
     });
   }
+
 
   const coordinator = coordinatorRef.current;
 
@@ -185,7 +186,20 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     };
   }, [coordinator]);
 
+  /* ---------- WO-145D staged migration boundary ---------- */
+  // The bridge release activates automatically (legacy-compatible) and is
+  // therefore never prompted for. Crossing the boundary is recorded exactly once
+  // per client so the same transition is not announced twice and so the bridge's
+  // special behaviour is retired for every later release.
+  useEffect(() => {
+    if (!allowsAutomaticActivation(PWA_RELEASE, PWA_BRIDGE_ID)) return;
+    const outcome = recordBridgeCrossing(localStorageOrNull(), PWA_BRIDGE_ID);
+    if (outcome === "recorded")
+      logAnalyticsEvent("app_update_reload_completed", { outcome: "bridge-crossed" });
+  }, []);
+
   /* ---------- WO-145B fleet coordination ---------- */
+
   useEffect(() => {
     if (!coordinator) return;
     const channel = createBroadcastFleetChannel(CHANNEL_NAME);

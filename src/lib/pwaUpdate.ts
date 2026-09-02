@@ -109,43 +109,34 @@ export interface CoordinatorDeps {
   hasUnsavedWork: () => boolean;
   /** Tell sibling tabs/windows that an activation is happening. */
   broadcast?: (message: { type: "activating" }) => void;
-  /**
-   * WO-145C: one-shot permission to recover a stuck activation with a reload.
-   * A legacy (`skipWaiting: true`) worker can keep the first prompt-mode worker
-   * parked in `waiting` for as long as this client stays open, so an activation
-   * that never reports `activated` is resolved by reloading onto the new build
-   * instead of stranding the member on "Updating…". Returns false once the
-   * budget for this build is spent, and the visible error state is used instead.
-   */
-  allowRecoveryReload?: () => boolean;
-  /**
-   * WO-145C: unregister the stuck worker so the recovery reload is served from
-   * the network instead of a worker that can no longer answer it. Resolves (or
-   * rejects) when the release attempt is finished; the reload follows either way.
-   */
-  releaseRegistration?: () => Promise<unknown>;
 
   minCheckIntervalMs?: number;
   activationTimeoutMs?: number;
-
 }
 
 const DEFAULT_MIN_CHECK_INTERVAL_MS = 60_000;
-// WO-145C: a real activation reports `activated` within milliseconds. This
-// bound only has to be long enough to rule that out before the legacy bridge
-// reloads, so it stays short enough that no member watches a stalled spinner.
 /**
- * WO-145C: how long a posted SKIP_WAITING is given before the client converges
- * by releasing the registration instead. Measured behaviour, not a guess: in
- * Chromium a waiting worker is not promoted while the previous worker still
- * controls this document, so the message alone never completes the update for
- * the member who asked for it. 2.5s is long enough for browsers that do promote
- * promptly (the poll below finishes those in well under a second) and short
- * enough that "Updating…" never looks stuck.
+ * WO-145D: how long a posted SKIP_WAITING is given before the client reports a
+ * recoverable failure.
+ *
+ * Measured in Chromium against the real production builds: promotion normally
+ * completes in ~250ms, but a document with in-flight requests still outstanding
+ * (authenticated backend reads, a retrying request) can hold the outgoing worker
+ * busy for several seconds — promotion then lands as soon as those settle. A
+ * 2.5s budget reported a false failure in exactly that case, so the budget is
+ * bounded but generous, and SKIP_WAITING is re-posted on every poll tick because
+ * the message is one-shot and may be observed while the worker is still busy.
+ *
+ * A stall past the budget is surfaced as a visible, retryable error with the
+ * current build left working — never an unregister, and never a reload of a
+ * client whose activation is still pending (measured in WO-145C to hang the
+ * navigation).
  */
-const DEFAULT_ACTIVATION_TIMEOUT_MS = 2_500;
+const DEFAULT_ACTIVATION_TIMEOUT_MS = 20_000;
 /** How often the pending activation is re-checked against the registration. */
 const ACTIVATION_POLL_MS = 250;
+
+
 
 
 
@@ -375,34 +366,38 @@ export class UpdateCoordinator {
         waiting.state === "activated" ||
         waiting.state === "redundant" ||
         (reg !== null && reg.waiting !== waiting);
-      if (promoted) this.finishActivation("worker_activated");
+      if (promoted) {
+        this.finishActivation("worker_activated");
+        return;
+      }
+      // WO-145D: SKIP_WAITING is one-shot and can be observed while the outgoing
+      // worker is still finishing in-flight requests. Re-posting each tick is
+      // idempotent (`skipWaiting()` is), and promotion lands the moment the
+      // outgoing worker is free.
+      try {
+        waiting.postMessage(SKIP_WAITING_MESSAGE);
+      } catch {
+        /* the worker went away; the promotion checks above settle this */
+      }
     }, ACTIVATION_POLL_MS);
+
 
 
     const timeout = this.deps.activationTimeoutMs ?? DEFAULT_ACTIVATION_TIMEOUT_MS;
     this.activationTimer = setTimeout(() => {
       this.activationTimer = null;
       if (this.state.status !== "activating") return;
-      // WO-145C — legacy bridge. The waiting worker never reported `activated`.
-      // On a client still controlled by the previously published
-      // `skipWaiting: true` worker this is the expected outcome, and a plain
-      // reload is NOT safe: measured against a byte-exact copy of the published
-      // build, reloading while this activation is pending left the navigation
-      // request hanging forever (white screen). Releasing the stuck
-      // registration first removes the worker from the navigation path, so the
-      // reload is served from the network and the registrar installs the new
-      // worker cleanly with no other client holding it back.
-      if (this.deps.allowRecoveryReload?.() === true) {
-        this.recoverByRegistrationReset();
-        return;
-      }
+      // WO-145D: no registration-removal fallback exists on this path. The
+      // legacy boundary is handled by the staged Bridge B release
+      // (`pwaMigration.ts`), which activates automatically without claiming or
+      // unregistering anything, so a stall here is a genuine failure and is
+      // surfaced as a retryable error with the current build left working.
       this.fail("controller_timeout");
     }, timeout);
 
-
-
     return "activating";
   }
+
 
   /**
    * WO-145B — the fleet leader activated a new build. Every other client must
@@ -452,29 +447,7 @@ export class UpdateCoordinator {
   }
 
   /** Reload exactly once for this client, for any activation path. */
-  /**
-   * WO-145C — release a registration whose activation is stuck, then reload
-   * exactly once. Never destructive: it removes only the worker registration,
-   * so caches, auth tokens, drafts and offline data are untouched, and the
-   * guarded registrar installs the new worker on the next boot.
-   */
-  private recoverByRegistrationReset(): void {
-    this.deps.log("app_update_failed", { cause: "activation_stuck_recovering" });
-    const reset = this.deps.releaseRegistration?.();
-    if (!reset) {
-      this.finishActivation("activation_timeout_recovery");
-      return;
-    }
-    let done = false;
-    const proceed = () => {
-      if (done) return;
-      done = true;
-      this.finishActivation("activation_timeout_recovery");
-    };
-    // Bounded: a hung unregister must not strand the member either.
-    setTimeout(proceed, 3_000);
-    void reset.then(proceed, proceed);
-  }
+
 
   private clearActivationPoll(): void {
     if (this.activationPoll !== null) {
