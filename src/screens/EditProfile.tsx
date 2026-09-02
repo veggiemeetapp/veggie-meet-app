@@ -29,8 +29,6 @@ import { InterestPicker } from "@/components/interests/InterestPicker";
 
 // WO-143: the sample avatars are the bundled, approved VeggieMeet cartoon set.
 import {
-  PLATFORM_AVATARS,
-  platformAvatarToken,
   platformAvatarTokenForSeed,
   isPlatformAvatarToken,
 } from "@/lib/avatar";
