@@ -3895,6 +3895,10 @@ export type Database = {
         Args: { _candidate_id: string }
         Returns: string
       }
+      reconcile_invitations_on_join: {
+        Args: { _meetup_id: string; _profile_id: string }
+        Returns: undefined
+      }
       record_first_meaningful_action: {
         Args: { _action_type: string; _entity_id: string }
         Returns: {
