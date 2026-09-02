@@ -1,0 +1,119 @@
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * WO-144 — host-initiated multi-select Meetup invitations.
+ *
+ * Authorization, connection state, capacity, duplicate suppression and the
+ * daily invitation cap are all enforced by `public.send_meetup_invitations`.
+ * This module is a thin, typed transport around the two RPCs.
+ */
+
+export const INVITE_SELECTION_MAX = 20;
+export const INVITE_MESSAGE_MAX = 300;
+
+export interface InviteCandidate {
+  profileId: string;
+  displayName: string;
+  firstName: string;
+  avatarUrl: string | null;
+  cityName: string | null;
+  alreadyAttending: boolean;
+  alreadyInvited: boolean;
+  invitationStatus: string | null;
+}
+
+export type SkipReason =
+  | "already_invited"
+  | "already_attending"
+  | "not_connected"
+  | "unavailable"
+  | "blocked";
+
+export interface SendInvitationsResult {
+  invitedCount: number;
+  invitationIds: string[];
+  skipped: { profileId: string; reason: SkipReason }[];
+}
+
+export function candidateSelectable(c: InviteCandidate): boolean {
+  return !c.alreadyAttending && !c.alreadyInvited;
+}
+
+export async function fetchInviteCandidates(
+  meetupId: string,
+): Promise<InviteCandidate[]> {
+  const { data, error } = await supabase.rpc("get_meetup_invite_candidates", {
+    _meetup_id: meetupId,
+  });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as any[]).map((r) => ({
+    profileId: r.profile_id as string,
+    displayName: (r.display_name as string) ?? "Veggie",
+    firstName: (r.first_name as string) ?? "Veggie",
+    avatarUrl: (r.avatar_url as string | null) ?? null,
+    cityName: (r.city_name as string | null) ?? null,
+    alreadyAttending: !!r.already_attending,
+    alreadyInvited: !!r.already_invited,
+    invitationStatus: (r.invitation_status as string | null) ?? null,
+  }));
+}
+
+export async function sendMeetupInvitations(
+  meetupId: string,
+  recipientIds: string[],
+  personalMessage?: string,
+): Promise<SendInvitationsResult> {
+  const { data, error } = await supabase.rpc("send_meetup_invitations", {
+    _meetup_id: meetupId,
+    _recipient_ids: recipientIds,
+    _personal_message: personalMessage ?? null,
+  });
+  if (error) throw new Error(error.message);
+  const payload = (data ?? {}) as {
+    invited_count?: number;
+    invitation_ids?: string[];
+    skipped?: { profile_id: string; reason: SkipReason }[];
+  };
+  return {
+    invitedCount: payload.invited_count ?? 0,
+    invitationIds: payload.invitation_ids ?? [],
+    skipped: (payload.skipped ?? []).map((s) => ({
+      profileId: s.profile_id,
+      reason: s.reason,
+    })),
+  };
+}
+
+export function skipReasonLabel(reason: SkipReason): string {
+  switch (reason) {
+    case "already_invited":
+      return "already invited";
+    case "already_attending":
+      return "already attending";
+    case "not_connected":
+      return "no longer connected";
+    default:
+      return "unavailable";
+  }
+}
+
+/** Human summary of a send result, used for the confirmation toast. */
+export function sendResultSummary(
+  result: SendInvitationsResult,
+  nameFor: (profileId: string) => string,
+): { title: string; description?: string } {
+  const title =
+    result.invitedCount === 0
+      ? "No invitations sent"
+      : `${result.invitedCount} invitation${result.invitedCount === 1 ? "" : "s"} sent`;
+  if (result.skipped.length === 0) return { title };
+  const parts = result.skipped
+    .slice(0, 3)
+    .map((s) => `${nameFor(s.profileId)} — ${skipReasonLabel(s.reason)}`);
+  const extra = result.skipped.length - parts.length;
+  return {
+    title,
+    description:
+      `Skipped: ${parts.join(", ")}` + (extra > 0 ? ` and ${extra} more.` : "."),
+  };
+}
