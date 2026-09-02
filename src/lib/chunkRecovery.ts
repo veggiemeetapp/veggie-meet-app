@@ -61,8 +61,15 @@ export function recoverFromChunkFailure(deps: RecoveryDeps): RecoveryOutcome {
     return "update-required";
   }
 
+  if (!deps.storage) {
+    // Without storage we cannot bound retries, so we never reload: the member
+    // gets a recoverable prompt instead of a possible reload loop.
+    deps.log?.("chunk_load_failed_no_storage");
+    deps.onUpdateRequired("chunk_load_failed_no_storage");
+    return "update-required";
+  }
   try {
-    deps.storage?.setItem(MARKER_KEY, deps.buildId);
+    deps.storage.setItem(MARKER_KEY, deps.buildId);
   } catch {
     // Private mode: fall back to the non-destructive branch so we can still
     // never loop.

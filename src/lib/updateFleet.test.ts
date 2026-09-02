@@ -122,7 +122,10 @@ describe("FleetCoordinator", () => {
     const bus = createBus();
     const a = makeClient(bus, { id: "a" });
     const b = makeClient(bus, { id: "b" });
-    const db = await b.fleet.requestActivation();
+    const [, db] = await Promise.all([
+      a.fleet.requestActivation(),
+      b.fleet.requestActivation(),
+    ]);
     expect(db.outcome).toBe("deferred");
     a.fleet.stop(); // leader disappears without committing
     await new Promise((r) => setTimeout(r, 20));
