@@ -18,10 +18,12 @@ import {
   fetchInviteCandidates,
   INVITE_MESSAGE_MAX,
   INVITE_SELECTION_MAX,
+  isRateLimited,
   sendMeetupInvitations,
   sendResultSummary,
   type InviteCandidate,
 } from "@/lib/meetupInvites";
+
 import { DEFAULT_INVITATION_MESSAGE } from "@/lib/invitations";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { memberSafeMessage } from "@/lib/errors";
@@ -143,7 +145,9 @@ export function InviteVeggiesSheet({
       });
       await qc.invalidateQueries({ queryKey: ["meetup-invite-candidates", meetupId] });
       onSent?.(result.invitedCount);
-      onOpenChange(false);
+      // WO-144B: a fully rate-limited batch keeps the sheet open so the host can
+      // retry later without rebuilding the selection.
+      if (!isRateLimited(result)) onOpenChange(false);
     } catch (e) {
       logAnalyticsEvent("meetup_invitations_failed", {
         meetup_id: meetupId,
@@ -154,6 +158,7 @@ export function InviteVeggiesSheet({
       setSending(false);
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -234,8 +239,17 @@ export function InviteVeggiesSheet({
                       type="button"
                       role="checkbox"
                       aria-checked={isSelected}
-                      aria-disabled={!selectable}
-                      disabled={!selectable || (atLimit && !isSelected)}
+                      // WO-144B: never use the `disabled` attribute here — a
+                      // disabled control is unreachable by keyboard, which would
+                      // hide the "Already invited"/"Already attending" reason
+                      // from screen-reader users. aria-disabled keeps the row
+                      // focusable and announced while `toggle` ignores the press.
+                      aria-disabled={!selectable || (atLimit && !isSelected)}
+                      aria-label={
+                        blockedReason
+                          ? `${c.displayName} — ${blockedReason}`
+                          : c.displayName
+                      }
                       onClick={() => toggle(c)}
                       className={cn(
                         "w-full text-left rounded-card border p-2.5 flex items-center gap-3 transition-colors",
@@ -247,6 +261,7 @@ export function InviteVeggiesSheet({
                           : "opacity-60 cursor-not-allowed",
                       )}
                     >
+
                       <UserAvatar
                         src={c.avatarUrl ?? undefined}
                         seed={c.profileId}
