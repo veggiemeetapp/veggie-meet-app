@@ -175,10 +175,8 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         /* no worker in dev/preview — the app simply never prompts */
       });
 
-    stopWatchers = startUpdateWatchers(coordinator, {
-      win: window,
-      doc: document,
-    });
+
+
 
     return () => {
       disposed = true;
