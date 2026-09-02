@@ -34,16 +34,29 @@ describe("PWA service worker configuration", () => {
 
   it("cleans up obsolete caches and updates only on explicit activation", () => {
     expect(config).toContain("cleanupOutdatedCaches: true");
-    // WO-145: no unconditional takeover — a new build activates only when the
+    // WO-145: no unconditional takeover — Release N activates only when the
     // coordinator posts SKIP_WAITING, so a document never mixes two builds.
     expect(config).toContain('registerType: "prompt"');
-    expect(config).toContain("skipWaiting: false");
     expect(config).not.toContain('registerType: "autoUpdate"');
+    expect(config).toContain("skipWaiting: IS_BRIDGE");
+    // WO-145B: never claim already-loaded documents, in either release.
+    expect(config).toContain("clientsClaim: false");
+  });
+
+  it("WO-145D: the staged bridge is explicitly versioned and opt-in", () => {
+    expect(config).toContain('const IS_BRIDGE = process.env.PWA_RELEASE === "bridge"');
+    expect(config).toContain('const BRIDGE_ID = "wo145d-legacy-bridge-1"');
+    // The default build (no PWA_RELEASE) is the final prompt-mode architecture.
+    expect(config).toContain('IS_BRIDGE ? "bridge" : "prompt"');
+    // Clients can tell bridge from final release without cache clearing.
+    expect(config).toContain("release: PWA_RELEASE");
+    expect(config).toContain("bridgeId: IS_BRIDGE ? BRIDGE_ID : null");
   });
 
   it("emits a build marker the client can compare against", () => {
     expect(config).toContain('fileName: "version.json"');
   });
+
 
   it("keeps private storage paths out of the image runtime cache", () => {
     expect(config).toContain('!url.pathname.startsWith("/storage/")');
