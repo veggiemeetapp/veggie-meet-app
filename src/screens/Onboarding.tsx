@@ -71,6 +71,7 @@ import {
   platformAvatarToken,
   platformAvatarTokenForSeed,
   isPlatformAvatarToken,
+  isUploadedAvatarUrl,
 } from "@/lib/avatar";
 
 
@@ -492,14 +493,8 @@ export default function Onboarding() {
             bio={bio}
             setBio={setBio}
             onContinue={() => handlePhotoContinue(false)}
-            onSkip={() => {
-              // WO-143: skipping still leaves the member with a platform avatar.
-              const token = platformAvatarTokenForSeed(profile?.id ?? displayName);
-              setAvatarUrl(token);
-              handlePhotoContinue(true);
-            }}
-
           />
+
         )}
 
         {step === "guidelines" && (
@@ -1335,7 +1330,6 @@ function Photo({
   bio,
   setBio,
   onContinue,
-  onSkip,
 }: {
   avatarUrl: string | null;
   setAvatarUrl: (u: string | null) => void;
@@ -1346,8 +1340,8 @@ function Photo({
   bio: string;
   setBio: (s: string) => void;
   onContinue: () => void;
-  onSkip: () => void;
 }) {
+
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1415,7 +1409,10 @@ function Photo({
         >
           Choose another avatar
         </button>
-        {avatarUrl && !isPlatformAvatarToken(avatarUrl) && (
+        {/* WO-143A: "Remove photo" is only meaningful when an uploaded personal
+            photo is active. Platform avatars are changed with "Choose another
+            avatar", and the control is hidden while the gallery is open. */}
+        {!pickerOpen && isUploadedAvatarUrl(avatarUrl) && (
           <button
             type="button"
             onClick={() => setAvatarUrl(platformToken)}
@@ -1442,20 +1439,17 @@ function Photo({
         <p className="text-xs text-charcoal-muted text-right">{bio.length}/160</p>
       </div>
 
-      <div className="mt-4 space-y-2">
+      {/* WO-143A: no redundant skip action here — a stable platform avatar is
+          already assigned, so "Continue with this avatar" IS the no-choice path. */}
+
+      <div className="mt-4">
         <PrimaryButton fullWidth onClick={onContinue}>
-          {avatarUrl && !isPlatformAvatarToken(avatarUrl)
+          {isUploadedAvatarUrl(avatarUrl)
             ? "Continue with this photo"
             : "Continue with this avatar"}
         </PrimaryButton>
-        <button
-          type="button"
-          onClick={onSkip}
-          className="w-full text-center py-3 text-sm font-medium text-charcoal-muted hover:text-charcoal transition"
-        >
-          Skip for now
-        </button>
       </div>
+
 
       <input
         ref={fileRef}
