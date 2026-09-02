@@ -13,11 +13,9 @@ import {
   Save,
   Ban,
   CheckCircle2,
-  X,
-
-
-} from "lucide-react";
+  X,, UserPlus } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
+import { InviteVeggiesSheet } from "@/components/invitations/InviteVeggiesSheet";
 import {
   Dialog,
   DialogContent,
