@@ -134,9 +134,19 @@ const DEFAULT_MIN_CHECK_INTERVAL_MS = 60_000;
 // WO-145C: a real activation reports `activated` within milliseconds. This
 // bound only has to be long enough to rule that out before the legacy bridge
 // reloads, so it stays short enough that no member watches a stalled spinner.
-const DEFAULT_ACTIVATION_TIMEOUT_MS = 8_000;
+/**
+ * WO-145C: how long a posted SKIP_WAITING is given before the client converges
+ * by releasing the registration instead. Measured behaviour, not a guess: in
+ * Chromium a waiting worker is not promoted while the previous worker still
+ * controls this document, so the message alone never completes the update for
+ * the member who asked for it. 2.5s is long enough for browsers that do promote
+ * promptly (the poll below finishes those in well under a second) and short
+ * enough that "Updating…" never looks stuck.
+ */
+const DEFAULT_ACTIVATION_TIMEOUT_MS = 2_500;
 /** How often the pending activation is re-checked against the registration. */
 const ACTIVATION_POLL_MS = 250;
+
 
 
 
