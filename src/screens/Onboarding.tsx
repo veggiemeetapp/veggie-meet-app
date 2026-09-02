@@ -1376,36 +1376,63 @@ function Photo({
     }
   }
 
+  // WO-143C addition: remember the platform avatar the member is on (assigned
+  // or explicitly chosen) so removing an uploaded photo returns to it.
+  const assignedToken = platformAvatarTokenForSeed(seed);
+  const [chosenToken, setChosenToken] = useState<string>(
+    isPlatformAvatarToken(avatarUrl) ? (avatarUrl as string) : assignedToken,
+  );
+  const platformToken = isPlatformAvatarToken(avatarUrl)
+    ? (avatarUrl as string)
+    : chosenToken;
+
   return (
     <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
-          Put a friendly face to your name
+          Add a profile photo
         </h1>
         <p className="mt-2 text-base text-charcoal-muted">
-          A photo and a line about you help people say hi. Totally optional.
+          Upload a photo or continue with your VeggieMeet avatar. You can change it anytime.
         </p>
       </div>
 
       <div className="flex flex-col items-center mb-6">
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
-          aria-label="Change profile photo"
-          className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] transition"
-        >
-          <UserAvatar
-            name={displayName || "You"}
-            src={avatarUrl ?? undefined}
-            size="xl"
-          />
-          <span className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-green">
-            <Camera className="w-4 h-4" aria-hidden />
-          </span>
-        </button>
+        <UserAvatar
+          name={displayName || "You"}
+          src={avatarUrl ?? undefined}
+          seed={seed}
+          size="xl"
+        />
       </div>
 
-      <div className="space-y-2 flex-1">
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="w-full h-12 rounded-card border border-border bg-card font-semibold text-charcoal hover:bg-muted/60 transition"
+        >
+          {uploading ? "Uploading…" : "Upload a photo"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="w-full h-12 rounded-card border border-border bg-card font-semibold text-charcoal hover:bg-muted/60 transition"
+        >
+          Choose another avatar
+        </button>
+        {avatarUrl && !isPlatformAvatarToken(avatarUrl) && (
+          <button
+            type="button"
+            onClick={() => setAvatarUrl(platformToken)}
+            className="w-full h-12 rounded-card text-sm font-semibold text-destructive hover:underline"
+          >
+            Remove photo
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2 flex-1 mt-6">
         <label className="block text-sm font-semibold text-charcoal">
           Short bio <span className="text-charcoal-muted font-normal">(optional)</span>
         </label>
@@ -1423,7 +1450,9 @@ function Photo({
 
       <div className="mt-4 space-y-2">
         <PrimaryButton fullWidth onClick={onContinue}>
-          Continue
+          {avatarUrl && !isPlatformAvatarToken(avatarUrl)
+            ? "Continue with this photo"
+            : "Continue with this avatar"}
         </PrimaryButton>
         <button
           type="button"
@@ -1442,107 +1471,42 @@ function Photo({
         className="hidden"
       />
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
         <SheetContent
           side="bottom"
           className="rounded-t-3xl border-t border-border p-0"
         >
           <SheetHeader className="page-x pt-6 pb-2 text-left">
             <SheetTitle className="text-lg font-semibold text-charcoal">
-              Profile photo
+              Choose a VeggieMeet avatar
             </SheetTitle>
             <SheetDescription className="text-sm text-charcoal-muted">
-              You can always change this later.
+              Your current avatar is highlighted. You can change it anytime.
             </SheetDescription>
           </SheetHeader>
-          <div className="page-x pb-6 pt-3 space-y-1">
-            {pickerOpen ? (
-              <div>
-                <p className="text-sm font-semibold text-charcoal mb-3">
-                  Pick a VeggieMeet avatar
-                </p>
-                <div className="grid grid-cols-4 gap-3">
-                  {PLATFORM_AVATARS.map((asset, i) => {
-                    const token = platformAvatarToken(i + 1);
-                    const selected = avatarUrl === token;
-                    return (
-                      <button
-                        key={token}
-                        type="button"
-                        aria-label={`VeggieMeet avatar ${i + 1}`}
-                        aria-pressed={selected}
-                        onClick={() => {
-                          setAvatarUrl(token);
-                          setPickerOpen(false);
-                          setSheetOpen(false);
-                        }}
-                        className={`rounded-full overflow-hidden aspect-square transition ${
-                          selected
-                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                            : "ring-1 ring-border hover:ring-primary/60"
-                        }`}
-                      >
-                        <img
-                          src={asset}
-                          alt=""
-                          loading="lazy"
-                          width={512}
-                          height={512}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen(false)}
-                  className="w-full mt-4 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
-                >
-                  Back
-                </button>
-              </div>
-            ) : (
-              <>
-                <SheetAction
-                  icon={<Shuffle className="w-5 h-5" />}
-                  label="Choose a VeggieMeet avatar"
-                  onClick={() => setPickerOpen(true)}
-                />
-                <SheetAction
-                  icon={<ImagePlus className="w-5 h-5" />}
-                  label={uploading ? "Uploading…" : "Upload photo"}
-                  hint="JPG, PNG or WebP, up to 5 MB"
-                  onClick={() => fileRef.current?.click()}
-                />
-                {avatarUrl && !isPlatformAvatarToken(avatarUrl) && (
-                  <SheetAction
-                    icon={<Trash2 className="w-5 h-5" />}
-                    label="Remove photo"
-                    hint="Uses your VeggieMeet avatar instead"
-                    destructive
-                    onClick={() => {
-                      setAvatarUrl(platformAvatarTokenForSeed(seed));
-                      setSheetOpen(false);
-                    }}
-                  />
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSheetOpen(false)}
-                  className="w-full mt-2 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
-                >
-                  Cancel
-                </button>
-              </>
-            )}
+          <div className="page-x pb-6 pt-3">
+            <PlatformAvatarGallery
+              value={platformToken}
+              assignedToken={assignedToken}
+              onSelect={(token) => {
+                setChosenToken(token);
+                setAvatarUrl(token);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setPickerOpen(false)}
+              className="w-full mt-4 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
+            >
+              Done
+            </button>
           </div>
-
         </SheetContent>
       </Sheet>
     </div>
   );
 }
+
 
 function SheetAction({
   icon,
