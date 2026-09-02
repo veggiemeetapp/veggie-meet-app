@@ -3,8 +3,8 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, ImagePlus, Shuffle, Trash2 } from "lucide-react";
-import { PrimaryButton, UserAvatar, BackButton } from "@/components/app";
+import { Camera, ImagePlus, Images, Trash2 } from "lucide-react";
+import { PrimaryButton, UserAvatar, BackButton, PlatformAvatarGallery } from "@/components/app";
 import {
   Sheet,
   SheetContent,
@@ -29,8 +29,6 @@ import { InterestPicker } from "@/components/interests/InterestPicker";
 
 // WO-143: the sample avatars are the bundled, approved VeggieMeet cartoon set.
 import {
-  PLATFORM_AVATARS,
-  platformAvatarToken,
   platformAvatarTokenForSeed,
   isPlatformAvatarToken,
 } from "@/lib/avatar";
@@ -48,6 +46,10 @@ export default function EditProfile() {
   const [interests, setInterests] = useState<string[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [avatarPicker, setAvatarPicker] = useState(false);
+  // WO-143C addition: the platform avatar the member is on — their explicit
+  // choice when they made one, otherwise their stable assigned avatar. Removing
+  // an uploaded photo returns here, never to an initial or blank image.
+  const [chosenToken, setChosenToken] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -73,6 +75,9 @@ export default function EditProfile() {
     setBio(profile.bio ?? "");
     // WO-143: a profile always has an avatar; fall back to the stable platform one.
     setAvatarUrl(profile.avatar_url ?? platformAvatarTokenForSeed(profile.id));
+    setChosenToken(
+      isPlatformAvatarToken(profile.avatar_url) ? profile.avatar_url : null,
+    );
 
     setInterests(profile.interests ?? []);
   }, [profile]);
@@ -166,6 +171,11 @@ export default function EditProfile() {
       </div>
     );
   }
+
+  const assignedToken = platformAvatarTokenForSeed(profile.id);
+  const platformToken = isPlatformAvatarToken(avatarUrl)
+    ? (avatarUrl as string)
+    : (chosenToken ?? assignedToken);
 
   return (
     <div className="flex flex-col min-h-dvh bg-background">
@@ -323,61 +333,35 @@ export default function EditProfile() {
             {avatarPicker ? (
               <div>
                 <p className="text-sm font-semibold text-charcoal mb-3">
-                  Pick a VeggieMeet avatar
+                  Choose a VeggieMeet avatar
                 </p>
-                <div className="grid grid-cols-4 gap-3">
-                  {PLATFORM_AVATARS.map((asset, i) => {
-                    const token = platformAvatarToken(i + 1);
-                    const selected = avatarUrl === token;
-                    return (
-                      <button
-                        key={token}
-                        type="button"
-                        aria-label={`VeggieMeet avatar ${i + 1}`}
-                        aria-pressed={selected}
-                        onClick={() => {
-                          setAvatarUrl(token);
-                          setDirty(true);
-                          setAvatarPicker(false);
-                          setAvatarSheet(false);
-                        }}
-                        className={cn(
-                          "rounded-full overflow-hidden aspect-square transition",
-                          selected
-                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                            : "ring-1 ring-border hover:ring-primary/60",
-                        )}
-                      >
-                        <img
-                          src={asset}
-                          alt=""
-                          loading="lazy"
-                          width={512}
-                          height={512}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
+                <PlatformAvatarGallery
+                  value={platformToken}
+                  assignedToken={assignedToken}
+                  onSelect={(token) => {
+                    setChosenToken(token);
+                    setAvatarUrl(token);
+                    setDirty(true);
+                  }}
+                />
                 <button
                   type="button"
                   onClick={() => setAvatarPicker(false)}
                   className="w-full mt-4 h-12 rounded-card bg-muted text-charcoal font-semibold hover:bg-muted/80 transition"
                 >
-                  Back
+                  Done
                 </button>
               </div>
             ) : (
               <>
             <SheetRow
-              icon={<Shuffle className="w-5 h-5" />}
-              label="Choose a VeggieMeet avatar"
+              icon={<Images className="w-5 h-5" />}
+              label="Choose a different avatar"
               onClick={() => setAvatarPicker(true)}
             />
             <SheetRow
               icon={<ImagePlus className="w-5 h-5" />}
-              label="Upload photo"
+              label={uploading ? "Uploading…" : "Upload or replace photo"}
               onClick={() => fileRef.current?.click()}
             />
             {avatarUrl && !isPlatformAvatarToken(avatarUrl) && (
@@ -388,7 +372,7 @@ export default function EditProfile() {
                 onClick={() => {
                   // WO-143: removing a photo returns the member to their stable
                   // VeggieMeet avatar — never to an initial-letter placeholder.
-                  setAvatarUrl(platformAvatarTokenForSeed(profile?.id ?? displayName));
+                  setAvatarUrl(platformToken);
                   setDirty(true);
                   setAvatarSheet(false);
                 }}
