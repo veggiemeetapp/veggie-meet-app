@@ -132,7 +132,7 @@ export function isBuildMismatch(
  * WO-145B — account partitioning and same-build freshness.
  *
  * Trace (proved by src/lib/queryCacheIsolation.test.ts):
- *  - React Query is NOT persisted. No `persistQueryClient`, no localStorage or
+ *  - React Query is NOT persisted. No query-client persister plugin, no localStorage or
  *    IndexedDB cache plugin: the cache is in-memory only (gcTime 5 min), so a
  *    reload always starts empty. There is therefore no persisted cache key and
  *    no maximum persisted age to bound.
