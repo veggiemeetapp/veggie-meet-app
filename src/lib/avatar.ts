@@ -19,16 +19,31 @@
  * fails to a neutral (never initial-bearing) placeholder mark.
  */
 
-import a01 from "@/assets/avatars/veggie-avatar-01.jpg";
-import a02 from "@/assets/avatars/veggie-avatar-02.jpg";
-import a03 from "@/assets/avatars/veggie-avatar-03.jpg";
-import a04 from "@/assets/avatars/veggie-avatar-04.jpg";
-import a05 from "@/assets/avatars/veggie-avatar-05.jpg";
-import a06 from "@/assets/avatars/veggie-avatar-06.jpg";
-import a07 from "@/assets/avatars/veggie-avatar-07.jpg";
-import a08 from "@/assets/avatars/veggie-avatar-08.jpg";
+/**
+ * WO-143D — the active platform avatar set is the founder-approved restored
+ * Notionists artwork (seven recovered historical seeds plus selected candidate
+ * 8C). The colourful WO-143 generated JPGs were rejected and are no longer
+ * imported or bundled; they survive only as labelled WO evidence.
+ *
+ * Provenance: rendered from the DiceBear "Notionists" style (CC0-1.0,
+ * https://dicebear.com — original artwork by Zoish, CC0). Rasterised once to
+ * 512x512 PNG and bundled as hashed same-origin assets; VeggieMeet never calls
+ * the DiceBear API at runtime. See src/assets/avatars/PROVENANCE.md.
+ */
+import a01 from "@/assets/avatars/veggie-avatar-01-justin.png";
+import a02 from "@/assets/avatars/veggie-avatar-02-sarah.png";
+import a03 from "@/assets/avatars/veggie-avatar-03-maya.png";
+import a04 from "@/assets/avatars/veggie-avatar-04-arjun.png";
+import a05 from "@/assets/avatars/veggie-avatar-05-sofia.png";
+import a06 from "@/assets/avatars/veggie-avatar-06-leo.png";
+import a07 from "@/assets/avatars/veggie-avatar-07-priya.png";
+import a08 from "@/assets/avatars/veggie-avatar-08-candidate-m.png";
 
-/** Approved VeggieMeet cartoon avatar assets, index 1..N by position. */
+/**
+ * Approved VeggieMeet cartoon avatar assets, index 1..N by position.
+ * 01 Justin · 02 Sarah · 03 Maya · 04 Arjun · 05 Sofia · 06 Leo · 07 Priya
+ * · 08 candidate 8C (seed `veggie-08-candidate-m`).
+ */
 export const PLATFORM_AVATARS: readonly string[] = [a01, a02, a03, a04, a05, a06, a07, a08];
 
 export const PLATFORM_AVATAR_COUNT = PLATFORM_AVATARS.length;
