@@ -134,6 +134,8 @@ export default function MeetupManagement() {
   // fields are never touched by a cover change and Remove is reversible.
   const [coverDraft, setCoverDraft] = useState<CoverDraft>(COVER_DRAFT_UNCHANGED);
   const [coverSaveError, setCoverSaveError] = useState<string | null>(null);
+  // WO-144 — multi-select invitation sheet.
+  const [inviteOpen, setInviteOpen] = useState(false);
 
 
   // Location editor state (independent from the main Save; uses update_meetup_location).
