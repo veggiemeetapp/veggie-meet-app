@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => ({
     // exactly once, so old and new code can never execute together.
     VitePWA({
       strategies: "generateSW",
-      // WO-145D measured behaviour: `registerType: "autoUpdate"` makes
+      // WO-145D measured behaviour: the plugin's auto-update register type makes
       // vite-plugin-pwa inject `clientsClaim()` into the generated worker even
       // when `workbox.clientsClaim` is false — which would let Bridge B take
       // over an already-loaded legacy document. `prompt` is therefore used for
