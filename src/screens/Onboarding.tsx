@@ -5,20 +5,18 @@ import {
   Camera,
   Check,
   Heart,
-  ImagePlus,
   Mail,
   MapPin,
   Shield,
-  Shuffle,
   Sparkles,
   Sprout,
 
-  Trash2,
   Users,
   Utensils,
 } from "lucide-react";
 import { PrimaryButton, BackButton } from "@/components/app";
 import { UserAvatar } from "@/components/app/UserAvatar";
+import { PlatformAvatarGallery } from "@/components/app/PlatformAvatarGallery";
 import { CitySelector } from "@/components/location/CitySelector";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +69,6 @@ import { PASSWORD_MIN_LENGTH, isPasswordLongEnough } from "@/lib/passwordPolicy"
 // WO-143: sample avatars are the bundled, approved VeggieMeet cartoon set —
 // no third-party generated images, and never an initial-letter fallback.
 import {
-  PLATFORM_AVATARS,
   platformAvatarToken,
   platformAvatarTokenForSeed,
   isPlatformAvatarToken,
@@ -1353,7 +1350,6 @@ function Photo({
   onSkip: () => void;
 }) {
 
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1368,7 +1364,6 @@ function Photo({
       const { uploadAvatar } = await import("@/lib/imageUpload");
       const url = await uploadAvatar(file);
       setAvatarUrl(url);
-      setSheetOpen(false);
     } catch (err) {
       toast.error(memberSafeMessage(err));
     } finally {
@@ -1508,41 +1503,6 @@ function Photo({
 }
 
 
-function SheetAction({
-  icon,
-  label,
-  hint,
-  onClick,
-  destructive,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  hint?: string;
-  onClick: () => void;
-  destructive?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-card hover:bg-accent/40 active:scale-[0.99] transition text-left",
-        destructive ? "text-destructive" : "text-charcoal",
-      )}
-    >
-      <span
-        className={cn(
-          "w-10 h-10 rounded-control flex items-center justify-center shrink-0",
-          destructive ? "bg-destructive/10" : "bg-muted",
-        )}
-      >
-        {icon}
-      </span>
-      <span className="flex-1 font-semibold">{label}</span>
-      {hint && <span className="text-xs text-charcoal-muted">{hint}</span>}
-    </button>
-  );
-}
 
 function Guidelines({
   accepted,
