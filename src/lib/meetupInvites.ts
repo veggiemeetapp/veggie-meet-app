@@ -69,6 +69,17 @@ export function isRateLimited(result: SendInvitationsResult): boolean {
 }
 
 
+interface InviteCandidateRow {
+  profile_id: string;
+  display_name: string | null;
+  first_name: string | null;
+  avatar_url: string | null;
+  city_name: string | null;
+  already_attending: boolean | null;
+  already_invited: boolean | null;
+  invitation_status: string | null;
+}
+
 export async function fetchInviteCandidates(
   meetupId: string,
 ): Promise<InviteCandidate[]> {
@@ -76,15 +87,15 @@ export async function fetchInviteCandidates(
     _meetup_id: meetupId,
   });
   if (error) throw new Error(error.message);
-  return ((data ?? []) as any[]).map((r) => ({
-    profileId: r.profile_id as string,
-    displayName: (r.display_name as string) ?? "Veggie",
-    firstName: (r.first_name as string) ?? "Veggie",
-    avatarUrl: (r.avatar_url as string | null) ?? null,
-    cityName: (r.city_name as string | null) ?? null,
+  return ((data ?? []) as InviteCandidateRow[]).map((r) => ({
+    profileId: r.profile_id,
+    displayName: r.display_name ?? "Veggie",
+    firstName: r.first_name ?? "Veggie",
+    avatarUrl: r.avatar_url ?? null,
+    cityName: r.city_name ?? null,
     alreadyAttending: !!r.already_attending,
     alreadyInvited: !!r.already_invited,
-    invitationStatus: (r.invitation_status as string | null) ?? null,
+    invitationStatus: r.invitation_status ?? null,
   }));
 }
 
