@@ -12,6 +12,7 @@ import {
 import { PrimaryButton, SecondaryButton } from "@/components/app";
 import { PROFILE_REPORT_REASONS, submitProfileReport, blockProfile } from "@/lib/safety";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { useUnsavedWork } from "@/lib/unsavedWork";
 
 
 type Step = "form" | "offer_block";
@@ -33,6 +34,9 @@ export function ReportProfileDialog({
   const [reason, setReason] = useState<string>(PROFILE_REPORT_REASONS[0].id);
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // WO-145B: an open report with member-entered content is protected work.
+  useUnsavedWork("report-profile", "report_form", open && (busy || details.trim().length > 0));
 
   function reset() {
     setStep("form");
