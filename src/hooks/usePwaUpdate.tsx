@@ -40,6 +40,7 @@ import {
   randomClientId,
 } from "@/lib/updateFleet";
 import { startChunkRecovery } from "@/lib/chunkRecovery";
+import { consumeActivationRecoveryBudget } from "@/lib/activationRecovery";
 import {
   LOADED_BUILD_ID,
   fetchDeployedBuildId,
@@ -49,6 +50,16 @@ import {
   refreshSessionCriticalQueries,
 } from "@/lib/buildFreshness";
 import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
+
+/** sessionStorage is unavailable in private modes and inside some webviews. */
+function sessionStorageOrNull(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
 
 const IDLE_STATE: UpdateState = {
   status: "idle",
@@ -119,8 +130,21 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // Active mutations count as work in progress: a reload mid-write would
       // leave the member unsure whether their action landed.
       hasUnsavedWork: () => hasUnsavedWork() || qc.isMutating() > 0,
+      // WO-145C: bridge for clients still controlled by the previously
+      // published `skipWaiting: true` worker, which can hold the first
+      // prompt-mode worker in `waiting` for as long as this client lives.
+      allowRecoveryReload: () =>
+        consumeActivationRecoveryBudget(sessionStorageOrNull(), LOADED_BUILD_ID),
+      // Only the worker registration is released — caches, tokens and drafts
+      // are untouched, and the guarded registrar reinstalls on the next boot.
+      releaseRegistration: async () => {
+        const reg = await navigator.serviceWorker.getRegistration();
+        return reg ? reg.unregister() : false;
+      },
+
     });
   }
+
   const coordinator = coordinatorRef.current;
 
   const state = useSyncExternalStore(

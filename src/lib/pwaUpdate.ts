@@ -109,12 +109,46 @@ export interface CoordinatorDeps {
   hasUnsavedWork: () => boolean;
   /** Tell sibling tabs/windows that an activation is happening. */
   broadcast?: (message: { type: "activating" }) => void;
+  /**
+   * WO-145C: one-shot permission to recover a stuck activation with a reload.
+   * A legacy (`skipWaiting: true`) worker can keep the first prompt-mode worker
+   * parked in `waiting` for as long as this client stays open, so an activation
+   * that never reports `activated` is resolved by reloading onto the new build
+   * instead of stranding the member on "Updating…". Returns false once the
+   * budget for this build is spent, and the visible error state is used instead.
+   */
+  allowRecoveryReload?: () => boolean;
+  /**
+   * WO-145C: unregister the stuck worker so the recovery reload is served from
+   * the network instead of a worker that can no longer answer it. Resolves (or
+   * rejects) when the release attempt is finished; the reload follows either way.
+   */
+  releaseRegistration?: () => Promise<unknown>;
+
   minCheckIntervalMs?: number;
   activationTimeoutMs?: number;
+
 }
 
 const DEFAULT_MIN_CHECK_INTERVAL_MS = 60_000;
-const DEFAULT_ACTIVATION_TIMEOUT_MS = 15_000;
+// WO-145C: a real activation reports `activated` within milliseconds. This
+// bound only has to be long enough to rule that out before the legacy bridge
+// reloads, so it stays short enough that no member watches a stalled spinner.
+/**
+ * WO-145C: how long a posted SKIP_WAITING is given before the client converges
+ * by releasing the registration instead. Measured behaviour, not a guess: in
+ * Chromium a waiting worker is not promoted while the previous worker still
+ * controls this document, so the message alone never completes the update for
+ * the member who asked for it. 2.5s is long enough for browsers that do promote
+ * promptly (the poll below finishes those in well under a second) and short
+ * enough that "Updating…" never looks stuck.
+ */
+const DEFAULT_ACTIVATION_TIMEOUT_MS = 2_500;
+/** How often the pending activation is re-checked against the registration. */
+const ACTIVATION_POLL_MS = 250;
+
+
+
 
 export const SKIP_WAITING_MESSAGE = { type: "SKIP_WAITING" } as const;
 
@@ -131,6 +165,8 @@ export class UpdateCoordinator {
   private trackedWaiting: WorkerLike | null = null;
   private reloaded = false;
   private activationTimer: ReturnType<typeof setTimeout> | null = null;
+  private activationPoll: ReturnType<typeof setInterval> | null = null;
+
   private promptLoggedToken: number | null = null;
 
   private state: UpdateState = {
@@ -322,11 +358,48 @@ export class UpdateCoordinator {
     }
     onActivated();
 
+    // WO-145C: the `statechange` event alone proved unreliable in a real
+    // Chromium run — promotion happened while no event was observed on this
+    // reference, so the client sat on "Updating…" until the fallback fired.
+    // Polling the registration is the authoritative check: once this worker is
+    // no longer the registration's `waiting` worker, the new build is active and
+    // the client may reload immediately. The fallback below stays as the bridge
+    // for clients whose old worker genuinely refuses to hand over.
+    this.activationPoll = setInterval(() => {
+      if (this.state.status !== "activating") {
+        this.clearActivationPoll();
+        return;
+      }
+      const reg = this.registration;
+      const promoted =
+        waiting.state === "activated" ||
+        waiting.state === "redundant" ||
+        (reg !== null && reg.waiting !== waiting);
+      if (promoted) this.finishActivation("worker_activated");
+    }, ACTIVATION_POLL_MS);
+
+
     const timeout = this.deps.activationTimeoutMs ?? DEFAULT_ACTIVATION_TIMEOUT_MS;
     this.activationTimer = setTimeout(() => {
       this.activationTimer = null;
-      if (this.state.status === "activating") this.fail("controller_timeout");
+      if (this.state.status !== "activating") return;
+      // WO-145C — legacy bridge. The waiting worker never reported `activated`.
+      // On a client still controlled by the previously published
+      // `skipWaiting: true` worker this is the expected outcome, and a plain
+      // reload is NOT safe: measured against a byte-exact copy of the published
+      // build, reloading while this activation is pending left the navigation
+      // request hanging forever (white screen). Releasing the stuck
+      // registration first removes the worker from the navigation path, so the
+      // reload is served from the network and the registrar installs the new
+      // worker cleanly with no other client holding it back.
+      if (this.deps.allowRecoveryReload?.() === true) {
+        this.recoverByRegistrationReset();
+        return;
+      }
+      this.fail("controller_timeout");
     }, timeout);
+
+
 
     return "activating";
   }
@@ -379,7 +452,39 @@ export class UpdateCoordinator {
   }
 
   /** Reload exactly once for this client, for any activation path. */
+  /**
+   * WO-145C — release a registration whose activation is stuck, then reload
+   * exactly once. Never destructive: it removes only the worker registration,
+   * so caches, auth tokens, drafts and offline data are untouched, and the
+   * guarded registrar installs the new worker on the next boot.
+   */
+  private recoverByRegistrationReset(): void {
+    this.deps.log("app_update_failed", { cause: "activation_stuck_recovering" });
+    const reset = this.deps.releaseRegistration?.();
+    if (!reset) {
+      this.finishActivation("activation_timeout_recovery");
+      return;
+    }
+    let done = false;
+    const proceed = () => {
+      if (done) return;
+      done = true;
+      this.finishActivation("activation_timeout_recovery");
+    };
+    // Bounded: a hung unregister must not strand the member either.
+    setTimeout(proceed, 3_000);
+    void reset.then(proceed, proceed);
+  }
+
+  private clearActivationPoll(): void {
+    if (this.activationPoll !== null) {
+      clearInterval(this.activationPoll);
+      this.activationPoll = null;
+    }
+  }
+
   private finishActivation(cause: string): void {
+    this.clearActivationPoll();
     if (this.activationTimer !== null) {
       clearTimeout(this.activationTimer);
       this.activationTimer = null;
@@ -391,10 +496,13 @@ export class UpdateCoordinator {
   }
 
 
+
   private fail(cause: string): void {
+    this.clearActivationPoll();
     this.deps.log("app_update_failed", { cause });
     this.set({ status: "failed" });
   }
+
 
   /** Retry after a failed activation, without a second prompt cycle. */
   retry(): "activating" | "blocked" | "noop" {
