@@ -162,6 +162,10 @@ export const ANALYTICS_EVENTS = [
 
   // WO-117 — one-time Google Calendar export (no account data, no sync state).
   "meetup_add_to_calendar",
+  // WO-144 — multi-select Veggie Network Meetup invitations.
+  "meetup_invite_sheet_opened",
+  "meetup_invitations_sent",
+  "meetup_invitations_failed",
 ] as const;
 
 

@@ -14,10 +14,10 @@ import {
   Ban,
   CheckCircle2,
   X,
-
-
+  UserPlus,
 } from "lucide-react";
 import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
+import { InviteVeggiesSheet } from "@/components/invitations/InviteVeggiesSheet";
 import {
   Dialog,
   DialogContent,
@@ -136,6 +136,8 @@ export default function MeetupManagement() {
   // fields are never touched by a cover change and Remove is reversible.
   const [coverDraft, setCoverDraft] = useState<CoverDraft>(COVER_DRAFT_UNCHANGED);
   const [coverSaveError, setCoverSaveError] = useState<string | null>(null);
+  // WO-144 — multi-select invitation sheet.
+  const [inviteOpen, setInviteOpen] = useState(false);
 
 
   // Location editor state (independent from the main Save; uses update_meetup_location).
@@ -688,6 +690,27 @@ export default function MeetupManagement() {
             )}
           </div>
         </section>
+
+        {/* WO-144 — invite connected Veggies to this Meetup. */}
+        {!locked && !isEnded && (
+          <section className="rounded-card border border-border bg-card p-4">
+            <h2 className="font-semibold text-charcoal">Invite Veggies</h2>
+            <p className="mt-1 text-xs text-charcoal-muted">
+              Invite Veggies from your network. They'll get a notification and can join
+              from the Meetup.
+            </p>
+            <SecondaryButton
+              fullWidth
+              className="mt-3"
+              onClick={() => setInviteOpen(true)}
+            >
+              <UserPlus className="w-4 h-4" />
+              Invite Veggies
+            </SecondaryButton>
+          </section>
+        )}
+
+
 
         {/* Edit form (disabled if cancelled) */}
         {/* WO-063 — completion state / Finish Meetup */}
@@ -1285,6 +1308,16 @@ export default function MeetupManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InviteVeggiesSheet
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        meetupId={meetup.id}
+        meetupTitle={meetup.title}
+        onSent={() => {
+          qc.invalidateQueries({ queryKey: ["managed-meetup", meetup.id] });
+        }}
+      />
     </>
 
   );

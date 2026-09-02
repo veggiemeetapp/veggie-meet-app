@@ -1828,7 +1828,7 @@ export type Database = {
       }
       meetup_invitations: {
         Row: {
-          conversation_id: string
+          conversation_id: string | null
           created_at: string
           id: string
           joined_at: string | null
@@ -1841,7 +1841,7 @@ export type Database = {
           viewed_at: string | null
         }
         Insert: {
-          conversation_id: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           joined_at?: string | null
@@ -1854,7 +1854,7 @@ export type Database = {
           viewed_at?: string | null
         }
         Update: {
-          conversation_id?: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           joined_at?: string | null
@@ -3602,6 +3602,19 @@ export type Database = {
         Returns: Json
       }
       get_meetup_group: { Args: { _meetup_id: string }; Returns: Json }
+      get_meetup_invite_candidates: {
+        Args: { _meetup_id: string }
+        Returns: {
+          already_attending: boolean
+          already_invited: boolean
+          avatar_url: string
+          city_name: string
+          display_name: string
+          first_name: string
+          invitation_status: string
+          profile_id: string
+        }[]
+      }
       get_meetup_lifecycle: { Args: { _meetup_id: string }; Returns: Json }
       get_meetup_message_reactions: {
         Args: { _chat_id: string; _message_ids: string[] }
@@ -4044,6 +4057,14 @@ export type Database = {
       }
       send_meetup_chat_message: {
         Args: { _body: string; _chat_id: string; _client_token?: string }
+        Returns: Json
+      }
+      send_meetup_invitations: {
+        Args: {
+          _meetup_id: string
+          _personal_message?: string
+          _recipient_ids: string[]
+        }
         Returns: Json
       }
       set_community_place_active: {

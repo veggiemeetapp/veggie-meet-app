@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Sparkles, Calendar, Clock, MapPin, Share2, MessageCircle } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Sparkles, Calendar, Clock, MapPin, MessageCircle, UserPlus } from "lucide-react";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/app";
 
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { fetchMeetupById, isUuid } from "@/lib/backend";
 import type { Meetup } from "@/types";
 import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
+import { InviteVeggiesSheet } from "@/components/invitations/InviteVeggiesSheet";
 
 export default function MeetupCreated() {
   const { id } = useParams();
   const [meetup, setMeetup] = useState<Meetup | null | undefined>(undefined);
+  // WO-144 — invite connected Veggies straight after publishing.
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useEffect(() => {
     if (!id || meetup) return;
@@ -93,22 +95,25 @@ export default function MeetupCreated() {
             </SecondaryButton>
           </Link>
         )}
-        <SecondaryButton
-          fullWidth
-          onClick={() =>
-            toast({
-              title: "Sharing coming soon",
-              description: "You'll be able to invite Veggies from here.",
-            })
-          }
-        >
-          <Share2 className="w-4 h-4" />
-          Share Meetup
-        </SecondaryButton>
+        {meetup && (
+          <SecondaryButton fullWidth onClick={() => setInviteOpen(true)}>
+            <UserPlus className="w-4 h-4" />
+            Invite Veggies
+          </SecondaryButton>
+        )}
         <Link to="/" className="block">
           <SecondaryButton fullWidth>Back to Today</SecondaryButton>
         </Link>
       </div>
+
+      {meetup && (
+        <InviteVeggiesSheet
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
+          meetupId={meetup.id}
+          meetupTitle={meetup.title}
+        />
+      )}
     </div>
   );
 }

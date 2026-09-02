@@ -173,6 +173,11 @@ export function notificationDestination(n: NotificationItem): string | null {
       return n.destination_id ? `/veggie/${n.destination_id}` : "/network";
     case "meetup_invitation_received":
     case "meetup_invitation_joined":
+      // WO-144: host network invitations carry no conversation, so they route
+      // to the Meetup itself. Chat-originated invitations still open the DM.
+      if (n.destination_type === "meetup") {
+        return n.destination_id ? `/meetup/${n.destination_id}` : "/";
+      }
       return n.destination_id ? `/dm/${n.destination_id}` : "/chats";
     case "meetup_updated":
     case "meetup_cancelled":
