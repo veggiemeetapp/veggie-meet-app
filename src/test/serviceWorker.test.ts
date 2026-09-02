@@ -32,9 +32,17 @@ describe("PWA service worker configuration", () => {
     expect(config).toContain("navigateFallback: null");
   });
 
-  it("cleans up obsolete caches and updates predictably", () => {
+  it("cleans up obsolete caches and updates only on explicit activation", () => {
     expect(config).toContain("cleanupOutdatedCaches: true");
-    expect(config).toContain('registerType: "autoUpdate"');
+    // WO-145: no unconditional takeover — a new build activates only when the
+    // coordinator posts SKIP_WAITING, so a document never mixes two builds.
+    expect(config).toContain('registerType: "prompt"');
+    expect(config).toContain("skipWaiting: false");
+    expect(config).not.toContain('registerType: "autoUpdate"');
+  });
+
+  it("emits a build marker the client can compare against", () => {
+    expect(config).toContain('fileName: "version.json"');
   });
 
   it("keeps private storage paths out of the image runtime cache", () => {
