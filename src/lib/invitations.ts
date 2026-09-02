@@ -263,3 +263,48 @@ export async function fetchInvitationsBundle(
 export function fallbackCover(url?: string | null): string {
   return url && url.length > 0 ? url : FALLBACK_COVER;
 }
+
+/**
+ * WO-144A addendum (DEF-144A-01) — the host's optional personal message was
+ * stored on network invitations (no conversation) but never surfaced to the
+ * recipient anywhere. This loads the viewer's own invitation for a Meetup so
+ * the message can be shown in its private invitation context.
+ *
+ * Privacy: `meetup_invitations` RLS restricts SELECT to the sender or the
+ * recipient of the row, so no other member can retrieve it.
+ */
+export interface ViewerInvitationNote {
+  invitationId: string;
+  personalMessage: string;
+  senderName: string;
+  createdAt: string;
+}
+
+export async function fetchViewerInvitationNote(
+  meetupId: string,
+  viewerProfileId: string,
+): Promise<ViewerInvitationNote | null> {
+  const { data, error } = await supabase
+    .from("meetup_invitations")
+    .select("id, personal_message, created_at, sender_id, profiles:sender_id(display_name)")
+    .eq("meetup_id", meetupId)
+    .eq("recipient_id", viewerProfileId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as unknown as {
+    id: string;
+    personal_message: string | null;
+    created_at: string;
+    profiles?: { display_name: string | null } | null;
+  };
+  const message = (row.personal_message ?? "").trim();
+  if (!message) return null;
+  return {
+    invitationId: row.id,
+    personalMessage: message,
+    senderName: row.profiles?.display_name ?? "Your host",
+    createdAt: row.created_at,
+  };
+}
