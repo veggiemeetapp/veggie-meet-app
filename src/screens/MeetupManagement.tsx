@@ -1306,6 +1306,16 @@ export default function MeetupManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InviteVeggiesSheet
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        meetupId={meetup.id}
+        meetupTitle={meetup.title}
+        onSent={() => {
+          qc.invalidateQueries({ queryKey: ["managed-meetup", meetup.id] });
+        }}
+      />
     </>
 
   );
