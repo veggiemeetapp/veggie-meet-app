@@ -292,9 +292,15 @@ export default function MeetupDetail() {
           </div>
         ) : null}
 
+        {/* WO-144A addendum — private invitation note for the recipient only. */}
+        {isRealMeetup && !isHistorical && (
+          <InvitationNote meetupId={meetup.id} viewerProfileId={profile?.id} />
+        )}
+
         <MeetupInfo meetup={meetup} />
 
         {isRealMeetup && <MeetupPlaceSection meetupId={meetup.id} />}
+
 
         {/* WO-125 — read-only interest tags, after the essentials, before the story. */}
         <MeetupInterestTags
