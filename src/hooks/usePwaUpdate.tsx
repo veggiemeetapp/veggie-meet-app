@@ -161,7 +161,7 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!coordinator) return;
     let disposed = false;
-    let stopWatchers: (() => void) | undefined;
+    const stopWatchers = startUpdateWatchers(coordinator, { win: window, doc: document });
 
     void navigator.serviceWorker
       .getRegistration()
