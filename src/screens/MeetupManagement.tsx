@@ -689,6 +689,27 @@ export default function MeetupManagement() {
           </div>
         </section>
 
+        {/* WO-144 — invite connected Veggies to this Meetup. */}
+        {!locked && !isEnded && (
+          <section className="rounded-card border border-border bg-card p-4">
+            <h2 className="font-semibold text-charcoal">Invite Veggies</h2>
+            <p className="mt-1 text-xs text-charcoal-muted">
+              Invite Veggies from your network. They'll get a notification and can join
+              from the Meetup.
+            </p>
+            <SecondaryButton
+              fullWidth
+              className="mt-3"
+              onClick={() => setInviteOpen(true)}
+            >
+              <UserPlus className="w-4 h-4" />
+              Invite Veggies
+            </SecondaryButton>
+          </section>
+        )}
+
+
+
         {/* Edit form (disabled if cancelled) */}
         {/* WO-063 — completion state / Finish Meetup */}
         {isCompleted ? (
