@@ -23,6 +23,7 @@ import {
 } from "@/components/meetup";
 
 import { MeetupCheckInButton } from "@/components/meetup/MeetupCheckInButton";
+import { InvitationNote } from "@/components/invitations/InvitationNote";
 
 
 import { supabase } from "@/integrations/supabase/client";
