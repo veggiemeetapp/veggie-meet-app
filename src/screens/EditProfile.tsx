@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { useUnsavedWork } from "@/lib/unsavedWork";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext, useSetHomeCity } from "@/hooks/useLocation";
 import { CitySelector } from "@/components/location/CitySelector";
@@ -89,6 +90,9 @@ export default function EditProfile() {
     interests.length >= PROFILE_MIN_INTERESTS &&
     interests.length <= PROFILE_MAX_INTERESTS;
   const canSave = nameValid && cityValid && interestsValid && dirty && !saving && !uploading;
+
+  // WO-145: a pending build activation must never silently discard edits.
+  useUnsavedWork("edit-profile", "profile_editor", dirty || uploading);
 
   function toggleInterest(label: string) {
     setInterests((s) =>
