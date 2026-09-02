@@ -4,12 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
  * WO-144 — host-initiated multi-select Meetup invitations.
  *
  * Authorization, connection state, capacity, duplicate suppression and the
- * daily invitation cap are all enforced by `public.send_meetup_invitations`.
+ * rolling invitation quota are all enforced by `public.send_meetup_invitations`.
  * This module is a thin, typed transport around the two RPCs.
+ *
+ * WO-144B — abuse control contract:
+ *  - at most {@link INVITE_SELECTION_MAX} recipients per send action;
+ *  - at most {@link INVITE_DAILY_LIMIT} *newly created* invitations per host per
+ *    rolling 24 hours (window = trailing 24h ending at the server statement
+ *    time; nothing resets at midnight);
+ *  - skipped recipients never consume allowance;
+ *  - a sender-scoped advisory lock serialises simultaneous batches across
+ *    different Meetups, so the quota cannot be raced.
  */
 
 export const INVITE_SELECTION_MAX = 20;
 export const INVITE_MESSAGE_MAX = 300;
+/** Beta ceiling: newly created invitations per host per rolling 24 hours. */
+export const INVITE_DAILY_LIMIT = 50;
 
 export interface InviteCandidate {
   profileId: string;
@@ -27,17 +38,36 @@ export type SkipReason =
   | "already_attending"
   | "not_connected"
   | "unavailable"
+  | "rate_limited"
   | "blocked";
 
 export interface SendInvitationsResult {
   invitedCount: number;
   invitationIds: string[];
   skipped: { profileId: string; reason: SkipReason }[];
+  /** Rolling allowance ceiling reported by the server. */
+  dailyLimit: number;
+  /** Newly created invitations still available in the current window. */
+  remaining: number;
+  /** Length of the rolling window in hours. */
+  windowHours: number;
+  /** ISO timestamp at which the current rolling window begins. */
+  windowStart: string | null;
 }
 
 export function candidateSelectable(c: InviteCandidate): boolean {
   return !c.alreadyAttending && !c.alreadyInvited;
 }
+
+/** True when the batch was fully blocked by the rolling invitation quota. */
+export function isRateLimited(result: SendInvitationsResult): boolean {
+  return (
+    result.invitedCount === 0 &&
+    result.skipped.length > 0 &&
+    result.skipped.some((s) => s.reason === "rate_limited")
+  );
+}
+
 
 export async function fetchInviteCandidates(
   meetupId: string,
@@ -73,6 +103,10 @@ export async function sendMeetupInvitations(
     invited_count?: number;
     invitation_ids?: string[];
     skipped?: { profile_id: string; reason: SkipReason }[];
+    daily_limit?: number;
+    remaining?: number;
+    window_hours?: number;
+    window_start?: string;
   };
   return {
     invitedCount: payload.invited_count ?? 0,
@@ -81,6 +115,10 @@ export async function sendMeetupInvitations(
       profileId: s.profile_id,
       reason: s.reason,
     })),
+    dailyLimit: payload.daily_limit ?? INVITE_DAILY_LIMIT,
+    remaining: payload.remaining ?? 0,
+    windowHours: payload.window_hours ?? 24,
+    windowStart: payload.window_start ?? null,
   };
 }
 
@@ -92,21 +130,31 @@ export function skipReasonLabel(reason: SkipReason): string {
       return "already attending";
     case "not_connected":
       return "no longer connected";
+    case "rate_limited":
+      return "daily invitation limit reached";
     default:
       return "unavailable";
   }
 }
+
 
 /** Human summary of a send result, used for the confirmation toast. */
 export function sendResultSummary(
   result: SendInvitationsResult,
   nameFor: (profileId: string) => string,
 ): { title: string; description?: string } {
+  if (isRateLimited(result)) {
+    return {
+      title: "Daily invitation limit reached",
+      description: `You can send up to ${result.dailyLimit} invitations every ${result.windowHours} hours. Please try again later.`,
+    };
+  }
   const title =
     result.invitedCount === 0
       ? "No invitations sent"
       : `${result.invitedCount} invitation${result.invitedCount === 1 ? "" : "s"} sent`;
   if (result.skipped.length === 0) return { title };
+
   const parts = result.skipped
     .slice(0, 3)
     .map((s) => `${nameFor(s.profileId)} — ${skipReasonLabel(s.reason)}`);
