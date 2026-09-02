@@ -1,4 +1,5 @@
 import { memberSafeMessage } from "@/lib/errors";
+import { useUnsavedWork } from "@/lib/unsavedWork";
 import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -98,6 +99,13 @@ export default function MeetupChat() {
   // WO-136: author-only edit/delete state.
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
+
+  // WO-145: an unsent message (new or in-place edit) blocks a silent reload.
+  useUnsavedWork(
+    "meetup-chat",
+    "composer",
+    draft.trim().length > 0 || editDraft.trim().length > 0,
+  );
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
   // DEF-136A-02: remembers the originating menu for focus restoration.
