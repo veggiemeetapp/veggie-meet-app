@@ -1,5 +1,6 @@
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useUnsavedWork } from "@/lib/unsavedWork";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -289,6 +290,14 @@ export default function MeetupManagement() {
     endTime !== "" && endTime <= startTime
       ? "End time must be after the start time."
       : null;
+  // WO-145: an in-progress Meetup edit (an unsaved cover change or an open
+  // location edit) blocks a silent update reload.
+  useUnsavedWork(
+    "meetup-management",
+    "meetup_editor",
+    coverDraft !== COVER_DRAFT_UNCHANGED || locSaving || locConfirmOpen,
+  );
+
   const canSave =
     title.trim().length > 0 &&
     !!date &&

@@ -1,4 +1,5 @@
 import { memberSafeMessage } from "@/lib/errors";
+import { useUnsavedWork } from "@/lib/unsavedWork";
 import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -271,6 +272,13 @@ function DMScreen({
   // states only drive the surface and optimistic rendering.
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
+
+  // WO-145: an unsent message (new or in-place edit) blocks a silent reload.
+  useUnsavedWork(
+    "direct-message",
+    "composer",
+    draft.trim().length > 0 || editDraft.trim().length > 0,
+  );
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DMMessage | null>(null);
   // DEF-136A-02: remembers which message menu opened the confirmation so focus

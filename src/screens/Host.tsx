@@ -1,4 +1,5 @@
 import { isStaleClientError } from "@/lib/errors";
+import { useUnsavedWork } from "@/lib/unsavedWork";
 import { showErrorToast } from "@/lib/errorToast";
 import { ToastAction } from "@/components/ui/toast";
 import { safeBack } from "@/lib/navigation";
@@ -141,6 +142,13 @@ export default function Host() {
   const [coverError, setCoverError] = useState<string | null>(null);
   const [showIssues, setShowIssues] = useState(false);
   const [publishError, setPublishError] = useState<MeetupPublishError | null>(null);
+
+  // WO-145: a partially composed Meetup is real member work — never reload it away.
+  useUnsavedWork(
+    "host-create-meetup",
+    "meetup_editor",
+    title.trim().length > 0 || description.trim().length > 0 || cover !== null,
+  );
 
   // WO-051: location mode (Community Place vs Custom location).
   const [searchParams] = useSearchParams();

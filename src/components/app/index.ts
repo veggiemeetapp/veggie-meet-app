@@ -19,3 +19,4 @@ export { RouteLoading } from "./RouteLoading";
 export { NotificationsBell } from "./NotificationsBell";
 export { AppErrorBoundary } from "./ErrorBoundary";
 export { OfflineBanner } from "./OfflineBanner";
+export { UpdatePrompt } from "./UpdatePrompt";
