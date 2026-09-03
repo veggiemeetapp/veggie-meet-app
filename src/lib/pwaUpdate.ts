@@ -109,6 +109,23 @@ export interface CoordinatorDeps {
   hasUnsavedWork: () => boolean;
   /** Tell sibling tabs/windows that an activation is happening. */
   broadcast?: (message: { type: "activating" }) => void;
+  /**
+   * WO-145F — true while this client is quiesced for an update transaction.
+   * Scheduled/opportunistic update checks are nonessential requests: starting
+   * one keeps the outgoing worker busy and is exactly what delayed a consented
+   * activation. A manual check by the member is still honoured.
+   */
+  isPaused?: () => boolean;
+  /**
+   * WO-145F — the new build is genuinely active and this client is about to
+   * reload. Measured against real builds: broadcasting the commit BEFORE
+   * activation makes every sibling navigate through the still-outgoing worker,
+   * which keeps that worker busy and prevented the promotion the member asked
+   * for. Siblings are therefore told only once activation has landed.
+   */
+  onActivated?: (cause: string) => void;
+
+
 
   minCheckIntervalMs?: number;
   activationTimeoutMs?: number;
@@ -273,6 +290,7 @@ export class UpdateCoordinator {
     const reg = this.registration;
     if (!reg) return false;
     if (this.state.checking) return false;
+    if (reason !== "manual" && this.deps.isPaused?.() === true) return false;
 
     const min = this.deps.minCheckIntervalMs ?? DEFAULT_MIN_CHECK_INTERVAL_MS;
     const last = this.state.lastCheckAt;
@@ -481,6 +499,13 @@ export class UpdateCoordinator {
     if (this.reloaded) return;
     this.reloaded = true;
     this.deps.log("app_update_reload_completed", { cause });
+    // Activation has landed: siblings may now converge onto the new build. This
+    // ordering is what makes the multi-client transition deterministic.
+    try {
+      this.deps.onActivated?.(cause);
+    } catch {
+      /* a sibling notification must never block this client's reload */
+    }
     this.deps.reload();
   }
 

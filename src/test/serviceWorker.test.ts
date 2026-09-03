@@ -68,4 +68,37 @@ describe("PWA service worker configuration", () => {
     expect(registrar).toContain("id-preview--");
     expect(registrar).toContain("unregisterMatching");
   });
+
+  it("WO-145F: the worker exposes a bounded, anonymous fleet helper", () => {
+    const fleetWorker = readFileSync(
+      resolve(process.cwd(), "public/sw-fleet.js"),
+      "utf8",
+    );
+    expect(config).toContain('importScripts: ["sw-fleet.js"]');
+    // Real client set + anonymous diagnostics only.
+    expect(fleetWorker).toContain("CLIENT_CENSUS");
+    expect(fleetWorker).toContain("clients.matchAll");
+    expect(fleetWorker).toContain("UPDATE_DIAGNOSTICS");
+    // It must never take over documents, unregister, or own promotion.
+    expect(fleetWorker).not.toContain("clientsClaim");
+    expect(fleetWorker).not.toContain("unregister");
+    expect(fleetWorker).not.toContain("self.skipWaiting()");
+    // No URLs, bodies, headers or auth material may leave the worker.
+    expect(fleetWorker).not.toContain("request.url,");
+    expect(fleetWorker).not.toContain("Authorization");
+  });
+
+  it("WO-145F: no production path ever unregisters the worker", () => {
+    const coordinator = readFileSync(
+      resolve(process.cwd(), "src/lib/pwaUpdate.ts"),
+      "utf8",
+    );
+    const hook = readFileSync(
+      resolve(process.cwd(), "src/hooks/usePwaUpdate.tsx"),
+      "utf8",
+    );
+    // Comments may discuss it; no path may CALL it.
+    expect(coordinator).not.toMatch(/\.unregister\s*\(/);
+    expect(hook).not.toMatch(/\.unregister\s*\(/);
+  });
 });

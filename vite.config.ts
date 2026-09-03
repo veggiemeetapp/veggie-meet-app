@@ -100,6 +100,11 @@ export default defineConfig(({ mode }) => ({
           "**/assets/Owner*-*.js",
         ],
 
+        // WO-145F — fleet preparation support inside the worker. It adds only a
+        // message handler (real client census via `clients.matchAll()`) and
+        // passive, anonymous fetch/lifecycle counters used to attribute a
+        // stalled transition. It never changes routing, caching or activation.
+        importScripts: ["sw-fleet.js"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         // WO-145B — `clientsClaim: false` is required, not cosmetic. With it

@@ -29,6 +29,8 @@ export function UpdatePrompt() {
     unsavedKinds,
     coordinating,
     blockedByPeers,
+    peerBlocker,
+
     updateNow,
     later,
     retry,
@@ -71,50 +73,64 @@ export function UpdatePrompt() {
   if (!visible) return null;
 
   const blocked = state.blockedByUnsavedWork && unsavedKinds.length > 0;
-  const peersBlocked = blockedByPeers > 0;
+  // WO-145F: when the application knows another client is the blocker, that
+  // specific condition is reported — never the generic failure copy.
+  const peerUnsaved = peerBlocker === "unsaved" || (blockedByPeers > 0 && peerBlocker === null);
+  const peerUnprepared = peerBlocker === "unprepared";
+  const peersBlocked = peerUnsaved || peerUnprepared;
   const offline = typeof navigator !== "undefined" && navigator.onLine === false;
   const warn = failed || blocked || peersBlocked || required || offline;
 
-  const title = failed
-    ? "The update couldn't finish"
-    : required
-      ? "This window needs to update"
-      : "A new version of VeggieMeet is available";
+  const title = peerUnprepared
+    ? "Another VeggieMeet window is open"
+    : failed
+      ? "The update couldn't finish"
+      : required
+        ? "This window needs to update"
+        : "A new version of VeggieMeet is available";
 
-  const body = failed
-    ? "Your current version is still working. You can try again now or later."
-    : required
-      ? blocked
-        ? `A newer version is already running elsewhere. You have ${unsavedWorkSummary(unsavedKinds)} — finish or save it, then reload. Reload anyway to discard it.`
-        : "A newer version is now active. Reload this window to continue safely."
-      : offline
-        ? "You're offline. VeggieMeet keeps working on this version and will update when you're back online."
-        : peersBlocked
-          ? `Another VeggieMeet window has unsaved work. Save or finish it there, or update anyway and lose it.`
-          : blocked
-            ? `You have ${unsavedWorkSummary(unsavedKinds)}. Finish or save it first, or update anyway and lose it.`
-            : coordinating
-              ? "Checking your other VeggieMeet windows…"
-              : "Update now to get the latest improvements.";
+  const body = peerUnprepared
+    ? "VeggieMeet is open in another window. Close that window, then try the update again."
+    : failed
+      ? "Your current version is still working. You can try again now or later."
+      : required
+        ? blocked
+          ? `A newer version is already running elsewhere. You have ${unsavedWorkSummary(unsavedKinds)} — finish or save it, then reload. Reload anyway to discard it.`
+          : "A newer version is now active. Reload this window to continue safely."
+        : offline
+          ? "You're offline. VeggieMeet keeps working on this version and will update when you're back online."
+          : peerUnsaved
+            ? "Another VeggieMeet window has unfinished work. The update will wait until it's saved or discarded there — or update anyway and lose it."
+            : blocked
+              ? `You have ${unsavedWorkSummary(unsavedKinds)}. Finish or save it first, or update anyway and lose it.`
+              : coordinating
+                ? "Getting your other VeggieMeet windows ready…"
+                : "Update now to get the latest improvements.";
 
   const primaryLabel = activating
     ? "Updating…"
     : coordinating
-      ? "Checking…"
-      : failed
+      ? "Preparing…"
+      : peerUnprepared
         ? "Try again"
-        : required
-          ? blocked
-            ? "Reload anyway"
-            : "Reload now"
-          : blocked || peersBlocked
-            ? "Update anyway"
-            : "Update now";
+        : failed
+          ? "Try again"
+          : required
+            ? blocked
+              ? "Reload anyway"
+              : "Reload now"
+            : blocked || peerUnsaved
+              ? "Update anyway"
+              : "Update now";
 
   const onPrimary = () => {
+    // A specifically identified sibling blocker is retried as an ordinary,
+    // non-forced update: closing that window is the resolution, not force.
+    if (peerUnprepared) return updateNow();
     if (failed) return retry();
-    return updateNow({ force: blocked || peersBlocked || required });
+    return updateNow({ force: blocked || peerUnsaved || required });
   };
+
 
   const Icon = offline ? WifiOff : peersBlocked ? Users : warn ? AlertTriangle : RefreshCw;
 
