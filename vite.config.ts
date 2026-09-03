@@ -12,16 +12,12 @@ import { VitePWA } from "vite-plugin-pwa";
 // origin serves" and report a stale document instead of guessing.
 const BUILD_ID = new Date().toISOString().replace(/[-:]/g, "").slice(0, 13) + "Z";
 
-// WO-145D — staged rollout. `PWA_RELEASE=bridge` builds the one-time,
-// versioned transitional bridge (Release B): the worker promotes itself on
-// install so a client controlled by the previously published legacy worker can
-// cross the boundary without anything being unregistered, while
-// `clientsClaim: false` guarantees it never takes over an already-loaded legacy
-// document. Every other build is the final prompt-mode architecture (Release N):
-// consent-gated activation, fleet-coordinated, one reload per client.
-const IS_BRIDGE = process.env.PWA_RELEASE === "bridge";
-const BRIDGE_ID = "wo145d-legacy-bridge-1";
-const PWA_RELEASE = IS_BRIDGE ? "bridge" : "prompt";
+// WO-145E — Option 2: there is exactly ONE release architecture, the final
+// prompt-mode one (Release N). No migration bridge, no automatic activation and
+// no unregister path: a client controlled by the previously published worker
+// keeps that worker until every client of the registration is closed, and the
+// browser then activates Release N normally.
+const PWA_RELEASE = "prompt";
 
 /** Emits an uncached, non-secret build marker consumed by the update coordinator. */
 function versionManifestPlugin(): Plugin {
@@ -35,7 +31,6 @@ function versionManifestPlugin(): Plugin {
         source: JSON.stringify({
           buildId: BUILD_ID,
           release: PWA_RELEASE,
-          bridgeId: IS_BRIDGE ? BRIDGE_ID : null,
         }),
       });
     },
@@ -48,7 +43,6 @@ export default defineConfig(({ mode }) => ({
   define: {
     __APP_VERSION__: JSON.stringify(BUILD_ID),
     __PWA_RELEASE__: JSON.stringify(PWA_RELEASE),
-    __PWA_BRIDGE_ID__: JSON.stringify(IS_BRIDGE ? BRIDGE_ID : ""),
   },
   server: {
     host: "::",
@@ -72,13 +66,11 @@ export default defineConfig(({ mode }) => ({
     // exactly once, so old and new code can never execute together.
     VitePWA({
       strategies: "generateSW",
-      // WO-145D measured behaviour: the plugin's auto-update register type makes
-      // vite-plugin-pwa inject `clientsClaim()` into the generated worker even
-      // when `workbox.clientsClaim` is false — which would let Bridge B take
-      // over an already-loaded legacy document. `prompt` is therefore used for
-      // BOTH releases (the plugin never injects a registration anyway,
-      // `injectRegister: null`), and the bridge's one-time automatic activation
-      // comes solely from `skipWaiting: IS_BRIDGE` below.
+      // WO-145D/E measured behaviour: the plugin's auto-update register type
+      // makes vite-plugin-pwa inject `clientsClaim()` into the generated worker
+      // even when `workbox.clientsClaim` is false, which would take over an
+      // already-loaded document. `prompt` is therefore mandatory; the plugin
+      // never injects a registration (`injectRegister: null`).
       registerType: "prompt",
       injectRegister: null,
       filename: "sw.js",
@@ -118,11 +110,10 @@ export default defineConfig(({ mode }) => ({
         // worker that loaded it and only ever sees the new build after its own
         // one-time, coordinated reload.
         clientsClaim: false,
-        // WO-145D: the bridge (and only the bridge) may promote itself so a
-        // legacy-controlled client is not dependent on the legacy worker handing
-        // over. It still never claims loaded documents, so no unregister and no
-        // mixed-build execution are involved. Release N is consent-gated.
-        skipWaiting: IS_BRIDGE,
+        // WO-145E: activation is member-consented only. The worker waits until
+        // the coordinator posts SKIP_WAITING, so software is never replaced
+        // underneath a running document and nothing is ever unregistered.
+        skipWaiting: false,
 
         // Workbox registers a NavigationRoute BEFORE runtimeCaching, so the
         // plugin's default `navigateFallback: index.html` would shadow the
