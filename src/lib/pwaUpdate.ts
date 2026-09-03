@@ -499,6 +499,13 @@ export class UpdateCoordinator {
     if (this.reloaded) return;
     this.reloaded = true;
     this.deps.log("app_update_reload_completed", { cause });
+    // Activation has landed: siblings may now converge onto the new build. This
+    // ordering is what makes the multi-client transition deterministic.
+    try {
+      this.deps.onActivated?.(cause);
+    } catch {
+      /* a sibling notification must never block this client's reload */
+    }
     this.deps.reload();
   }
 
