@@ -145,6 +145,11 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // WO-145F: no scheduled/opportunistic check may start while this client is
       // quiesced for a transaction.
       isPaused: () => isQuiesced(),
+      // WO-145F: siblings converge only once the new build is genuinely active.
+      onActivated: () => {
+        const txnId = txnRef.current;
+        fleetRef.current?.commitActivation(false, txnId ?? undefined);
+      },
       // WO-145E: there is deliberately no registration-release fallback and no
       // migration bridge here. Release N ships directly; a client controlled by
       // the previously published worker keeps that worker until every client of
@@ -360,7 +365,9 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
 
       const fleet = fleetRef.current;
       const proceed = () => {
-        fleet?.commitActivation(force, txnId);
+        // The commit is broadcast from `onActivated` — after the new worker is
+        // active — so no sibling navigates through the outgoing worker while the
+        // promotion this member asked for is still pending.
         const result = coordinator.applyUpdate({ force: true });
         if (result !== "activating") {
           endQuiesce(txnId, { queryClient: qc });
