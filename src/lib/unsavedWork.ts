@@ -36,25 +36,14 @@ export function registerUnsavedWork(
   };
 }
 
-/**
- * WO-145F — opt-in certification seam. Multi-client update behaviour can only be
- * proved against genuine production builds, and the blocking condition under
- * test is "a sibling window holds unfinished work". A window opened with
- * `?e2e-unsaved=1` declares one synthetic composer draft for its lifetime.
- *
- * It is inert without that query parameter, carries no member data, grants no
- * privilege, and cannot suppress or force an update — it can only make this
- * window declare itself dirty, which is the state a real draft would produce.
+/*
+ * WO-145A — the WO-145F `?e2e-unsaved=1` certification seam is deliberately NOT
+ * part of the published release: live certification uses genuine member work
+ * (real composer text) instead of a synthetic marker, so the production bundle
+ * ships no QA fixture, test hook or debug control.
  */
-if (typeof window !== "undefined") {
-  try {
-    if (new URLSearchParams(window.location.search).get("e2e-unsaved") === "1") {
-      registerUnsavedWork("e2e-unsaved-marker", "composer", () => true);
-    }
-  } catch {
-    /* never let a URL parsing quirk break app boot */
-  }
-}
+
+
 
 
 
