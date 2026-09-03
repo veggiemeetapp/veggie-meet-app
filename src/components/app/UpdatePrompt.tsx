@@ -199,7 +199,7 @@ export function UpdatePrompt() {
                 onClick={later}
                 className="min-h-11 rounded-full border border-border bg-card text-charcoal text-sm font-semibold px-4"
               >
-                {blocked || peersBlocked ? "Finish first" : "Later"}
+                {blocked || peerUnsaved ? "Finish first" : "Later"}
               </button>
             )}
           </div>

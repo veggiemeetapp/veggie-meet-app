@@ -64,10 +64,18 @@ function makeHarness(options: { controlled?: boolean } = {}) {
   const log = vi.fn();
   let dirty = false;
   let clock = 1_000;
+  const order: string[] = [];
+  const onActivated = vi.fn(() => {
+    order.push("commit");
+  });
   const coordinator = new UpdateCoordinator({
     container,
-    reload,
+    reload: () => {
+      order.push("reload");
+      reload();
+    },
     log,
+    onActivated,
     now: () => clock,
     hasUnsavedWork: () => dirty,
     minCheckIntervalMs: 60_000,
@@ -77,6 +85,8 @@ function makeHarness(options: { controlled?: boolean } = {}) {
     container,
     registration,
     reload,
+    onActivated,
+    order: () => order,
     log,
     coordinator,
     setDirty: (v: boolean) => {
@@ -380,5 +390,26 @@ describe("WO-145 build freshness", () => {
     expect(isBuildMismatch("B2", "B1")).toBe(true);
     expect(isBuildMismatch("B1", "B1")).toBe(false);
     expect(isBuildMismatch(null, "B1")).toBe(false);
+  });
+});
+
+describe("WO-145F activation ordering", () => {
+  it("tells siblings only after the new worker is active, then reloads once", () => {
+    const h = makeHarness();
+    h.coordinator.attach(h.registration);
+    const waiting = makeWorker("installed");
+    h.registration.waiting = waiting;
+    h.registration.fireUpdateFound();
+
+    expect(h.coordinator.applyUpdate({ force: true })).toBe("activating");
+    // Nothing is announced while the promotion is still pending: a sibling that
+    // navigated now would do so through the outgoing worker.
+    expect(h.onActivated).not.toHaveBeenCalled();
+
+    waiting.setState("activated");
+    waiting.fire();
+
+    expect(h.order()).toEqual(["commit", "reload"]);
+    expect(h.reload).toHaveBeenCalledTimes(1);
   });
 });
