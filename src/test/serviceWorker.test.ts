@@ -38,19 +38,18 @@ describe("PWA service worker configuration", () => {
     // coordinator posts SKIP_WAITING, so a document never mixes two builds.
     expect(config).toContain('registerType: "prompt"');
     expect(config).not.toContain('registerType: "autoUpdate"');
-    expect(config).toContain("skipWaiting: IS_BRIDGE");
+    expect(config).toContain("skipWaiting: false");
     // WO-145B: never claim already-loaded documents, in either release.
     expect(config).toContain("clientsClaim: false");
   });
 
-  it("WO-145D: the staged bridge is explicitly versioned and opt-in", () => {
-    expect(config).toContain('const IS_BRIDGE = process.env.PWA_RELEASE === "bridge"');
-    expect(config).toContain('const BRIDGE_ID = "wo145d-legacy-bridge-1"');
-    // The default build (no PWA_RELEASE) is the final prompt-mode architecture.
-    expect(config).toContain('IS_BRIDGE ? "bridge" : "prompt"');
-    // Clients can tell bridge from final release without cache clearing.
+  it("WO-145E: ships exactly one prompt-mode release with no migration bridge", () => {
+    expect(config).toContain('const PWA_RELEASE = "prompt"');
+    expect(config).not.toContain("IS_BRIDGE");
+    expect(config).not.toContain("bridgeId");
+    expect(config).not.toContain("PWA_RELEASE === ");
+    // Clients can still identify the running build without clearing caches.
     expect(config).toContain("release: PWA_RELEASE");
-    expect(config).toContain("bridgeId: IS_BRIDGE ? BRIDGE_ID : null");
   });
 
   it("emits a build marker the client can compare against", () => {

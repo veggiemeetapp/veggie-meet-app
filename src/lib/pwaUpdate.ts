@@ -312,8 +312,15 @@ export class UpdateCoordinator {
    * and nothing is activated or reloaded.
    */
   applyUpdate(options: { force?: boolean } = {}): "activating" | "blocked" | "noop" {
-    const waiting = this.trackedWaiting;
+    // WO-145E: always address the registration's *current* waiting worker. The
+    // reference captured while the worker was still `installing` is not a
+    // reliable postMessage target in Chromium — measured against real builds,
+    // SKIP_WAITING posted to that reference was accepted but never promoted the
+    // worker, while the same message posted to `registration.waiting` promoted
+    // in ~500ms.
+    const waiting = this.registration?.waiting ?? this.trackedWaiting;
     if (!waiting) return "noop";
+
 
     if (!options.force && this.deps.hasUnsavedWork()) {
       this.deps.log("app_update_blocked_unsaved", {});
@@ -354,8 +361,8 @@ export class UpdateCoordinator {
     // reference, so the client sat on "Updating…" until the fallback fired.
     // Polling the registration is the authoritative check: once this worker is
     // no longer the registration's `waiting` worker, the new build is active and
-    // the client may reload immediately. The fallback below stays as the bridge
-    // for clients whose old worker genuinely refuses to hand over.
+    // the client may reload immediately. The bounded timeout below reports a
+    // retryable failure for a worker that genuinely refuses to hand over.
     this.activationPoll = setInterval(() => {
       if (this.state.status !== "activating") {
         this.clearActivationPoll();
@@ -370,10 +377,10 @@ export class UpdateCoordinator {
         this.finishActivation("worker_activated");
         return;
       }
-      // WO-145D: SKIP_WAITING is one-shot and can be observed while the outgoing
-      // worker is still finishing in-flight requests. Re-posting each tick is
-      // idempotent (`skipWaiting()` is), and promotion lands the moment the
-      // outgoing worker is free.
+      // WO-145E: `SKIP_WAITING` is one-shot and can be observed while the
+      // outgoing worker is still finishing work, in which case the promotion
+      // does not land. Re-posting on each tick is idempotent (`skipWaiting()`
+      // is latched) and promotion lands the moment the outgoing worker is free.
       try {
         waiting.postMessage(SKIP_WAITING_MESSAGE);
       } catch {
@@ -383,14 +390,14 @@ export class UpdateCoordinator {
 
 
 
+
+
     const timeout = this.deps.activationTimeoutMs ?? DEFAULT_ACTIVATION_TIMEOUT_MS;
     this.activationTimer = setTimeout(() => {
       this.activationTimer = null;
       if (this.state.status !== "activating") return;
-      // WO-145D: no registration-removal fallback exists on this path. The
-      // legacy boundary is handled by the staged Bridge B release
-      // (`pwaMigration.ts`), which activates automatically without claiming or
-      // unregistering anything, so a stall here is a genuine failure and is
+      // WO-145E: no registration-removal fallback exists on this path, and no
+      // migration bridge ships. A stall here is a genuine failure and is
       // surfaced as a retryable error with the current build left working.
       this.fail("controller_timeout");
     }, timeout);
@@ -407,6 +414,14 @@ export class UpdateCoordinator {
    */
   noteFleetCommit(info: { forced: boolean }): void {
     if (this.reloaded) return;
+    // WO-145E: the client that asked for the activation is already running the
+    // activation lifecycle. Reloading it here (its own commit broadcast comes
+    // back to it) starts a navigation while `skipWaiting()` is still pending,
+    // which Chromium cannot complete — the document never unloads, the worker
+    // never activates, and the member is stranded on "Updating…". Measured
+    // repeatedly in WO-145E: this was the sole cause of the stalled consented
+    // update. Let the activation path finish and reload exactly once.
+    if (this.state.status === "activating") return;
     if (info.forced || !this.deps.hasUnsavedWork()) {
       this.finishActivation("fleet_commit");
       return;
@@ -414,6 +429,7 @@ export class UpdateCoordinator {
     this.deps.log("app_update_blocked_unsaved", { phase: "fleet_commit" });
     this.set({ status: "update-required", updateRequired: true });
   }
+
 
   /**
    * Called when protected work is saved/discarded, or by the member from the

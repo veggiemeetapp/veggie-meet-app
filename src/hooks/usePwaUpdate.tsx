@@ -40,12 +40,7 @@ import {
   randomClientId,
 } from "@/lib/updateFleet";
 import { startChunkRecovery } from "@/lib/chunkRecovery";
-import {
-  PWA_BRIDGE_ID,
-  PWA_RELEASE,
-  allowsAutomaticActivation,
-  recordBridgeCrossing,
-} from "@/lib/pwaMigration";
+
 
 import {
   LOADED_BUILD_ID,
@@ -56,15 +51,10 @@ import {
   refreshSessionCriticalQueries,
 } from "@/lib/buildFreshness";
 import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
+import { quiesceBackendConnections } from "@/lib/updateQuiesce";
 
-/** localStorage is unavailable in private modes and inside some webviews. */
-function localStorageOrNull(): Storage | null {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
+
+
 
 
 
@@ -137,11 +127,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // Active mutations count as work in progress: a reload mid-write would
       // leave the member unsure whether their action landed.
       hasUnsavedWork: () => hasUnsavedWork() || qc.isMutating() > 0,
-      // WO-145D: there is deliberately no registration-release fallback here.
-      // The legacy boundary is crossed by the staged Bridge B release
-      // (`src/lib/pwaMigration.ts`), which activates automatically without
-      // claiming loaded documents and without ever unregistering the shared
-      // worker. Only the explicit `?sw=off` diagnostic path may unregister.
+      // WO-145E: there is deliberately no registration-release fallback and no
+      // migration bridge here. Release N ships directly; a client controlled by
+      // the previously published worker keeps that worker until every client of
+      // the registration is closed, and then activates Release N normally.
+      // Only the explicit `?sw=off` diagnostic path may ever unregister.
+
     });
   }
 
@@ -184,17 +175,8 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     };
   }, [coordinator]);
 
-  /* ---------- WO-145D staged migration boundary ---------- */
-  // The bridge release activates automatically (legacy-compatible) and is
-  // therefore never prompted for. Crossing the boundary is recorded exactly once
-  // per client so the same transition is not announced twice and so the bridge's
-  // special behaviour is retired for every later release.
-  useEffect(() => {
-    if (!allowsAutomaticActivation(PWA_RELEASE, PWA_BRIDGE_ID)) return;
-    const outcome = recordBridgeCrossing(localStorageOrNull(), PWA_BRIDGE_ID);
-    if (outcome === "recorded")
-      logAnalyticsEvent("app_update_reload_completed", { outcome: "bridge-crossed" });
-  }, []);
+
+
 
   /* ---------- WO-145B fleet coordination ---------- */
 
@@ -214,7 +196,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       onCommit: ({ forced }) => coordinator.noteFleetCommit({ forced }),
       // The elected leader never committed (crash / close mid-coordination):
       // take over rather than wait forever.
-      onEscalate: () => coordinator.applyUpdate({ force: false }),
+      onEscalate: () => {
+        // WO-145E: same rule as the consented path — an outgoing worker with
+        // realtime work in flight never hands over.
+        quiesceBackendConnections();
+        coordinator.applyUpdate({ force: false });
+      },
     });
     fleetRef.current = fleet;
     fleet.start();
@@ -313,11 +300,17 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // WO-145E: the member has consented, so long-lived realtime connections
+      // are closed first. An outgoing worker with work still in flight never
+      // hands over, which stranded consented updates on "Updating…".
+      quiesceBackendConnections();
+
       const fleet = fleetRef.current;
       if (!fleet) {
         coordinator.applyUpdate({ force });
         return;
       }
+
 
       setCoordinating(true);
       void fleet
