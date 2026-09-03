@@ -42,6 +42,8 @@
  * unit-testable with an in-memory bus and no browser.
  */
 
+export type PrepareAck = "ready" | "blocked" | "unable";
+
 export type FleetMessage =
   | { type: "hello"; from: string; buildId: string }
   | { type: "here"; from: string; buildId: string }
@@ -57,7 +59,19 @@ export type FleetMessage =
       dirty: boolean;
     }
   | { type: "intent"; from: string; round: number }
-  | { type: "commit"; from: string; forced: boolean };
+  /** WO-145F — fleet-wide update-preparation request for one transaction. */
+  | { type: "prepare"; from: string; txnId: string }
+  | {
+      type: "prepare-ack";
+      from: string;
+      txnId: string;
+      ack: PrepareAck;
+      visible: boolean;
+    }
+  /** WO-145F — the transaction was abandoned: restore normal behaviour. */
+  | { type: "prepare-cancel"; from: string; txnId: string }
+  | { type: "commit"; from: string; forced: boolean; txnId?: string };
+
 
 export interface FleetChannel {
   post: (message: FleetMessage) => void;
@@ -78,11 +92,25 @@ export interface FleetDeps {
   onPeers?: (peerCount: number) => void;
   /** A deferred activation never got its commit — take over as leader. */
   onEscalate?: () => void;
+  /**
+   * WO-145F — this client was asked to prepare for update transaction `txnId`.
+   * It must enter the bounded quiescent state and return its acknowledgement:
+   * `ready`, `blocked` (unsaved work / active mutation) or `unable`.
+   * Called at most once per transaction; repeated requests re-use the answer.
+   */
+  onPrepare?: (txnId: string) => PrepareAck;
+  /** WO-145F — the transaction ended without committing: restore normal work. */
+  onPrepareCancel?: (txnId: string) => void;
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
   censusTimeoutMs?: number;
   commitTimeoutMs?: number;
+  /** How long responsive clients are given to acknowledge a preparation. */
+  prepareTimeoutMs?: number;
+  /** How long a prepared client stays quiesced without a commit. */
+  prepareLeaseMs?: number;
 }
+
 
 export interface CensusPeer {
   clientId: string;
@@ -101,8 +129,39 @@ export interface ActivationDecision {
   leader: string;
 }
 
+/** WO-145F — result of the fleet-wide preparation phase for one transaction. */
+export interface PrepareResult {
+  txnId: string;
+  /**
+   *  - `ready`: every discovered responsive client is quiescent — SKIP_WAITING
+   *    may be sent exactly once for this transaction;
+   *  - `blocked-dirty`: a sibling holds unsaved work or an active mutation;
+   *  - `blocked-unprepared`: a sibling answered `unable`, or was discovered but
+   *    never acknowledged within the bounded window (frozen/unresponsive).
+   */
+  outcome: "ready" | "blocked-dirty" | "blocked-unprepared";
+  /** Clients that acknowledged, by acknowledgement. */
+  ready: string[];
+  dirty: string[];
+  unable: string[];
+  /** Clients seen on the channel that never acknowledged in the window. */
+  silent: string[];
+  /** True when at least one blocking client reported itself visible. */
+  blockerVisible: boolean;
+}
+
 const DEFAULT_CENSUS_TIMEOUT_MS = 1_200;
 const DEFAULT_COMMIT_TIMEOUT_MS = 6_000;
+/**
+ * WO-145F: the preparation window is short by design. An unresponsive client can
+ * only delay the member by this much; after it elapses the real client set is
+ * rechecked through the service worker and the member gets specific guidance
+ * instead of an indefinite spinner.
+ */
+const DEFAULT_PREPARE_TIMEOUT_MS = 1_500;
+/** How long a prepared (quiesced) client waits for a commit before restoring. */
+const DEFAULT_PREPARE_LEASE_MS = 30_000;
+
 
 export function randomClientId(): string {
   try {
@@ -126,6 +185,19 @@ export class FleetCoordinator {
   private roundActive = false;
   private commitTimer: unknown = null;
   private stopped = false;
+
+  /* ---------- WO-145F preparation state ---------- */
+  /** Acknowledgements observed for the transaction this client is leading. */
+  private prepareAcks = new Map<string, { ack: PrepareAck; visible: boolean }>();
+  /** Transaction this client is leading (null when it is not the accepting one). */
+  private leadingTxn: string | null = null;
+  /** Transaction this client is prepared FOR, with its own answer (idempotency). */
+  private preparedTxn: string | null = null;
+  private preparedAck: PrepareAck | null = null;
+  private prepareLeaseTimer: unknown = null;
+  /** Commits already applied, so duplicate commit messages are inert. */
+  private appliedCommits = new Set<string>();
+
 
   constructor(deps: FleetDeps) {
     this.deps = deps;
@@ -153,6 +225,7 @@ export class FleetCoordinator {
 
   stop(): void {
     this.stopped = true;
+    this.clearPrepareLease();
     try {
       this.deps.channel.post({ type: "bye", from: this.deps.clientId });
     } catch {
@@ -249,18 +322,173 @@ export class FleetCoordinator {
         this.adoptRound(m.round);
         if (m.round === this.round) this.intents.add(m.from);
         break;
-      case "commit":
+      // WO-145F — a sibling asked this client to prepare for a transaction.
+      case "prepare": {
         this.notePeer(m.from);
+        const ack = this.answerPrepare(m.txnId);
+        this.deps.channel.post({
+          type: "prepare-ack",
+          from: this.deps.clientId,
+          txnId: m.txnId,
+          ack,
+          visible: this.deps.isVisible(),
+        });
+        break;
+      }
+      case "prepare-ack":
+        this.notePeer(m.from);
+        // Duplicate acknowledgements collapse: the map is keyed by client id.
+        if (m.txnId === this.leadingTxn)
+          this.prepareAcks.set(m.from, { ack: m.ack, visible: m.visible });
+        break;
+      case "prepare-cancel":
+        this.notePeer(m.from);
+        this.releasePrepare(m.txnId);
+        break;
+      case "commit": {
+        this.notePeer(m.from);
+        const key = m.txnId ?? `legacy:${m.from}`;
+        if (this.appliedCommits.has(key)) return; // idempotent per transaction
+        this.appliedCommits.add(key);
         if (this.committed) return; // exactly-once convergence per client
         this.committed = true;
+        this.clearPrepareLease();
         if (this.commitTimer !== null) {
           this.clearTimer(this.commitTimer);
           this.commitTimer = null;
         }
         this.deps.onCommit({ forced: m.forced, from: m.from });
         break;
+      }
     }
   }
+
+  /* ---------- WO-145F preparation protocol ---------- */
+
+  private clearPrepareLease(): void {
+    if (this.prepareLeaseTimer !== null) {
+      this.clearTimer(this.prepareLeaseTimer);
+      this.prepareLeaseTimer = null;
+    }
+  }
+
+  /**
+   * Enter (or re-report) the quiescent state for `txnId`. Idempotent: a repeated
+   * `prepare` for the same transaction returns the same answer and never
+   * quiesces twice, so duplicate broadcasts cannot cause extra work or reloads.
+   */
+  private answerPrepare(txnId: string): PrepareAck {
+    if (this.preparedTxn === txnId && this.preparedAck !== null)
+      return this.preparedAck;
+
+    // A different transaction supersedes an earlier one: release the old lease
+    // so the client can never be left quiesced for an abandoned transaction.
+    if (this.preparedTxn !== null && this.preparedTxn !== txnId)
+      this.releasePrepare(this.preparedTxn);
+
+    let ack: PrepareAck;
+    try {
+      ack = this.deps.onPrepare?.(txnId) ?? (this.deps.isDirty() ? "blocked" : "ready");
+    } catch {
+      ack = "unable";
+    }
+    this.preparedTxn = txnId;
+    this.preparedAck = ack;
+
+    if (ack === "ready") {
+      // Bounded lease: if the accepting client vanishes without committing or
+      // cancelling, this client restores itself instead of staying paused.
+      this.clearPrepareLease();
+      this.prepareLeaseTimer = this.setTimer(() => {
+        this.prepareLeaseTimer = null;
+        this.releasePrepare(txnId);
+      }, this.deps.prepareLeaseMs ?? DEFAULT_PREPARE_LEASE_MS);
+    }
+    return ack;
+  }
+
+  /** Restore normal behaviour after a cancelled/expired preparation. */
+  private releasePrepare(txnId: string): void {
+    if (this.preparedTxn !== txnId) return;
+    this.preparedTxn = null;
+    this.preparedAck = null;
+    this.clearPrepareLease();
+    try {
+      this.deps.onPrepareCancel?.(txnId);
+    } catch {
+      /* a broken restore must never break the channel */
+    }
+  }
+
+  /**
+   * Accepting client: ask every same-origin VeggieMeet client to quiesce for
+   * `txnId` and resolve once they have all answered — or once the bounded
+   * preparation window elapses, whichever comes first.
+   */
+  async prepareFleet(txnId: string, options: { force?: boolean } = {}): Promise<PrepareResult> {
+    this.leadingTxn = txnId;
+    this.prepareAcks.clear();
+    const expected = new Set(this.peers);
+
+    this.deps.channel.post({ type: "prepare", from: this.deps.clientId, txnId });
+
+    const timeout = this.deps.prepareTimeoutMs ?? DEFAULT_PREPARE_TIMEOUT_MS;
+    const started = Date.now();
+    await new Promise<void>((resolve) => {
+      const tick = () => {
+        const answered = [...expected].every((id) => this.prepareAcks.has(id));
+        if (answered || Date.now() - started >= timeout) {
+          resolve();
+          return;
+        }
+        this.setTimer(tick, Math.min(50, timeout));
+      };
+      this.setTimer(tick, 0);
+    });
+
+    const ready: string[] = [];
+    const dirty: string[] = [];
+    const unable: string[] = [];
+    let blockerVisible = false;
+    for (const [id, entry] of this.prepareAcks) {
+      if (entry.ack === "ready") ready.push(id);
+      else if (entry.ack === "blocked") {
+        dirty.push(id);
+        blockerVisible = blockerVisible || entry.visible;
+      } else {
+        unable.push(id);
+        blockerVisible = blockerVisible || entry.visible;
+      }
+    }
+    // A client that is still on the channel but never answered is treated as
+    // unresponsive, never as absent: silently activating past it is what
+    // produced the unexplained 20 s stall this work order removes.
+    const silent = [...expected].filter((id) => !this.prepareAcks.has(id) && this.peers.has(id));
+
+    let outcome: PrepareResult["outcome"] = "ready";
+    if (dirty.length > 0 && !options.force) outcome = "blocked-dirty";
+    else if (unable.length > 0 || silent.length > 0) outcome = "blocked-unprepared";
+
+    return { txnId, outcome, ready, dirty, unable, silent, blockerVisible };
+  }
+
+  /** Abandon a transaction: every prepared client restores normal behaviour. */
+  cancelPreparation(txnId: string): void {
+    if (this.leadingTxn === txnId) this.leadingTxn = null;
+    this.prepareAcks.clear();
+    this.deps.channel.post({
+      type: "prepare-cancel",
+      from: this.deps.clientId,
+      txnId,
+    });
+    this.releasePrepare(txnId);
+  }
+
+  /** Test/inspection helper: is this client currently quiesced for a txn? */
+  preparedFor(): string | null {
+    return this.preparedTxn;
+  }
+
 
   /**
    * Census + leader election. Resolves after a bounded window, so a crashed or
@@ -307,14 +535,19 @@ export class FleetCoordinator {
   }
 
   /** Leader only: tell the fleet the new build is taking over. */
-  commitActivation(forced: boolean): void {
+  commitActivation(forced: boolean, txnId?: string): void {
+    const key = txnId ?? `legacy:${this.deps.clientId}`;
+    if (this.appliedCommits.has(key)) return; // one commit per transaction
+    this.appliedCommits.add(key);
     this.committed = true;
     this.deps.channel.post({
       type: "commit",
       from: this.deps.clientId,
       forced,
+      txnId,
     });
   }
+
 }
 
 /** BroadcastChannel adapter. Returns null where the API is unavailable. */

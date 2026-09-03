@@ -51,7 +51,13 @@ import {
   refreshSessionCriticalQueries,
 } from "@/lib/buildFreshness";
 import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
-import { quiesceBackendConnections } from "@/lib/updateQuiesce";
+import {
+  beginQuiesce,
+  endQuiesce,
+  isQuiesced,
+  quiesceBackendConnections,
+} from "@/lib/updateQuiesce";
+import { requestClientCensus } from "@/lib/swClientCensus";
 
 
 
@@ -70,6 +76,9 @@ const IDLE_STATE: UpdateState = {
   lastCheckAt: null,
 };
 
+/** WO-145F — which specific sibling condition is blocking the update. */
+export type PeerBlocker = "unsaved" | "unprepared" | null;
+
 interface PwaUpdateCtx {
   state: UpdateState;
   /** True when the accessible update prompt should render. */
@@ -81,6 +90,8 @@ interface PwaUpdateCtx {
   coordinating: boolean;
   /** WO-145B: sibling clients reported protected unsaved work. */
   blockedByPeers: number;
+  /** WO-145F: the identified blocking condition in another window. */
+  peerBlocker: PeerBlocker;
   checkNow: () => Promise<void>;
   updateNow: (options?: { force?: boolean }) => void;
   later: () => void;
@@ -96,6 +107,7 @@ const Ctx = createContext<PwaUpdateCtx>({
   unsavedKinds: [],
   coordinating: false,
   blockedByPeers: 0,
+  peerBlocker: null,
   checkNow: async () => {},
   updateNow: () => {},
   later: () => {},
@@ -111,6 +123,9 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
   const [unsavedKinds, setUnsavedKinds] = useState<UnsavedWorkKind[]>([]);
   const [coordinating, setCoordinating] = useState(false);
   const [blockedByPeers, setBlockedByPeers] = useState(0);
+  const [peerBlocker, setPeerBlocker] = useState<PeerBlocker>(null);
+  /** Open update transaction, so repeated clicks cannot start a second one. */
+  const txnRef = useRef<string | null>(null);
 
   // A single coordinator for the lifetime of the client.
   const coordinatorRef = useRef<UpdateCoordinator | null>(null);
@@ -127,6 +142,9 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // Active mutations count as work in progress: a reload mid-write would
       // leave the member unsure whether their action landed.
       hasUnsavedWork: () => hasUnsavedWork() || qc.isMutating() > 0,
+      // WO-145F: no scheduled/opportunistic check may start while this client is
+      // quiesced for a transaction.
+      isPaused: () => isQuiesced(),
       // WO-145E: there is deliberately no registration-release fallback and no
       // migration bridge here. Release N ships directly; a client controlled by
       // the previously published worker keeps that worker until every client of
@@ -196,6 +214,23 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       onCommit: ({ forced }) => coordinator.noteFleetCommit({ forced }),
       // The elected leader never committed (crash / close mid-coordination):
       // take over rather than wait forever.
+      // WO-145F — a sibling is driving an update transaction. Enter the bounded
+      // quiescent state so the outgoing worker has no residual work anywhere in
+      // the fleet, and report exactly what this client can promise.
+      onPrepare: (txnId) => {
+        if (hasUnsavedWork() || qc.isMutating() > 0) return "blocked";
+        try {
+          beginQuiesce(txnId, { queryClient: qc });
+          return "ready";
+        } catch {
+          return "unable";
+        }
+      },
+      // The transaction was abandoned: restore queries, realtime and analytics
+      // so this build keeps working normally.
+      onPrepareCancel: (txnId) => {
+        endQuiesce(txnId, { queryClient: qc });
+      },
       onEscalate: () => {
         // WO-145E: same rule as the consented path — an outgoing worker with
         // realtime work in flight never hands over.
@@ -281,6 +316,19 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     setTick((t) => t + 1);
   }, [coordinator]);
 
+  /**
+   * WO-145F — member-consented activation is a fleet-wide transaction:
+   *
+   *   1. refuse on local protected work (nothing else is disturbed);
+   *   2. open a uniquely identified transaction and quiesce THIS client;
+   *   3. ask every same-origin client to quiesce and acknowledge
+   *      (`ready` / `blocked` / `unable`) within a short bounded window;
+   *   4. only when every discovered responsive client is ready, post
+   *      SKIP_WAITING once and reload this client exactly once;
+   *   5. on any blocked outcome, cancel the transaction — every client restores
+   *      normal behaviour — and tell the member specifically what is blocking,
+   *      after rechecking the browser's real client set through the worker.
+   */
   const updateNow = useCallback(
     (options?: { force?: boolean }) => {
       if (!coordinator) return;
@@ -300,46 +348,74 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // WO-145E: the member has consented, so long-lived realtime connections
-      // are closed first. An outgoing worker with work still in flight never
-      // hands over, which stranded consented updates on "Updating…".
-      quiesceBackendConnections();
+      // Repeated clicks must not open a second transaction.
+      if (txnRef.current !== null) return;
+      const txnId = `txn-${randomClientId()}`;
+      txnRef.current = txnId;
+      setBlockedByPeers(0);
+      setPeerBlocker(null);
+
+      // This client quiesces first: it is a client of the same outgoing worker.
+      beginQuiesce(txnId, { queryClient: qc });
 
       const fleet = fleetRef.current;
+      const proceed = () => {
+        fleet?.commitActivation(force, txnId);
+        const result = coordinator.applyUpdate({ force: true });
+        if (result !== "activating") {
+          endQuiesce(txnId, { queryClient: qc });
+          txnRef.current = null;
+        }
+      };
+      const abandon = (blocker: PeerBlocker, count: number) => {
+        fleet?.cancelPreparation(txnId);
+        endQuiesce(txnId, { queryClient: qc });
+        txnRef.current = null;
+        setBlockedByPeers(count);
+        setPeerBlocker(blocker);
+      };
+
       if (!fleet) {
-        coordinator.applyUpdate({ force });
+        proceed();
         return;
       }
 
-
       setCoordinating(true);
       void fleet
-        .requestActivation({ force })
-        .then((decision) => {
+        .prepareFleet(txnId, { force })
+        .then(async (result) => {
           setCoordinating(false);
-          coordinator.notePeerCount(decision.peers.length);
-          if (decision.outcome === "blocked-dirty") {
-            setBlockedByPeers(decision.dirtyPeers);
+          if (result.outcome === "ready" || force) {
+            proceed();
             return;
           }
-          setBlockedByPeers(0);
-          // A deferred client waits for the leader's commit; its bounded
-          // escalation timer prevents a deadlock.
-          if (decision.outcome === "deferred") return;
-          fleet.commitActivation(force);
-          coordinator.applyUpdate({ force: true });
+          if (result.outcome === "blocked-dirty") {
+            abandon("unsaved", result.dirty.length);
+            return;
+          }
+          // Unresponsive or unable sibling: recheck the browser's real client
+          // set before blaming a window that may already be gone.
+          const census = await requestClientCensus();
+          const stillThere = census === null || census.total > 1;
+          if (!stillThere) {
+            proceed();
+            return;
+          }
+          abandon("unprepared", result.unable.length + result.silent.length);
         })
         .catch(() => {
           setCoordinating(false);
-          coordinator.applyUpdate({ force });
+          proceed();
         });
     },
     [coordinator, qc],
   );
 
+
   const later = useCallback(() => {
     setUnsavedKinds([]);
     setBlockedByPeers(0);
+    setPeerBlocker(null);
     coordinator?.dismiss();
   }, [coordinator]);
 
@@ -360,6 +436,7 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       unsavedKinds,
       coordinating,
       blockedByPeers,
+      peerBlocker,
       checkNow,
       updateNow,
       later,
@@ -374,6 +451,7 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       unsavedKinds,
       coordinating,
       blockedByPeers,
+      peerBlocker,
       checkNow,
       updateNow,
       later,

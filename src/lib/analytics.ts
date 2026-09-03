@@ -265,12 +265,31 @@ export function resetAnalyticsIdentity(): void {
   chain = Promise.resolve();
 }
 
+/**
+ * WO-145F — analytics delivery is stopped for the duration of an update
+ * transaction. An analytics write is a same-origin request the outgoing service
+ * worker must serve, and residual worker work is exactly what prevented a
+ * consented activation from settling. Events raised while paused are dropped:
+ * analytics is an observation layer, never a source of truth.
+ */
+let deliveryPaused = false;
+
+export function setAnalyticsDeliveryPaused(paused: boolean): void {
+  deliveryPaused = paused;
+}
+
+export function isAnalyticsDeliveryPaused(): boolean {
+  return deliveryPaused;
+}
+
 export function logAnalyticsEvent(
   event: string,
   properties?: Record<string, unknown>,
 ): void {
   try {
+    if (deliveryPaused) return; // WO-145F: quiesced for an update transaction
     if (!ALLOWED.has(event)) return; // unbounded vocabulary is not possible
+
 
     const props = sanitizeAnalyticsProperties(properties);
 

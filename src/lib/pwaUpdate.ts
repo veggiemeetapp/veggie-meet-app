@@ -109,6 +109,13 @@ export interface CoordinatorDeps {
   hasUnsavedWork: () => boolean;
   /** Tell sibling tabs/windows that an activation is happening. */
   broadcast?: (message: { type: "activating" }) => void;
+  /**
+   * WO-145F — true while this client is quiesced for an update transaction.
+   * Scheduled/opportunistic update checks are nonessential requests: starting
+   * one keeps the outgoing worker busy and is exactly what delayed a consented
+   * activation. A manual check by the member is still honoured.
+   */
+  isPaused?: () => boolean;
 
   minCheckIntervalMs?: number;
   activationTimeoutMs?: number;
@@ -273,6 +280,7 @@ export class UpdateCoordinator {
     const reg = this.registration;
     if (!reg) return false;
     if (this.state.checking) return false;
+    if (reason !== "manual" && this.deps.isPaused?.() === true) return false;
 
     const min = this.deps.minCheckIntervalMs ?? DEFAULT_MIN_CHECK_INTERVAL_MS;
     const last = this.state.lastCheckAt;
