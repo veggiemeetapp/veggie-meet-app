@@ -116,6 +116,16 @@ export interface CoordinatorDeps {
    * activation. A manual check by the member is still honoured.
    */
   isPaused?: () => boolean;
+  /**
+   * WO-145F — the new build is genuinely active and this client is about to
+   * reload. Measured against real builds: broadcasting the commit BEFORE
+   * activation makes every sibling navigate through the still-outgoing worker,
+   * which keeps that worker busy and prevented the promotion the member asked
+   * for. Siblings are therefore told only once activation has landed.
+   */
+  onActivated?: (cause: string) => void;
+
+
 
   minCheckIntervalMs?: number;
   activationTimeoutMs?: number;
