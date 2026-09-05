@@ -136,7 +136,15 @@ export async function awaitStabilization(
     } catch {
       s = { clients: null, activity: null, outstanding: 0, reappeared: false, dirty: false };
     }
-    trace("sample", { ...s });
+    trace("sample", {
+      clients: s.clients ?? -1,
+      activity: s.activity ?? -1,
+      pending: s.pending ?? -1,
+      outstanding: s.outstanding,
+      reappeared: s.reappeared,
+      dirty: s.dirty,
+      ...(s.pendingBySource ?? {}),
+    });
 
     if (s.dirty) {
       trace("blocked", { reason: "dirty" });
