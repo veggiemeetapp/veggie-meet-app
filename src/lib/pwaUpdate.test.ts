@@ -79,8 +79,11 @@ function makeHarness(options: { controlled?: boolean } = {}) {
     now: () => clock,
     hasUnsavedWork: () => dirty,
     minCheckIntervalMs: 60_000,
-    activationTimeoutMs: 5_000,
+    activationSlowMs: 1_000,
+    activationVerySlowMs: 3_000,
+    activationPendingCloseMs: 5_000,
   });
+
   return {
     container,
     registration,
@@ -205,7 +208,60 @@ describe("WO-145 update coordinator", () => {
     expect(waiting.posted).toEqual([SKIP_WAITING_MESSAGE]);
   });
 
-  it("fails safely on activation timeout and can retry", () => {
+  /* ---------- WO-145I: browser-controlled activation latency ---------- */
+
+  it("reports progressive status while activation is pending, never a failure", () => {
+    vi.useFakeTimers();
+    const h = makeHarness();
+    h.coordinator.attach(h.registration);
+    const waiting = makeWorker("installed");
+    h.registration.waiting = waiting;
+    h.registration.fireUpdateFound();
+
+    h.coordinator.applyUpdate();
+    expect(h.coordinator.getState().activationPhase).toBe("normal");
+    vi.advanceTimersByTime(1_001);
+    expect(h.coordinator.getState().activationPhase).toBe("slow");
+    vi.advanceTimersByTime(2_001);
+    expect(h.coordinator.getState().activationPhase).toBe("very-slow");
+    expect(h.coordinator.getState().status).toBe("activating");
+    expect(h.events()).not.toContain("app_update_failed");
+
+    // Past the generous bound the member gets the honest close/reopen outcome —
+    // not "the update couldn't finish", and no blind retry.
+    vi.advanceTimersByTime(2_001);
+    expect(h.coordinator.getState().status).toBe("pending-close");
+    expect(h.events()).toContain("app_update_activation_pending_close");
+    expect(h.events()).not.toContain("app_update_failed");
+    expect(h.reload).not.toHaveBeenCalled();
+
+    // The transaction is still observed: a late activation reloads exactly once.
+    waiting.setState("activated");
+    vi.advanceTimersByTime(300);
+    expect(h.reload).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("stops re-posting SKIP_WAITING once the worker acknowledges it", () => {
+    vi.useFakeTimers();
+    const h = makeHarness();
+    h.coordinator.attach(h.registration);
+    const waiting = makeWorker("installed");
+    h.registration.waiting = waiting;
+    h.registration.fireUpdateFound();
+
+    h.coordinator.applyUpdate();
+    vi.advanceTimersByTime(600); // two poll ticks while still `installed`
+    const beforeAck = waiting.posted.length;
+    expect(beforeAck).toBeGreaterThan(1);
+    waiting.setState("activating"); // acknowledged, promotion in progress
+    vi.advanceTimersByTime(1_000);
+    expect(waiting.posted).toHaveLength(beforeAck);
+    // And reposting is bounded even if the worker never acknowledges.
+    vi.useRealTimers();
+  });
+
+  it("keeps the member on the current version without reloading over new work", () => {
     vi.useFakeTimers();
     const h = makeHarness();
     h.coordinator.attach(h.registration);
@@ -215,15 +271,41 @@ describe("WO-145 update coordinator", () => {
 
     h.coordinator.applyUpdate();
     vi.advanceTimersByTime(5_001);
-    expect(h.coordinator.getState().status).toBe("failed");
-    expect(h.events()).toContain("app_update_failed");
-    expect(h.reload).not.toHaveBeenCalled();
+    expect(h.coordinator.getState().status).toBe("pending-close");
 
-    expect(h.coordinator.retry()).toBe("activating");
+    h.coordinator.continueOnCurrentVersion();
+    expect(h.coordinator.shouldPrompt()).toBe(false);
+    expect(h.coordinator.isActivationPending()).toBe(true);
+
+    // The member starts new work, then activation finally lands: no surprise
+    // reload — explicit approval is required.
+    h.setDirty(true);
     h.container.changeController();
+    expect(h.reload).not.toHaveBeenCalled();
+    expect(h.coordinator.getState().status).toBe("update-required");
+
+    expect(h.coordinator.reloadIfSafe({ force: true })).toBe("reloaded");
     expect(h.reload).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
+
+  it("opens exactly one activation transaction for repeated consent", () => {
+    vi.useFakeTimers();
+    const h = makeHarness();
+    h.coordinator.attach(h.registration);
+    const waiting = makeWorker("installed");
+    h.registration.waiting = waiting;
+    h.registration.fireUpdateFound();
+
+    expect(h.coordinator.applyUpdate()).toBe("activating");
+    expect(h.coordinator.applyUpdate()).toBe("activating");
+    expect(
+      h.events().filter((e) => e === "app_update_activation_requested"),
+    ).toHaveLength(1);
+    expect(waiting.posted).toHaveLength(1);
+    vi.useRealTimers();
+  });
+
 
   it("is a no-op when there is no waiting worker", () => {
     const h = makeHarness();
@@ -411,5 +493,38 @@ describe("WO-145F activation ordering", () => {
 
     expect(h.order()).toEqual(["commit", "reload"]);
     expect(h.reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+/* ---------- WO-145I: browser-held navigation ---------- */
+
+describe("WO-145I queued navigation", () => {
+  it("keeps escalating the status while the browser holds the reload", () => {
+    vi.useFakeTimers();
+    const h = makeHarness();
+    h.coordinator.attach(h.registration);
+    const waiting = makeWorker("installed");
+    h.registration.waiting = waiting;
+    h.registration.fireUpdateFound();
+
+    h.coordinator.applyUpdate({ force: true });
+    waiting.setState("activated");
+    waiting.fire();
+    expect(h.reload).toHaveBeenCalledTimes(1);
+    expect(h.coordinator.getState().reloadRequested).toBe(true);
+
+    // The document is still alive: the member must not be shown one frozen line.
+    vi.advanceTimersByTime(1_100);
+    expect(h.coordinator.getState().activationPhase).toBe("slow");
+    vi.advanceTimersByTime(2_100);
+    expect(h.coordinator.getState().activationPhase).toBe("very-slow");
+    vi.advanceTimersByTime(2_100);
+    expect(h.coordinator.getState().status).toBe("pending-close");
+
+    // Nothing can cancel a queued navigation, and there is never a second reload.
+    h.coordinator.continueOnCurrentVersion();
+    expect(h.coordinator.getState().status).toBe("pending-close");
+    expect(h.reload).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 });

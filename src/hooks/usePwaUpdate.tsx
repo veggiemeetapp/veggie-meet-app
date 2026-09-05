@@ -74,6 +74,9 @@ const IDLE_STATE: UpdateState = {
   otherClientsLikely: false,
   updateRequired: false,
   peerCount: 0,
+  activationPhase: "normal",
+  activationPending: false,
+  reloadRequested: false,
   lastCheckAt: null,
 };
 
@@ -93,10 +96,17 @@ interface PwaUpdateCtx {
   blockedByPeers: number;
   /** WO-145F: the identified blocking condition in another window. */
   peerBlocker: PeerBlocker;
+  /**
+   * WO-145I: an irreversible activation request is outstanding, so this client
+   * must not start new member work (edits, uploads, messages, mutations).
+   */
+  activationPending: boolean;
   checkNow: () => Promise<void>;
   updateNow: (options?: { force?: boolean }) => void;
   later: () => void;
   retry: () => void;
+  /** WO-145I: keep using this version while the browser finishes in its own time. */
+  continueOnCurrentVersion: () => void;
   notePromptShown: () => void;
 }
 
@@ -109,12 +119,15 @@ const Ctx = createContext<PwaUpdateCtx>({
   coordinating: false,
   blockedByPeers: 0,
   peerBlocker: null,
+  activationPending: false,
   checkNow: async () => {},
   updateNow: () => {},
   later: () => {},
   retry: () => {},
+  continueOnCurrentVersion: () => {},
   notePromptShown: () => {},
 });
+
 
 const CHANNEL_NAME = "veggiemeet-update";
 
@@ -549,6 +562,25 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     coordinator?.retry();
   }, [coordinator]);
 
+  /**
+   * WO-145I — the browser has not activated within the generous bound. The
+   * activation request stays outstanding (it cannot be cancelled), but this
+   * client returns to normal use: queries, realtime and analytics resume so the
+   * member can keep working on the version they already have. A later activation
+   * is honoured through the coordinator's safe path.
+   */
+  const continueOnCurrentVersion = useCallback(() => {
+    const txnId = txnRef.current;
+    if (txnId) {
+      endQuiesce(txnId, { queryClient: qc });
+      txnRef.current = null;
+    }
+    setUnsavedKinds([]);
+    setBlockedByPeers(0);
+    setPeerBlocker(null);
+    coordinator?.continueOnCurrentVersion();
+  }, [coordinator, qc]);
+
   const notePromptShown = useCallback(() => {
     coordinator?.notePromptShown();
   }, [coordinator]);
@@ -563,10 +595,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       coordinating,
       blockedByPeers,
       peerBlocker,
+      activationPending: state.activationPending,
       checkNow,
       updateNow,
       later,
       retry,
+      continueOnCurrentVersion,
       notePromptShown,
     }),
     // `tick` participates so a manual check refreshes derived values.
@@ -582,10 +616,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       updateNow,
       later,
       retry,
+      continueOnCurrentVersion,
       notePromptShown,
       tick,
     ],
   );
+
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
