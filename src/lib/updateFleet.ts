@@ -504,6 +504,12 @@ export class FleetCoordinator {
   async prepareFleet(txnId: string, options: { force?: boolean } = {}): Promise<PrepareResult> {
     this.leadingTxn = txnId;
     this.prepareAcks.clear();
+    // WO-145H — the *discovered* set is snapshotted before departures are
+    // removed, so `departed` below reports every client that was known to this
+    // transaction and is now gone. (Before this fix the snapshot already had
+    // departures removed, so `departed` was always empty and the post-departure
+    // stabilization phase could never trigger.)
+    const discovered = new Set([...this.peers, ...this.departed]);
     const expected = new Set(this.peers);
     this.expectedForTxn = expected;
     for (const id of this.departed) expected.delete(id);
@@ -552,7 +558,7 @@ export class FleetCoordinator {
     // A client that STILL EXISTS on the channel but never answered is treated as
     // unresponsive. A confirmed-closed client is excluded (WO-145G).
     const silent = this.outstandingFor(txnId);
-    const departed = [...expected].filter((id) => this.departed.has(id));
+    const departed = [...discovered].filter((id) => this.departed.has(id));
 
     let outcome: PrepareResult["outcome"] = "ready";
     if (dirty.length > 0 && !options.force) outcome = "blocked-dirty";
@@ -599,6 +605,26 @@ export class FleetCoordinator {
   /** WO-145G — anonymous transaction trace collected in this client. */
   traceEvents(): FleetTraceEvent[] {
     return [...this.traceLog];
+  }
+
+  /**
+   * WO-145H — which of `ids` (clients that had departed) are present on the
+   * channel again. A reappeared client must be re-admitted to the transaction
+   * and owe a *fresh* readiness answer before activation may start.
+   */
+  reappeared(ids: string[]): string[] {
+    return ids.filter((id) => this.peers.has(id) && !this.departed.has(id));
+  }
+
+  /**
+   * WO-145H — drop cached acknowledgements for `ids` so the next preparation
+   * round requires a fresh answer from them.
+   */
+  requireFreshReadiness(ids: string[]): void {
+    for (const id of ids) {
+      this.prepareAcks.delete(id);
+      this.expectedForTxn.add(id);
+    }
   }
 
 

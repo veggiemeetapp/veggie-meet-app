@@ -174,6 +174,8 @@ export class UpdateCoordinator {
   private reloaded = false;
   private activationTimer: ReturnType<typeof setTimeout> | null = null;
   private activationPoll: ReturnType<typeof setInterval> | null = null;
+  /** WO-145H — bounded nudge counter for the activation poll. */
+  private activationTicks = 0;
 
   private promptLoggedToken: number | null = null;
 
@@ -381,6 +383,7 @@ export class UpdateCoordinator {
     // no longer the registration's `waiting` worker, the new build is active and
     // the client may reload immediately. The bounded timeout below reports a
     // retryable failure for a worker that genuinely refuses to hand over.
+    this.activationTicks = 0;
     this.activationPoll = setInterval(() => {
       if (this.state.status !== "activating") {
         this.clearActivationPoll();
@@ -403,6 +406,20 @@ export class UpdateCoordinator {
         waiting.postMessage(SKIP_WAITING_MESSAGE);
       } catch {
         /* the worker went away; the promotion checks above settle this */
+      }
+      // WO-145H — measured on genuine builds: after a sibling window closes the
+      // outgoing worker can sit idle (no pending fetch, no clients but this one)
+      // and Chromium still deferred promotion for ~30s. Re-running the update
+      // algorithm re-evaluates the registration and lets the promotion land. It
+      // is non-destructive (never `unregister()`), idempotent and bounded to a
+      // couple of nudges so it can never become a loop.
+      this.activationTicks += 1;
+      if (this.activationTicks === 8 || this.activationTicks === 20) {
+        try {
+          void this.registration?.update?.();
+        } catch {
+          /* an unavailable update() simply means we keep polling */
+        }
       }
     }, ACTIVATION_POLL_MS);
 
