@@ -1,8 +1,13 @@
 import { memberSafeMessage } from "@/lib/errors";
 import { BackButton } from "@/components/app";
-import { safeBack } from "@/lib/navigation";
+import { canGoBackInApp, safeBack } from "@/lib/navigation";
+import {
+  resolveSettingsBack,
+  resolveSettingsSectionNavigation,
+  type SettingsLocationState,
+} from "@/lib/settingsNavigation";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -68,7 +73,8 @@ const SECTION_LABELS: Record<Section, string> = {
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const [params] = useSearchParams();
   const section = (params.get("section") as Section) || "hub";
   const qc = useQueryClient();
   const { refreshProfile } = useAuth();
@@ -82,16 +88,25 @@ export default function Settings() {
     logOnboardingEvent("settings_opened", { section });
   }, [section]);
 
+  // WO-145M: section navigation pushes exactly one entry for a subsection and
+  // REPLACES when returning to the hub, so Settings can never accumulate two
+  // entries that Back could cycle between.
   function go(s: Section) {
-    if (s === "hub") setParams({});
-    else setParams({ section: s });
+    const { to, replace, state } = resolveSettingsSectionNavigation(s);
+    navigate(to, { replace, state });
   }
 
   const title = SECTION_LABELS[section];
 
   const handleBack = () => {
-    if (section === "hub") safeBack(navigate, "/you");
-    else go("hub");
+    const action = resolveSettingsBack({
+      section,
+      cameFromSettingsHub:
+        (location.state as SettingsLocationState | null)?.settingsHub === true,
+      canGoBackInApp: canGoBackInApp(),
+    });
+    if (action.type === "history-back") safeBack(navigate, action.fallback);
+    else navigate(action.to, { replace: true });
   };
 
   const invalidate = () => {
