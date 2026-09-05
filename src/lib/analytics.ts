@@ -330,27 +330,21 @@ function deliver(
   resolve: () => void,
 ): void {
   try {
-
-            (supabase.rpc as unknown as (
-              n: string,
-              a?: Record<string, unknown>,
-            ) => { then: (ok: () => void, err: () => void) => void })
-              .call(supabase, "log_analytics_event", {
-                _event_name: event,
-                _properties: props,
-              })
-              .then(
-                () => resolve(),
-                () => resolve(),
-              );
-          } catch {
-            resolve();
-          }
-        }),
-      () => undefined,
-    );
+    (supabase.rpc as unknown as (
+      n: string,
+      a?: Record<string, unknown>,
+    ) => { then: (ok: () => void, err: () => void) => void })
+      .call(supabase, "log_analytics_event", {
+        _event_name: event,
+        _properties: props,
+      })
+      .then(
+        () => resolve(),
+        () => resolve(),
+      );
   } catch {
-    /* analytics is best-effort and must never affect a product flow */
+    resolve();
   }
 }
+
 
