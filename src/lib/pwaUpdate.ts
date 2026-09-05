@@ -37,8 +37,19 @@ export type UpdateStatus =
   | "available"
   | "activating"
   | "failed"
+  /**
+   * WO-145I — SKIP_WAITING has been sent and the browser has not activated the
+   * new worker within the generously bounded evidence-based interval. This is an
+   * environmental latency condition, never an application failure: the current
+   * screen keeps working and the transition completes on activation or on the
+   * next full close/reopen.
+   */
+  | "pending-close"
   /** WO-145B: a newer build activated in the fleet; this client must reload. */
   | "update-required";
+
+/** WO-145I — progressive, non-alarming member-facing activation phase. */
+export type ActivationPhase = "normal" | "slow" | "very-slow";
 
 export interface UpdateState {
   status: UpdateStatus;
@@ -56,6 +67,20 @@ export interface UpdateState {
   updateRequired: boolean;
   /** WO-145B: number of live sibling clients seen in the last census. */
   peerCount: number;
+  /** WO-145I: how long the pending activation has been running, in phases. */
+  activationPhase: ActivationPhase;
+  /**
+   * WO-145I: SKIP_WAITING has been sent for this session. The transition is
+   * irreversible: no new member work may start, and any later activation is
+   * honoured (immediately when safe, otherwise with explicit approval).
+   */
+  activationPending: boolean;
+  /**
+   * WO-145I: the reload for this transition has been requested. The browser may
+   * hold the navigation until the incoming worker finishes activating, so the
+   * update surface stays truthful instead of offering a cancel that cannot work.
+   */
+  reloadRequested: boolean;
   lastCheckAt: number | null;
 }
 
@@ -64,11 +89,15 @@ export type UpdateTelemetryEvent =
   | "app_update_prompt_shown"
   | "app_update_postponed"
   | "app_update_activation_requested"
+  | "app_update_activation_slow"
+  | "app_update_activation_pending_close"
+  | "app_update_activation_deferred"
   | "app_update_blocked_unsaved"
   | "app_update_controller_changed"
   | "app_update_reload_completed"
   | "app_update_failed"
   | "app_update_build_mismatch";
+
 
 export type CheckReason =
   | "launch"
@@ -128,35 +157,44 @@ export interface CoordinatorDeps {
 
 
   minCheckIntervalMs?: number;
-  activationTimeoutMs?: number;
+  /** WO-145I — when the copy moves from "Preparing" to "Finishing update…". */
+  activationSlowMs?: number;
+  /** WO-145I — when the "taking longer than usual" reassurance appears. */
+  activationVerySlowMs?: number;
+  /** WO-145I — generous bound after which the close/reopen outcome is offered. */
+  activationPendingCloseMs?: number;
 }
 
 const DEFAULT_MIN_CHECK_INTERVAL_MS = 60_000;
 /**
- * WO-145D: how long a posted SKIP_WAITING is given before the client reports a
- * recoverable failure.
+ * WO-145I — activation latency is browser-controlled, not application-controlled.
  *
- * Measured in Chromium against the real production builds: promotion normally
- * completes in ~250ms, but a document with in-flight requests still outstanding
- * (authenticated backend reads, a retrying request) can hold the outgoing worker
- * busy for several seconds — promotion then lands as soon as those settle. A
- * 2.5s budget reported a false failure in exactly that case, so the budget is
- * bounded but generous, and SKIP_WAITING is re-posted on every poll tick because
- * the message is one-shot and may be observed while the worker is still busy.
+ * Measured on genuine builds across 54 close-during-update runs: 53 activated in
+ * 1.9–4.3s and one in 31.3s with a provably stable client set and zero pending
+ * outgoing-worker requests. Treating the slow case as a failure produced the
+ * rejected "The update couldn't finish / try again" experience, and a blind retry
+ * is misleading while the original `skipWaiting()` may still complete.
  *
- * A stall past the budget is surfaced as a visible, retryable error with the
- * current build left working — never an unregister, and never a reload of a
- * client whose activation is still pending (measured in WO-145C to hang the
- * navigation).
+ * So SKIP_WAITING is a single irreversible transaction. These thresholds only
+ * change what the member is told:
+ *   - `SLOW`   → "Finishing update…";
+ *   - `VERY_SLOW` → "This is taking longer than usual…" (still safe, still waiting);
+ *   - `PENDING_CLOSE` → an honest outcome: the update finishes after VeggieMeet is
+ *     fully closed and reopened, or the member continues on the current version.
+ * The transaction keeps observing the worker lifecycle in every phase.
  */
-const DEFAULT_ACTIVATION_TIMEOUT_MS = 20_000;
+const DEFAULT_ACTIVATION_SLOW_MS = 5_000;
+const DEFAULT_ACTIVATION_VERY_SLOW_MS = 20_000;
+const DEFAULT_ACTIVATION_PENDING_CLOSE_MS = 90_000;
 /** How often the pending activation is re-checked against the registration. */
 const ACTIVATION_POLL_MS = 250;
-
-
-
-
-
+/**
+ * WO-145I — SKIP_WAITING is one-shot, so it is re-posted only until the waiting
+ * worker acknowledges it by leaving the `installed` state, and never beyond this
+ * bounded window. After that, one transaction state is retained and its lifecycle
+ * is observed — no indefinite reposting.
+ */
+const MAX_SKIP_WAITING_REPOSTS = 8;
 
 export const SKIP_WAITING_MESSAGE = { type: "SKIP_WAITING" } as const;
 
@@ -172,10 +210,14 @@ export class UpdateCoordinator {
   private tokenSeq = 0;
   private trackedWaiting: WorkerLike | null = null;
   private reloaded = false;
-  private activationTimer: ReturnType<typeof setTimeout> | null = null;
+  private phaseTimers: ReturnType<typeof setTimeout>[] = [];
   private activationPoll: ReturnType<typeof setInterval> | null = null;
   /** WO-145H — bounded nudge counter for the activation poll. */
   private activationTicks = 0;
+  /** WO-145I — reposts issued for the open transaction. */
+  private reposts = 0;
+  /** WO-145I — the worker of the single open activation transaction. */
+  private activationWorker: WorkerLike | null = null;
 
   private promptLoggedToken: number | null = null;
 
@@ -188,8 +230,12 @@ export class UpdateCoordinator {
     otherClientsLikely: false,
     updateRequired: false,
     peerCount: 0,
+    activationPhase: "normal",
+    activationPending: false,
+    reloadRequested: false,
     lastCheckAt: null,
   };
+
 
   constructor(deps: CoordinatorDeps) {
     this.deps = deps;
@@ -248,6 +294,12 @@ export class UpdateCoordinator {
     this.trackedWaiting = worker;
     this.tokenSeq += 1;
     this.deps.log("app_update_detected", { reason: "waiting_worker" });
+    // WO-145I — an open irreversible transaction is never downgraded to a fresh
+    // "available" prompt by a later detection: one transaction, one lifecycle.
+    if (this.state.activationPending) {
+      this.set({ waitingToken: this.tokenSeq });
+      return;
+    }
     this.set({
       status: "available",
       waitingToken: this.tokenSeq,
@@ -262,6 +314,7 @@ export class UpdateCoordinator {
     const s = this.state;
     if (
       s.status === "activating" ||
+      s.status === "pending-close" ||
       s.status === "failed" ||
       s.status === "update-required"
     )
@@ -272,6 +325,7 @@ export class UpdateCoordinator {
       s.waitingToken !== s.dismissedToken
     );
   }
+
 
   /** Called by the UI when the prompt becomes visible (one event per build). */
   notePromptShown(): void {
@@ -330,6 +384,12 @@ export class UpdateCoordinator {
    * Member chose "Update now".
    * Returns "blocked" when unsaved work exists — the caller shows the warning
    * and nothing is activated or reloaded.
+   *
+   * WO-145I — once this returns "activating", SKIP_WAITING has been sent and the
+   * transition is irreversible. It is never abandoned, never reported as a
+   * failure for slowness, and never retried blindly: the single transaction's
+   * lifecycle is observed until activation lands (immediately reloading when
+   * safe) or the member is offered the honest close-and-reopen outcome.
    */
   applyUpdate(options: { force?: boolean } = {}): "activating" | "blocked" | "noop" {
     // WO-145E: always address the registration's *current* waiting worker. The
@@ -341,6 +401,10 @@ export class UpdateCoordinator {
     const waiting = this.registration?.waiting ?? this.trackedWaiting;
     if (!waiting) return "noop";
 
+    // WO-145I — exactly one activation transaction per client. A second consent
+    // (repeated taps, a duplicate lifecycle message) joins the open one.
+    if (this.state.activationPending && this.activationWorker === waiting)
+      return "activating";
 
     if (!options.force && this.deps.hasUnsavedWork()) {
       this.deps.log("app_update_blocked_unsaved", {});
@@ -351,7 +415,15 @@ export class UpdateCoordinator {
     this.deps.log("app_update_activation_requested", {
       forced: options.force === true,
     });
-    this.set({ status: "activating", blockedByUnsavedWork: false });
+    this.activationWorker = waiting;
+    this.reposts = 0;
+    this.set({
+      status: "activating",
+      activationPending: true,
+      activationPhase: "normal",
+      reloadRequested: false,
+      blockedByUnsavedWork: false,
+    });
     this.deps.broadcast?.({ type: "activating" });
 
     // WO-145B: with `clientsClaim: false` the new worker activates without
@@ -360,7 +432,7 @@ export class UpdateCoordinator {
     // reload then boots this client wholly onto the new build.
     const onActivated = () => {
       if (waiting.state === "activated" || waiting.state === "redundant")
-        this.finishActivation("worker_activated");
+        this.onActivationLanded("worker_activated");
     };
     try {
       waiting.addEventListener("statechange", onActivated);
@@ -381,11 +453,10 @@ export class UpdateCoordinator {
     // reference, so the client sat on "Updating…" until the fallback fired.
     // Polling the registration is the authoritative check: once this worker is
     // no longer the registration's `waiting` worker, the new build is active and
-    // the client may reload immediately. The bounded timeout below reports a
-    // retryable failure for a worker that genuinely refuses to hand over.
+    // the client may reload immediately.
     this.activationTicks = 0;
     this.activationPoll = setInterval(() => {
-      if (this.state.status !== "activating") {
+      if (!this.state.activationPending || this.reloaded) {
         this.clearActivationPoll();
         return;
       }
@@ -395,17 +466,22 @@ export class UpdateCoordinator {
         waiting.state === "redundant" ||
         (reg !== null && reg.waiting !== waiting);
       if (promoted) {
-        this.finishActivation("worker_activated");
+        this.onActivationLanded("worker_activated");
         return;
       }
-      // WO-145E: `SKIP_WAITING` is one-shot and can be observed while the
-      // outgoing worker is still finishing work, in which case the promotion
-      // does not land. Re-posting on each tick is idempotent (`skipWaiting()`
-      // is latched) and promotion lands the moment the outgoing worker is free.
-      try {
-        waiting.postMessage(SKIP_WAITING_MESSAGE);
-      } catch {
-        /* the worker went away; the promotion checks above settle this */
+      // WO-145E/WO-145I: `SKIP_WAITING` is one-shot and can be observed while
+      // the outgoing worker is still finishing work, in which case the promotion
+      // does not land. Re-posting is idempotent (`skipWaiting()` is latched), but
+      // it stops as soon as the worker acknowledges by leaving `installed`, and
+      // in any case after a small bounded number of attempts — the transaction is
+      // then simply observed rather than re-driven.
+      if (waiting.state === "installed" && this.reposts < MAX_SKIP_WAITING_REPOSTS) {
+        this.reposts += 1;
+        try {
+          waiting.postMessage(SKIP_WAITING_MESSAGE);
+        } catch {
+          /* the worker went away; the promotion checks above settle this */
+        }
       }
       // WO-145H — measured on genuine builds: after a sibling window closes the
       // outgoing worker can sit idle (no pending fetch, no clients but this one)
@@ -423,22 +499,81 @@ export class UpdateCoordinator {
       }
     }, ACTIVATION_POLL_MS);
 
-
-
-
-
-    const timeout = this.deps.activationTimeoutMs ?? DEFAULT_ACTIVATION_TIMEOUT_MS;
-    this.activationTimer = setTimeout(() => {
-      this.activationTimer = null;
-      if (this.state.status !== "activating") return;
-      // WO-145E: no registration-removal fallback exists on this path, and no
-      // migration bridge ships. A stall here is a genuine failure and is
-      // surfaced as a retryable error with the current build left working.
-      this.fail("controller_timeout");
-    }, timeout);
+    // WO-145I — progressive, truthful status only. None of these timers cancels
+    // or retries the transaction.
+    const slow = this.deps.activationSlowMs ?? DEFAULT_ACTIVATION_SLOW_MS;
+    const verySlow = this.deps.activationVerySlowMs ?? DEFAULT_ACTIVATION_VERY_SLOW_MS;
+    const pendingClose =
+      this.deps.activationPendingCloseMs ?? DEFAULT_ACTIVATION_PENDING_CLOSE_MS;
+    this.phaseTimers = [
+      setTimeout(() => {
+        if (this.state.status !== "activating") return;
+        this.deps.log("app_update_activation_slow", { phase: "slow" });
+        this.set({ activationPhase: "slow" });
+      }, slow),
+      setTimeout(() => {
+        if (this.state.status !== "activating") return;
+        this.deps.log("app_update_activation_slow", { phase: "very_slow" });
+        this.set({ activationPhase: "very-slow" });
+      }, verySlow),
+      setTimeout(() => {
+        if (this.state.status !== "activating") return;
+        // Still pending, and still safe: the browser owns this latency. The
+        // member is told the truth — the update finishes after VeggieMeet is
+        // fully closed and reopened — and may continue on the current version.
+        this.deps.log("app_update_activation_pending_close", {});
+        this.set({ status: "pending-close", activationPhase: "very-slow" });
+      }, pendingClose),
+    ];
 
     return "activating";
   }
+
+  /**
+   * WO-145I — activation landed. Reload exactly once when it is safe; if the
+   * member has started new work since consenting (only possible after they chose
+   * to continue on the current version), wait for explicit approval instead of
+   * reloading over it.
+   */
+  private onActivationLanded(cause: string): void {
+    if (this.reloaded) return;
+    if (this.state.status === "activating" || this.state.status === "pending-close") {
+      this.finishActivation(cause);
+      return;
+    }
+    // The member continued on the current version and the promotion arrived
+    // later. Never reload unexpectedly over newly entered work.
+    if (!this.deps.hasUnsavedWork()) {
+      this.finishActivation(cause);
+      return;
+    }
+    this.deps.log("app_update_activation_deferred", { cause });
+    this.clearActivationPoll();
+    this.set({ status: "update-required", updateRequired: true });
+  }
+
+  /**
+   * WO-145I — the member chose "Continue on current version" after a browser-
+   * delayed activation. The transaction is not cancelled (it cannot be): it stays
+   * observed, and a later activation is handled by `onActivationLanded`.
+   */
+  continueOnCurrentVersion(): void {
+    if (this.state.status !== "pending-close") return;
+    // A queued navigation cannot be cancelled: never pretend otherwise.
+    if (this.state.reloadRequested) return;
+    this.clearPhaseTimers();
+    this.set({
+      status: "available",
+      dismissedToken: this.state.waitingToken,
+      blockedByUnsavedWork: false,
+    });
+  }
+
+  /** WO-145I — true while an irreversible activation request is outstanding. */
+  isActivationPending(): boolean {
+    return this.state.activationPending && !this.reloaded;
+  }
+
 
 
   /**
@@ -456,7 +591,8 @@ export class UpdateCoordinator {
     // never activates, and the member is stranded on "Updating…". Measured
     // repeatedly in WO-145E: this was the sole cause of the stalled consented
     // update. Let the activation path finish and reload exactly once.
-    if (this.state.status === "activating") return;
+    if (this.state.status === "activating" || this.state.status === "pending-close")
+      return;
     if (info.forced || !this.deps.hasUnsavedWork()) {
       this.finishActivation("fleet_commit");
       return;
@@ -464,6 +600,7 @@ export class UpdateCoordinator {
     this.deps.log("app_update_blocked_unsaved", { phase: "fleet_commit" });
     this.set({ status: "update-required", updateRequired: true });
   }
+
 
 
   /**
@@ -497,9 +634,6 @@ export class UpdateCoordinator {
     this.set({ status: "update-required", updateRequired: true });
   }
 
-  /** Reload exactly once for this client, for any activation path. */
-
-
   private clearActivationPoll(): void {
     if (this.activationPoll !== null) {
       clearInterval(this.activationPoll);
@@ -507,12 +641,14 @@ export class UpdateCoordinator {
     }
   }
 
+  private clearPhaseTimers(): void {
+    this.phaseTimers.forEach((t) => clearTimeout(t));
+    this.phaseTimers = [];
+  }
+
+  /** Reload exactly once for this client, for any activation path. */
   private finishActivation(cause: string): void {
     this.clearActivationPoll();
-    if (this.activationTimer !== null) {
-      clearTimeout(this.activationTimer);
-      this.activationTimer = null;
-    }
     if (this.reloaded) return;
     this.reloaded = true;
     this.deps.log("app_update_reload_completed", { cause });
@@ -523,24 +659,39 @@ export class UpdateCoordinator {
     } catch {
       /* a sibling notification must never block this client's reload */
     }
+    /*
+     * WO-145I — measured on genuine builds: when the outgoing worker leaves
+     * `waiting` but the incoming worker's `activate` handler is still running,
+     * Chromium *queues* this navigation until the promotion completes. The
+     * document keeps running (and keeps painting) meanwhile, so the progressive
+     * status timers are deliberately NOT cleared here: the member sees
+     * "Preparing update…", then "Finishing update…", then the honest
+     * close-and-reopen guidance, instead of one frozen line for 30 s.
+     */
+    this.set({ reloadRequested: true });
     this.deps.reload();
   }
 
-
-
+  /**
+   * WO-145I — reserved for the one genuine application-level failure: the
+   * consent could not even be delivered to the waiting worker. Browser-controlled
+   * activation latency is NEVER reported here.
+   */
   private fail(cause: string): void {
     this.clearActivationPoll();
+    this.clearPhaseTimers();
     this.deps.log("app_update_failed", { cause });
-    this.set({ status: "failed" });
+    this.set({ status: "failed", activationPending: false });
   }
 
-
-  /** Retry after a failed activation, without a second prompt cycle. */
+  /** Retry after a failed delivery, without a second prompt cycle. */
   retry(): "activating" | "blocked" | "noop" {
     if (this.state.status !== "failed") return "noop";
-    this.set({ status: "available" });
+    this.activationWorker = null;
+    this.set({ status: "available", activationPending: false });
     return this.applyUpdate({ force: true });
   }
+
 
   /**
    * The new worker now controls this client. Reload exactly once, and only for
@@ -552,9 +703,13 @@ export class UpdateCoordinator {
     // Only an activation THIS client asked for may reload it. A sibling tab's
     // activation is handled through the fleet protocol instead, so a member is
     // never yanked out of a form mid-edit.
-    if (this.state.status !== "activating") return;
-    this.finishActivation("controller_changed");
+    // WO-145I — a controllerchange that arrives long after consent (including
+    // after the member chose to continue on the current version) is honoured
+    // through the safe path: reload when nothing would be lost, otherwise ask.
+    if (!this.state.activationPending) return;
+    this.onActivationLanded("controller_changed");
   }
+
 
   /** WO-145B: record the live sibling count from the last fleet census. */
   notePeerCount(count: number): void {

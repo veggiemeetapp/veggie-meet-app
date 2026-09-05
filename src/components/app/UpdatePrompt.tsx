@@ -34,6 +34,7 @@ export function UpdatePrompt() {
     updateNow,
     later,
     retry,
+    continueOnCurrentVersion,
     notePromptShown,
   } = usePwaUpdate();
   const primaryRef = useRef<HTMLButtonElement | null>(null);
@@ -56,19 +57,32 @@ export function UpdatePrompt() {
 
   const required = state.status === "update-required";
   const activating = state.status === "activating";
+  // WO-145I — the browser has not activated within the generous bound. This is
+  // not a failure: the current screen is safe and the transition completes on
+  // activation or on the next full close/reopen.
+  const pendingClose = state.status === "pending-close";
+  /*
+   * WO-145I — the reload has been requested and the browser is holding the
+   * navigation until the incoming worker finishes activating. There is nothing
+   * truthful to cancel here, so the member is told what will happen instead.
+   */
+  const navigationQueued = pendingClose && state.reloadRequested;
   const failed = state.status === "failed";
+  // WO-145I — once consent is given the transition is irreversible, so the member
+  // stays on the controlled update surface and cannot start new work behind it.
+  const locked = activating || pendingClose;
 
   // Escape means "Later" only while there is something safe to postpone.
   useEffect(() => {
     if (!visible) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (activating || required) return;
+      if (locked || required) return;
       later();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [visible, activating, required, later]);
+  }, [visible, locked, required, later]);
 
   if (!visible) return null;
 
@@ -81,49 +95,81 @@ export function UpdatePrompt() {
   const offline = typeof navigator !== "undefined" && navigator.onLine === false;
   const warn = failed || blocked || peersBlocked || required || offline;
 
-  const title = peerUnprepared
-    ? "Another VeggieMeet window is open"
-    : failed
-      ? "The update couldn't finish"
-      : required
-        ? "This window needs to update"
-        : "A new version of VeggieMeet is available";
-
-  const body = peerUnprepared
-    ? "VeggieMeet is open in another window. Close that window, then try the update again."
-    : failed
-      ? "Your current version is still working. You can try again now or later."
-      : required
-        ? blocked
-          ? `A newer version is already running elsewhere. You have ${unsavedWorkSummary(unsavedKinds)} — finish or save it, then reload. Reload anyway to discard it.`
-          : "A newer version is now active. Reload this window to continue safely."
-        : offline
-          ? "You're offline. VeggieMeet keeps working on this version and will update when you're back online."
-          : peerUnsaved
-            ? "Another VeggieMeet window has unfinished work. The update will wait until it's saved or discarded there — or update anyway and lose it."
-            : blocked
-              ? `You have ${unsavedWorkSummary(unsavedKinds)}. Finish or save it first, or update anyway and lose it.`
-              : coordinating
-                ? "Getting your other VeggieMeet windows ready…"
-                : "Update now to get the latest improvements.";
-
-  const primaryLabel = activating
-    ? "Updating…"
-    : coordinating
-      ? "Preparing…"
+  const title = navigationQueued
+    ? "Still finishing your update"
+    : pendingClose
+    ? "Your update is ready to finish"
+    : activating
+      ? state.activationPhase === "normal"
+        ? "Preparing update…"
+        : state.activationPhase === "slow"
+          ? "Finishing update…"
+          : "Still finishing your update"
       : peerUnprepared
-        ? "Try again"
+        ? "Another VeggieMeet window is open"
         : failed
-          ? "Try again"
+          ? "The update couldn't finish"
+          : required
+            ? "This window needs to update"
+            : "A new version of VeggieMeet is available";
+
+  const body = navigationQueued
+    ? "The update will finish after VeggieMeet is fully closed and reopened. Your account and work are safe."
+    : pendingClose
+    ? "The update will finish after VeggieMeet is fully closed and reopened. Your account and work are safe. You can keep using the version you have until then."
+    : activating
+      ? state.activationPhase === "very-slow"
+        ? "This is taking longer than usual. VeggieMeet is keeping your current screen safe while the browser finishes the update."
+        : "Keep this window open — VeggieMeet is switching to the new version."
+      : peerUnprepared
+        ? "VeggieMeet is open in another window. Close that window, then try the update again."
+        : failed
+          ? "Your current version is still working. You can try again now or later."
           : required
             ? blocked
-              ? "Reload anyway"
-              : "Reload now"
-            : blocked || peerUnsaved
-              ? "Update anyway"
-              : "Update now";
+              ? `A newer version is already running elsewhere. You have ${unsavedWorkSummary(unsavedKinds)} — finish or save it, then reload. Reload anyway to discard it.`
+              : "A newer version is now active. Reload this window to continue safely."
+            : offline
+              ? "You're offline. VeggieMeet keeps working on this version and will update when you're back online."
+              : peerUnsaved
+                ? "Another VeggieMeet window has unfinished work. The update will wait until it's saved or discarded there — or update anyway and lose it."
+                : blocked
+                  ? `You have ${unsavedWorkSummary(unsavedKinds)}. Finish or save it first, or update anyway and lose it.`
+                  : coordinating
+                    ? "Getting your other VeggieMeet windows ready…"
+                    : "Update now to get the latest improvements.";
+
+  const primaryLabel = navigationQueued
+    ? "Close and reopen VeggieMeet"
+    : pendingClose
+    ? "Continue on current version"
+    : activating
+      ? "Updating…"
+      : coordinating
+        ? "Preparing…"
+        : peerUnprepared
+          ? "Try again"
+          : failed
+            ? "Try again"
+            : required
+              ? blocked
+                ? "Reload anyway"
+                : "Reload now"
+              : blocked || peerUnsaved
+                ? "Update anyway"
+                : "Update now";
 
   const onPrimary = () => {
+    // WO-145I — the reload is already queued behind the browser's promotion:
+    // closing and reopening VeggieMeet is the only thing that helps, and it is
+    // always safe because nothing is left half-written.
+    if (navigationQueued) {
+      window.close();
+      return;
+    }
+    // WO-145I — no blind retry while the original activation request may still
+    // complete: the only honest action is to keep using this version.
+    if (pendingClose) return continueOnCurrentVersion();
     // A specifically identified sibling blocker is retried as an ordinary,
     // non-forced update: closing that window is the resolution, not force.
     if (peerUnprepared) return updateNow();
@@ -134,17 +180,25 @@ export function UpdatePrompt() {
 
   const Icon = offline ? WifiOff : peersBlocked ? Users : warn ? AlertTriangle : RefreshCw;
 
+
   return (
     <div
       role="dialog"
-      aria-modal={required ? true : undefined}
+      aria-modal={required || locked ? true : undefined}
       aria-labelledby="app-update-title"
       aria-describedby="app-update-body"
       data-testid="app-update-prompt"
-      className="fixed inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none"
+      data-activation-phase={locked ? state.activationPhase : undefined}
+      className={`fixed inset-0 z-50 flex items-end justify-center ${
+        locked ? "" : "pointer-events-none"
+      }`}
     >
+      {/* WO-145I — after consent the transition is irreversible, so the member
+          stays on this controlled surface and cannot begin new edits, uploads or
+          messages behind it. Nothing is hidden: the screen stays visible. */}
+      {locked && <div className="absolute inset-0 bg-charcoal/10" aria-hidden />}
       <div
-        className="pointer-events-auto w-full max-w-phone p-3"
+        className="pointer-events-auto relative w-full max-w-phone p-3"
         style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       >
         <div className="rounded-card border border-border bg-card shadow-float p-4">
@@ -176,9 +230,14 @@ export function UpdatePrompt() {
                 className="mt-1 text-xs text-charcoal-muted break-words"
               >
                 {body}
-                {!failed && !required && !blocked && !peersBlocked && state.peerCount > 0 && (
-                  <> Your other VeggieMeet windows will update too.</>
-                )}
+                {!failed &&
+                  !required &&
+                  !locked &&
+                  !blocked &&
+                  !peersBlocked &&
+                  state.peerCount > 0 && (
+                    <> Your other VeggieMeet windows will update too.</>
+                  )}
               </p>
             </div>
           </div>
@@ -193,7 +252,7 @@ export function UpdatePrompt() {
             >
               {primaryLabel}
             </button>
-            {!required && (
+            {!required && !locked && (
               <button
                 type="button"
                 onClick={later}
@@ -205,6 +264,7 @@ export function UpdatePrompt() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
