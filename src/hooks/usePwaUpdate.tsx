@@ -236,12 +236,22 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       onPrepareCancel: (txnId) => {
         endQuiesce(txnId, { queryClient: qc });
       },
+      // WO-145G — anonymous, timestamped transaction trace. Counts, client ids
+      // (random per client) and outcomes only: never URLs, message content,
+      // auth material or request bodies. Kept in memory, capped, read-only.
+      onTrace: (entry) => {
+        const w = window as unknown as { __vmUpdateTrace?: unknown[] };
+        if (!Array.isArray(w.__vmUpdateTrace)) w.__vmUpdateTrace = [];
+        w.__vmUpdateTrace.push(entry);
+        if (w.__vmUpdateTrace.length > 200) w.__vmUpdateTrace.shift();
+      },
       onEscalate: () => {
         // WO-145E: same rule as the consented path — an outgoing worker with
         // realtime work in flight never hands over.
         quiesceBackendConnections();
         coordinator.applyUpdate({ force: false });
       },
+
     });
     fleetRef.current = fleet;
     fleet.start();
@@ -400,15 +410,30 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
             abandon("unsaved", result.dirty.length);
             return;
           }
-          // Unresponsive or unable sibling: recheck the browser's real client
-          // set before blaming a window that may already be gone.
-          const census = await requestClientCensus();
-          const stillThere = census === null || census.total > 1;
+          // WO-145G — a sibling that closed during preparation must never be
+          // read as an unresolved blocker. Re-derive the outstanding set (a
+          // confirmed departure has already left it), then take the worker's
+          // authoritative census twice, because a window that is tearing down
+          // can still appear in a single `clients.matchAll()` sample.
+          const outstanding = fleet.outstandingFor(txnId);
+          if (result.unable.length === 0 && outstanding.length === 0) {
+            proceed();
+            return;
+          }
+          const first = await requestClientCensus();
+          const second = first && first.total > 1 ? await requestClientCensus() : first;
+          const stillOutstanding = fleet.outstandingFor(txnId);
+          const censusSaysOthers = second === null ? null : second.total > 1;
+          const stillThere =
+            censusSaysOthers === null
+              ? stillOutstanding.length > 0 || result.unable.length > 0
+              : censusSaysOthers && (stillOutstanding.length > 0 || result.unable.length > 0);
           if (!stillThere) {
             proceed();
             return;
           }
-          abandon("unprepared", result.unable.length + result.silent.length);
+          abandon("unprepared", result.unable.length + stillOutstanding.length);
+
         })
         .catch(() => {
           setCoordinating(false);
