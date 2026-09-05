@@ -57,7 +57,8 @@ import {
   isQuiesced,
   quiesceBackendConnections,
 } from "@/lib/updateQuiesce";
-import { requestClientCensus } from "@/lib/swClientCensus";
+import { requestClientCensus, requestWorkerDiagnostics } from "@/lib/swClientCensus";
+import { awaitStabilization } from "@/lib/updateStabilization";
 
 
 
@@ -397,15 +398,96 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      /**
+       * WO-145H — a departure during preparation means the outgoing worker may
+       * still be finishing teardown work for the client that closed. Posting
+       * SKIP_WAITING into that window latches the request without promoting the
+       * worker, which is exactly the rejected "timeout then retry" outcome.
+       * Wait for a short, evidence-derived quiet interval in the authoritative
+       * client set AND the worker's own activity counters first. Any change
+       * restarts the interval; nothing here consumes the activation timeout.
+       * The no-departure path never enters this phase.
+       */
+      const stabilizeAfterDeparture = async (departedIds: string[]) => {
+        let admitted = departedIds;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const outcome = await awaitStabilization({
+            sample: async () => {
+              const census = await requestClientCensus();
+              const diag = await requestWorkerDiagnostics();
+              const activity = diag
+                ? // WO-145H — count only work the OUTGOING worker is actually
+                  // doing: request handling and install/activate lifecycle.
+                  // `message` and `skipWaitingRequests` are excluded because this
+                  // very sample is a message — including them made the counter
+                  // change on every tick and restarted the quiet interval forever.
+                  diag.fetchStarted +
+                  Object.values(diag.pendingBySource).reduce((a, b) => a + b, 0) +
+                  (diag.lifecycle.install ?? 0) +
+                  (diag.lifecycle.activate ?? 0)
+                : null;
+              const pending = diag
+                ? Object.values(diag.pendingBySource).reduce((a, b) => a + b, 0)
+                : null;
+              return {
+                clients: census ? census.total : null,
+                activity,
+                pending,
+                pendingBySource: diag?.pendingBySource,
+                outstanding: fleet.outstandingFor(txnId).length,
+                reappeared: fleet.reappeared(admitted).length > 0,
+                dirty: hasUnsavedWork() || qc.isMutating() > 0,
+              };
+            },
+            onTrace: (entry) => {
+              const w = window as unknown as { __vmUpdateTrace?: unknown[] };
+              if (!Array.isArray(w.__vmUpdateTrace)) w.__vmUpdateTrace = [];
+              w.__vmUpdateTrace.push({ ...entry, txnId, phase: "stabilize" });
+              if (w.__vmUpdateTrace.length > 400) w.__vmUpdateTrace.shift();
+            },
+          });
+          if (outcome.outcome !== "blocked") return outcome.outcome;
+          if (outcome.reason === "dirty") return "blocked";
+          // A departed client came back, or a discovered client still owes an
+          // answer: re-admit it and require a fresh readiness result.
+          const back = fleet.reappeared(admitted);
+          fleet.requireFreshReadiness(back);
+          admitted = [...admitted, ...back];
+          const again = await fleet.prepareFleet(txnId, { force });
+          if (again.outcome === "blocked-dirty") return "blocked";
+          if (again.outcome === "blocked-unprepared") return "unprepared";
+        }
+        return "unprepared";
+      };
+
       setCoordinating(true);
       void fleet
         .prepareFleet(txnId, { force })
         .then(async (result) => {
-          setCoordinating(false);
           if (result.outcome === "ready" || force) {
+            // WO-145H — enter stabilization whenever this transaction knew about
+            // any other client: one that already departed, or one that may depart
+            // (or start work) between now and the single SKIP_WAITING. A genuinely
+            // single-client update never enters the phase and stays fast.
+            if ((result.departed.length > 0 || result.expected.length > 0) && !force) {
+              const stable = await stabilizeAfterDeparture(result.departed);
+              setCoordinating(false);
+              if (stable === "blocked") {
+                abandon("unsaved", 1);
+                return;
+              }
+              if (stable === "unprepared") {
+                abandon("unprepared", 1);
+                return;
+              }
+              proceed();
+              return;
+            }
+            setCoordinating(false);
             proceed();
             return;
           }
+          setCoordinating(false);
           if (result.outcome === "blocked-dirty") {
             abandon("unsaved", result.dirty.length);
             return;
@@ -415,9 +497,21 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
           // confirmed departure has already left it), then take the worker's
           // authoritative census twice, because a window that is tearing down
           // can still appear in a single `clients.matchAll()` sample.
+          // WO-145H — a run that reached here through a departure stabilizes on
+          // the same terms before activation.
+          const settleThenProceed = async () => {
+            setCoordinating(true);
+            const stable = await stabilizeAfterDeparture(result.departed);
+            setCoordinating(false);
+            if (stable === "blocked") {
+              abandon("unsaved", 1);
+              return;
+            }
+            proceed();
+          };
           const outstanding = fleet.outstandingFor(txnId);
           if (result.unable.length === 0 && outstanding.length === 0) {
-            proceed();
+            await settleThenProceed();
             return;
           }
           const first = await requestClientCensus();
@@ -429,7 +523,7 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
               ? stillOutstanding.length > 0 || result.unable.length > 0
               : censusSaysOthers && (stillOutstanding.length > 0 || result.unable.length > 0);
           if (!stillThere) {
-            proceed();
+            await settleThenProceed();
             return;
           }
           abandon("unprepared", result.unable.length + stillOutstanding.length);
