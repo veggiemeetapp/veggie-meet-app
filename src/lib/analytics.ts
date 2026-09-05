@@ -306,18 +306,13 @@ export function logAnalyticsEvent(
       () =>
         new Promise<void>((resolve) => {
           try {
-            (supabase.rpc as unknown as (
-              n: string,
-              a?: Record<string, unknown>,
-            ) => { then: (ok: () => void, err: () => void) => void })
-              .call(supabase, "log_analytics_event", {
-                _event_name: event,
-                _properties: props,
-              })
-              .then(
-                () => resolve(),
-                () => resolve(),
-              );
+            // WO-145J — the trusted RPC is authenticated-only. A signed-out
+            // visitor must not generate a 401 in the console: analytics is an
+            // observation layer and simply has nothing to report yet.
+            void supabase.auth.getSession().then(({ data }) => {
+              if (!data.session) return resolve();
+              deliver(event, props, resolve);
+            }, () => resolve());
           } catch {
             resolve();
           }
@@ -328,4 +323,28 @@ export function logAnalyticsEvent(
     /* analytics is best-effort and must never affect a product flow */
   }
 }
+
+function deliver(
+  event: string,
+  props: Record<string, unknown>,
+  resolve: () => void,
+): void {
+  try {
+    (supabase.rpc as unknown as (
+      n: string,
+      a?: Record<string, unknown>,
+    ) => { then: (ok: () => void, err: () => void) => void })
+      .call(supabase, "log_analytics_event", {
+        _event_name: event,
+        _properties: props,
+      })
+      .then(
+        () => resolve(),
+        () => resolve(),
+      );
+  } catch {
+    resolve();
+  }
+}
+
 
