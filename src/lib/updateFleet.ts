@@ -101,6 +101,9 @@ export interface FleetDeps {
   onPrepare?: (txnId: string) => PrepareAck;
   /** WO-145F — the transaction ended without committing: restore normal work. */
   onPrepareCancel?: (txnId: string) => void;
+  /** WO-145G — anonymous, timestamped transaction trace for diagnostics. */
+  onTrace?: (event: FleetTraceEvent) => void;
+
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
   censusTimeoutMs?: number;
@@ -129,6 +132,24 @@ export interface ActivationDecision {
   leader: string;
 }
 
+/** WO-145G — one anonymous, timestamped step of an update transaction. */
+export interface FleetTraceEvent {
+  t: number;
+  txnId: string;
+  event:
+    | "prepare-sent"
+    | "ack"
+    | "departed"
+    | "resolved-complete"
+    | "resolved-timeout"
+    | "recheck"
+    | "cancelled"
+    | "commit";
+  /** Anonymous client id (random per client; never personal data). */
+  client?: string;
+  detail?: Record<string, string | number | boolean>;
+}
+
 /** WO-145F — result of the fleet-wide preparation phase for one transaction. */
 export interface PrepareResult {
   txnId: string;
@@ -146,9 +167,20 @@ export interface PrepareResult {
   unable: string[];
   /** Clients seen on the channel that never acknowledged in the window. */
   silent: string[];
+  /**
+   * WO-145G — clients that were discovered when the transaction opened but are
+   * confirmed gone (they said goodbye, or left the peer set). They are removed
+   * from the outstanding acknowledgement set and are never blockers.
+   */
+  departed: string[];
+  /** Clients discovered when the transaction opened. */
+  expected: string[];
   /** True when at least one blocking client reported itself visible. */
   blockerVisible: boolean;
+  /** Milliseconds spent in the preparation window. */
+  elapsedMs: number;
 }
+
 
 const DEFAULT_CENSUS_TIMEOUT_MS = 1_200;
 const DEFAULT_COMMIT_TIMEOUT_MS = 6_000;
@@ -197,6 +229,12 @@ export class FleetCoordinator {
   private prepareLeaseTimer: unknown = null;
   /** Commits already applied, so duplicate commit messages are inert. */
   private appliedCommits = new Set<string>();
+  /** WO-145G — clients confirmed gone (said goodbye or removed from the set). */
+  private departed = new Set<string>();
+  /** WO-145G — clients discovered when the current transaction opened. */
+  private expectedForTxn = new Set<string>();
+  private traceLog: FleetTraceEvent[] = [];
+
 
 
   constructor(deps: FleetDeps) {
@@ -255,11 +293,32 @@ export class FleetCoordinator {
 
   private notePeer(id: string): void {
     if (id === this.deps.clientId) return;
+    // WO-145G — a client that comes back is re-admitted, so a reappearing
+    // window with unsaved work can still veto the transaction.
+    this.departed.delete(id);
     if (!this.peers.has(id)) {
       this.peers.add(id);
       this.deps.onPeers?.(this.peers.size);
     }
   }
+
+  /** WO-145G — record one anonymous, timestamped transaction step. */
+  private trace(
+    txnId: string,
+    event: FleetTraceEvent["event"],
+    client?: string,
+    detail?: Record<string, string | number | boolean>,
+  ): void {
+    const entry: FleetTraceEvent = { t: Date.now(), txnId, event, client, detail };
+    this.traceLog.push(entry);
+    if (this.traceLog.length > 200) this.traceLog.shift();
+    try {
+      this.deps.onTrace?.(entry);
+    } catch {
+      /* diagnostics must never break the protocol */
+    }
+  }
+
 
   private adoptRound(round: number): void {
     if (round <= this.round) return;
@@ -291,7 +350,15 @@ export class FleetCoordinator {
         if (this.peers.delete(m.from)) this.deps.onPeers?.(this.peers.size);
         this.replies.delete(m.from);
         this.intents.delete(m.from);
+        // WO-145G — a confirmed departure is authoritative for the lifetime of
+        // the transaction: it is removed from the outstanding acknowledgement
+        // set instead of being mistaken for a frozen window. A client that
+        // reappears says "hello" again and is re-admitted by `notePeer`, and it
+        // will report `blocked` if it holds unsaved work.
+        this.departed.add(m.from);
+        if (this.leadingTxn) this.trace(this.leadingTxn, "departed", m.from);
         break;
+
       case "census":
         this.notePeer(m.from);
         // Two clients can start a round at almost the same instant. Adopting a
@@ -338,13 +405,16 @@ export class FleetCoordinator {
       case "prepare-ack":
         this.notePeer(m.from);
         // Duplicate acknowledgements collapse: the map is keyed by client id.
-        if (m.txnId === this.leadingTxn)
+        if (m.txnId === this.leadingTxn) {
           this.prepareAcks.set(m.from, { ack: m.ack, visible: m.visible });
+          this.trace(m.txnId, "ack", m.from, { ack: m.ack, visible: m.visible });
+        }
         break;
       case "prepare-cancel":
         this.notePeer(m.from);
         this.releasePrepare(m.txnId);
         break;
+
       case "commit": {
         this.notePeer(m.from);
         const key = m.txnId ?? `legacy:${m.from}`;
@@ -424,20 +494,36 @@ export class FleetCoordinator {
    * Accepting client: ask every same-origin VeggieMeet client to quiesce for
    * `txnId` and resolve once they have all answered — or once the bounded
    * preparation window elapses, whichever comes first.
+   *
+   * WO-145G — a client that closes mid-preparation is deterministic, not a
+   * blocker. The outstanding acknowledgement set is recomputed on every tick
+   * from `peers` minus `departed`, so the transaction resolves the instant the
+   * last *existing* client is ready instead of burning the whole window (and,
+   * worse, then treating the gone client as an unresponsive blocker).
    */
   async prepareFleet(txnId: string, options: { force?: boolean } = {}): Promise<PrepareResult> {
     this.leadingTxn = txnId;
     this.prepareAcks.clear();
     const expected = new Set(this.peers);
+    this.expectedForTxn = expected;
+    for (const id of this.departed) expected.delete(id);
 
     this.deps.channel.post({ type: "prepare", from: this.deps.clientId, txnId });
+    this.trace(txnId, "prepare-sent", undefined, { expected: expected.size });
 
     const timeout = this.deps.prepareTimeoutMs ?? DEFAULT_PREPARE_TIMEOUT_MS;
     const started = Date.now();
+    let timedOut = false;
     await new Promise<void>((resolve) => {
       const tick = () => {
-        const answered = [...expected].every((id) => this.prepareAcks.has(id));
-        if (answered || Date.now() - started >= timeout) {
+        // Recomputed every tick: departures shrink the set, so the wait ends.
+        const outstanding = this.outstandingFor(txnId);
+        if (outstanding.length === 0) {
+          resolve();
+          return;
+        }
+        if (Date.now() - started >= timeout) {
+          timedOut = true;
           resolve();
           return;
         }
@@ -451,6 +537,9 @@ export class FleetCoordinator {
     const unable: string[] = [];
     let blockerVisible = false;
     for (const [id, entry] of this.prepareAcks) {
+      // An acknowledgement from a client that has since closed cannot block:
+      // it no longer exists, so it holds no work and runs no requests.
+      if (this.departed.has(id)) continue;
       if (entry.ack === "ready") ready.push(id);
       else if (entry.ack === "blocked") {
         dirty.push(id);
@@ -460,17 +549,58 @@ export class FleetCoordinator {
         blockerVisible = blockerVisible || entry.visible;
       }
     }
-    // A client that is still on the channel but never answered is treated as
-    // unresponsive, never as absent: silently activating past it is what
-    // produced the unexplained 20 s stall this work order removes.
-    const silent = [...expected].filter((id) => !this.prepareAcks.has(id) && this.peers.has(id));
+    // A client that STILL EXISTS on the channel but never answered is treated as
+    // unresponsive. A confirmed-closed client is excluded (WO-145G).
+    const silent = this.outstandingFor(txnId);
+    const departed = [...expected].filter((id) => this.departed.has(id));
 
     let outcome: PrepareResult["outcome"] = "ready";
     if (dirty.length > 0 && !options.force) outcome = "blocked-dirty";
     else if (unable.length > 0 || silent.length > 0) outcome = "blocked-unprepared";
 
-    return { txnId, outcome, ready, dirty, unable, silent, blockerVisible };
+    const elapsedMs = Date.now() - started;
+    this.trace(txnId, timedOut ? "resolved-timeout" : "resolved-complete", undefined, {
+      outcome,
+      ready: ready.length,
+      dirty: dirty.length,
+      unable: unable.length,
+      silent: silent.length,
+      departed: departed.length,
+      elapsedMs,
+    });
+
+    return {
+      txnId,
+      outcome,
+      ready,
+      dirty,
+      unable,
+      silent,
+      departed,
+      expected: [...expected],
+      blockerVisible,
+      elapsedMs,
+    };
   }
+
+  /**
+   * WO-145G — the authoritative outstanding acknowledgement set for `txnId`:
+   * discovered clients that still exist on the channel, are not confirmed
+   * closed, and have not acknowledged. Callers use it to re-check a blocked
+   * outcome before blaming a window that has since been closed.
+   */
+  outstandingFor(txnId: string): string[] {
+    if (this.leadingTxn !== txnId) return [];
+    return [...this.expectedForTxn].filter(
+      (id) => !this.prepareAcks.has(id) && this.peers.has(id) && !this.departed.has(id),
+    );
+  }
+
+  /** WO-145G — anonymous transaction trace collected in this client. */
+  traceEvents(): FleetTraceEvent[] {
+    return [...this.traceLog];
+  }
+
 
   /** Abandon a transaction: every prepared client restores normal behaviour. */
   cancelPreparation(txnId: string): void {
@@ -482,6 +612,8 @@ export class FleetCoordinator {
       txnId,
     });
     this.releasePrepare(txnId);
+    this.trace(txnId, "cancelled");
+    this.expectedForTxn = new Set();
   }
 
   /** Test/inspection helper: is this client currently quiesced for a txn? */
@@ -546,6 +678,7 @@ export class FleetCoordinator {
       forced,
       txnId,
     });
+    this.trace(key, "commit", undefined, { forced });
   }
 
 }
