@@ -58,7 +58,7 @@ export default function You() {
   }, []);
   const { profile, loading, signOut, refreshProfile } = useAuth();
   const [tab, setTab] = useState<Tab>("hosting");
-  const [menuOpen, setMenuOpen] = useState(false);
+  
 
   // WO-087: one bounded, self-scoped RPC replaces the previous five direct
   // meetups/attendance reads (hosting, going, past ×3 sub-reads).
