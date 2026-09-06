@@ -404,53 +404,11 @@ export default function You() {
 
 
 
-      {/* Settings sheet */}
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl border-t border-border p-0">
-          <SheetHeader className="page-x pt-6 pb-2 text-left">
-            <SheetTitle className="text-lg font-semibold text-charcoal">
-              Settings
-            </SheetTitle>
-            <SheetDescription className="text-sm text-charcoal-muted">
-              A full settings experience is coming soon.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="page-x pt-3 space-y-1">
-            <SheetRow
-              icon={<Pencil className="w-5 h-5" />}
-              label="Edit Profile"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/you/edit");
-              }}
-            />
-            <SheetRow
-              icon={<ShieldCheck className="w-5 h-5" />}
-              label="Safety & Trust"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/safety");
-              }}
-            />
-            <SheetRow
-              icon={<SettingsIcon className="w-5 h-5" />}
-              label="Settings"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/settings");
-              }}
-            />
-          </div>
-          <div className="mt-4 border-t border-border page-x pt-3 pb-6">
-            <SheetRow
-              icon={<LogOut className="w-5 h-5" />}
-              label="Sign Out"
-              destructive
-              onClick={handleSignOut}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* WO-146: the intermediary Settings sheet was removed. The gear now
+          navigates straight to the canonical /settings screen; Edit Profile
+          keeps its prominent button above, Safety & Trust lives only under
+          Settings → Trust & policies, and Sign out lives in Settings →
+          Account. */}
     </>
   );
 }
