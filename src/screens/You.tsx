@@ -10,7 +10,6 @@ import {
   Handshake,
   Home,
   Leaf,
-  LogOut,
   MapPin,
   Pencil,
   ShieldCheck,
@@ -31,13 +30,6 @@ import {
   UserAvatar,
 } from "@/components/app";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { todayISO } from "@/lib/todayDate";
 import { toMeetupCardShape } from "@/lib/youSummary";
