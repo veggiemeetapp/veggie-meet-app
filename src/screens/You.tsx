@@ -155,8 +155,8 @@ export default function You() {
           <>
             <NotificationsBell />
             <button
-              onClick={() => setMenuOpen(true)}
-              aria-label="Profile settings"
+              onClick={() => navigate("/settings")}
+              aria-label="Open Settings"
               className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
             >
               <SettingsIcon className="w-5 h-5" />
