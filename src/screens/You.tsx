@@ -10,7 +10,6 @@ import {
   Handshake,
   Home,
   Leaf,
-  LogOut,
   MapPin,
   Pencil,
   ShieldCheck,
@@ -31,13 +30,6 @@ import {
   UserAvatar,
 } from "@/components/app";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { todayISO } from "@/lib/todayDate";
 import { toMeetupCardShape } from "@/lib/youSummary";
@@ -58,7 +50,7 @@ export default function You() {
   }, []);
   const { profile, loading, signOut, refreshProfile } = useAuth();
   const [tab, setTab] = useState<Tab>("hosting");
-  const [menuOpen, setMenuOpen] = useState(false);
+  
 
   // WO-087: one bounded, self-scoped RPC replaces the previous five direct
   // meetups/attendance reads (hosting, going, past ×3 sub-reads).
@@ -146,11 +138,6 @@ export default function You() {
     );
   }
 
-  async function handleSignOut() {
-    setMenuOpen(false);
-    await signOut();
-    navigate("/onboarding", { replace: true });
-  }
 
   return (
     <>
@@ -160,8 +147,8 @@ export default function You() {
           <>
             <NotificationsBell />
             <button
-              onClick={() => setMenuOpen(true)}
-              aria-label="Profile settings"
+              onClick={() => navigate("/settings")}
+              aria-label="Open Settings"
               className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
             >
               <SettingsIcon className="w-5 h-5" />
@@ -404,53 +391,11 @@ export default function You() {
 
 
 
-      {/* Settings sheet */}
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl border-t border-border p-0">
-          <SheetHeader className="page-x pt-6 pb-2 text-left">
-            <SheetTitle className="text-lg font-semibold text-charcoal">
-              Settings
-            </SheetTitle>
-            <SheetDescription className="text-sm text-charcoal-muted">
-              A full settings experience is coming soon.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="page-x pt-3 space-y-1">
-            <SheetRow
-              icon={<Pencil className="w-5 h-5" />}
-              label="Edit Profile"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/you/edit");
-              }}
-            />
-            <SheetRow
-              icon={<ShieldCheck className="w-5 h-5" />}
-              label="Safety & Trust"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/safety");
-              }}
-            />
-            <SheetRow
-              icon={<SettingsIcon className="w-5 h-5" />}
-              label="Settings"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/settings");
-              }}
-            />
-          </div>
-          <div className="mt-4 border-t border-border page-x pt-3 pb-6">
-            <SheetRow
-              icon={<LogOut className="w-5 h-5" />}
-              label="Sign Out"
-              destructive
-              onClick={handleSignOut}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* WO-146: the intermediary Settings sheet was removed. The gear now
+          navigates straight to the canonical /settings screen; Edit Profile
+          keeps its prominent button above, Safety & Trust lives only under
+          Settings → Trust & policies, and Sign out lives in Settings →
+          Account. */}
     </>
   );
 }
@@ -650,41 +595,6 @@ function formatShortDate(iso: string) {
   });
 }
 
-function SheetRow({
-  icon,
-  label,
-  hint,
-  onClick,
-  destructive,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  hint?: string;
-  onClick: () => void;
-  destructive?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-card hover:bg-accent/40 active:scale-[0.99] transition text-left",
-        destructive ? "text-destructive" : "text-charcoal"
-      )}
-    >
-      <span
-        className={cn(
-          "w-10 h-10 rounded-control flex items-center justify-center shrink-0",
-          destructive ? "bg-destructive/10" : "bg-muted"
-        )}
-      >
-        {icon}
-      </span>
-      <span className="flex-1 font-semibold">{label}</span>
-      {hint && <span className="text-xs text-charcoal-muted">{hint}</span>}
-    </button>
-  );
-}
 
 function PastMeetupsSection({
   loading,
