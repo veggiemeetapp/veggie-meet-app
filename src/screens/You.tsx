@@ -650,41 +650,6 @@ function formatShortDate(iso: string) {
   });
 }
 
-function SheetRow({
-  icon,
-  label,
-  hint,
-  onClick,
-  destructive,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  hint?: string;
-  onClick: () => void;
-  destructive?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-card hover:bg-accent/40 active:scale-[0.99] transition text-left",
-        destructive ? "text-destructive" : "text-charcoal"
-      )}
-    >
-      <span
-        className={cn(
-          "w-10 h-10 rounded-control flex items-center justify-center shrink-0",
-          destructive ? "bg-destructive/10" : "bg-muted"
-        )}
-      >
-        {icon}
-      </span>
-      <span className="flex-1 font-semibold">{label}</span>
-      {hint && <span className="text-xs text-charcoal-muted">{hint}</span>}
-    </button>
-  );
-}
 
 function PastMeetupsSection({
   loading,
