@@ -146,11 +146,6 @@ export default function You() {
     );
   }
 
-  async function handleSignOut() {
-    setMenuOpen(false);
-    await signOut();
-    navigate("/onboarding", { replace: true });
-  }
 
   return (
     <>
