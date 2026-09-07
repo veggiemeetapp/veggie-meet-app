@@ -248,6 +248,9 @@ export class UpdateCoordinator {
     activationPending: false,
     reloadRequested: false,
     lastCheckAt: null,
+    lastCheckOutcome: null,
+    remoteBuildId: null,
+
   };
 
 
