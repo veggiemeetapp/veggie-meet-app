@@ -337,7 +337,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     return startChunkRecovery({
       storage,
       buildId: LOADED_BUILD_ID,
-      reload: () => window.location.reload(),
+      // WO-145P — a recovery reload is also a hop: the next document must re-prove
+      // itself against the origin instead of assuming it landed on the latest build.
+      reload: () => {
+        markUpdateReload(updateSessionStore());
+        window.location.reload();
+      },
       onUpdateRequired: (cause) => coordinator.enterUpdateRequired(cause),
       log: (cause) => logAnalyticsEvent("app_update_build_mismatch", { cause }),
     });
