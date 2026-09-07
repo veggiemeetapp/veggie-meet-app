@@ -82,7 +82,21 @@ export interface UpdateState {
    */
   reloadRequested: boolean;
   lastCheckAt: number | null;
+  /**
+   * WO-145O — the honest, evidence-backed result of the most recent check.
+   * `null` = no check has completed in this session. Only "latest" may ever be
+   * presented as "You're on the latest version": it requires BOTH a successful
+   * registration update and a freshly fetched remote build id equal to the
+   * running one, with no installing/waiting worker.
+   */
+  lastCheckOutcome: CheckOutcome | null;
+  /** WO-145O — the build the origin served on the last successful check. */
+  remoteBuildId: string | null;
 }
+
+/** WO-145O — outcome of a single update check. */
+export type CheckOutcome = "latest" | "update-available" | "failed";
+
 
 export type UpdateTelemetryEvent =
   | "app_update_detected"
