@@ -25,9 +25,18 @@ describe("manual update check contract", () => {
     expect(hook).toContain("fetchRemoteBuildId: () => fetchDeployedBuildId()");
   });
 
+  it("WO-145P — an intermediate build can never be presented as latest", () => {
+    expect(coordinator).toContain("chainedUpdate");
+    expect(coordinator).toContain("convergenceStalled");
+    expect(settings).toContain("One more update to install");
+  });
+
   it("the coordinator awaits registration.update() and the remote marker", () => {
-    expect(coordinator).toContain("await reg.update()");
-    expect(coordinator).toContain("await this.deps.fetchRemoteBuildId()");
+    expect(coordinator).toContain("Promise.resolve(reg.update())");
+    // WO-145P — both authorities are bounded, so "Checking…" always ends.
+    expect(coordinator).toContain("registrationUpdateTimeoutMs");
+    expect(coordinator).toContain("remoteBuildTimeoutMs");
+    expect(coordinator).toContain("this.deps.fetchRemoteBuildId()");
     expect(coordinator).toContain("this.scanForWaiting()");
     // Consent-only activation and the single-reload lifecycle are untouched.
     expect(coordinator).not.toMatch(/\.unregister\s*\(/);

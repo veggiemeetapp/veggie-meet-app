@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sprout } from "lucide-react";
+import { bootedFromUpdateReload } from "@/lib/updateConvergence";
 
 /**
  * WO-121 — branded route-transition loading state.
@@ -17,6 +18,16 @@ import { Sprout } from "lucide-react";
  *   so post-navigation focus handling in `AppShell` stays correct.
  * - Motion collapses under `prefers-reduced-motion` (static bar, no pulse).
  */
+function updateReloadLabel(): string {
+  let store: Storage | null = null;
+  try {
+    store = window.sessionStorage;
+  } catch {
+    store = null;
+  }
+  return bootedFromUpdateReload(store) ? "Finishing your update…" : "Loading…";
+}
+
 export function RouteLoading({ delayMs = 150 }: { delayMs?: number }) {
   const [visible, setVisible] = useState(delayMs === 0);
 
@@ -43,7 +54,12 @@ export function RouteLoading({ delayMs = 150 }: { delayMs?: number }) {
       <div className="w-32 h-1 rounded-full bg-muted overflow-hidden">
         <div className="h-full w-1/2 rounded-full bg-primary motion-safe:animate-route-progress motion-reduce:w-full" />
       </div>
-      <p className="text-sm text-muted-foreground">Loading…</p>
+      {/* WO-145P — a document booted by an update reload must never show an
+          unexplained blank loading screen: the founder's installed client sat on
+          exactly this state for over two minutes with no explanation. */}
+      <p className="text-sm text-muted-foreground">
+        {updateReloadLabel()}
+      </p>
     </div>
   );
 }

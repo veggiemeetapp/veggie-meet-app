@@ -31,6 +31,7 @@
  * It is deliberately framework-free and fully dependency-injected so the whole
  * lifecycle is unit-testable without a real service worker.
  */
+import { MAX_CONVERGENCE_HOPS } from "@/lib/updateConvergence";
 
 export type UpdateStatus =
   | "idle"
@@ -92,10 +93,23 @@ export interface UpdateState {
   lastCheckOutcome: CheckOutcome | null;
   /** WO-145O — the build the origin served on the last successful check. */
   remoteBuildId: string | null;
+  /**
+   * WO-145P — this document booted from an update reload and the origin STILL
+   * serves a newer build: the browser promoted an intermediate waiting worker.
+   * The member is told one more update remains, never that this is the latest.
+   */
+  chainedUpdate: boolean;
+  /**
+   * WO-145P — the bounded hop budget is exhausted and the client is still behind
+   * the published build. Reported honestly; the member is never asked to keep
+   * pressing "Check for updates".
+   */
+  convergenceStalled: boolean;
 }
 
 /** WO-145O — outcome of a single update check. */
 export type CheckOutcome = "latest" | "update-available" | "failed";
+
 
 
 export type UpdateTelemetryEvent =
@@ -181,7 +195,28 @@ export interface CoordinatorDeps {
   runningBuildId?: string;
   fetchRemoteBuildId?: () => Promise<string | null>;
 
+  /**
+   * WO-145P — convergence context. `bootedFromUpdate` is true when THIS document
+   * was loaded by an update reload, and `convergenceHops` is how many such hops
+   * have happened without reaching the published build. Together they let a check
+   * say "one more update to install" instead of "latest" when the browser could
+   * only promote an intermediate waiting worker. `onConverged` is called once the
+   * running build provably equals the published build.
+   */
+  bootedFromUpdate?: () => boolean;
+  convergenceHops?: () => number;
+  onConverged?: () => void;
+
   minCheckIntervalMs?: number;
+
+  /**
+   * WO-145P — a manual check must always end. On the installed iOS client
+   * `registration.update()` stayed pending for over a minute, so "Checking…"
+   * never cleared. Both authorities are now bounded and a timeout is an honest,
+   * retryable failure — never "latest".
+   */
+  registrationUpdateTimeoutMs?: number;
+  remoteBuildTimeoutMs?: number;
 
   /** WO-145I — when the copy moves from "Preparing" to "Finishing update…". */
   activationSlowMs?: number;
@@ -192,6 +227,35 @@ export interface CoordinatorDeps {
 }
 
 const DEFAULT_MIN_CHECK_INTERVAL_MS = 60_000;
+/** WO-145P — bounds for the two check authorities. */
+export const DEFAULT_REGISTRATION_UPDATE_TIMEOUT_MS = 15_000;
+export const DEFAULT_REMOTE_BUILD_TIMEOUT_MS = 10_000;
+
+/** Resolve `promise`, or reject after `ms`. Never leaves a check hanging. */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  sleep: (ms: number) => Promise<void> = (d) =>
+    new Promise<void>((r) => setTimeout(r, d)),
+): Promise<T> {
+  let settled = false;
+  const timeout = sleep(ms).then(() => {
+    if (!settled) throw new Error("timeout");
+    return undefined as unknown as T;
+  });
+  try {
+    return await Promise.race([
+      promise.then((v) => {
+        settled = true;
+        return v;
+      }),
+      timeout,
+    ]);
+  } finally {
+    settled = true;
+  }
+}
+
 /**
  * WO-145I — activation latency is browser-controlled, not application-controlled.
  *
@@ -262,7 +326,8 @@ export class UpdateCoordinator {
     lastCheckAt: null,
     lastCheckOutcome: null,
     remoteBuildId: null,
-
+    chainedUpdate: false,
+    convergenceStalled: false,
   };
 
 
@@ -409,10 +474,15 @@ export class UpdateCoordinator {
 
     let updateFailed = false;
     try {
-      await reg.update();
+      // WO-145P — bounded: the installed iOS client left this pending for over a
+      // minute and "Checking…" never cleared.
+      await withTimeout(
+        Promise.resolve(reg.update()),
+        this.deps.registrationUpdateTimeoutMs ?? DEFAULT_REGISTRATION_UPDATE_TIMEOUT_MS,
+      );
     } catch {
-      // A failed check is never fatal: the current build keeps working and the
-      // next trigger retries. Offline checks land here routinely.
+      // A failed or timed-out check is never fatal: the current build keeps
+      // working and the next trigger retries. Offline checks land here routinely.
       updateFailed = true;
     }
 
@@ -428,7 +498,10 @@ export class UpdateCoordinator {
     if (this.deps.fetchRemoteBuildId) {
       remoteConsulted = true;
       try {
-        remote = await this.deps.fetchRemoteBuildId();
+        remote = await withTimeout(
+          Promise.resolve(this.deps.fetchRemoteBuildId()),
+          this.deps.remoteBuildTimeoutMs ?? DEFAULT_REMOTE_BUILD_TIMEOUT_MS,
+        );
       } catch {
         remote = null;
       }
@@ -446,6 +519,16 @@ export class UpdateCoordinator {
       outcome = "latest";
     }
 
+    /*
+     * WO-145P — convergence, not merely "newer". A registration has at most one
+     * waiting worker, so a client behind by two releases can only be promoted to
+     * the intermediate one. That is acceptable; declaring it current is not.
+     */
+    const bootedFromUpdate = this.deps.bootedFromUpdate?.() === true;
+    const hops = this.deps.convergenceHops?.() ?? 0;
+    const chained = remoteMismatch && bootedFromUpdate;
+    const stalled = chained && hops >= MAX_CONVERGENCE_HOPS;
+
     if (outcome === "update-available") {
       // A member-initiated check always re-offers a postponed build: "Later"
       // suppresses one prompt, never future manual checks.
@@ -457,8 +540,24 @@ export class UpdateCoordinator {
         this.enterUpdateRequired("remote_build_mismatch");
     }
 
-    this.set({ checking: false, lastCheckOutcome: outcome, remoteBuildId: remote });
+    // Provably running the published build: the hop chain is closed.
+    if (remote !== null && running !== null && remote === running) {
+      try {
+        this.deps.onConverged?.();
+      } catch {
+        /* bookkeeping must never break a check */
+      }
+    }
+
+    this.set({
+      checking: false,
+      lastCheckOutcome: outcome,
+      remoteBuildId: remote,
+      chainedUpdate: chained,
+      convergenceStalled: stalled,
+    });
     return !updateFailed;
+
   }
 
 
