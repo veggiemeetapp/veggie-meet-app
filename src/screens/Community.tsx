@@ -129,16 +129,17 @@ export default function Community() {
       ) : (
         <div className="pb-12 animate-fade-in">
 
-          {/* WO-096 DEF-096-05: "Near You"/"Nearby" implied device proximity,
-              but every list here is ranked by the member's chosen city — the app
-              never uses device location for discovery. Titles now say so. */}
+          {/* WO-147: headings are intentionally city-agnostic ("nearby") because
+              the selected city is already shown at the top of the page. The lists
+              are still ranked by the member's chosen city, not device location. */}
           <SectionHeader
             icon={Sprout}
-            title={`Meetups in ${cityTitle}`}
+            title="Meetups nearby"
             ctaLabel="View all"
             ctaTo="/community/meetups"
             ctaComingSoon
           />
+
           {meetupsQuery.isPending ? (
             <HScrollSkeleton />
           ) : meetupsQuery.isError ? (
