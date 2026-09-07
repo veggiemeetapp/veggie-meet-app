@@ -78,6 +78,9 @@ const IDLE_STATE: UpdateState = {
   activationPending: false,
   reloadRequested: false,
   lastCheckAt: null,
+  lastCheckOutcome: null,
+  remoteBuildId: null,
+
 };
 
 /** WO-145F — which specific sibling condition is blocking the update. */
