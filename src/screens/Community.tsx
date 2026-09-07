@@ -76,10 +76,9 @@ export default function Community() {
   const name = firstName(profile?.display_name);
   const hello = greeting(new Date().getHours());
   const cityLabel = selectedCity?.name ?? null;
-  // Titles are only rendered once a city is chosen; this keeps them safe anyway.
-  const cityTitle = cityLabel ?? "your city";
 
   const cityCoords = useMemo(
+
     () =>
       selectedCity && selectedCity.latitude != null && selectedCity.longitude != null
         ? { latitude: selectedCity.latitude, longitude: selectedCity.longitude }
@@ -130,16 +129,17 @@ export default function Community() {
       ) : (
         <div className="pb-12 animate-fade-in">
 
-          {/* WO-096 DEF-096-05: "Near You"/"Nearby" implied device proximity,
-              but every list here is ranked by the member's chosen city — the app
-              never uses device location for discovery. Titles now say so. */}
+          {/* WO-147: headings are intentionally city-agnostic ("nearby") because
+              the selected city is already shown at the top of the page. The lists
+              are still ranked by the member's chosen city, not device location. */}
           <SectionHeader
             icon={Sprout}
-            title={`Meetups in ${cityTitle}`}
+            title="Meetups nearby"
             ctaLabel="View all"
             ctaTo="/community/meetups"
             ctaComingSoon
           />
+
           {meetupsQuery.isPending ? (
             <HScrollSkeleton />
           ) : meetupsQuery.isError ? (
@@ -161,10 +161,11 @@ export default function Community() {
 
           <SectionHeader
             icon={Users}
-            title={`Veggies in ${cityTitle}`}
+            title="Veggies nearby"
             ctaLabel="Discover"
             ctaTo="/network?tab=meet-next"
           />
+
           {veggiesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (veggiesQuery.data ?? []).length === 0 ? (
@@ -183,10 +184,11 @@ export default function Community() {
           {/* Community Places */}
           <SectionHeader
             icon={Utensils}
-            title={`Community Places in ${cityTitle}`}
+            title="Community places nearby"
             ctaLabel="Explore"
             ctaTo="/community/places"
           />
+
           {placesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (placesQuery.data ?? []).length === 0 ? (
