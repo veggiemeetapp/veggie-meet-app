@@ -14,6 +14,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { PrimaryButton, BackButton } from "@/components/app";
+import { RouteLoading } from "@/components/app/RouteLoading";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { PlatformAvatarGallery } from "@/components/app/PlatformAvatarGallery";
 import { CitySelector } from "@/components/location/CitySelector";
@@ -116,7 +117,7 @@ export default function Onboarding() {
     return raw && ONBOARDING_STEP_ORDER.includes(raw) ? raw : null;
   }, [searchParams]);
 
-  const { session, profile, refreshProfile } = useAuth();
+  const { session, profile, refreshProfile, authGate } = useAuth();
   const setHomeCityMut = useSetHomeCity();
   const setSelectedMut = useSetSelectedCity();
 
@@ -214,11 +215,13 @@ export default function Onboarding() {
   const redirecting = !!profile && (!!nextPath || (profile.onboarding_completed && !resumeStep));
   useEffect(() => {
     if (redirecting) return;
+    // WO-145Q: a step view while auth is still restoring is not a real view.
+    if (authGate === "restoring") return;
     if (step !== "welcome" && step !== "auth" && !hydrated) return;
     if (lastLogged.current === step) return;
     lastLogged.current = step;
     logOnboardingEvent("onboarding_step_viewed", { step });
-  }, [step, hydrated, redirecting]);
+  }, [step, hydrated, redirecting, authGate]);
 
   const advance = useCallback(
     async (from: OnboardingStep, to: OnboardingStep, opts?: { skipped?: boolean }) => {
@@ -388,6 +391,15 @@ export default function Onboarding() {
       });
     }
   }
+
+  /**
+   * WO-145Q — never render the welcome/auth experience while a persisted session
+   * is still being restored. The founder's installed iPhone showed exactly this
+   * screen (telemetry `onboarding_step_viewed{step:"welcome"}` at 13:34:52Z and
+   * `{step:"auth"}` at 13:35:21Z) after a consented update reload, without ever
+   * signing out; the session restored on its own moments later.
+   */
+  if (authGate === "restoring") return <RouteLoading delayMs={0} />;
 
   return (
     <div className="flex flex-col min-h-dvh bg-background">

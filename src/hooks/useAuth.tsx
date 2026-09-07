@@ -5,6 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { clearStoredPermissions } from "@/lib/permissions";
 import { resetAnalyticsIdentity } from "@/lib/analytics";
 import { reconcileAccountMarker, removeProtectedQueries } from "@/lib/buildFreshness";
+import {
+  AUTH_HYDRATION_GRACE_MS,
+  classifyAuthGate,
+  hasPersistedAuthToken,
+  type AuthGate,
+} from "@/lib/authHydration";
 
 
 export type Profile = {
@@ -27,6 +33,13 @@ interface AuthCtx {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  /**
+   * WO-145Q — the only value route gates may branch on. `restoring` means
+   * authentication is still being resolved (including a persisted session whose
+   * refresh is still in flight after an update reload), so the signed-out
+   * experience must not render.
+   */
+  authGate: AuthGate;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -36,6 +49,7 @@ const Ctx = createContext<AuthCtx>({
   user: null,
   profile: null,
   loading: true,
+  authGate: "restoring",
   refreshProfile: async () => {},
   signOut: async () => {},
 });
@@ -44,6 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // WO-145Q — the profile fetch for the current session has settled (found or
+  // provably absent). A session without a settled profile must never be routed
+  // on: that is what redirected a fully onboarded member to onboarding.
+  const [profileResolved, setProfileResolved] = useState(false);
+  const [graceElapsed, setGraceElapsed] = useState(false);
   const qc = useQueryClient();
   // Track the previously observed auth user id so we can wipe React Query
   // caches on sign-out or same-device account switches. Without this the next
@@ -54,12 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Coalesce concurrent loads per auth user so one boot = one profile call.
   const profileFetchRef = useRef<{ userId: string; promise: Promise<void> } | null>(null);
   const loadedUserIdRef = useRef<string | null>(null);
+  /** WO-145Q — this device holds a persisted session (presence only). */
+  const persistedTokenRef = useRef(false);
+
 
   async function loadProfile(userId: string | undefined, force = false) {
     if (!userId) {
       profileFetchRef.current = null;
       loadedUserIdRef.current = null;
       setProfile(null);
+      setProfileResolved(false);
       return;
     }
     const inFlight = profileFetchRef.current;
@@ -73,10 +96,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadedUserIdRef.current = userId;
     })().finally(() => {
       if (profileFetchRef.current?.promise === promise) profileFetchRef.current = null;
+      // Settled either way: a failed read must not hold the member in a
+      // permanent loading state.
+      setProfileResolved(true);
     });
     profileFetchRef.current = { userId, promise };
     return promise;
   }
+
+  /**
+   * WO-145Q — bounded restore window. It runs only when this device actually
+   * holds a persisted session token, so a genuinely signed-out visitor reaches
+   * onboarding immediately.
+   */
+  useEffect(() => {
+    let persisted = false;
+    try {
+      persisted = hasPersistedAuthToken(window.localStorage, window.sessionStorage);
+    } catch {
+      persisted = false;
+    }
+    persistedTokenRef.current = persisted;
+    if (!persisted) {
+      setGraceElapsed(true);
+      return;
+    }
+    const t = window.setTimeout(() => setGraceElapsed(true), AUTH_HYDRATION_GRACE_MS);
+    return () => window.clearTimeout(t);
+  }, []);
+
 
   useEffect(() => {
     // Register listener first, then hydrate
@@ -127,6 +175,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     profile,
     loading,
+    authGate: classifyAuthGate({
+      loading,
+      hasSession: !!session,
+      profileResolved,
+      persistedToken: persistedTokenRef.current,
+      graceElapsed,
+    }),
     refreshProfile: async () => {
       await loadProfile(session?.user.id, true);
     },
@@ -136,6 +191,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // navigation to a signed-out screen.
       qc.clear();
       setProfile(null);
+      // WO-145Q: an explicit sign-out is conclusive — no restore window applies,
+      // so the signed-out experience renders immediately.
+      persistedTokenRef.current = false;
+      setGraceElapsed(true);
+      setProfileResolved(false);
       // WO-073: drop any pending post-auth deep-link hint so the next identity
       // on this tab never resumes into the previous member's destination.
       try {
