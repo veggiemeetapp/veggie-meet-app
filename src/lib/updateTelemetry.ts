@@ -83,19 +83,22 @@ export function readAuthGate(): AuthGate {
   return currentGate;
 }
 
-/** Normalises a worker-ish object into a presence value. */
-export function workerPresence(worker: { state?: string } | null | undefined): WorkerPresence {
-  const state = worker?.state;
-  if (!worker) return "none";
-  if (!state) return "unknown";
+const PRESENCE_BY_STATE: Readonly<Record<string, WorkerPresence>> = {
+  installing: "installing",
+  installed: "installed",
+  activating: "activating",
+  activated: "activated",
+};
 
-  if (
-    state === "installing" ||
-    state === "installed" ||
-    state === "activating" ||
-    state === "activated"
-  ) {
-    return state;
-  }
-  return "none";
+/**
+ * Normalises a worker-ish object into a presence value.
+ * - absent worker            -> "none"
+ * - present, state missing   -> "unknown"
+ * - present, unmapped state  -> "unknown" (never silently reported as absent)
+ */
+export function workerPresence(worker: { state?: string } | null | undefined): WorkerPresence {
+  if (!worker) return "none";
+  const state = worker.state;
+  if (!state) return "unknown";
+  return PRESENCE_BY_STATE[state] ?? "unknown";
 }
