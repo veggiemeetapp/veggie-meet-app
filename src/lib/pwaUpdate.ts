@@ -371,6 +371,25 @@ export class UpdateCoordinator {
 
   /* ---------- checks ---------- */
 
+  /**
+   * WO-145O — a check is only complete once BOTH authorities have answered:
+   *
+   *  1. `registration.update()` — resolves, and any resulting installing/waiting
+   *     worker is observed (an available worker is never ignored);
+   *  2. `/version.json`, fetched uncacheably — the build the origin serves.
+   *
+   * Outcomes are recorded in state and are the ONLY thing the UI may speak from:
+   *  - `update-available` — a waiting/installing worker exists, or the origin
+   *     serves a different build than this document is running (the installed
+   *     iOS failure mode: the worker script came from a cache, so no
+   *     `updatefound` ever fired while a successor was genuinely published);
+   *  - `latest` — proven equal build ids and no installing/waiting worker;
+   *  - `failed` — offline, timeout, non-OK, unparseable, or an update() error.
+   *     Never presented as "latest".
+   *
+   * Returns whether the check itself completed without error (kept boolean for
+   * the watcher/debounce contract); truth about the result lives in state.
+   */
   async checkForUpdate(reason: CheckReason): Promise<boolean> {
     const reg = this.registration;
     if (!reg) return false;
@@ -382,19 +401,66 @@ export class UpdateCoordinator {
     if (reason !== "manual" && last !== null && this.deps.now() - last < min)
       return false;
 
-    this.set({ checking: true, lastCheckAt: this.deps.now() });
+    this.set({
+      checking: true,
+      lastCheckAt: this.deps.now(),
+      lastCheckOutcome: null,
+    });
+
+    let updateFailed = false;
     try {
       await reg.update();
-      this.scanForWaiting();
-      return true;
     } catch {
       // A failed check is never fatal: the current build keeps working and the
       // next trigger retries. Offline checks land here routinely.
-      return false;
-    } finally {
-      this.set({ checking: false });
+      updateFailed = true;
     }
+
+    // An installing or waiting worker must never be ignored by a check.
+    this.scanForWaiting();
+    const workerAvailable =
+      !!reg.waiting || !!reg.installing || this.trackedWaiting !== null;
+
+    // The remote authority is consulted even when update() failed: an installed
+    // client can be provably stale while its worker script is served from cache.
+    let remote: string | null = null;
+    let remoteConsulted = false;
+    if (this.deps.fetchRemoteBuildId) {
+      remoteConsulted = true;
+      try {
+        remote = await this.deps.fetchRemoteBuildId();
+      } catch {
+        remote = null;
+      }
+    }
+    const running = this.deps.runningBuildId ?? null;
+    const remoteMismatch =
+      remote !== null && running !== null && remote !== running;
+
+    let outcome: CheckOutcome;
+    if (workerAvailable || remoteMismatch) {
+      outcome = "update-available";
+    } else if (updateFailed || (remoteConsulted && remote === null)) {
+      outcome = "failed";
+    } else {
+      outcome = "latest";
+    }
+
+    if (outcome === "update-available") {
+      // A member-initiated check always re-offers a postponed build: "Later"
+      // suppresses one prompt, never future manual checks.
+      if (reason === "manual" && this.state.dismissedToken !== null)
+        this.set({ dismissedToken: null });
+      // Provably stale with no waiting worker (cached worker script): converge
+      // through the existing member-consented, single-reload path.
+      if (!workerAvailable && remoteMismatch)
+        this.enterUpdateRequired("remote_build_mismatch");
+    }
+
+    this.set({ checking: false, lastCheckOutcome: outcome, remoteBuildId: remote });
+    return !updateFailed;
   }
+
 
   /* ---------- activation ---------- */
 
