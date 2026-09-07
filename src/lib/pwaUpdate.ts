@@ -170,7 +170,19 @@ export interface CoordinatorDeps {
 
 
 
+  /**
+   * WO-145O — the build id this running JavaScript belongs to, and a fetcher for
+   * the build id the origin currently serves. Together they are the authority a
+   * "latest" claim must be proven against: `registration.update()` alone can
+   * silently observe a cached worker script and produce a false "latest".
+   * When omitted (unit fixtures), no remote claim is made and no check may
+   * report "latest" on the strength of a remote comparison.
+   */
+  runningBuildId?: string;
+  fetchRemoteBuildId?: () => Promise<string | null>;
+
   minCheckIntervalMs?: number;
+
   /** WO-145I — when the copy moves from "Preparing" to "Finishing update…". */
   activationSlowMs?: number;
   /** WO-145I — when the "taking longer than usual" reassurance appears. */
