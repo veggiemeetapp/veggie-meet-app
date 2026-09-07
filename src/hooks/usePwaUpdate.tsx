@@ -50,6 +50,12 @@ import {
   reconcileBuildMarkers,
   refreshSessionCriticalQueries,
 } from "@/lib/buildFreshness";
+import {
+  bootedFromUpdateReload,
+  markUpdateReload,
+  noteConverged,
+  readHops,
+} from "@/lib/updateConvergence";
 import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
 import {
   beginQuiesce,
@@ -80,7 +86,8 @@ const IDLE_STATE: UpdateState = {
   lastCheckAt: null,
   lastCheckOutcome: null,
   remoteBuildId: null,
-
+  chainedUpdate: false,
+  convergenceStalled: false,
 };
 
 /** WO-145F — which specific sibling condition is blocking the update. */
@@ -134,6 +141,19 @@ const Ctx = createContext<PwaUpdateCtx>({
 
 const CHANNEL_NAME = "veggiemeet-update";
 
+/**
+ * WO-145P — session-scoped convergence bookkeeping. Two counters only: whether
+ * this document was booted by an update reload, and how many hops it has taken.
+ * Never auth material, never member data.
+ */
+function updateSessionStore(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
 export function PwaUpdateProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [tick, setTick] = useState(0);
@@ -153,7 +173,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
   if (supported && !coordinatorRef.current) {
     coordinatorRef.current = new UpdateCoordinator({
       container: navigator.serviceWorker as unknown as ContainerLike,
-      reload: () => window.location.reload(),
+      reload: () => {
+        // WO-145P — record the hop BEFORE reloading, so the next document knows
+        // it arrived from an update and must re-prove itself against the origin.
+        markUpdateReload(updateSessionStore());
+        window.location.reload();
+      },
       now: () => Date.now(),
       log: (event, properties) => logAnalyticsEvent(event, properties),
       // Active mutations count as work in progress: a reload mid-write would
@@ -166,6 +191,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // against a possibly cached worker script.
       runningBuildId: LOADED_BUILD_ID,
       fetchRemoteBuildId: () => fetchDeployedBuildId(),
+      // WO-145P — a client that arrived through an update reload and still finds
+      // a newer published build has landed on an INTERMEDIATE release. It must
+      // say "one more update to install", never "latest".
+      bootedFromUpdate: () => bootedFromUpdateReload(updateSessionStore()),
+      convergenceHops: () => readHops(updateSessionStore()),
+      onConverged: () => noteConverged(updateSessionStore()),
 
       // WO-145F: siblings converge only once the new build is genuinely active.
       onActivated: () => {
@@ -306,7 +337,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     return startChunkRecovery({
       storage,
       buildId: LOADED_BUILD_ID,
-      reload: () => window.location.reload(),
+      // WO-145P — a recovery reload is also a hop: the next document must re-prove
+      // itself against the origin instead of assuming it landed on the latest build.
+      reload: () => {
+        markUpdateReload(updateSessionStore());
+        window.location.reload();
+      },
       onUpdateRequired: (cause) => coordinator.enterUpdateRequired(cause),
       log: (cause) => logAnalyticsEvent("app_update_build_mismatch", { cause }),
     });

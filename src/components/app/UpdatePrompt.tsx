@@ -109,7 +109,9 @@ export function UpdatePrompt() {
         ? "Another VeggieMeet window is open"
         : failed
           ? "The update couldn't finish"
-          : required
+          : state.chainedUpdate
+            ? "One more update to install"
+            : required
             ? "This window needs to update"
             : "A new version of VeggieMeet is available";
 
@@ -125,7 +127,11 @@ export function UpdatePrompt() {
         ? "VeggieMeet is open in another window. Close that window, then try the update again."
         : failed
           ? "Your current version is still working. You can try again now or later."
-          : required
+          : state.convergenceStalled
+            ? "VeggieMeet keeps landing on an in-between version. This version is safe to keep using — please try again in a few minutes."
+            : state.chainedUpdate
+            ? "VeggieMeet installed an in-between version. Install the latest one now to finish."
+            : required
             ? blocked
               ? `A newer version is already running elsewhere. You have ${unsavedWorkSummary(unsavedKinds)} — finish or save it, then reload. Reload anyway to discard it.`
               : "A newer version is now active. Reload this window to continue safely."

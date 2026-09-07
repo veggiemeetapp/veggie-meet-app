@@ -268,13 +268,22 @@ function AboutSection() {
    */
   const updateAvailable =
     visible || state.status === "available" || state.updateRequired;
-  const message = updateAvailable
-    ? "An update is ready to install."
-    : state.lastCheckOutcome === "latest"
-      ? "You're on the latest version."
-      : state.lastCheckOutcome === "failed"
-        ? "We couldn't check for updates just now. Please check your connection and try again."
-        : "VeggieMeet updates itself. You can also check now.";
+  /**
+   * WO-145P — an intermediate build may never present itself as current. When
+   * this document arrived through an update reload and the origin still serves a
+   * newer build, the copy says exactly that.
+   */
+  const message = state.convergenceStalled
+    ? "VeggieMeet keeps landing on an in-between version. This version is safe to keep using — please try again in a few minutes."
+    : state.chainedUpdate
+      ? "One more update to install. VeggieMeet installed an in-between version first."
+      : updateAvailable
+        ? "An update is ready to install."
+        : state.lastCheckOutcome === "latest"
+          ? "You're on the latest version."
+          : state.lastCheckOutcome === "failed"
+            ? "We couldn't check for updates just now. Please check your connection and try again."
+            : "VeggieMeet updates itself. You can also check now.";
 
   return (
     <section aria-labelledby="about-heading" className="pt-6">
