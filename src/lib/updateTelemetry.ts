@@ -16,7 +16,13 @@
  */
 import type { AuthGate } from "@/lib/authHydration";
 
-export type WorkerPresence = "none" | "installing" | "installed" | "activating" | "activated";
+export type WorkerPresence =
+  | "none"
+  | "unknown"
+  | "installing"
+  | "installed"
+  | "activating"
+  | "activated";
 
 export interface UpdateTelemetry {
   running_build?: string;
