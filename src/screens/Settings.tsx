@@ -259,13 +259,22 @@ function Hub({ data, go }: { data: AccountSettings; go: (s: Section) => void }) 
 
 function AboutSection() {
   const { buildId, state, checkNow, updateNow, visible, supported } = usePwaUpdate();
-  const [checked, setChecked] = useState(false);
 
-  async function onCheck() {
-    setChecked(false);
-    await checkNow();
-    setChecked(true);
-  }
+  /**
+   * WO-145O — this copy speaks only from the coordinator's proven check outcome.
+   * The previous version said "You're on the latest version." as soon as the
+   * check call returned, which reported "latest" for a failed, offline or
+   * cache-served check — the physical installed-iPhone false-latest defect.
+   */
+  const updateAvailable =
+    visible || state.status === "available" || state.updateRequired;
+  const message = updateAvailable
+    ? "An update is ready to install."
+    : state.lastCheckOutcome === "latest"
+      ? "You're on the latest version."
+      : state.lastCheckOutcome === "failed"
+        ? "We couldn't check for updates just now. Please check your connection and try again."
+        : "VeggieMeet updates itself. You can also check now.";
 
   return (
     <section aria-labelledby="about-heading" className="pt-6">
@@ -280,24 +289,20 @@ function AboutSection() {
           <span className="text-sm font-semibold text-charcoal">Version</span>
           <span className="text-xs text-charcoal-muted font-mono break-all">{buildId}</span>
         </div>
-        <p className="text-xs text-charcoal-muted">
-          {visible || state.status === "available"
-            ? "An update is ready to install."
-            : checked
-              ? "You're on the latest version."
-              : "VeggieMeet updates itself. You can also check now."}
+        <p className="text-xs text-charcoal-muted" aria-live="polite">
+          {message}
         </p>
         <div className="flex gap-2">
           <SecondaryButton
             fullWidth
             disabled={state.checking || !supported}
             onClick={() => {
-              void onCheck();
+              void checkNow();
             }}
           >
             {state.checking ? "Checking…" : "Check for updates"}
           </SecondaryButton>
-          {state.status === "available" && (
+          {updateAvailable && (
             <PrimaryButton fullWidth onClick={() => updateNow()}>
               Update now
             </PrimaryButton>
@@ -307,6 +312,7 @@ function AboutSection() {
     </section>
   );
 }
+
 
 /* ---------- Profile ---------- */
 

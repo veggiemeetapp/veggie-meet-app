@@ -106,12 +106,24 @@ export function invalidateCriticalQueries(client: InvalidatorLike): number {
   return n;
 }
 
-/** The build id the origin currently serves, or null when unknown/offline. */
+/**
+ * The build id the origin currently serves, or null when unknown/offline.
+ *
+ * WO-145O — a false "You're on the latest version" was traced to this marker
+ * being answerable from a cache. `cache: "no-store"` alone is not sufficient in
+ * an installed iOS standalone client, so the request is ALSO made unique per
+ * call and sent with explicit revalidation headers. A response that cannot be
+ * proven fresh must resolve to `null`, never to a build id.
+ */
 export async function fetchDeployedBuildId(
   fetchFn: typeof fetch = fetch,
+  now: () => number = () => Date.now(),
 ): Promise<string | null> {
   try {
-    const res = await fetchFn("/version.json", { cache: "no-store" });
+    const res = await fetchFn(`/version.json?_=${now()}`, {
+      cache: "no-store",
+      headers: { "cache-control": "no-cache", pragma: "no-cache" },
+    });
     if (!res.ok) return null;
     const body = (await res.json()) as { buildId?: unknown };
     return typeof body.buildId === "string" && body.buildId ? body.buildId : null;
@@ -119,6 +131,7 @@ export async function fetchDeployedBuildId(
     return null;
   }
 }
+
 
 /** True when the origin serves a different build than this document loaded. */
 export function isBuildMismatch(
