@@ -56,6 +56,14 @@ import {
   noteConverged,
   readHops,
 } from "@/lib/updateConvergence";
+import {
+  classifyHandover,
+  clearConsent,
+  hasConsent,
+  noteAutoReload,
+  readAutoReloads,
+  recordConsent,
+} from "@/lib/updateHandover";
 import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
 import {
   beginQuiesce,
@@ -196,7 +204,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // say "one more update to install", never "latest".
       bootedFromUpdate: () => bootedFromUpdateReload(updateSessionStore()),
       convergenceHops: () => readHops(updateSessionStore()),
-      onConverged: () => noteConverged(updateSessionStore()),
+      onConverged: () => {
+        const store = updateSessionStore();
+        noteConverged(store);
+        // WO-145Q — the handover the member consented to is complete.
+        clearConsent(store);
+      },
 
       // WO-145F: siblings converge only once the new build is genuinely active.
       onActivated: () => {
@@ -382,6 +395,34 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     };
   }, [qc]);
 
+  /**
+   * WO-145Q — complete a consented handover.
+   *
+   * Physical failure: one consent, one reload, and the document that came back
+   * was still not the published build, so this client entered `update-required`
+   * and asked the founder to press "Reload now" again
+   * (`app_update_build_mismatch{cause:"remote_build_mismatch"}`, 13:35:38Z).
+   *
+   * The recorded consent pays for exactly one automatic completion. Unsaved work
+   * always wins, the budget is one, and nothing here unregisters, claims clients
+   * or signs anybody out.
+   */
+  useEffect(() => {
+    if (!coordinator) return;
+    const store = updateSessionStore();
+    const decision = classifyHandover({
+      updateRequired: state.updateRequired,
+      consented: hasConsent(store),
+      autoReloads: readAutoReloads(store),
+      dirty: hasUnsavedWork() || qc.isMutating() > 0,
+      reloadRequested: state.reloadRequested,
+    });
+    if (decision !== "auto-reload") return;
+    noteAutoReload(store);
+    logAnalyticsEvent("app_update_handover_reload", {});
+    coordinator.reloadIfSafe({ force: false });
+  }, [coordinator, qc, state.updateRequired, state.reloadRequested]);
+
   /* ---------- actions ---------- */
   const checkNow = useCallback(async () => {
     if (!coordinator) return;
@@ -425,6 +466,11 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       if (txnRef.current !== null) return;
       const txnId = `txn-${randomClientId()}`;
       txnRef.current = txnId;
+      // WO-145Q — the consent covers the whole handover, not just the first
+      // reload: if the document that boots from it is still provably stale, the
+      // handover completes automatically exactly once instead of degrading into
+      // a second "Reload now" the member never asked for.
+      recordConsent(updateSessionStore());
       setBlockedByPeers(0);
       setPeerBlocker(null);
 

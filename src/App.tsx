@@ -97,10 +97,18 @@ function LegacyPlaceCheckInRedirect() {
 
 
 function RequireOnboarded({ children }: { children: JSX.Element }) {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, authGate } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
+  /**
+   * WO-145Q — while authentication is still resolving the member sees an
+   * authenticated loading state, never a blank document and never the
+   * unauthenticated route. The founder's installed iPhone previously sat on a
+   * blank white screen for ~60s (this gate returned `null`) and then rendered
+   * the signed-out welcome screen while a valid session was still restoring.
+   */
+  if (authGate === "restoring") return <RouteLoading delayMs={0} />;
+
 
   // No session → onboarding/auth. We no longer honor the legacy
   // `veggiemeet_onboarded` localStorage flag: a stale flag on a shared or
