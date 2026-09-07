@@ -47,7 +47,6 @@ describe("update telemetry", () => {
   it("drops anything outside the allow-list, including personal data", () => {
     const out = sanitizeUpdateTelemetry({
       running_build: "B",
-      // @ts-expect-error deliberately hostile input
       email: "member@example.com",
       access_token: "secret",
       note: "member content",
@@ -60,7 +59,6 @@ describe("update telemetry", () => {
   it("never emits token- or credential-shaped keys", () => {
     const out = sanitizeUpdateTelemetry({
       running_build: "B",
-      // @ts-expect-error hostile input
       "sb-x-auth-token": "eyJ...",
     });
     expect(JSON.stringify(out)).not.toMatch(/token|auth-token|eyJ/);
