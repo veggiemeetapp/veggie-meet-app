@@ -162,6 +162,11 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // WO-145F: no scheduled/opportunistic check may start while this client is
       // quiesced for a transaction.
       isPaused: () => isQuiesced(),
+      // WO-145O: a "latest" claim must be proven against the origin, not merely
+      // against a possibly cached worker script.
+      runningBuildId: LOADED_BUILD_ID,
+      fetchRemoteBuildId: () => fetchDeployedBuildId(),
+
       // WO-145F: siblings converge only once the new build is genuinely active.
       onActivated: () => {
         const txnId = txnRef.current;
