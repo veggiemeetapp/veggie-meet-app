@@ -161,10 +161,11 @@ export default function Community() {
 
           <SectionHeader
             icon={Users}
-            title={`Veggies in ${cityTitle}`}
+            title="Veggies nearby"
             ctaLabel="Discover"
             ctaTo="/network?tab=meet-next"
           />
+
           {veggiesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (veggiesQuery.data ?? []).length === 0 ? (
@@ -183,10 +184,11 @@ export default function Community() {
           {/* Community Places */}
           <SectionHeader
             icon={Utensils}
-            title={`Community Places in ${cityTitle}`}
+            title="Community places nearby"
             ctaLabel="Explore"
             ctaTo="/community/places"
           />
+
           {placesQuery.isPending ? (
             <HScrollSkeleton />
           ) : (placesQuery.data ?? []).length === 0 ? (
