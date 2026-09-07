@@ -1,21 +1,29 @@
 /**
- * WO-145Q — regression cover for the second-reload defect: one consent produced
- * one reload, the returning document was still not the published build, and the
- * app raised "This window needs to update … Reload now"
- * (`app_update_build_mismatch{cause:"remote_build_mismatch"}` from 13:35:38Z).
+ * WO-145Q CORRECTION — the bounded update session.
+ *
+ * Physical failure: one consent produced one reload, the returning document was
+ * still not the published build, and the app raised "This window needs to update
+ * … Reload now" (`app_update_build_mismatch{cause:"remote_build_mismatch"}` from
+ * 13:35:38Z).
+ *
+ * Honest contract pinned here: one "Update now" authorises AT MOST TWO
+ * controlled document reloads in total — the consent reload plus one automatic
+ * completion reload — subject to unsaved-work and multi-window safety.
  */
 import { beforeEach, describe, expect, it } from "vitest";
 import { readFileSync } from "fs";
 import {
-  HANDOVER_CONSENT_KEY,
-  HANDOVER_RELOADS_KEY,
-  MAX_HANDOVER_AUTO_RELOADS,
+  MAX_AUTOMATIC_COMPLETION_RELOADS,
+  MAX_UPDATE_SESSION_RELOADS,
+  UPDATE_SESSION_KEY,
+  UPDATE_SESSION_RELOADS_KEY,
   classifyHandover,
-  clearConsent,
-  hasConsent,
-  noteAutoReload,
-  readAutoReloads,
-  recordConsent,
+  endUpdateSession,
+  isUpdateSessionActive,
+  noteSessionReload,
+  readSessionReloads,
+  startUpdateSession,
+  updateSessionId,
 } from "@/lib/updateHandover";
 
 function memoryStorage(initial: Record<string, string> = {}) {
@@ -28,64 +36,83 @@ function memoryStorage(initial: Record<string, string> = {}) {
   };
 }
 
-describe("WO-145Q consent-carried handover", () => {
+describe("bounded update session budget", () => {
   let store = memoryStorage();
   beforeEach(() => {
     store = memoryStorage();
   });
 
-  it("records and clears consent without touching anything else", () => {
-    recordConsent(store);
-    expect(store.map.get(HANDOVER_CONSENT_KEY)).toBe("1");
-    expect(hasConsent(store)).toBe(true);
-    clearConsent(store);
-    expect(hasConsent(store)).toBe(false);
+  it("states the exact maximum: two controlled reloads per consent", () => {
+    expect(MAX_UPDATE_SESSION_RELOADS).toBe(2);
+    expect(MAX_AUTOMATIC_COMPLETION_RELOADS).toBe(1);
+  });
+
+  it("opens and closes a session without touching anything else", () => {
+    const id = startUpdateSession(store, "upd-test");
+    expect(id).toBe("upd-test");
+    expect(store.map.get(UPDATE_SESSION_KEY)).toBe("upd-test");
+    expect(store.map.get(UPDATE_SESSION_RELOADS_KEY)).toBe("0");
+    expect(isUpdateSessionActive(store)).toBe(true);
+    expect(updateSessionId(store)).toBe("upd-test");
+    endUpdateSession(store);
+    expect(isUpdateSessionActive(store)).toBe(false);
     expect(store.map.size).toBe(0);
   });
 
-  it("completes a consented handover automatically exactly once", () => {
-    recordConsent(store);
+  it("counts the consent reload, then permits exactly one completion reload", () => {
+    startUpdateSession(store);
+
+    // Reload 1 — the consent reload itself.
+    expect(noteSessionReload(store)).toBe(1);
+
+    // Landed on an intermediate build: the session completes itself once.
     expect(
       classifyHandover({
         updateRequired: true,
-        consented: hasConsent(store),
-        autoReloads: readAutoReloads(store),
+        sessionActive: isUpdateSessionActive(store),
+        reloadsUsed: readSessionReloads(store),
         dirty: false,
       }),
     ).toBe("auto-reload");
 
-    expect(noteAutoReload(store)).toBe(MAX_HANDOVER_AUTO_RELOADS);
-    // The consent is consumed, so a non-converging origin cannot loop.
-    expect(hasConsent(store)).toBe(false);
-    expect(store.map.get(HANDOVER_RELOADS_KEY)).toBe("1");
+    // Reload 2 — the automatic completion. Total for this consent: TWO.
+    expect(noteSessionReload(store)).toBe(MAX_UPDATE_SESSION_RELOADS);
+
+    // Budget spent: a still-stale origin asks the member, it never loops.
     expect(
       classifyHandover({
         updateRequired: true,
-        consented: hasConsent(store),
-        autoReloads: readAutoReloads(store),
+        sessionActive: isUpdateSessionActive(store),
+        reloadsUsed: readSessionReloads(store),
         dirty: false,
       }),
     ).toBe("prompt");
   });
 
+  it("never counts reloads outside an open session", () => {
+    expect(noteSessionReload(store)).toBe(0);
+    expect(readSessionReloads(store)).toBe(0);
+  });
+
   it("never reloads over unsaved work — it asks", () => {
-    recordConsent(store);
+    startUpdateSession(store);
+    noteSessionReload(store);
     expect(
       classifyHandover({
         updateRequired: true,
-        consented: true,
-        autoReloads: 0,
+        sessionActive: true,
+        reloadsUsed: 1,
         dirty: true,
       }),
     ).toBe("prompt");
   });
 
-  it("never reloads without consent on record", () => {
+  it("never reloads when no session is on record", () => {
     expect(
       classifyHandover({
         updateRequired: true,
-        consented: false,
-        autoReloads: 0,
+        sessionActive: false,
+        reloadsUsed: 0,
         dirty: false,
       }),
     ).toBe("prompt");
@@ -93,13 +120,18 @@ describe("WO-145Q consent-carried handover", () => {
 
   it("does nothing when this client is not stale, or already reloading", () => {
     expect(
-      classifyHandover({ updateRequired: false, consented: true, autoReloads: 0, dirty: false }),
+      classifyHandover({
+        updateRequired: false,
+        sessionActive: true,
+        reloadsUsed: 1,
+        dirty: false,
+      }),
     ).toBe("none");
     expect(
       classifyHandover({
         updateRequired: true,
-        consented: true,
-        autoReloads: 0,
+        sessionActive: true,
+        reloadsUsed: 1,
         dirty: false,
         reloadRequested: true,
       }),
@@ -107,27 +139,35 @@ describe("WO-145Q consent-carried handover", () => {
   });
 
   it("degrades to the explicit prompt when storage is unavailable", () => {
-    recordConsent(null);
-    expect(hasConsent(null)).toBe(false);
-    expect(readAutoReloads(null)).toBe(0);
-    expect(noteAutoReload(null)).toBe(0);
+    expect(startUpdateSession(null).startsWith("upd-")).toBe(true);
+    expect(isUpdateSessionActive(null)).toBe(false);
+    expect(readSessionReloads(null)).toBe(0);
+    expect(noteSessionReload(null)).toBe(0);
   });
 });
 
-describe("WO-145Q handover wiring", () => {
+describe("update-session wiring", () => {
   const provider = readFileSync("src/hooks/usePwaUpdate.tsx", "utf8");
 
-  it("records the consent before the update reload", () => {
-    expect(provider).toMatch(/recordConsent\(updateSessionStore\(\)\)/);
+  it("opens the session on the member's consent", () => {
+    expect(provider).toMatch(/startUpdateSession\(updateSessionStore\(\)\)/);
   });
 
-  it("completes the handover through the safe single-reload path", () => {
+  it("counts every controlled reload, including the consent reload", () => {
+    expect(provider).toMatch(/noteSessionReload\(store\)/);
+  });
+
+  it("completes the session through the safe single-reload path", () => {
     expect(provider).toMatch(/classifyHandover\(\{/);
     expect(provider).toMatch(/coordinator\.reloadIfSafe\(\{ force: false \}\)/);
   });
 
-  it("clears the consent once the client is proven current", () => {
-    expect(provider).toMatch(/clearConsent\(store\)/);
+  it("enforces the ceiling independently of the decision function", () => {
+    expect(provider).toMatch(/readSessionReloads\(store\) >= MAX_UPDATE_SESSION_RELOADS/);
+  });
+
+  it("ends the session once the client is proven current", () => {
+    expect(provider).toMatch(/endUpdateSession\(store\)/);
   });
 
   it("adds no takeover mechanism", () => {

@@ -14,6 +14,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { PrimaryButton, BackButton } from "@/components/app";
+import { AuthRestoring } from "@/components/app/AuthRestoring";
 import { RouteLoading } from "@/components/app/RouteLoading";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { PlatformAvatarGallery } from "@/components/app/PlatformAvatarGallery";
@@ -216,7 +217,7 @@ export default function Onboarding() {
   useEffect(() => {
     if (redirecting) return;
     // WO-145Q: a step view while auth is still restoring is not a real view.
-    if (authGate === "restoring") return;
+    if (authGate === "restoring" || authGate === "delayed") return;
     if (step !== "welcome" && step !== "auth" && !hydrated) return;
     if (lastLogged.current === step) return;
     lastLogged.current = step;
@@ -399,7 +400,9 @@ export default function Onboarding() {
    * `{step:"auth"}` at 13:35:21Z) after a consented update reload, without ever
    * signing out; the session restored on its own moments later.
    */
-  if (authGate === "restoring") return <RouteLoading delayMs={0} />;
+  if (authGate === "restoring" || authGate === "delayed") {
+    return <AuthRestoring delayed={authGate === "delayed"} />;
+  }
 
   return (
     <div className="flex flex-col min-h-dvh bg-background">

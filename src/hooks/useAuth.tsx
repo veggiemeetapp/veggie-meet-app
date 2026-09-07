@@ -11,6 +11,7 @@ import {
   hasPersistedAuthToken,
   type AuthGate,
 } from "@/lib/authHydration";
+import { noteAuthGate } from "@/lib/updateTelemetry";
 
 
 export type Profile = {
@@ -41,6 +42,8 @@ interface AuthCtx {
    */
   authGate: AuthGate;
   refreshProfile: () => Promise<void>;
+  /** WO-145Q — retry a delayed restoration without touching member data. */
+  retryRestore: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -51,6 +54,7 @@ const Ctx = createContext<AuthCtx>({
   loading: true,
   authGate: "restoring",
   refreshProfile: async () => {},
+  retryRestore: async () => {},
   signOut: async () => {},
 });
 
@@ -63,6 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // on: that is what redirected a fully onboarded member to onboarding.
   const [profileResolved, setProfileResolved] = useState(false);
   const [graceElapsed, setGraceElapsed] = useState(false);
+  // WO-145Q CORRECTION — an explicit sign-out is the ONLY thing that makes the
+  // signed-out experience correct for a device that held a session.
+  const [explicitSignOut, setExplicitSignOut] = useState(false);
   const qc = useQueryClient();
   // Track the previously observed auth user id so we can wipe React Query
   // caches on sign-out or same-device account switches. Without this the next
@@ -73,8 +80,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Coalesce concurrent loads per auth user so one boot = one profile call.
   const profileFetchRef = useRef<{ userId: string; promise: Promise<void> } | null>(null);
   const loadedUserIdRef = useRef<string | null>(null);
-  /** WO-145Q — this device holds a persisted session (presence only). */
-  const persistedTokenRef = useRef(false);
+  /**
+   * WO-145Q CORRECTION — this device holds a persisted session (presence only).
+   * Computed synchronously on the very first render, so the gate can never see
+   * "no persisted session" for a device that has one — that ordering is what
+   * allowed the signed-out welcome screen to render during restoration.
+   */
+  const [persistedToken, setPersistedToken] = useState<boolean>(() => {
+    try {
+      return hasPersistedAuthToken(window.localStorage, window.sessionStorage);
+    } catch {
+      return false;
+    }
+  });
 
 
   async function loadProfile(userId: string | undefined, force = false) {
@@ -116,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       persisted = false;
     }
-    persistedTokenRef.current = persisted;
+    setPersistedToken((prev) => prev || persisted);
     if (!persisted) {
       setGraceElapsed(true);
       return;
@@ -170,20 +188,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, [qc]);
 
+  const authGate = classifyAuthGate({
+    loading,
+    hasSession: !!session,
+    profileResolved,
+    persistedToken,
+    graceElapsed,
+    explicitSignOut,
+  });
+
+  // WO-145Q CORRECTION — privacy-safe correlation for update telemetry: the gate
+  // name only, never a token, id or any member data.
+  useEffect(() => {
+    console.log("WO145QDBG", JSON.stringify({authGate, loading, hasSession: !!session, profileResolved, persistedToken, graceElapsed, explicitSignOut}));
+    noteAuthGate(authGate);
+  }, [authGate]);
+
   const value: AuthCtx = {
     session,
     user: session?.user ?? null,
     profile,
     loading,
-    authGate: classifyAuthGate({
-      loading,
-      hasSession: !!session,
-      profileResolved,
-      persistedToken: persistedTokenRef.current,
-      graceElapsed,
-    }),
+    authGate,
     refreshProfile: async () => {
       await loadProfile(session?.user.id, true);
+    },
+    /**
+     * WO-145Q CORRECTION — the delayed-restoration retry. It re-reads the
+     * persisted session and reloads the profile. It never signs out, never
+     * clears storage and never discards member data.
+     */
+    retryRestore: async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setSession(data.session);
+        if (data.session?.user?.id) await loadProfile(data.session.user.id, true);
+      } catch {
+        /* offline: the gate stays in its honest delayed state */
+      }
     },
     signOut: async () => {
       await supabase.auth.signOut();
@@ -193,7 +235,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       // WO-145Q: an explicit sign-out is conclusive — no restore window applies,
       // so the signed-out experience renders immediately.
-      persistedTokenRef.current = false;
+      setPersistedToken(false);
+      setExplicitSignOut(true);
       setGraceElapsed(true);
       setProfileResolved(false);
       // WO-073: drop any pending post-auth deep-link hint so the next identity

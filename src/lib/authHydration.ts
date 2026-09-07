@@ -1,5 +1,5 @@
 /**
- * WO-145Q — authentication hydration gate.
+ * WO-145Q (corrected) — authentication restoration gate.
  *
  * Physical failure this exists for
  * -------------------------------
@@ -15,15 +15,20 @@
  * The session restored by itself at 13:35:35 UTC. So the account was never lost:
  * the application simply *routed on an unresolved auth state*.
  *
- * Rules encoded here:
- *   1. never show the unauthenticated experience while initialisation is still
- *      running;
- *   2. never show it when a persisted session token exists and the provider has
- *      not yet had a bounded grace period to restore it;
- *   3. never show a private screen's onboarding redirect before the profile for
- *      the restored session has resolved;
- *   4. still fail open after the grace window, so a genuinely signed-out visitor
- *      reaches onboarding instead of an endless loading state.
+ * Corrected contract (WO-145Q CORRECTION)
+ * ---------------------------------------
+ * Restoration NEVER fails open to onboarding. Precisely:
+ *
+ *   1. an explicit sign-out is immediately conclusive → `signed-out`;
+ *   2. a conclusively settled no-session result with NO persisted session →
+ *      `signed-out` (a genuine visitor reaches onboarding at once);
+ *   3. a persisted session whose refresh / settlement / profile read is still
+ *      unresolved is `restoring`, and after the bounded grace window becomes
+ *      `delayed` — an honest branded state with retry and offline guidance. It
+ *      never becomes `signed-out` merely because time passed;
+ *   4. a restored session renders private routes once its profile has settled
+ *      (or, after the grace window, without it — the member is signed in and
+ *      must not be held hostage by one failed read).
  *
  * Nothing here reads, writes, logs or transmits token material: presence of a
  * key is the only fact consulted.
@@ -36,10 +41,11 @@ export interface StorageLike {
 }
 
 /**
- * Bounded restore window. Derived from the recording: the real restore completed
- * ~43s after the unauthenticated render, and the whole hydration took ~65s on a
- * cold 5G start. 20s covers a normal cold restore while still guaranteeing a
- * signed-out visitor is never held for long.
+ * Bounded window before restoration is reported as *delayed*. Derived from the
+ * recording: the real restore completed ~43s after the unauthenticated render,
+ * and the whole hydration took ~65s on a cold 5G start. 20s is long enough that
+ * a normal cold restore never shows the delayed copy, and short enough that a
+ * genuinely stuck restore explains itself instead of spinning silently.
  */
 export const AUTH_HYDRATION_GRACE_MS = 20_000;
 
@@ -68,10 +74,21 @@ export function hasPersistedAuthToken(...stores: (StorageLike | null | undefined
 export type AuthGate =
   /** Initialisation or a credible restore is still in progress. */
   | "restoring"
+  /**
+   * A persisted session is still unresolved after the bounded window. The member
+   * sees an honest branded delayed-restoration state with retry/offline
+   * guidance. Member data is untouched and onboarding is NEVER rendered.
+   */
+  | "delayed"
   /** A session (and its profile) is resolved: private routes may render. */
   | "authenticated"
   /** Conclusively no session: the unauthenticated experience is correct. */
   | "signed-out";
+
+/** True while authentication is unresolved — onboarding must not render. */
+export function isRestoringGate(gate: AuthGate): boolean {
+  return gate === "restoring" || gate === "delayed";
+}
 
 export function classifyAuthGate(input: {
   /** The provider's own initialisation flag. */
@@ -83,15 +100,33 @@ export function classifyAuthGate(input: {
   persistedToken: boolean;
   /** The bounded restore window has elapsed. */
   graceElapsed: boolean;
+  /** The member signed out in this document — immediately conclusive. */
+  explicitSignOut?: boolean;
 }): AuthGate {
-  const { loading, hasSession, profileResolved, persistedToken, graceElapsed } = input;
+  const {
+    loading,
+    hasSession,
+    profileResolved,
+    persistedToken,
+    graceElapsed,
+    explicitSignOut,
+  } = input;
+
+  // 1. Explicit sign-out is conclusive at once.
+  if (explicitSignOut === true) return "signed-out";
+
   if (hasSession) {
     // A session without a settled profile must not be routed on: the onboarding
-    // redirect would fire for a fully onboarded member.
+    // redirect would fire for a fully onboarded member. After the window the
+    // member is still signed in, so they enter the app rather than onboarding.
     if (!profileResolved && !graceElapsed) return "restoring";
     return "authenticated";
   }
+
+  // 3. A persisted session that has not resolved is never treated as absent.
+  if (persistedToken) return graceElapsed ? "delayed" : "restoring";
+
+  // 2. Conclusively settled with nothing persisted → the visitor onboards.
   if (loading) return "restoring";
-  if (persistedToken && !graceElapsed) return "restoring";
   return "signed-out";
 }
