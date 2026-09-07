@@ -72,7 +72,7 @@ describe("WO-145Q auth hydration gate", () => {
     ).toBe("restoring");
   });
 
-  it("fails open after the bounded window so a real visitor reaches onboarding", () => {
+  it("NEVER falls open to onboarding for a persisted session — it reports delayed", () => {
     expect(
       classifyAuthGate({
         loading: false,
@@ -81,7 +81,7 @@ describe("WO-145Q auth hydration gate", () => {
         persistedToken: true,
         graceElapsed: true,
       }),
-    ).toBe("signed-out");
+    ).toBe("delayed");
     // And a profile read that never settles still lets the member in.
     expect(
       classifyAuthGate({
@@ -139,16 +139,23 @@ describe("WO-145Q route gates consume the gate, not raw loading", () => {
   const auth = readFileSync("src/hooks/useAuth.tsx", "utf8");
 
   it("renders an authenticated loading state instead of a blank document", () => {
-    expect(app).toMatch(/authGate === "restoring"\) return <RouteLoading/);
+    expect(app).toMatch(/authGate === "restoring" \|\| authGate === "delayed"/);
     expect(app).not.toMatch(/if \(loading\) return null;/);
   });
 
   it("never renders the welcome/auth experience while restoring", () => {
-    expect(onboarding).toMatch(/authGate === "restoring"\) return <RouteLoading/);
+    expect(onboarding).toMatch(/authGate === "restoring" \|\| authGate === "delayed"/);
+    expect(onboarding).toMatch(/<AuthRestoring/);
   });
 
   it("treats an explicit sign-out as conclusive", () => {
-    expect(auth).toMatch(/persistedTokenRef\.current = false;/);
+    expect(auth).toMatch(/setPersistedToken\(false\)/);
+    expect(auth).toMatch(/setExplicitSignOut\(true\)/);
+  });
+
+  it("renders the branded restoration state for delayed restoration too", () => {
+    expect(app).toMatch(/authGate === "delayed"/);
+    expect(onboarding).toMatch(/authGate === "delayed"/);
   });
 
   it("introduces no sign-out, unregister or clientsClaim", () => {

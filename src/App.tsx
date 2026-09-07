@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell, RouteLoading } from "@/components/app";
+import { AuthRestoring } from "@/components/app/AuthRestoring";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { PwaUpdateProvider } from "@/hooks/usePwaUpdate";
 import { sanitizeInternalPath } from "@/lib/authRedirect";
@@ -97,7 +98,7 @@ function LegacyPlaceCheckInRedirect() {
 
 
 function RequireOnboarded({ children }: { children: JSX.Element }) {
-  const { session, profile, authGate } = useAuth();
+  const { session, profile, authGate, retryRestore } = useAuth();
   const location = useLocation();
 
   /**
@@ -107,7 +108,9 @@ function RequireOnboarded({ children }: { children: JSX.Element }) {
    * blank white screen for ~60s (this gate returned `null`) and then rendered
    * the signed-out welcome screen while a valid session was still restoring.
    */
-  if (authGate === "restoring") return <RouteLoading delayMs={0} />;
+  if (authGate === "restoring" || authGate === "delayed") {
+    return <AuthRestoring delayed={authGate === "delayed"} onRetry={() => void retryRestore()} />;
+  }
 
 
   // No session → onboarding/auth. We no longer honor the legacy

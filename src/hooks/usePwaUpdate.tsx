@@ -57,13 +57,20 @@ import {
   readHops,
 } from "@/lib/updateConvergence";
 import {
+  MAX_UPDATE_SESSION_RELOADS,
   classifyHandover,
-  clearConsent,
-  hasConsent,
-  noteAutoReload,
-  readAutoReloads,
-  recordConsent,
+  endUpdateSession,
+  isUpdateSessionActive,
+  noteSessionReload,
+  readSessionReloads,
+  startUpdateSession,
+  updateSessionId,
 } from "@/lib/updateHandover";
+import {
+  readAuthGate,
+  sanitizeUpdateTelemetry,
+  workerPresence,
+} from "@/lib/updateTelemetry";
 import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
 import {
   beginQuiesce,
@@ -184,7 +191,27 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       reload: () => {
         // WO-145P — record the hop BEFORE reloading, so the next document knows
         // it arrived from an update and must re-prove itself against the origin.
-        markUpdateReload(updateSessionStore());
+        const store = updateSessionStore();
+        markUpdateReload(store);
+        // WO-145Q CORRECTION — every controlled reload of the bounded update
+        // session is counted here, the consent reload included, so the recorded
+        // total is honest (an A→B→C chain reports two, never one).
+        const total = noteSessionReload(store);
+        logAnalyticsEvent(
+          "app_update_reload_requested",
+          sanitizeUpdateTelemetry({
+            running_build: LOADED_BUILD_ID,
+            update_session: updateSessionId(store),
+            hop: total,
+            reload_reason: total <= 1 ? "consent" : "handover-completion",
+            sw_controller: workerPresence(
+              (navigator.serviceWorker as unknown as { controller?: { state?: string } })
+                ?.controller ?? null,
+            ),
+            auth_gate: readAuthGate(),
+            outcome: "pending",
+          }),
+        );
         window.location.reload();
       },
       now: () => Date.now(),
@@ -207,8 +234,18 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       onConverged: () => {
         const store = updateSessionStore();
         noteConverged(store);
-        // WO-145Q — the handover the member consented to is complete.
-        clearConsent(store);
+        // WO-145Q — the update session the member consented to is complete.
+        logAnalyticsEvent(
+          "app_update_session_converged",
+          sanitizeUpdateTelemetry({
+            running_build: LOADED_BUILD_ID,
+            update_session: updateSessionId(store),
+            hop: readSessionReloads(store),
+            auth_gate: readAuthGate(),
+            outcome: "converged",
+          }),
+        );
+        endUpdateSession(store);
       },
 
       // WO-145F: siblings converge only once the new build is genuinely active.
@@ -410,16 +447,30 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!coordinator) return;
     const store = updateSessionStore();
+    // Hard ceiling, independent of the decision function: a session can never
+    // spend more than MAX_UPDATE_SESSION_RELOADS controlled reloads.
+    if (readSessionReloads(store) >= MAX_UPDATE_SESSION_RELOADS) return;
     const decision = classifyHandover({
       updateRequired: state.updateRequired,
-      consented: hasConsent(store),
-      autoReloads: readAutoReloads(store),
+      sessionActive: isUpdateSessionActive(store),
+      reloadsUsed: readSessionReloads(store),
       dirty: hasUnsavedWork() || qc.isMutating() > 0,
       reloadRequested: state.reloadRequested,
     });
     if (decision !== "auto-reload") return;
-    noteAutoReload(store);
-    logAnalyticsEvent("app_update_handover_reload", {});
+    logAnalyticsEvent(
+      "app_update_session_continues",
+      sanitizeUpdateTelemetry({
+        running_build: LOADED_BUILD_ID,
+        update_session: updateSessionId(store),
+        hop: readSessionReloads(store),
+        reload_reason: "handover-completion",
+        auth_gate: readAuthGate(),
+        outcome: "intermediate",
+      }),
+    );
+    // The reload itself is counted in the coordinator's reload callback, so the
+    // budget of MAX_UPDATE_SESSION_RELOADS controlled reloads is enforced once.
     coordinator.reloadIfSafe({ force: false });
   }, [coordinator, qc, state.updateRequired, state.reloadRequested]);
 
@@ -466,11 +517,13 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       if (txnRef.current !== null) return;
       const txnId = `txn-${randomClientId()}`;
       txnRef.current = txnId;
-      // WO-145Q — the consent covers the whole handover, not just the first
-      // reload: if the document that boots from it is still provably stale, the
-      // handover completes automatically exactly once instead of degrading into
-      // a second "Reload now" the member never asked for.
-      recordConsent(updateSessionStore());
+      // WO-145Q CORRECTION — one consent opens a BOUNDED UPDATE SESSION of at
+      // most MAX_UPDATE_SESSION_RELOADS (2) controlled document reloads: the
+      // consent reload, plus one automatic completion reload if the document it
+      // produces is provably still an intermediate build. Unsaved work and
+      // multi-window safety always win, and beyond the budget the member is
+      // asked again — never a loop.
+      startUpdateSession(updateSessionStore());
       setBlockedByPeers(0);
       setPeerBlocker(null);
 
