@@ -77,8 +77,8 @@ export default function Community() {
   const hello = greeting(new Date().getHours());
   const cityLabel = selectedCity?.name ?? null;
 
-
   const cityCoords = useMemo(
+
     () =>
       selectedCity && selectedCity.latitude != null && selectedCity.longitude != null
         ? { latitude: selectedCity.latitude, longitude: selectedCity.longitude }
