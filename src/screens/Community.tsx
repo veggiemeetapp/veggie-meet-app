@@ -76,8 +76,7 @@ export default function Community() {
   const name = firstName(profile?.display_name);
   const hello = greeting(new Date().getHours());
   const cityLabel = selectedCity?.name ?? null;
-  // Titles are only rendered once a city is chosen; this keeps them safe anyway.
-  const cityTitle = cityLabel ?? "your city";
+
 
   const cityCoords = useMemo(
     () =>
