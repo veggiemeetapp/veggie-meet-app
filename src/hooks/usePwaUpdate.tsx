@@ -770,17 +770,5 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
 }
 
 export function usePwaUpdate(): PwaUpdateCtx {
-  // TEMPORARY EVIDENCE HOOK (reverted immediately after screenshots).
-  const ctx = useContext(Ctx);
-  const forced = new URLSearchParams(window.location.search).get("__shot");
-  if (forced === "progress") {
-    return { ...ctx, visible: true, state: { ...ctx.state, status: "activating", activationPhase: "slow" } } as PwaUpdateCtx;
-  }
-  if (forced === "dirty") {
-    return { ...ctx, visible: true, unsavedKinds: ["composer"], state: { ...ctx.state, status: "available", blockedByUnsavedWork: true } } as PwaUpdateCtx;
-  }
-  return ctx;
-}
-function __unusedUsePwaUpdate(): PwaUpdateCtx {
   return useContext(Ctx);
 }
