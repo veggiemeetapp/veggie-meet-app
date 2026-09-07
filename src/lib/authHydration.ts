@@ -102,6 +102,12 @@ export function classifyAuthGate(input: {
   graceElapsed: boolean;
   /** The member signed out in this document — immediately conclusive. */
   explicitSignOut?: boolean;
+  /**
+   * The profile read for the current session FAILED (offline / transient), so the
+   * member's onboarding state is unknown. It must never be read as "new member":
+   * that renders the welcome screen to a fully onboarded member.
+   */
+  profileUnavailable?: boolean;
 }): AuthGate {
   const {
     loading,
@@ -110,12 +116,16 @@ export function classifyAuthGate(input: {
     persistedToken,
     graceElapsed,
     explicitSignOut,
+    profileUnavailable,
   } = input;
 
   // 1. Explicit sign-out is conclusive at once.
   if (explicitSignOut === true) return "signed-out";
 
   if (hasSession) {
+    // The profile could not be read at all: the member stays on an honest,
+    // retryable restoration state rather than being offered onboarding.
+    if (profileUnavailable) return graceElapsed ? "delayed" : "restoring";
     // A session without a settled profile must not be routed on: the onboarding
     // redirect would fire for a fully onboarded member. After the window the
     // member is still signed in, so they enter the app rather than onboarding.

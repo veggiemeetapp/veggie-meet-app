@@ -67,6 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // on: that is what redirected a fully onboarded member to onboarding.
   const [profileResolved, setProfileResolved] = useState(false);
   const [graceElapsed, setGraceElapsed] = useState(false);
+  // WO-145Q CORRECTION — the profile read failed (offline / transient). Distinct
+  // from "provably absent", which is a genuine new member.
+  const [profileUnavailable, setProfileUnavailable] = useState(false);
   // WO-145Q CORRECTION — an explicit sign-out is the ONLY thing that makes the
   // signed-out experience correct for a device that held a session.
   const [explicitSignOut, setExplicitSignOut] = useState(false);
@@ -109,7 +112,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Uses the get_my_profile() RPC (SECURITY DEFINER) so callers don't need
       // direct SELECT on profiles.auth_user_id — that column is now hidden from
       // arbitrary authenticated users at the table-privilege level.
-      const { data } = await supabase.rpc("get_my_profile");
+      const { data, error } = await supabase.rpc("get_my_profile");
+      if (error) {
+        // Unknown, not absent: keep the member on the restoration state.
+        setProfileUnavailable(true);
+        return;
+      }
+      setProfileUnavailable(false);
       setProfile((data as Profile) ?? null);
       loadedUserIdRef.current = userId;
     })().finally(() => {
@@ -195,12 +204,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistedToken,
     graceElapsed,
     explicitSignOut,
+    profileUnavailable,
   });
 
   // WO-145Q CORRECTION — privacy-safe correlation for update telemetry: the gate
   // name only, never a token, id or any member data.
   useEffect(() => {
-    console.log("WO145QDBG", JSON.stringify({authGate, loading, hasSession: !!session, profileResolved, persistedToken, graceElapsed, explicitSignOut}));
     noteAuthGate(authGate);
   }, [authGate]);
 
