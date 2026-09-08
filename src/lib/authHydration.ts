@@ -108,6 +108,13 @@ export function classifyAuthGate(input: {
    * that renders the welcome screen to a fully onboarded member.
    */
   profileUnavailable?: boolean;
+  /**
+   * WO-145R — the persisted session was CONCLUSIVELY rejected or removed by the
+   * server (expired / revoked refresh token, a real SIGNED_OUT event, or storage
+   * that no longer holds a session). This is a settled negative result, not an
+   * inconclusive one: a timeout, offline condition or 5xx must NEVER set it.
+   */
+  sessionRejected?: boolean;
 }): AuthGate {
   const {
     loading,
@@ -117,6 +124,7 @@ export function classifyAuthGate(input: {
     graceElapsed,
     explicitSignOut,
     profileUnavailable,
+    sessionRejected,
   } = input;
 
   // 1. Explicit sign-out is conclusive at once.
@@ -133,10 +141,18 @@ export function classifyAuthGate(input: {
     return "authenticated";
   }
 
-  // 3. A persisted session that has not resolved is never treated as absent.
+  // 2. WO-145R — a conclusively rejected/removed session is settled: the normal
+  // signed-out experience must be reachable, whatever storage still contains.
+  // An expired or revoked session is routine and must never trap the member on
+  // the restoration screen.
+  if (sessionRejected === true) return "signed-out";
+
+  // 3. A persisted session whose restoration is still INCONCLUSIVE (in flight,
+  // offline, 5xx, timed out) is never treated as absent.
   if (persistedToken) return graceElapsed ? "delayed" : "restoring";
 
-  // 2. Conclusively settled with nothing persisted → the visitor onboards.
+  // 4. Conclusively settled with nothing persisted → the visitor onboards.
   if (loading) return "restoring";
   return "signed-out";
 }
+
