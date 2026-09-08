@@ -21,7 +21,7 @@ import {
   startUpdateSession,
 } from "@/lib/updateHandover";
 import { beginQuiesce, endQuiesce, resetQuiesceState } from "@/lib/updateQuiesce";
-import { readRealtimeEpoch, resetRealtimeEpoch } from "@/lib/realtimeEpoch";
+import { realtimeEpoch as readRealtimeEpoch, resetRealtimeEpoch } from "@/lib/realtimeEpoch";
 
 function memoryStore() {
   const map = new Map<string, string>();
