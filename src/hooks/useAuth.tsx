@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Register listener first, then hydrate
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
       const nextId = s?.user?.id ?? null;
       if (lastUserIdRef.current !== null && lastUserIdRef.current !== nextId) {
         // User changed (sign-out, account switch, expired/revoked/deleted).
@@ -186,6 +186,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       lastUserIdRef.current = nextId;
       setSession(s);
+      /**
+       * WO-145R — a real SIGNED_OUT event is the auth client telling us the
+       * persisted session is conclusively gone (expired or revoked refresh
+       * token, or a sign-out elsewhere). Clearing the persisted-session marker
+       * here is what makes the normal signed-out experience reachable instead of
+       * trapping the member on "Still restoring your session" forever. It never
+       * touches member data. Any event that carries a session is conclusive the
+       * other way, so the rejection flag is cleared.
+       */
+      if (evt === "SIGNED_OUT" && !s) {
+        setPersistedToken(false);
+        setSessionRejected(true);
+        setGraceElapsed(true);
+        setProfileResolved(false);
+        setProfileUnavailable(false);
+      } else if (s) {
+        setSessionRejected(false);
+      }
       // Defer profile fetch to avoid deadlock. Token refreshes for the same
       // identity keep the already-loaded profile instead of refetching it.
       setTimeout(() => {
@@ -194,11 +212,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }, 0);
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      lastUserIdRef.current = data.session?.user?.id ?? null;
-      setSession(data.session);
-      loadProfile(data.session?.user.id).finally(() => setLoading(false));
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        lastUserIdRef.current = data.session?.user?.id ?? null;
+        setSession(data.session);
+        // WO-145R — separate a conclusive rejection from an inconclusive failure.
+        let stillPersisted = false;
+        try {
+          stillPersisted = hasPersistedAuthToken(window.localStorage, window.sessionStorage);
+        } catch {
+          stillPersisted = false;
+        }
+        const outcome = classifyRestoration({
+          hasSession: !!data.session,
+          error: error ?? null,
+          persistedToken: stillPersisted,
+        });
+        if (outcome === "rejected") {
+          setPersistedToken(false);
+          setSessionRejected(true);
+          setGraceElapsed(true);
+        } else if (outcome === "restored") {
+          setSessionRejected(false);
+        }
+        // "inconclusive" deliberately changes nothing: the delayed-restoration
+        // state stays, member data is untouched, and retry remains available.
+        loadProfile(data.session?.user.id).finally(() => setLoading(false));
+      })
+      .catch(() => {
+        // Transport failure: nothing was decided. Stay on the safe state.
+        setLoading(false);
+      });
 
     return () => sub.subscription.unsubscribe();
   }, [qc]);
@@ -211,7 +256,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     graceElapsed,
     explicitSignOut,
     profileUnavailable,
+    sessionRejected,
   });
+
 
   // WO-145Q CORRECTION — privacy-safe correlation for update telemetry: the gate
   // name only, never a token, id or any member data.
