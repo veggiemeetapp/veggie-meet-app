@@ -70,9 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // WO-145Q CORRECTION — the profile read failed (offline / transient). Distinct
   // from "provably absent", which is a genuine new member.
   const [profileUnavailable, setProfileUnavailable] = useState(false);
+  // WO-145R — the persisted session was CONCLUSIVELY rejected or removed (an
+  // expired/revoked refresh token, a real SIGNED_OUT event, or storage that no
+  // longer holds a session). Settled negative results only: never set by a
+  // timeout, an offline condition or a 5xx.
+  const [sessionRejected, setSessionRejected] = useState(false);
   // WO-145Q CORRECTION — an explicit sign-out is the ONLY thing that makes the
   // signed-out experience correct for a device that held a session.
   const [explicitSignOut, setExplicitSignOut] = useState(false);
+
   const qc = useQueryClient();
   // Track the previously observed auth user id so we can wipe React Query
   // caches on sign-out or same-device account switches. Without this the next
