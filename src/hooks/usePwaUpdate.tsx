@@ -394,9 +394,19 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         window.location.reload();
       },
       onUpdateRequired: (cause) => coordinator.enterUpdateRequired(cause),
+      // WO-145R — unfinished member work is never discarded by a recovery reload,
+      // and an ordinary connectivity failure is never treated as a stale build.
+      hasUnsavedWork,
+      confirmBuildMismatch: async () => {
+        const deployed = await fetchDeployedBuildId();
+        if (deployed === null) return null; // offline / unproven: decide nothing
+        return deployed !== LOADED_BUILD_ID;
+      },
+      onRecoveryChoice: (cause) => coordinator.enterRecoverable?.(cause),
       log: (cause) => logAnalyticsEvent("app_update_build_mismatch", { cause }),
     });
   }, [coordinator]);
+
 
   /* ---------- authenticated cache freshness ---------- */
   useEffect(() => {
