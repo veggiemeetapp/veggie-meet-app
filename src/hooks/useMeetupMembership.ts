@@ -4,6 +4,7 @@ import { useAuth } from "./useAuth";
 import { isUuid, type MeetupRole } from "@/lib/backend";
 import { supabase } from "@/integrations/supabase/client";
 import type { Meetup } from "@/types";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 /**
  * Derive the authenticated user's role for a given meetup from backend state.
@@ -35,6 +36,8 @@ export function useMeetupMembership(meetup: Pick<Meetup, "id" | "hostId" | "chat
     },
   });
 
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!isReal || !meetupId) return;
     const channel = supabase
@@ -61,7 +64,7 @@ export function useMeetupMembership(meetup: Pick<Meetup, "id" | "hostId" | "chat
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isReal, meetupId, qc]);
+  }, [isReal, meetupId, qc, realtimeEpoch]);
 
   const loading = isReal && (authLoading || query.isPending);
   const role: MeetupRole = isReal ? query.data ?? "visitor" : "visitor";

@@ -23,6 +23,7 @@ import {
   type PlanItem,
 } from "@/lib/plans";
 import { PlanCard } from "@/components/plans/PlanCard";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 export default function Plans() {
   const navigate = useNavigate();
@@ -45,6 +46,8 @@ export default function Plans() {
   }, [profile?.id]);
 
 
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -58,7 +61,7 @@ export default function Plans() {
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id]);
+  }, [profile?.id, realtimeEpoch]);
 
   const firstPage = query.data?.pages[0];
   const allPast: PlanItem[] = (query.data?.pages ?? []).flatMap((p) => p.past);

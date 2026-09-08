@@ -29,6 +29,7 @@ import {
   type ImpactSubject,
 } from "@/lib/communityImpact";
 import { cn } from "@/lib/utils";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 type Tab = "overview" | "veggies" | "places" | "meetups" | "history";
 
@@ -64,6 +65,8 @@ export default function Impact() {
   });
 
   // Refresh totals when the tab regains focus, and after relevant tables change.
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const ch = supabase
@@ -81,7 +84,7 @@ export default function Impact() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   return (
     <>

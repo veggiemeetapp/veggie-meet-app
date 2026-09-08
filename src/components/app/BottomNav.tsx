@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchInbox } from "@/lib/directMessages";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 export interface BottomNavItem {
   label: string;
@@ -43,6 +44,8 @@ function useUnreadConversations() {
   });
 
 
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -54,7 +57,7 @@ function useUnreadConversations() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   return count;
 }

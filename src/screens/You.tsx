@@ -37,6 +37,7 @@ import type { YouHistoryItem, YouMeetupCard } from "@/lib/youSummary";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { isOwner } from "@/lib/placeVerification";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 
 type Tab = "hosting" | "going";
@@ -78,6 +79,8 @@ export default function You() {
   });
 
   const qc = useQueryClient();
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     // Shared invalidation: attendance / meetup lifecycle / verified connection
@@ -96,7 +99,7 @@ export default function You() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   const hostedCount = summaryQuery.data?.counts.hosting_upcoming ?? 0;
   const isActiveHost = hostedCount > 0 || profile?.is_active_host;

@@ -48,6 +48,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 const RATING_OPTIONS: { value: FeedbackRating; label: string; hint: string }[] = [
   { value: "great", label: "Great experience", hint: "I'd do this again." },
@@ -90,6 +91,8 @@ export default function MeetupSummary() {
   }, [id, profile?.id, summaryQuery.data]);
 
   // Realtime: verified pairs & attendance transitions
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!id || !profile?.id) return;
     const channel = supabase
@@ -113,7 +116,7 @@ export default function MeetupSummary() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, profile?.id, qc]);
+  }, [id, profile?.id, qc, realtimeEpoch]);
 
   if (!id) return null;
 

@@ -83,6 +83,7 @@ import { showErrorToast } from "@/lib/errorToast";
 import { DeleteChatDialog } from "@/components/chat/DeleteChatDialog";
 import { useSendToken } from "@/hooks/useSendToken";
 import { messageRowAlignment } from "@/lib/chatMessageLayout";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 
 const STARTER_PROMPTS = [
@@ -463,6 +464,8 @@ function DMScreen({
   }, [conversationId, meProfileId, qc, messages.length]);
 
   // Realtime — incoming messages + read receipts
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     const channel = supabase
       .channel(`dm-${conversationId}`)
@@ -535,7 +538,7 @@ function DMScreen({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, qc, meProfileId]);
+  }, [conversationId, qc, meProfileId, realtimeEpoch]);
 
 
   // Hydrate invitations referenced by messages, refetch whenever messages change.
@@ -619,7 +622,7 @@ function DMScreen({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, invitationIdsKey, meProfileId, invitations]);
+  }, [conversationId, invitationIdsKey, meProfileId, invitations, realtimeEpoch]);
 
 
   // Autoscroll

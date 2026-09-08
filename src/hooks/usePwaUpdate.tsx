@@ -394,9 +394,19 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         window.location.reload();
       },
       onUpdateRequired: (cause) => coordinator.enterUpdateRequired(cause),
+      // WO-145R — unfinished member work is never discarded by a recovery reload,
+      // and an ordinary connectivity failure is never treated as a stale build.
+      hasUnsavedWork: () => hasUnsavedWork() || qc.isMutating() > 0,
+      confirmBuildMismatch: async () => {
+        const deployed = await fetchDeployedBuildId();
+        if (deployed === null) return null; // offline / unproven: decide nothing
+        return deployed !== LOADED_BUILD_ID;
+      },
       log: (cause) => logAnalyticsEvent("app_update_build_mismatch", { cause }),
     });
-  }, [coordinator]);
+  }, [coordinator, qc]);
+
+
 
   /* ---------- authenticated cache freshness ---------- */
   useEffect(() => {
@@ -539,15 +549,22 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         if (result !== "activating") {
           endQuiesce(txnId, { queryClient: qc });
           txnRef.current = null;
+          // WO-145R — the consent produced no activation: close the session so it
+          // can never arm an unconsented reload later.
+          endUpdateSession(updateSessionStore());
         }
       };
       const abandon = (blocker: PeerBlocker, count: number) => {
         fleet?.cancelPreparation(txnId);
         endQuiesce(txnId, { queryClient: qc });
         txnRef.current = null;
+        // WO-145R — a blocked / abandoned / failed transaction ends the consent
+        // immediately. The member must consent again for any future reload.
+        endUpdateSession(updateSessionStore());
         setBlockedByPeers(count);
         setPeerBlocker(blocker);
       };
+
 
       if (!fleet) {
         proceed();
@@ -718,6 +735,11 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       endQuiesce(txnId, { queryClient: qc });
       txnRef.current = null;
     }
+    // WO-145R — the consent did not complete, so it must not stay authorized: a
+    // later foreground / focus / reconnect check can never reload this window
+    // without a fresh explicit consent.
+    endUpdateSession(updateSessionStore());
+
     setUnsavedKinds([]);
     setBlockedByPeers(0);
     setPeerBlocker(null);

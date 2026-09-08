@@ -34,10 +34,11 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { setAnalyticsDeliveryPaused } from "@/lib/analytics";
+import { bumpRealtimeEpoch } from "@/lib/realtimeEpoch";
 
 interface RealtimeLike {
   removeAllChannels?: () => unknown;
-  realtime?: { disconnect?: () => unknown };
+  realtime?: { disconnect?: () => unknown; connect?: () => unknown };
 }
 
 /** Close realtime channels and the realtime socket. Never throws. */
@@ -55,6 +56,23 @@ export function quiesceBackendConnections(client: unknown = supabase): void {
     /* ditto */
   }
 }
+
+/**
+ * WO-145R — reopen the realtime socket and ask every realtime owner (chats, DMs,
+ * meetup chat, reactions, notification badges) to re-subscribe exactly once.
+ * Called only on the cancellation / failure / timeout paths, where the document
+ * keeps running on the version it already has.
+ */
+export function restoreBackendConnections(client: unknown = supabase): void {
+  const c = client as RealtimeLike | null;
+  try {
+    c?.realtime?.connect?.();
+  } catch {
+    /* the epoch bump below still recreates channels, which reconnects lazily */
+  }
+  bumpRealtimeEpoch();
+}
+
 
 /* ---------- nonessential-request gate ---------- */
 
@@ -190,6 +208,10 @@ export function endQuiesce(
   quiesceTxn = null;
   setAnalyticsDeliveryPaused(false);
 
+  // WO-145R — the live connection was closed by `beginQuiesce`; a document that
+  // keeps running must get it back without a manual reload.
+  restoreBackendConnections(deps.realtimeClient ?? supabase);
+
   const qc = deps.queryClient as QueryClient | undefined;
   if (qc) {
     try {
@@ -199,6 +221,7 @@ export function endQuiesce(
     }
   }
   return "restored";
+
 }
 
 /** Test helper: forget all registry/gate state. */

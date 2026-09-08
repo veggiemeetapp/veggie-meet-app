@@ -35,6 +35,7 @@ import {
 } from "@/lib/relationships";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 type Tab = "network" | "requests" | "meet-next";
 
@@ -94,6 +95,8 @@ export default function VeggieNetwork() {
 
 
   // Realtime — refresh both lists when any friendship of mine changes.
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -119,7 +122,7 @@ export default function VeggieNetwork() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   const data = networkQuery.data;
   const verified = data?.verified ?? [];
