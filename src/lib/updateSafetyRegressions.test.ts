@@ -234,7 +234,7 @@ describe("WO-145R a stale consent cannot reload later", () => {
     const store = memoryStore();
     const t0 = 9_000_000;
     startUpdateSession(store, "upd-d", t0);
-    expect(noteSessionReload(store)).toBe(1); // the consent reload
+    expect(noteSessionReload(store, t0 + 1_000)).toBe(1); // the consent reload
     expect(
       classifyHandover({
         updateRequired: true,
@@ -243,7 +243,7 @@ describe("WO-145R a stale consent cannot reload later", () => {
         dirty: false,
       }),
     ).toBe("auto-reload");
-    expect(noteSessionReload(store)).toBe(2); // the completion reload
+    expect(noteSessionReload(store, t0 + 2_000)).toBe(2); // the completion reload
     expect(
       classifyHandover({
         updateRequired: true,
