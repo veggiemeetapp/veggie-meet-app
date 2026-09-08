@@ -38,7 +38,14 @@ export interface MeetupLocationSnapshot {
   longitude: number | null;
   locationSource: MeetupLocationSource;
   isInferred: boolean;
+  /**
+   * WO-148 — structured provider reference for a custom location. Exposed so a
+   * name-only edit can preserve the existing map pin instead of clearing it.
+   */
+  googlePlaceId?: string | null;
+  googleMapsUrl?: string | null;
 }
+
 
 export interface Meetup {
   id: ID;

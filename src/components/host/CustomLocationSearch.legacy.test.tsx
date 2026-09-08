@@ -34,20 +34,18 @@ describe("WO-134 / DEF-134-01 — saved custom location visibility", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("clears the location only when the host explicitly changes it", () => {
+  /**
+   * WO-148 (supersedes the earlier expectation) — "Change" must NOT clear the
+   * saved location. It opens search while the saved location stays committed
+   * and visible until a different place is explicitly selected.
+   */
+  it("keeps the saved location committed when the host opens search", () => {
     const onChange = vi.fn();
     render(<CustomLocationSearch value={legacy} onChange={onChange} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: /Change location/i }),
-    );
-    expect(onChange).toHaveBeenCalledWith({
-      name: "",
-      address: "",
-      latitude: null,
-      longitude: null,
-      googlePlaceId: null,
-      googleMapsUrl: null,
-    });
+    fireEvent.click(screen.getByRole("button", { name: /Change location/i }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText(/Still saved:/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Search for a place")).toBeInTheDocument();
   });
 
   it("still shows the search field for a brand new custom location", () => {
@@ -60,8 +58,8 @@ describe("WO-134 / DEF-134-01 — saved custom location visibility", () => {
     expect(screen.getByLabelText("Search for a place")).toBeInTheDocument();
   });
 
-  /** WO-134A step 7 — empty-name validation while editing a saved location. */
-  it("blocks Done editing location and alerts when the name is cleared", () => {
+  /** WO-134A step 7, restated for WO-148 — empty-name validation on save. */
+  it("blocks saving and alerts when the name is cleared", () => {
     function Harness() {
       const [value, setValue] = useState<CustomLocationValue>(legacy);
       return <CustomLocationSearch value={value} onChange={setValue} />;
@@ -71,19 +69,22 @@ describe("WO-134 / DEF-134-01 — saved custom location visibility", () => {
       screen.getByRole("button", { name: "Edit Highland coffee name and address" }),
     );
     fireEvent.change(screen.getByLabelText("Location name"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save location details" }));
 
-    const done = screen.getByRole("button", { name: "Done editing location" });
-    expect(done).toBeDisabled();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Add a location name so attendees know where to go.",
     );
+    // Still editing, saved location untouched.
+    expect(screen.getByLabelText("Location name")).toBeInTheDocument();
 
-    // Restoring the name re-enables the action and drops the alert.
+    // Restoring the name allows the save and returns to the saved-location view.
     fireEvent.change(screen.getByLabelText("Location name"), {
       target: { value: "Highland coffee" },
     });
-    expect(screen.getByRole("button", { name: "Done editing location" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Save location details" }));
+    expect(screen.getByText("Current location")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
+
 
