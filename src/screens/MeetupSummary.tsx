@@ -41,7 +41,6 @@ import { formatMeetupDate, formatMeetupTimeRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
   Dialog,
   DialogContent,
   DialogHeader,
@@ -49,6 +48,7 @@ import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 const RATING_OPTIONS: { value: FeedbackRating; label: string; hint: string }[] = [
   { value: "great", label: "Great experience", hint: "I'd do this again." },

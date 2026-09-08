@@ -19,12 +19,12 @@ import { ResultSkeleton } from "@/components/search/ResultSkeleton";
 import { SearchEmptyState } from "@/components/search/SearchEmptyState";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import {
-import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
   useSearchAll,
   useSearchMeetupsInfinite,
   useSearchPlacesInfinite,
   useSearchVeggiesInfinite,
 } from "@/hooks/useSearch";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 export type ResultTab = "all" | "veggies" | "meetups" | "places";
 
