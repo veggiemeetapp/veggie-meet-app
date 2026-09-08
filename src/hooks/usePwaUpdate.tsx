@@ -735,6 +735,11 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       endQuiesce(txnId, { queryClient: qc });
       txnRef.current = null;
     }
+    // WO-145R — the consent did not complete, so it must not stay authorized: a
+    // later foreground / focus / reconnect check can never reload this window
+    // without a fresh explicit consent.
+    endUpdateSession(updateSessionStore());
+
     setUnsavedKinds([]);
     setBlockedByPeers(0);
     setPeerBlocker(null);
