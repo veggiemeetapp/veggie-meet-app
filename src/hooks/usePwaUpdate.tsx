@@ -539,15 +539,22 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         if (result !== "activating") {
           endQuiesce(txnId, { queryClient: qc });
           txnRef.current = null;
+          // WO-145R — the consent produced no activation: close the session so it
+          // can never arm an unconsented reload later.
+          endUpdateSession(updateSessionStore());
         }
       };
       const abandon = (blocker: PeerBlocker, count: number) => {
         fleet?.cancelPreparation(txnId);
         endQuiesce(txnId, { queryClient: qc });
         txnRef.current = null;
+        // WO-145R — a blocked / abandoned / failed transaction ends the consent
+        // immediately. The member must consent again for any future reload.
+        endUpdateSession(updateSessionStore());
         setBlockedByPeers(count);
         setPeerBlocker(blocker);
       };
+
 
       if (!fleet) {
         proceed();
