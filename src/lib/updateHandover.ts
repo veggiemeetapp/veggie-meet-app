@@ -173,9 +173,13 @@ export function readSessionReloads(storage: StorageLike | null): number {
  * BOTH the consent reload and the automatic completion reload, so the number it
  * returns is the honest total for this update session.
  */
-export function noteSessionReload(storage: StorageLike | null): number {
+export function noteSessionReload(
+  storage: StorageLike | null,
+  now: number = Date.now(),
+): number {
   if (!storage) return 0;
-  if (!isUpdateSessionActive(storage)) return readSessionReloads(storage);
+  if (!isUpdateSessionActive(storage, now)) return readSessionReloads(storage);
+
   try {
     const next = readSessionReloads(storage) + 1;
     storage.setItem(UPDATE_SESSION_RELOADS_KEY, String(next));
