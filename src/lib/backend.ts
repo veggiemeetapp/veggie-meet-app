@@ -49,7 +49,10 @@ interface DBMeetupRow {
   additional_interest_ids?: string[] | null;
   location_source?: "community_place" | "custom_location" | "unknown" | null;
   location_is_inferred?: boolean | null;
+  google_place_id?: string | null;
+  google_maps_url?: string | null;
 }
+
 
 function toMeetup(row: DBMeetupRow): Meetup {
   const source = (row.location_source ?? (row.community_place_id ? "community_place" : row.custom_location_name ? "custom_location" : "unknown"));
@@ -87,7 +90,12 @@ function toMeetup(row: DBMeetupRow): Meetup {
       longitude: row.longitude ?? null,
       locationSource: source as MeetupLocationSource,
       isInferred: row.location_is_inferred ?? false,
+      // WO-148 — carried through so location editing never has to guess (and
+      // therefore never clears) the stored provider reference.
+      googlePlaceId: row.google_place_id ?? null,
+      googleMapsUrl: row.google_maps_url ?? null,
     },
+
   };
 }
 

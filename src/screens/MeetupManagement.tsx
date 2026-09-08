@@ -49,6 +49,8 @@ import {
   type ManagedAttendee,
 } from "@/lib/meetupManagement";
 import { updateMeetupLocation } from "@/lib/location";
+import { resolveGoogleMetaUpdate } from "@/lib/meetupLocationDraft";
+
 import { fetchMeetupPlaceContext } from "@/lib/meetupPlaceContext";
 import {
   blockedReasonCopy,
@@ -191,9 +193,12 @@ export default function MeetupManagement() {
       address: isCustomSnapshot ? meetup.location?.address ?? "" : "",
       latitude: isCustomSnapshot ? meetup.location?.latitude ?? null : null,
       longitude: isCustomSnapshot ? meetup.location?.longitude ?? null : null,
-      googlePlaceId: null,
-      googleMapsUrl: null,
+      // WO-148 — hydrate the stored provider reference so editing only the
+      // display name keeps the existing map pin and Maps link.
+      googlePlaceId: isCustomSnapshot ? meetup.location?.googlePlaceId ?? null : null,
+      googleMapsUrl: isCustomSnapshot ? meetup.location?.googleMapsUrl ?? null : null,
     });
+
 
   }, [meetup?.id]);
 
@@ -624,16 +629,29 @@ export default function MeetupManagement() {
         timezone: locResolved.timezone,
         locationSource: locResolved.locationSource,
       });
-      // WO-123: keep the stored Google reference in step with the new location.
-      try {
-        await setMeetupGoogleLocationMeta(
-          meetup.id,
-          locIsCustom ? locCustom.googlePlaceId : null,
-          locIsCustom ? locCustom.googleMapsUrl : null,
-        );
-      } catch {
-        /* ignore — cosmetic metadata only */
+      // WO-123 / WO-148: keep the stored Google reference in step with the new
+      // location, but only write it when it actually changed — a name-only edit
+      // must never clear an existing map pin.
+      const metaUpdate = resolveGoogleMetaUpdate(
+        {
+          googlePlaceId: meetup.location?.googlePlaceId ?? null,
+          googleMapsUrl: meetup.location?.googleMapsUrl ?? null,
+        },
+        { googlePlaceId: locCustom.googlePlaceId, googleMapsUrl: locCustom.googleMapsUrl },
+        locIsCustom,
+      );
+      if (metaUpdate) {
+        try {
+          await setMeetupGoogleLocationMeta(
+            meetup.id,
+            metaUpdate.googlePlaceId,
+            metaUpdate.googleMapsUrl,
+          );
+        } catch {
+          /* ignore — cosmetic metadata only */
+        }
       }
+
 
       // Copy is driven by notifications_inserted (not recipients_count), so we
       // never claim attendees were notified when zero notifications landed.

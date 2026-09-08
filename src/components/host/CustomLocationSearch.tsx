@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink, Loader2, MapPin, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { searchMeetupPlaces, type MeetupPlaceResult } from "@/lib/meetupPlaceSearch";
@@ -44,8 +44,12 @@ function MapsLink({ url, placeName }: { url: string; placeName: string }) {
 }
 
 /**
- * Manual name/address fields. Used both as the "can't find it" fallback during
- * search and as the edit form for an already-saved custom location (WO-134).
+ * Manual name/address fields. Used both as the "can't find it" fallback while
+ * searching and as the edit form for an already-saved custom location (WO-134).
+ *
+ * WO-148 — these fields edit a LOCAL draft only, and a name/address change
+ * never touches the structured place data (coordinates, provider place id,
+ * Maps link). Structured data is replaced only by picking a different place.
  */
 function ManualLocationFields({
   value,
@@ -67,16 +71,7 @@ function ManualLocationFields({
           id="custom-location-name"
           type="text"
           value={value.name}
-          onChange={(e) =>
-            onChange({
-              ...value,
-              name: e.target.value,
-              latitude: null,
-              longitude: null,
-              googlePlaceId: null,
-              googleMapsUrl: null,
-            })
-          }
+          onChange={(e) => onChange({ ...value, name: e.target.value })}
           placeholder="e.g. Riverside Park pavilion"
           className="w-full h-11 rounded-control border border-border bg-card px-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
         />
@@ -123,12 +118,22 @@ export interface CustomLocationSearchProps {
   onEvent?: (event: "searched" | "selected" | "manual", detail?: Record<string, unknown>) => void;
 }
 
+const EMPTY: CustomLocationValue = {
+  name: "",
+  address: "",
+  latitude: null,
+  longitude: null,
+  googlePlaceId: null,
+  googleMapsUrl: null,
+};
+
 /**
  * WO-123 — Google Places search-and-select for a Meetup custom location.
- *
- * Coordinates and the Google reference are captured silently from the selected
- * result; hosts never see or type latitude/longitude. Manual entry stays
- * available as a fallback when a place isn't listed.
+ * WO-148 — the view mode is driven by explicit member actions and a local
+ * draft, never by the committed value. This is what makes multi-character
+ * typing possible (the editor cannot re-render itself away after one keystroke),
+ * keeps the saved location visible while editing, and keeps map data intact for
+ * a name-only edit.
  */
 export function CustomLocationSearch({
   value,
@@ -136,21 +141,37 @@ export function CustomLocationSearch({
   region,
   onEvent,
 }: CustomLocationSearchProps) {
+  const hasSaved = value.name.trim().length > 0;
+  /**
+   * "view"   — a saved location exists and is shown read-only.
+   * "edit"   — editing name/address of the saved location in a local draft.
+   * "search" — searching for a (different) place; manual entry available.
+   */
+  const [mode, setMode] = useState<"view" | "edit" | "search">(
+    hasSaved ? "view" : "search",
+  );
+  const [draft, setDraft] = useState<CustomLocationValue>(value);
+  const [draftError, setDraftError] = useState<string | null>(null);
+
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MeetupPlaceResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
-  /** WO-134 — editing the name/address of an already-saved custom location. */
-  const [editing, setEditing] = useState(false);
+
+  /**
+   * DEF-148-02 — when a saved location arrives after mount (async Meetup load)
+   * show it instead of the search-first state. Never while the member is
+   * mid-edit or mid-search, so a draft is never discarded underneath them.
+   */
+  useEffect(() => {
+    if (hasSaved && mode === "search" && !manual && results === null && query === "") {
+      setMode("view");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSaved]);
 
   const googleConfirmed = value.googlePlaceId !== null;
-  /**
-   * DEF-134-01 — a saved custom location must stay visible even when it has no
-   * Google reference (manual or legacy rows), instead of being hidden behind an
-   * empty search field.
-   */
-  const hasSelection = googleConfirmed || value.name.trim().length > 0;
 
   async function runSearch() {
     const q = query.trim();
@@ -169,6 +190,7 @@ export function CustomLocationSearch({
     }
   }
 
+  /** Explicit selection of a genuinely different place — replaces structured data. */
   function select(r: MeetupPlaceResult) {
     onChange({
       name: r.name,
@@ -181,31 +203,29 @@ export function CustomLocationSearch({
     setResults(null);
     setQuery("");
     setManual(false);
-    setEditing(false);
+    setDraftError(null);
+    setMode("view");
     onEvent?.("selected", { has_coordinates: r.latitude !== null });
   }
 
-  function clearSelection() {
-    setEditing(false);
+  /** Commit the local draft (manual entry or a name/address edit). */
+  function commitDraft() {
+    if (draft.name.trim().length === 0) {
+      setDraftError("Add a location name so attendees know where to go.");
+      return;
+    }
+    setDraftError(null);
+    onChange({ ...draft, name: draft.name.trim(), address: draft.address.trim() });
     setManual(false);
-    onChange({
-      name: "",
-      address: "",
-      latitude: null,
-      longitude: null,
-      googlePlaceId: null,
-      googleMapsUrl: null,
-    });
+    setResults(null);
+    setQuery("");
+    setMode("view");
   }
 
   const selectedMapsUrl = safeMapsUrl(value.googleMapsUrl);
 
-  /**
-   * DEF-134A-02 — while the host is editing, the card must stay mounted even if
-   * the name field is momentarily empty, so the blocking alert is reachable
-   * instead of the UI collapsing back to the search-first state.
-   */
-  if (hasSelection || editing) {
+  // ---- Saved location, read-only view ------------------------------------
+  if (mode === "view" && hasSaved) {
     return (
       <div className="mt-2 rounded-card border border-primary bg-accent/30 p-3">
         <div className="flex items-start gap-2">
@@ -232,50 +252,33 @@ export function CustomLocationSearch({
                 ? "Location confirmed from Google Maps. Timezone comes from the city."
                 : "Saved as a custom location. Timezone comes from the city."}
             </p>
-
-            {editing ? (
-              <div className="mt-3 border-t border-border pt-3">
-                <ManualLocationFields value={value} onChange={onChange} />
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  disabled={value.name.trim().length === 0}
-                  className={cn(
-                    "mt-3 min-h-11 px-4 rounded-control text-sm font-semibold",
-                    value.name.trim().length === 0
-                      ? "bg-muted text-charcoal-muted"
-                      : "bg-primary text-primary-foreground",
-                  )}
-                >
-                  Done editing location
-                </button>
-                {value.name.trim().length === 0 && (
-                  <p role="alert" className="mt-2 text-xs text-destructive">
-                    Add a location name so attendees know where to go.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(true);
-                  onEvent?.("manual", { mode: "edit_saved" });
-                }}
-                aria-label={
-                  value.name
-                    ? `Edit ${value.name} name and address`
-                    : "Edit location name and address"
-                }
-                className="mt-2 min-h-11 inline-flex items-center text-xs font-semibold text-primary"
-              >
-                Edit name or address
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(value);
+                setDraftError(null);
+                setMode("edit");
+                onEvent?.("manual", { mode: "edit_saved" });
+              }}
+              aria-label={
+                value.name
+                  ? `Edit ${value.name} name and address`
+                  : "Edit location name and address"
+              }
+              className="mt-2 min-h-11 inline-flex items-center text-xs font-semibold text-primary"
+            >
+              Edit name or address
+            </button>
           </div>
           <button
             type="button"
-            onClick={clearSelection}
+            onClick={() => {
+              setManual(false);
+              setResults(null);
+              setQuery("");
+              setDraftError(null);
+              setMode("search");
+            }}
             aria-label="Change location — search for a different place"
             className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary"
           >
@@ -287,9 +290,72 @@ export function CustomLocationSearch({
     );
   }
 
+  // ---- Editing name / address of the saved location (local draft) ---------
+  if (mode === "edit") {
+    return (
+      <div className="mt-2 rounded-card border border-primary bg-accent/30 p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-charcoal-muted">
+          Editing location details
+        </p>
+        <p className="mt-0.5 text-[11px] text-charcoal-muted">
+          The saved location stays as it is until you save these details. Coordinates and the
+          map pin are kept.
+        </p>
+        <div className="mt-3">
+          <ManualLocationFields value={draft} onChange={setDraft} />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={commitDraft}
+            className="min-h-11 px-4 rounded-control text-sm font-semibold bg-primary text-primary-foreground"
+          >
+            Save location details
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(value);
+              setDraftError(null);
+              setMode("view");
+            }}
+            className="min-h-11 px-4 rounded-control text-sm font-semibold border border-border bg-card text-charcoal"
+          >
+            Cancel
+          </button>
+        </div>
+        {draftError && (
+          <p role="alert" className="mt-2 text-xs text-destructive">
+            {draftError}
+          </p>
+        )}
+      </div>
+    );
+  }
 
+  // ---- Search for a place (saved location, if any, is left untouched) -----
   return (
     <div className="mt-2 space-y-3 rounded-card border border-border bg-muted/30 p-3">
+      {hasSaved && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border bg-card px-3 py-2">
+          <p className="text-xs text-charcoal-muted min-w-0 [overflow-wrap:anywhere]">
+            Still saved: <span className="font-semibold text-charcoal">{value.name}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setManual(false);
+              setResults(null);
+              setQuery("");
+              setMode("view");
+            }}
+            className="min-h-11 inline-flex items-center text-xs font-semibold text-primary"
+          >
+            Keep current location
+          </button>
+        </div>
+      )}
+
       <div>
         <label
           htmlFor="custom-location-search"
@@ -397,6 +463,8 @@ export function CustomLocationSearch({
         <button
           type="button"
           onClick={() => {
+            setDraft(hasSaved ? value : EMPTY);
+            setDraftError(null);
             setManual(true);
             onEvent?.("manual");
           }}
@@ -406,7 +474,33 @@ export function CustomLocationSearch({
         </button>
       ) : (
         <div className="border-t border-border pt-3">
-          <ManualLocationFields value={value} onChange={onChange} />
+          <ManualLocationFields value={draft} onChange={setDraft} />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={commitDraft}
+              className="min-h-11 px-4 rounded-control text-sm font-semibold bg-primary text-primary-foreground"
+            >
+              Use this location
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setManual(false);
+                setDraft(value);
+                setDraftError(null);
+                if (hasSaved) setMode("view");
+              }}
+              className="min-h-11 px-4 rounded-control text-sm font-semibold border border-border bg-card text-charcoal"
+            >
+              Cancel
+            </button>
+          </div>
+          {draftError && (
+            <p role="alert" className="mt-2 text-xs text-destructive">
+              {draftError}
+            </p>
+          )}
         </div>
       )}
     </div>
