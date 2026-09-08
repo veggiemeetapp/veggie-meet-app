@@ -11,7 +11,9 @@ import {
   hasPersistedAuthToken,
   type AuthGate,
 } from "@/lib/authHydration";
+import { classifyRestoration } from "@/lib/authRestorationOutcome";
 import { noteAuthGate } from "@/lib/updateTelemetry";
+
 
 
 export type Profile = {
@@ -279,16 +281,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      * WO-145Q CORRECTION — the delayed-restoration retry. It re-reads the
      * persisted session and reloads the profile. It never signs out, never
      * clears storage and never discards member data.
+     *
+     * WO-145R — the retry is also allowed to CONCLUDE: if the server now says
+     * the session is rejected (or storage no longer holds one), the member is
+     * shown the normal signed-out experience instead of retrying forever.
      */
     retryRestore: async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         setSession(data.session);
+        let stillPersisted = false;
+        try {
+          stillPersisted = hasPersistedAuthToken(window.localStorage, window.sessionStorage);
+        } catch {
+          stillPersisted = false;
+        }
+        const outcome = classifyRestoration({
+          hasSession: !!data.session,
+          error: error ?? null,
+          persistedToken: stillPersisted,
+        });
+        if (outcome === "rejected") {
+          setPersistedToken(false);
+          setSessionRejected(true);
+          setGraceElapsed(true);
+          return;
+        }
+        if (outcome === "restored") setSessionRejected(false);
         if (data.session?.user?.id) await loadProfile(data.session.user.id, true);
       } catch {
         /* offline: the gate stays in its honest delayed state */
       }
     },
+
     signOut: async () => {
       await supabase.auth.signOut();
       // Belt-and-suspenders: also clear here in case the auth listener races
