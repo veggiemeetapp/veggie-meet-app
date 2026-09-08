@@ -44,6 +44,8 @@ export interface StorageLike {
 export const UPDATE_SESSION_KEY = "veggiemeet_update_session";
 /** Total controlled document reloads this session has already performed. */
 export const UPDATE_SESSION_RELOADS_KEY = "veggiemeet_update_session_reloads";
+/** WO-145R — wall-clock moment the consent was given (ms since epoch). */
+export const UPDATE_SESSION_STARTED_KEY = "veggiemeet_update_session_started";
 
 /**
  * The exact maximum: the consent reload plus one automatic completion reload.
@@ -51,6 +53,21 @@ export const UPDATE_SESSION_RELOADS_KEY = "veggiemeet_update_session_reloads";
 export const MAX_UPDATE_SESSION_RELOADS = 2;
 /** Derived, for readability at call sites: automatic reloads after the consent. */
 export const MAX_AUTOMATIC_COMPLETION_RELOADS = MAX_UPDATE_SESSION_RELOADS - 1;
+
+/**
+ * WO-145R — short-lived consent boundary (defence in depth).
+ *
+ * An installed PWA tab can stay alive for days. A consent that never completed
+ * must not remain authorized: without an expiry, a later foreground / focus /
+ * reconnect check that discovers a newer build would reload the member's window
+ * with no current consent. Every failure path also ends the session explicitly;
+ * this bound catches anything that escaped one.
+ *
+ * Two minutes comfortably covers the physically observed worst case (a ~65s cold
+ * hydration plus one controlled reload) and is far shorter than any plausible
+ * "much later" background reload.
+ */
+export const UPDATE_SESSION_MAX_AGE_MS = 120_000;
 
 function newSessionId(): string {
   try {
@@ -61,12 +78,17 @@ function newSessionId(): string {
 }
 
 /** Opens the bounded update session for one member consent. */
-export function startUpdateSession(storage: StorageLike | null, id?: string): string {
+export function startUpdateSession(
+  storage: StorageLike | null,
+  id?: string,
+  now: number = Date.now(),
+): string {
   const sessionId = id ?? newSessionId();
   if (!storage) return sessionId;
   try {
     storage.setItem(UPDATE_SESSION_KEY, sessionId);
     storage.setItem(UPDATE_SESSION_RELOADS_KEY, "0");
+    storage.setItem(UPDATE_SESSION_STARTED_KEY, String(now));
   } catch {
     /* private mode: the session degrades to the explicit prompt */
   }
@@ -83,8 +105,45 @@ export function updateSessionId(storage: StorageLike | null): string | null {
   }
 }
 
-export function isUpdateSessionActive(storage: StorageLike | null): boolean {
-  return updateSessionId(storage) !== null;
+/** Moment the open consent was given, or null when unknown. */
+export function updateSessionStartedAt(storage: StorageLike | null): number | null {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(UPDATE_SESSION_STARTED_KEY);
+    if (raw === null) return null;
+    const n = Number.parseInt(raw, 10);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/** WO-145R — true once the consent is older than the session boundary. */
+export function isUpdateSessionExpired(
+  storage: StorageLike | null,
+  now: number = Date.now(),
+): boolean {
+  if (updateSessionId(storage) === null) return false;
+  const startedAt = updateSessionStartedAt(storage);
+  // A session with no recorded start cannot be proven current: treat it as spent.
+  if (startedAt === null) return true;
+  return now - startedAt > UPDATE_SESSION_MAX_AGE_MS;
+}
+
+/**
+ * A consent is only ACTIVE while it exists and is within the boundary. An
+ * expired session is closed on read, so it can never arm a later reload.
+ */
+export function isUpdateSessionActive(
+  storage: StorageLike | null,
+  now: number = Date.now(),
+): boolean {
+  if (updateSessionId(storage) === null) return false;
+  if (isUpdateSessionExpired(storage, now)) {
+    endUpdateSession(storage);
+    return false;
+  }
+  return true;
 }
 
 export function endUpdateSession(storage: StorageLike | null): void {
@@ -92,6 +151,7 @@ export function endUpdateSession(storage: StorageLike | null): void {
   try {
     storage.removeItem(UPDATE_SESSION_KEY);
     storage.removeItem(UPDATE_SESSION_RELOADS_KEY);
+    storage.removeItem(UPDATE_SESSION_STARTED_KEY);
   } catch {
     /* ignore */
   }
@@ -124,6 +184,7 @@ export function noteSessionReload(storage: StorageLike | null): number {
     return 0;
   }
 }
+
 
 export type HandoverDecision =
   /** Complete the consented session with one further controlled reload. */
