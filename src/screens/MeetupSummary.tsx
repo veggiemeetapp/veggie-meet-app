@@ -41,6 +41,7 @@ import { formatMeetupDate, formatMeetupTimeRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
   Dialog,
   DialogContent,
   DialogHeader,
@@ -90,6 +91,8 @@ export default function MeetupSummary() {
   }, [id, profile?.id, summaryQuery.data]);
 
   // Realtime: verified pairs & attendance transitions
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!id || !profile?.id) return;
     const channel = supabase
@@ -113,7 +116,7 @@ export default function MeetupSummary() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, profile?.id, qc]);
+  }, [id, profile?.id, qc, realtimeEpoch]);
 
   if (!id) return null;
 

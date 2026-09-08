@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchUnreadCount } from "@/lib/notifications";
 import { UNREAD_COUNT_KEY, unreadCountKey } from "@/lib/notificationsCache";
 import { cn } from "@/lib/utils";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 interface Props {
   className?: string;
@@ -30,6 +31,8 @@ export function NotificationsBell({ className }: Props) {
     queryFn: fetchUnreadCount,
   });
 
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -48,7 +51,7 @@ export function NotificationsBell({ className }: Props) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
 
   const label =

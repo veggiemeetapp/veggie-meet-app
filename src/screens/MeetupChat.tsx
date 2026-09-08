@@ -65,6 +65,7 @@ import {
   toggleMeetupMessageReaction,
 } from "@/lib/chatReactions";
 import { messageRowAlignment } from "@/lib/chatMessageLayout";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 /** WO-137: message-specific accessible name for reaction controls. */
 function reactionMessageLabel(m: ChatMessage, isMe: boolean): string {
@@ -162,6 +163,8 @@ export default function MeetupChat() {
   // Realtime: RLS-scoped inserts for this chat. Re-read the row via the RPC
   // page so blocking suppression and sender identity stay server-derived.
   // WO-136: UPDATEs (edits and deletions) converge the same way.
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!isDb || !id || authLoading || !context?.can_read) return;
     const refresh = () => {
@@ -185,7 +188,7 @@ export default function MeetupChat() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, isDb, authLoading, context?.can_read, mergeMessages]);
+  }, [id, isDb, authLoading, context?.can_read, mergeMessages, realtimeEpoch]);
 
 
   useEffect(() => {

@@ -54,6 +54,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
@@ -143,6 +144,8 @@ export default function Notifications() {
 
   // Realtime: invalidate first page so new rows show up at the top without
   // shifting cursors. Existing loaded pages stay stable because we key by id.
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -161,7 +164,7 @@ export default function Notifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   // Deduplicate across pages (a realtime refetch of page 1 can overlap with
   // an already-loaded page 2 when new items push older ones down).

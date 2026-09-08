@@ -29,6 +29,7 @@ import { showErrorToast } from "@/lib/errorToast";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 function formatInboxTime(iso: string | null): string {
   if (!iso) return "";
@@ -98,6 +99,8 @@ export default function Chats() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusHeadingOnArrival]);
 
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -116,7 +119,7 @@ export default function Chats() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   const items = inboxQuery.data ?? [];
   const filtered = useMemo(() => {

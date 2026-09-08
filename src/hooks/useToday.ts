@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchTodayExperience, type TodayExperience } from "@/lib/today";
 import { useAuth } from "./useAuth";
 import { useLocationContext } from "./useLocation";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 const TODAY_KEY = ["today-experience"] as const;
 
@@ -26,6 +27,8 @@ export function useToday() {
     refetchOnReconnect: true,
   });
 
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const tables = [
@@ -51,7 +54,7 @@ export function useToday() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   return {
     data: query.data,

@@ -71,6 +71,7 @@ import { useLocationContext } from "@/hooks/useLocation";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import type { CommunityPlace } from "@/types";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -253,6 +254,8 @@ export default function MeetupManagement() {
 
 
   // Realtime: keep summary + attendee list in sync with backend.
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!id) return;
     const channel = supabase
@@ -271,7 +274,7 @@ export default function MeetupManagement() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, qc]);
+  }, [id, qc, realtimeEpoch]);
 
 
   const activeAttendeeCount = useMemo(

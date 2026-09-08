@@ -19,6 +19,7 @@ import { ResultSkeleton } from "@/components/search/ResultSkeleton";
 import { SearchEmptyState } from "@/components/search/SearchEmptyState";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import {
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
   useSearchAll,
   useSearchMeetupsInfinite,
   useSearchPlacesInfinite,
@@ -70,6 +71,8 @@ export default function Search() {
   const pQ = useSearchPlacesInfinite(query, cityId, allCities, {});
 
   // Realtime invalidation while on Search
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!profile?.id) return;
     const invalidate = () => qc.invalidateQueries({ queryKey: ["search"] });
@@ -83,7 +86,7 @@ export default function Search() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [profile?.id, qc]);
+  }, [profile?.id, qc, realtimeEpoch]);
 
   const dedupe = <T extends { entity_id: string }>(rows: T[]): T[] => {
     const seen = new Set<string>();

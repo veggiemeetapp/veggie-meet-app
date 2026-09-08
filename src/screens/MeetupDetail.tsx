@@ -43,6 +43,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useStickyPanelHeight } from "@/hooks/useStickyPanelHeight";
 
 import type { Meetup, Veggie } from "@/types";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 
 
@@ -132,6 +133,8 @@ export default function MeetupDetail() {
 
   // Realtime: reflect host actions (remove / cancel) on the already-open screen
   // without requiring a refresh, focus change, or remount.
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!isRealMeetup || !id) return;
     const channel = supabase
@@ -160,7 +163,7 @@ export default function MeetupDetail() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, isRealMeetup, queryClient]);
+  }, [id, isRealMeetup, queryClient, realtimeEpoch]);
 
   // WO-095: only server-backed (uuid) Meetups render. The screen used to fall
   // back to the mock-data fixture for non-uuid ids, which rendered fixture

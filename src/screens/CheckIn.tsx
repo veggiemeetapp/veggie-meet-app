@@ -30,6 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Meetup, Veggie } from "@/types";
 import { toast } from "sonner";
+import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 type Mode = "hub" | "qr" | "scan";
 
@@ -56,6 +57,8 @@ export default function CheckIn() {
 
   // Realtime: if this user's QR gets scanned while they're on this screen,
   // surface the same success dialog without any interaction.
+  // WO-145R — re-subscribe once when a cancelled update restores live updates.
+  const realtimeEpoch = useRealtimeEpoch();
   useEffect(() => {
     if (!realMeetup || !profile?.id) return;
     const channel = supabase
@@ -84,7 +87,7 @@ export default function CheckIn() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [meetupId, realMeetup, profile?.id, qc]);
+  }, [meetupId, realMeetup, profile?.id, qc, realtimeEpoch]);
 
   async function handleScanResult(raw: string) {
     const result: VerifyResult = await verifyMeetupConnection(raw);
