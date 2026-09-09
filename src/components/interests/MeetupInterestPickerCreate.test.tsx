@@ -1,4 +1,4 @@
-import { describe, expect, it, useState } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { useState as useReactState } from "react";
 import { MeetupInterestPicker } from "./MeetupInterestPicker";
