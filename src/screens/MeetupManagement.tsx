@@ -241,10 +241,10 @@ export default function MeetupManagement() {
       interestOptions,
     );
     setPrimaryInterestId(recovered.primaryId);
-    // WO-149 — a recovered main category must never also remain optional.
-    setAdditionalInterestIds((prev) =>
-      normalizeAdditionalInterestIds(recovered.primaryId, prev),
-    );
+    // WO-149B — recovery is a display aid, not a host decision: it deliberately
+    // does NOT mark the categories as touched, so an unrelated save still leaves
+    // the stored category columns exactly as they are.
+
   }, [meetup?.id, interestOptions.length]);
 
   const primaryInterestSelectable =
