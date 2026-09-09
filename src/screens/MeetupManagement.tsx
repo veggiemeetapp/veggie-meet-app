@@ -32,7 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
 import { recoverPrimaryInterest } from "@/lib/meetupLegacyInterest";
-import { normalizeAdditionalInterestIds } from "@/lib/meetupInterestDraft";
+import { resolveCategoryUpdate } from "@/lib/meetupInterestDraft";
 import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById, FALLBACK_COVER } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import {
@@ -136,6 +136,13 @@ export default function MeetupManagement() {
   // WO-124 — interest tags (shared taxonomy) for this Meetup.
   const [primaryInterestId, setPrimaryInterestId] = useState<string | null>(null);
   const [additionalInterestIds, setAdditionalInterestIds] = useState<string[]>([]);
+  /**
+   * WO-149B — true only after the host deliberately changed a category in this
+   * session. While false, Save omits the category columns so stored (including
+   * legacy, duplicated, over-limit, unknown or retired) values survive exactly.
+   */
+  const [categoryTouched, setCategoryTouched] = useState(false);
+
   const [saving, setSaving] = useState(false);
   // WO-133 — staged cover edit. Nothing is written until Save, so unrelated
   // fields are never touched by a cover change and Remove is reversible.
@@ -173,14 +180,12 @@ export default function MeetupManagement() {
     setEndTime(meetup.endTime ?? "");
     setCapacity(meetup.capacity);
     setPrimaryInterestId(meetup.primaryInterestId ?? null);
-    // WO-149 — legacy rows can repeat the main category or the same optional id
-    // twice. Normalise the draft only; stored data is never rewritten on open.
-    setAdditionalInterestIds(
-      normalizeAdditionalInterestIds(
-        meetup.primaryInterestId ?? null,
-        meetup.additionalInterestIds ?? [],
-      ),
-    );
+    // WO-149B — hydrate the stored categories verbatim. No deduplication,
+    // capping, reordering or dropping happens on open: only an explicit host
+    // decision may ever rewrite these columns (see `resolveCategoryUpdate`).
+    setAdditionalInterestIds(meetup.additionalInterestIds ?? []);
+    setCategoryTouched(false);
+
     setCoverDraft(COVER_DRAFT_UNCHANGED);
     setCoverSaveError(null);
 
@@ -236,10 +241,10 @@ export default function MeetupManagement() {
       interestOptions,
     );
     setPrimaryInterestId(recovered.primaryId);
-    // WO-149 — a recovered main category must never also remain optional.
-    setAdditionalInterestIds((prev) =>
-      normalizeAdditionalInterestIds(recovered.primaryId, prev),
-    );
+    // WO-149B — recovery is a display aid, not a host decision: it deliberately
+    // does NOT mark the categories as touched, so an unrelated save still leaves
+    // the stored category columns exactly as they are.
+
   }, [meetup?.id, interestOptions.length]);
 
   const primaryInterestSelectable =
@@ -520,13 +525,10 @@ export default function MeetupManagement() {
         // Cover: null + clearCover=false means "leave the current cover as is".
         coverImageUrl: cover.dirty ? cover.coverImageUrl : null,
         clearCover: cover.clearCover,
-        primaryInterestId,
-        // WO-149 — never persist the main category as an optional one, and never
-        // persist duplicates, whatever shape the legacy row arrived in.
-        additionalInterestIds: normalizeAdditionalInterestIds(
-          primaryInterestId,
-          additionalInterestIds,
-        ),
+        // WO-149B — categories are written only after an explicit host decision;
+        // otherwise they are omitted and the server preserves them verbatim.
+        ...resolveCategoryUpdate(categoryTouched, primaryInterestId, additionalInterestIds),
+
       });
       toast({
         title: cover.clearCover
@@ -537,6 +539,8 @@ export default function MeetupManagement() {
         description: "Attendees will be notified of meaningful changes.",
       });
       setCoverDraft(COVER_DRAFT_UNCHANGED);
+      // WO-149B — the confirmed categories are now the stored ones.
+      setCategoryTouched(false);
       // WO-133 — every surface that renders a Meetup cover must drop its cache
       // so the old image can never linger: Manage summary + member detail
       // (managed-meetup / meetup-membership), Today, Community, My Plans,
@@ -853,8 +857,14 @@ export default function MeetupManagement() {
               recovery={needsInterestRecovery}
               primaryId={primaryInterestId}
               additionalIds={additionalInterestIds}
-              onPrimaryChange={setPrimaryInterestId}
-              onAdditionalChange={setAdditionalInterestIds}
+              onPrimaryChange={(id) => {
+                setCategoryTouched(true);
+                setPrimaryInterestId(id);
+              }}
+              onAdditionalChange={(ids) => {
+                setCategoryTouched(true);
+                setAdditionalInterestIds(ids);
+              }}
               suggestFrom={`${title} ${description}`}
             />
           </div>
