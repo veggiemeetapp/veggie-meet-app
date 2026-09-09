@@ -32,7 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
 import { recoverPrimaryInterest } from "@/lib/meetupLegacyInterest";
-import { normalizeAdditionalInterestIds } from "@/lib/meetupInterestDraft";
+import { resolveCategoryUpdate } from "@/lib/meetupInterestDraft";
 import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById, FALLBACK_COVER } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import {
@@ -525,13 +525,10 @@ export default function MeetupManagement() {
         // Cover: null + clearCover=false means "leave the current cover as is".
         coverImageUrl: cover.dirty ? cover.coverImageUrl : null,
         clearCover: cover.clearCover,
-        primaryInterestId,
-        // WO-149 — never persist the main category as an optional one, and never
-        // persist duplicates, whatever shape the legacy row arrived in.
-        additionalInterestIds: normalizeAdditionalInterestIds(
-          primaryInterestId,
-          additionalInterestIds,
-        ),
+        // WO-149B — categories are written only after an explicit host decision;
+        // otherwise they are omitted and the server preserves them verbatim.
+        ...resolveCategoryUpdate(categoryTouched, primaryInterestId, additionalInterestIds),
+
       });
       toast({
         title: cover.clearCover
