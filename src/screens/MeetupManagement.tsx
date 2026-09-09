@@ -32,6 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { fetchInterestCatalogue } from "@/lib/onboarding";
 import { MeetupInterestPicker } from "@/components/interests/MeetupInterestPicker";
 import { recoverPrimaryInterest } from "@/lib/meetupLegacyInterest";
+import { normalizeAdditionalInterestIds } from "@/lib/meetupInterestDraft";
 import { fetchPublishedCommunityPlaces, fetchMeetupById, fetchCommunityPlaceById, FALLBACK_COVER } from "@/lib/backend";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import {
@@ -172,7 +173,14 @@ export default function MeetupManagement() {
     setEndTime(meetup.endTime ?? "");
     setCapacity(meetup.capacity);
     setPrimaryInterestId(meetup.primaryInterestId ?? null);
-    setAdditionalInterestIds(meetup.additionalInterestIds ?? []);
+    // WO-149 — legacy rows can repeat the main category or the same optional id
+    // twice. Normalise the draft only; stored data is never rewritten on open.
+    setAdditionalInterestIds(
+      normalizeAdditionalInterestIds(
+        meetup.primaryInterestId ?? null,
+        meetup.additionalInterestIds ?? [],
+      ),
+    );
     setCoverDraft(COVER_DRAFT_UNCHANGED);
     setCoverSaveError(null);
 
@@ -228,6 +236,10 @@ export default function MeetupManagement() {
       interestOptions,
     );
     setPrimaryInterestId(recovered.primaryId);
+    // WO-149 — a recovered main category must never also remain optional.
+    setAdditionalInterestIds((prev) =>
+      normalizeAdditionalInterestIds(recovered.primaryId, prev),
+    );
   }, [meetup?.id, interestOptions.length]);
 
   const primaryInterestSelectable =
