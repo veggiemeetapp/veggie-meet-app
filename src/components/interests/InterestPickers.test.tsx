@@ -118,11 +118,16 @@ describe("MeetupInterestPicker", () => {
     expect(screen.getByTestId("state").textContent).toBe("coffee|yoga");
   });
 
+  // WO-149 — tapping the main category is no longer destructive: it opens the
+  // explicit "change the main category" mode instead of clearing everything.
   it("prevents the primary interest from being duplicated as additional", () => {
     render(<MeetupHarness />);
     fireEvent.click(screen.getByRole("button", { name: "Coffee" }));
     fireEvent.click(screen.getByRole("button", { name: "Coffee (main category)" }));
-    expect(screen.getByTestId("state").textContent).toBe("-|");
+    expect(screen.getByTestId("state").textContent).toBe("coffee|");
+    // and the replacement tap swaps only the main category
+    fireEvent.click(screen.getByRole("button", { name: "Yoga" }));
+    expect(screen.getByTestId("state").textContent).toBe("yoga|");
   });
 
   it("caps additional interests at two (three tags total)", () => {
