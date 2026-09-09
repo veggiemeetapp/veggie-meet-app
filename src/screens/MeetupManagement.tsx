@@ -539,6 +539,8 @@ export default function MeetupManagement() {
         description: "Attendees will be notified of meaningful changes.",
       });
       setCoverDraft(COVER_DRAFT_UNCHANGED);
+      // WO-149B — the confirmed categories are now the stored ones.
+      setCategoryTouched(false);
       // WO-133 — every surface that renders a Meetup cover must drop its cache
       // so the old image can never linger: Manage summary + member detail
       // (managed-meetup / meetup-membership), Today, Community, My Plans,
