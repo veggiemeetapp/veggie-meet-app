@@ -37,3 +37,33 @@ export function normalizeAdditionalInterestIds(
   }
   return out;
 }
+
+/**
+ * WO-149B — what a save is allowed to write to the category columns.
+ *
+ * `update_hosted_meetup` leaves `primary_interest_id`, `additional_interest_ids`
+ * and the legacy `category` enum completely untouched when no main category is
+ * supplied. That is the only way to guarantee that an unrelated edit (title,
+ * date, capacity, cover, …) preserves stored category data exactly — including
+ * historical shapes the current client would otherwise deduplicate, cap,
+ * reorder or drop (unknown / retired ids).
+ *
+ * So the category columns are written only when the host explicitly touched the
+ * category picker in this editing session. Anything else omits them.
+ */
+export function resolveCategoryUpdate(
+  touched: boolean,
+  primaryId: string | null | undefined,
+  additionalIds: Array<string | null | undefined> | null | undefined,
+): { primaryInterestId: string | null; additionalInterestIds?: string[] } {
+  const primary = clean(primaryId);
+  if (!touched || !primary) {
+    // Omit the category write entirely — the server preserves what is stored.
+    return { primaryInterestId: null };
+  }
+  return {
+    primaryInterestId: primary,
+    additionalInterestIds: normalizeAdditionalInterestIds(primary, additionalIds),
+  };
+}
+
