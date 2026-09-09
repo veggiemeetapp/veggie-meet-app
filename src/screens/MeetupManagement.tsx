@@ -521,7 +521,12 @@ export default function MeetupManagement() {
         coverImageUrl: cover.dirty ? cover.coverImageUrl : null,
         clearCover: cover.clearCover,
         primaryInterestId,
-        additionalInterestIds,
+        // WO-149 — never persist the main category as an optional one, and never
+        // persist duplicates, whatever shape the legacy row arrived in.
+        additionalInterestIds: normalizeAdditionalInterestIds(
+          primaryInterestId,
+          additionalInterestIds,
+        ),
       });
       toast({
         title: cover.clearCover
