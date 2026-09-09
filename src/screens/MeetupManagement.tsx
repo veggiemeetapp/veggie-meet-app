@@ -136,6 +136,13 @@ export default function MeetupManagement() {
   // WO-124 — interest tags (shared taxonomy) for this Meetup.
   const [primaryInterestId, setPrimaryInterestId] = useState<string | null>(null);
   const [additionalInterestIds, setAdditionalInterestIds] = useState<string[]>([]);
+  /**
+   * WO-149B — true only after the host deliberately changed a category in this
+   * session. While false, Save omits the category columns so stored (including
+   * legacy, duplicated, over-limit, unknown or retired) values survive exactly.
+   */
+  const [categoryTouched, setCategoryTouched] = useState(false);
+
   const [saving, setSaving] = useState(false);
   // WO-133 — staged cover edit. Nothing is written until Save, so unrelated
   // fields are never touched by a cover change and Remove is reversible.
@@ -173,14 +180,12 @@ export default function MeetupManagement() {
     setEndTime(meetup.endTime ?? "");
     setCapacity(meetup.capacity);
     setPrimaryInterestId(meetup.primaryInterestId ?? null);
-    // WO-149 — legacy rows can repeat the main category or the same optional id
-    // twice. Normalise the draft only; stored data is never rewritten on open.
-    setAdditionalInterestIds(
-      normalizeAdditionalInterestIds(
-        meetup.primaryInterestId ?? null,
-        meetup.additionalInterestIds ?? [],
-      ),
-    );
+    // WO-149B — hydrate the stored categories verbatim. No deduplication,
+    // capping, reordering or dropping happens on open: only an explicit host
+    // decision may ever rewrite these columns (see `resolveCategoryUpdate`).
+    setAdditionalInterestIds(meetup.additionalInterestIds ?? []);
+    setCategoryTouched(false);
+
     setCoverDraft(COVER_DRAFT_UNCHANGED);
     setCoverSaveError(null);
 
