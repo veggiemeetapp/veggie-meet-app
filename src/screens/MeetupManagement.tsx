@@ -855,8 +855,14 @@ export default function MeetupManagement() {
               recovery={needsInterestRecovery}
               primaryId={primaryInterestId}
               additionalIds={additionalInterestIds}
-              onPrimaryChange={setPrimaryInterestId}
-              onAdditionalChange={setAdditionalInterestIds}
+              onPrimaryChange={(id) => {
+                setCategoryTouched(true);
+                setPrimaryInterestId(id);
+              }}
+              onAdditionalChange={(ids) => {
+                setCategoryTouched(true);
+                setAdditionalInterestIds(ids);
+              }}
               suggestFrom={`${title} ${description}`}
             />
           </div>
