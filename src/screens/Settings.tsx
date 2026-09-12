@@ -258,7 +258,7 @@ function Hub({ data, go }: { data: AccountSettings; go: (s: Section) => void }) 
 /* ---------- About / updates (WO-145) ---------- */
 
 function AboutSection() {
-  const { buildId, state, checkNow, updateNow, visible, supported } = usePwaUpdate();
+  const { buildId, state, updateNow, visible } = usePwaUpdate();
 
   /**
    * WO-145O — this copy speaks only from the coordinator's proven check outcome.
@@ -282,8 +282,8 @@ function AboutSection() {
         : state.lastCheckOutcome === "latest"
           ? "You're on the latest version."
           : state.lastCheckOutcome === "failed"
-            ? "We couldn't check for updates just now. Please check your connection and try again."
-            : "VeggieMeet updates itself. You can also check now.";
+            ? "We couldn't check for updates just now. VeggieMeet will try again automatically."
+            : "VeggieMeet checks for updates automatically.";
 
   return (
     <section aria-labelledby="about-heading" className="pt-6">
@@ -301,22 +301,13 @@ function AboutSection() {
         <p className="text-xs text-charcoal-muted" aria-live="polite">
           {message}
         </p>
-        <div className="flex gap-2">
-          <SecondaryButton
-            fullWidth
-            disabled={state.checking || !supported}
-            onClick={() => {
-              void checkNow();
-            }}
-          >
-            {state.checking ? "Checking…" : "Check for updates"}
-          </SecondaryButton>
-          {updateAvailable && (
+        {updateAvailable && (
+          <div className="flex gap-2">
             <PrimaryButton fullWidth onClick={() => updateNow()}>
               Update now
             </PrimaryButton>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
