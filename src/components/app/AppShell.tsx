@@ -82,8 +82,9 @@ export function AppShell({ children }: AppShellProps) {
         </p>
         {!hideNav && <BottomNav />}
         <FollowUpPrompt />
-        {/* WO-145: one application-level update prompt, above the nav. */}
-        <UpdatePrompt />
+        {/* Keep Today focused on the main feed. Update notices remain available
+            on every other screen without changing the update lifecycle. */}
+        {pathname !== "/" && <UpdatePrompt />}
       </div>
     </div>
   );
