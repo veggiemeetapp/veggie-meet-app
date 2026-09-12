@@ -18,7 +18,7 @@ describe("AppShell layout contract", () => {
     expect(src).toContain("/^\\/dm\\//");
   });
 
-  it("keeps the update prompt off the main Today screen", () => {
-    expect(src).toContain('{pathname !== "/" && <UpdatePrompt />}');
+  it("does not render an update popup on any screen", () => {
+    expect(src).not.toContain("<UpdatePrompt");
   });
 });
