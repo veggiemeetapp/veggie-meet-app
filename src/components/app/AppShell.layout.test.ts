@@ -17,4 +17,8 @@ describe("AppShell layout contract", () => {
     expect(src).toContain("/^\\/chat\\//");
     expect(src).toContain("/^\\/dm\\//");
   });
+
+  it("keeps the update prompt off the main Today screen", () => {
+    expect(src).toContain('{pathname !== "/" && <UpdatePrompt />}');
+  });
 });
