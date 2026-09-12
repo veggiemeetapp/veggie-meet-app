@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { AppErrorBoundary } from "./ErrorBoundary";
 import { OfflineBanner } from "./OfflineBanner";
-import { UpdatePrompt } from "./UpdatePrompt";
 import { FollowUpPrompt } from "@/components/postmeetup/FollowUpPrompt";
 import { useAuth } from "@/hooks/useAuth";
 import { titleForPath } from "@/lib/pageTitle";
@@ -82,9 +81,6 @@ export function AppShell({ children }: AppShellProps) {
         </p>
         {!hideNav && <BottomNav />}
         <FollowUpPrompt />
-        {/* Keep Today focused on the main feed. Update notices remain available
-            on every other screen without changing the update lifecycle. */}
-        {pathname !== "/" && <UpdatePrompt />}
       </div>
     </div>
   );
