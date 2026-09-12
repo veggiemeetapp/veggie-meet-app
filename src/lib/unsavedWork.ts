@@ -24,6 +24,21 @@ interface Entry {
 }
 
 const entries = new Map<string, Entry>();
+const listeners = new Set<() => void>();
+
+function notifyListeners(): void {
+  listeners.forEach((listener) => listener());
+}
+
+/**
+ * Lets the update coordinator resume a deferred automatic update as soon as
+ * protected work becomes clean. The snapshot itself is the boolean returned by
+ * `hasUnsavedWork`, so React only re-renders when update safety actually changes.
+ */
+export function subscribeUnsavedWork(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
 export function registerUnsavedWork(
   id: string,
@@ -31,8 +46,9 @@ export function registerUnsavedWork(
   isDirty: () => boolean,
 ): () => void {
   entries.set(id, { kind, isDirty });
+  notifyListeners();
   return () => {
-    entries.delete(id);
+    if (entries.delete(id)) notifyListeners();
   };
 }
 
@@ -65,7 +81,9 @@ export function hasUnsavedWork(): boolean {
 }
 
 export function resetUnsavedWork(): void {
+  const changed = entries.size > 0;
   entries.clear();
+  if (changed) notifyListeners();
 }
 
 export const UNSAVED_WORK_LABELS: Record<UnsavedWorkKind, string> = {

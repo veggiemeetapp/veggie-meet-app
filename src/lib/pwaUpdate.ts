@@ -135,6 +135,59 @@ export type CheckReason =
   | "interval"
   | "manual";
 
+export interface AutomaticUpdateInput {
+  state: Pick<
+    UpdateState,
+    | "status"
+    | "waitingToken"
+    | "updateRequired"
+    | "activationPending"
+    | "reloadRequested"
+    | "convergenceStalled"
+  >;
+  documentVisible: boolean;
+  protectedWork: boolean;
+  activeMutations: number;
+  coordinating: boolean;
+  transactionOpen: boolean;
+}
+
+/**
+ * A published build may activate automatically only when doing so cannot erase
+ * member work. Keeping this policy pure makes the no-data-loss boundary easy to
+ * verify independently from the browser service-worker lifecycle.
+ */
+export function shouldApplyUpdateAutomatically(input: AutomaticUpdateInput): boolean {
+  const {
+    state,
+    documentVisible,
+    protectedWork,
+    activeMutations,
+    coordinating,
+    transactionOpen,
+  } = input;
+
+  if (
+    !documentVisible ||
+    protectedWork ||
+    activeMutations > 0 ||
+    coordinating ||
+    transactionOpen ||
+    state.activationPending ||
+    state.reloadRequested ||
+    state.convergenceStalled
+  ) {
+    return false;
+  }
+
+  if (state.updateRequired || state.status === "update-required") return true;
+
+  return (
+    (state.status === "available" || state.status === "failed") &&
+    state.waitingToken !== null
+  );
+}
+
 /* ---------- Minimal structural types (real SW types are DOM-only) ---------- */
 
 export interface WorkerLike {

@@ -1,10 +1,11 @@
 /**
  * WO-145 / WO-145B — React binding for the update coordinator and the fleet.
  *
- * Owns exactly four things:
+ * Owns exactly five things:
  *  - construct one coordinator per client and attach the real registration;
  *  - run the required update checks (launch / foreground / focus / reconnect /
  *    interval / manual);
+ *  - automatically activate a detected build when the visible client is clean;
  *  - drive the WO-145B multi-client protocol (census, deterministic leader,
  *    bounded timeouts, one commit, one reload per client);
  *  - reconcile authenticated cache freshness on build change, on account change
@@ -25,10 +26,11 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useQueryClient } from "@tanstack/react-query";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import {
   UpdateCoordinator,
+  shouldApplyUpdateAutomatically,
   startUpdateWatchers,
   type ContainerLike,
   type RegistrationLike,
@@ -71,7 +73,12 @@ import {
   sanitizeUpdateTelemetry,
   workerPresence,
 } from "@/lib/updateTelemetry";
-import { hasUnsavedWork, unsavedWorkKinds, type UnsavedWorkKind } from "@/lib/unsavedWork";
+import {
+  hasUnsavedWork,
+  subscribeUnsavedWork,
+  unsavedWorkKinds,
+  type UnsavedWorkKind,
+} from "@/lib/unsavedWork";
 import {
   beginQuiesce,
   endQuiesce,
@@ -127,7 +134,7 @@ interface PwaUpdateCtx {
    */
   activationPending: boolean;
   checkNow: () => Promise<void>;
-  updateNow: (options?: { force?: boolean }) => void;
+  updateNow: (options?: { force?: boolean; automatic?: boolean }) => void;
   later: () => void;
   retry: () => void;
   /** WO-145I: keep using this version while the browser finishes in its own time. */
@@ -155,6 +162,8 @@ const Ctx = createContext<PwaUpdateCtx>({
 
 
 const CHANNEL_NAME = "veggiemeet-update";
+const AUTO_UPDATE_SETTLE_MS = 750;
+const AUTO_UPDATE_RETRY_MS = 30_000;
 
 /**
  * WO-145P — session-scoped convergence bookkeeping. Two counters only: whether
@@ -171,13 +180,25 @@ function updateSessionStore(): Storage | null {
 
 export function PwaUpdateProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
+  const activeMutations = useIsMutating();
+  const protectedWork = useSyncExternalStore(
+    subscribeUnsavedWork,
+    hasUnsavedWork,
+    () => false,
+  );
   const [tick, setTick] = useState(0);
+  const [documentVisible, setDocumentVisible] = useState(
+    () => typeof document === "undefined" || document.visibilityState === "visible",
+  );
+  const [automaticRetryTick, setAutomaticRetryTick] = useState(0);
   const [unsavedKinds, setUnsavedKinds] = useState<UnsavedWorkKind[]>([]);
   const [coordinating, setCoordinating] = useState(false);
   const [blockedByPeers, setBlockedByPeers] = useState(0);
   const [peerBlocker, setPeerBlocker] = useState<PeerBlocker>(null);
-  /** Open update transaction, so repeated clicks cannot start a second one. */
+  /** Open update transaction, so repeated triggers cannot start a second one. */
   const txnRef = useRef<string | null>(null);
+  /** The build attempt already started by this document (prevents rapid loops). */
+  const automaticAttemptRef = useRef<string | null>(null);
 
   // A single coordinator for the lifetime of the client.
   const coordinatorRef = useRef<UpdateCoordinator | null>(null);
@@ -273,6 +294,18 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     useCallback(() => coordinator?.getState() ?? IDLE_STATE, [coordinator]),
     () => IDLE_STATE,
   );
+
+  useEffect(() => {
+    const syncVisibility = () => setDocumentVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", syncVisibility);
+    window.addEventListener("pageshow", syncVisibility);
+    window.addEventListener("focus", syncVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", syncVisibility);
+      window.removeEventListener("pageshow", syncVisibility);
+      window.removeEventListener("focus", syncVisibility);
+    };
+  }, []);
 
   /* ---------- registration + watchers ---------- */
   useEffect(() => {
@@ -492,7 +525,7 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
   }, [coordinator]);
 
   /**
-   * WO-145F — member-consented activation is a fleet-wide transaction:
+   * WO-145F — safe activation is a fleet-wide transaction:
    *
    *   1. refuse on local protected work (nothing else is disturbed);
    *   2. open a uniquely identified transaction and quiesce THIS client;
@@ -505,12 +538,43 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
    *      after rechecking the browser's real client set through the worker.
    */
   const updateNow = useCallback(
-    (options?: { force?: boolean }) => {
+    (options?: { force?: boolean; automatic?: boolean }) => {
       if (!coordinator) return;
       const force = options?.force === true;
+      const automatic = options?.automatic === true;
 
-      // Already stale (fleet commit or chunk failure): just reload this client.
+      const store = updateSessionStore();
+      let sessionActive = isUpdateSessionActive(store);
+      // A broken origin or a long chain of intermediate releases must never
+      // create an automatic reload loop.
+      if (
+        automatic &&
+        (coordinator.getState().convergenceStalled ||
+          (sessionActive && readSessionReloads(store) >= MAX_UPDATE_SESSION_RELOADS))
+      ) {
+        return;
+      }
+      // A deliberate Settings action is still a recovery escape hatch after an
+      // automatic session reaches its cap; it starts a fresh bounded session.
+      if (
+        !automatic &&
+        (coordinator.getState().convergenceStalled ||
+          (sessionActive && readSessionReloads(store) >= MAX_UPDATE_SESSION_RELOADS))
+      ) {
+        endUpdateSession(store);
+        sessionActive = false;
+      }
+
+      // Already stale (fleet commit or remote build mismatch): reload safely.
       if (coordinator.isVersionSensitiveBlocked()) {
+        if (!force && (hasUnsavedWork() || qc.isMutating() > 0)) {
+          const result = coordinator.reloadIfSafe({ force: false });
+          if (result === "blocked") setUnsavedKinds(unsavedWorkKinds());
+          return;
+        }
+        // Both manual and automatic activation use the same bounded session. It
+        // survives the controlled reload without resetting the reload budget.
+        if (!sessionActive) startUpdateSession(store);
         const result = coordinator.reloadIfSafe({ force });
         if (result === "blocked") setUnsavedKinds(unsavedWorkKinds());
         return;
@@ -525,15 +589,12 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
 
       // Repeated clicks must not open a second transaction.
       if (txnRef.current !== null) return;
+      if (!sessionActive) startUpdateSession(store);
       const txnId = `txn-${randomClientId()}`;
       txnRef.current = txnId;
-      // WO-145Q CORRECTION — one consent opens a BOUNDED UPDATE SESSION of at
-      // most MAX_UPDATE_SESSION_RELOADS (2) controlled document reloads: the
-      // consent reload, plus one automatic completion reload if the document it
-      // produces is provably still an intermediate build. Unsaved work and
-      // multi-window safety always win, and beyond the budget the member is
-      // asked again — never a loop.
-      startUpdateSession(updateSessionStore());
+      // The bounded session permits at most two controlled document reloads:
+      // initial activation plus one completion hop for an intermediate build.
+      // Unsaved work and multi-window safety always win.
       setBlockedByPeers(0);
       setPeerBlocker(null);
 
@@ -546,11 +607,11 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
         // active — so no sibling navigates through the outgoing worker while the
         // promotion this member asked for is still pending.
         const result = coordinator.applyUpdate({ force: true });
-        if (result !== "activating") {
+        if (result !== "activating" || coordinator.getState().status === "failed") {
           endQuiesce(txnId, { queryClient: qc });
           txnRef.current = null;
-          // WO-145R — the consent produced no activation: close the session so it
-          // can never arm an unconsented reload later.
+          // No activation was started, so this attempt cannot authorize a later
+          // reload. A later automatic retry opens a fresh bounded session.
           endUpdateSession(updateSessionStore());
         }
       };
@@ -710,6 +771,68 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     [coordinator, qc],
   );
 
+  /* ---------- safe automatic activation ---------- */
+
+  const automaticUpdateKey = state.updateRequired
+    ? `required:${state.remoteBuildId ?? "unknown"}:${readHops(updateSessionStore())}`
+    : state.waitingToken !== null
+      ? `worker:${state.waitingToken}`
+      : null;
+
+  useEffect(() => {
+    if (automaticUpdateKey === null) {
+      automaticAttemptRef.current = null;
+      return;
+    }
+
+    const safeToStart = shouldApplyUpdateAutomatically({
+      state,
+      documentVisible,
+      protectedWork,
+      activeMutations,
+      coordinating,
+      transactionOpen: txnRef.current !== null,
+    });
+    if (!safeToStart) return;
+
+    // If another window temporarily blocked this build, retry at a calm cadence
+    // instead of spinning preparation transactions continuously.
+    if (automaticAttemptRef.current === automaticUpdateKey) {
+      const retry = window.setTimeout(() => {
+        automaticAttemptRef.current = null;
+        setAutomaticRetryTick((value) => value + 1);
+      }, AUTO_UPDATE_RETRY_MS);
+      return () => window.clearTimeout(retry);
+    }
+
+    const start = window.setTimeout(() => {
+      // Re-check at action time: a form or mutation may have started during the
+      // short settling window after update detection.
+      if (
+        document.visibilityState !== "visible" ||
+        hasUnsavedWork() ||
+        qc.isMutating() > 0 ||
+        txnRef.current !== null
+      ) {
+        return;
+      }
+      automaticAttemptRef.current = automaticUpdateKey;
+      updateNow({ automatic: true });
+    }, AUTO_UPDATE_SETTLE_MS);
+
+    return () => window.clearTimeout(start);
+  }, [
+    activeMutations,
+    automaticRetryTick,
+    automaticUpdateKey,
+    coordinating,
+    documentVisible,
+    protectedWork,
+    qc,
+    state,
+    updateNow,
+  ]);
+
 
   const later = useCallback(() => {
     setUnsavedKinds([]);
@@ -745,6 +868,14 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
     setPeerBlocker(null);
     coordinator?.continueOnCurrentVersion();
   }, [coordinator, qc]);
+
+  // With no global prompt mounted, a browser-held activation must restore the
+  // current document automatically after the bounded wait. The latched worker
+  // remains observed and will still trigger a safe reload if activation lands.
+  useEffect(() => {
+    if (state.status !== "pending-close" || state.reloadRequested) return;
+    continueOnCurrentVersion();
+  }, [continueOnCurrentVersion, state.reloadRequested, state.status]);
 
   const notePromptShown = useCallback(() => {
     coordinator?.notePromptShown();

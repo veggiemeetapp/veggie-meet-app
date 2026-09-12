@@ -32,10 +32,11 @@ describe("PWA service worker configuration", () => {
     expect(config).toContain("navigateFallback: null");
   });
 
-  it("cleans up obsolete caches and updates only on explicit activation", () => {
+  it("cleans up obsolete caches and updates only through coordinated activation", () => {
     expect(config).toContain("cleanupOutdatedCaches: true");
     // WO-145: no unconditional takeover — Release N activates only when the
-    // coordinator posts SKIP_WAITING, so a document never mixes two builds.
+    // coordinator posts SKIP_WAITING only when safe, so a document never mixes
+    // two builds even though activation is automatic for a clean client.
     expect(config).toContain('registerType: "prompt"');
     expect(config).not.toContain('registerType: "autoUpdate"');
     expect(config).toContain("skipWaiting: false");
@@ -100,5 +101,19 @@ describe("PWA service worker configuration", () => {
     // Comments may discuss it; no path may CALL it.
     expect(coordinator).not.toMatch(/\.unregister\s*\(/);
     expect(hook).not.toMatch(/\.unregister\s*\(/);
+  });
+
+  it("automatically applies a detected build only through the safety policy", () => {
+    const hook = readFileSync(
+      resolve(process.cwd(), "src/hooks/usePwaUpdate.tsx"),
+      "utf8",
+    );
+    expect(hook).toContain("shouldApplyUpdateAutomatically({");
+    expect(hook).toContain("subscribeUnsavedWork");
+    expect(hook).toContain("useIsMutating");
+    expect(hook).toContain("automaticAttemptRef.current = automaticUpdateKey");
+    expect(hook).toContain("updateNow({ automatic: true });");
+    expect(hook).toContain('state.status !== "pending-close"');
+    expect(hook).toContain("continueOnCurrentVersion();");
   });
 });

@@ -62,8 +62,8 @@ export default defineConfig(({ mode }) => ({
     // unconditional skipWaiting activated a new worker underneath a running old
     // document, so the member kept seeing the old build while its caches moved
     // to the new one, and old HTML could request new lazy chunks. The new worker
-    // now waits until the client explicitly posts SKIP_WAITING and then reloads
-    // exactly once, so old and new code can never execute together.
+    // now waits until the client coordinator posts SKIP_WAITING when the app is
+    // safe, then reloads exactly once so old and new code never execute together.
     VitePWA({
       strategies: "generateSW",
       // WO-145D/E measured behaviour: the plugin's auto-update register type
@@ -115,9 +115,9 @@ export default defineConfig(({ mode }) => ({
         // worker that loaded it and only ever sees the new build after its own
         // one-time, coordinated reload.
         clientsClaim: false,
-        // WO-145E: activation is member-consented only. The worker waits until
-        // the coordinator posts SKIP_WAITING, so software is never replaced
-        // underneath a running document and nothing is ever unregistered.
+        // WO-145E: activation is coordinator-controlled. The worker waits until
+        // the app is visible and free of unsaved work/mutations before the
+        // coordinator posts SKIP_WAITING. Nothing is ever unregistered.
         skipWaiting: false,
 
         // Workbox registers a NavigationRoute BEFORE runtimeCaching, so the

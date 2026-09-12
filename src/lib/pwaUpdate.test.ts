@@ -3,6 +3,7 @@ import {
   DEFAULT_POLL_INTERVAL_MS,
   SKIP_WAITING_MESSAGE,
   UpdateCoordinator,
+  shouldApplyUpdateAutomatically,
   startUpdateWatchers,
   type ContainerLike,
   type RegistrationLike,
@@ -19,6 +20,7 @@ import {
   hasUnsavedWork,
   registerUnsavedWork,
   resetUnsavedWork,
+  subscribeUnsavedWork,
   unsavedWorkKinds,
   unsavedWorkSummary,
 } from "@/lib/unsavedWork";
@@ -390,6 +392,60 @@ describe("WO-145 update coordinator", () => {
   });
 });
 
+describe("safe automatic update policy", () => {
+  const readyState = {
+    status: "available" as const,
+    waitingToken: 1,
+    updateRequired: false,
+    activationPending: false,
+    reloadRequested: false,
+    convergenceStalled: false,
+  };
+
+  function decision(
+    overrides: Partial<Parameters<typeof shouldApplyUpdateAutomatically>[0]> = {},
+  ) {
+    return shouldApplyUpdateAutomatically({
+      state: readyState,
+      documentVisible: true,
+      protectedWork: false,
+      activeMutations: 0,
+      coordinating: false,
+      transactionOpen: false,
+      ...overrides,
+    });
+  }
+
+  it("starts a waiting build automatically when the visible client is clean", () => {
+    expect(decision()).toBe(true);
+    expect(
+      decision({
+        state: { ...readyState, status: "update-required", updateRequired: true },
+      }),
+    ).toBe(true);
+  });
+
+  it("defers while member work or a mutation is in progress", () => {
+    expect(decision({ protectedWork: true })).toBe(false);
+    expect(decision({ activeMutations: 1 })).toBe(false);
+  });
+
+  it("never starts in the background, during another transaction, or after the hop cap", () => {
+    expect(decision({ documentVisible: false })).toBe(false);
+    expect(decision({ coordinating: true })).toBe(false);
+    expect(decision({ transactionOpen: true })).toBe(false);
+    expect(
+      decision({ state: { ...readyState, convergenceStalled: true } }),
+    ).toBe(false);
+  });
+
+  it("ignores idle state without a waiting worker", () => {
+    expect(
+      decision({ state: { ...readyState, status: "idle", waitingToken: null } }),
+    ).toBe(false);
+  });
+});
+
 /* ---------- unsaved work registry ---------- */
 
 describe("WO-145 unsaved-work registry", () => {
@@ -416,6 +472,16 @@ describe("WO-145 unsaved-work registry", () => {
       throw new Error("boom");
     });
     expect(hasUnsavedWork()).toBe(false);
+  });
+
+  it("notifies the automatic updater when protected-work safety changes", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeUnsavedWork(listener);
+    const unregister = registerUnsavedWork("draft", "composer", () => true);
+    expect(listener).toHaveBeenCalledTimes(1);
+    unregister();
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
   });
 });
 

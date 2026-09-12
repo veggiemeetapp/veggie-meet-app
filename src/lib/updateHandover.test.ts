@@ -149,8 +149,8 @@ describe("bounded update session budget", () => {
 describe("update-session wiring", () => {
   const provider = readFileSync("src/hooks/usePwaUpdate.tsx", "utf8");
 
-  it("opens the session on the member's consent", () => {
-    expect(provider).toMatch(/startUpdateSession\(updateSessionStore\(\)\)/);
+  it("opens one bounded session for automatic or manual activation", () => {
+    expect(provider).toMatch(/if \(!sessionActive\) startUpdateSession\(store\)/);
   });
 
   it("counts every controlled reload, including the consent reload", () => {
