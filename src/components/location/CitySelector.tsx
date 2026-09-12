@@ -130,9 +130,19 @@ export function CitySelector({
           element. The real <button> is now the trigger itself. */}
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
-        align="end"
+        align={variant === "chip" ? "start" : "end"}
         sideOffset={8}
         className="w-72 p-0 rounded-card overflow-hidden"
+        style={
+          variant === "chip"
+            ? {
+                // Header chips sit on the page gutter. Match the popover to the
+                // app's content width so it stays centered inside the screen.
+                width:
+                  "calc(min(100vw, var(--phone-max-width)) - (2 * var(--page-gutter)))",
+              }
+            : undefined
+        }
       >
         {title && (
           <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-charcoal-muted">
