@@ -17,9 +17,11 @@ describe("PlaceCoverImage (WO-105)", () => {
     expect(document.querySelector(".bg-soft-green")).not.toBeNull();
   });
 
-  it("renders the fallback while the cover is still loading", () => {
+  it("renders a decorative shimmer while the signed cover is unresolved", () => {
     render(<PlaceCoverImage coverUrl={undefined} />);
     expect(document.querySelector("img")).toBeNull();
+    expect(document.querySelector('[data-image-state="loading"]')).not.toBeNull();
+    expect(document.querySelector(".image-shimmer")).not.toBeNull();
   });
 
   it("falls back gracefully on a transient image failure instead of a broken img", () => {

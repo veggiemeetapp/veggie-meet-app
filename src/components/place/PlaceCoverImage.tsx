@@ -21,7 +21,18 @@ export function PlaceCoverImage({ coverUrl, className }: Props) {
     </span>
   );
 
-  if (!coverUrl) {
+  if (coverUrl === undefined) {
+    return (
+      <div
+        className={`relative w-full h-full overflow-hidden bg-muted ${className ?? ""}`}
+        data-image-state="loading"
+      >
+        <span className="image-shimmer absolute inset-0" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  if (coverUrl === null) {
     return (
       <div className={`w-full h-full bg-soft-green flex items-center justify-center ${className ?? ""}`}>
         <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
