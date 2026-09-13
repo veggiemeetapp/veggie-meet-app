@@ -279,7 +279,9 @@ export interface CoordinatorDeps {
   activationPendingCloseMs?: number;
 }
 
-const DEFAULT_MIN_CHECK_INTERVAL_MS = 60_000;
+// Collapse focus + pageshow + visibilitychange from a single resume, without
+// suppressing a check when the member reopens the PWA a few seconds later.
+const DEFAULT_MIN_CHECK_INTERVAL_MS = 5_000;
 /** WO-145P — bounds for the two check authorities. */
 export const DEFAULT_REGISTRATION_UPDATE_TIMEOUT_MS = 15_000;
 export const DEFAULT_REMOTE_BUILD_TIMEOUT_MS = 10_000;
@@ -414,9 +416,9 @@ export class UpdateCoordinator {
   }
 
   /**
-   * A worker only becomes a *usable* update once it reaches `installed` while
-   * this client already has a controller. Installing the very first worker is
-   * not an update and must never prompt.
+   * An installed replacement is usable if an older active worker exists. A
+   * first visit or Shift+Reload can have controller === null even though the
+   * registration already has an active worker. Do not strand its successor.
    */
   private scanForWaiting(): void {
     const reg = this.registration;
@@ -424,7 +426,7 @@ export class UpdateCoordinator {
 
     const candidate = reg.waiting ?? reg.installing ?? null;
     if (!candidate) return;
-    if (!this.deps.container.controller) return; // first install, not an update
+    if (!this.deps.container.controller && !reg.active) return;
 
     if (candidate.state === "installed") {
       this.markWaiting(candidate);
@@ -985,7 +987,7 @@ export interface WatcherOptions {
   clearIntervalFn?: (handle: unknown) => void;
 }
 
-export const DEFAULT_POLL_INTERVAL_MS = 30 * 60_000;
+export const DEFAULT_POLL_INTERVAL_MS = 60_000;
 
 /**
  * Attach every update trigger the WO requires. The coordinator itself owns
@@ -1015,7 +1017,9 @@ export function startUpdateWatchers(
   win.addEventListener("pageshow", onVisible);
 
   const handle = setIntervalFn(
-    () => void coordinator.checkForUpdate("interval"),
+    () => {
+      if (doc.visibilityState === "visible") void coordinator.checkForUpdate("interval");
+    },
     options.intervalMs ?? DEFAULT_POLL_INTERVAL_MS,
   );
 

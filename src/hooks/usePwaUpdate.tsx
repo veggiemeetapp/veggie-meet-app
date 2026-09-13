@@ -87,6 +87,7 @@ import {
 } from "@/lib/updateQuiesce";
 import { requestClientCensus, requestWorkerDiagnostics } from "@/lib/swClientCensus";
 import { awaitStabilization } from "@/lib/updateStabilization";
+import { reloadForUpdate } from "@/lib/updateNavigation";
 
 
 
@@ -233,7 +234,7 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
             outcome: "pending",
           }),
         );
-        window.location.reload();
+        reloadForUpdate();
       },
       now: () => Date.now(),
       log: (event, properties) => logAnalyticsEvent(event, properties),
@@ -424,7 +425,7 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       // itself against the origin instead of assuming it landed on the latest build.
       reload: () => {
         markUpdateReload(updateSessionStore());
-        window.location.reload();
+        reloadForUpdate();
       },
       onUpdateRequired: (cause) => coordinator.enterUpdateRequired(cause),
       // WO-145R — unfinished member work is never discarded by a recovery reload,

@@ -11,8 +11,7 @@
  * carries `?sw=off` (kill switch). That prevents a browser-held worker from
  * ever serving stale HTML in the editor preview.
  *
- * Updates are applied safely: the generated worker uses skipWaiting +
- * clientsClaim, so a new release takes over without a forced reload mid-form.
+ * Updates are activated by the app coordinator when protected work is clear.
  */
 const SW_URL = "/sw.js";
 
@@ -62,10 +61,13 @@ export function registerServiceWorker(): void {
     return;
   }
 
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register(SW_URL).catch(() => {
+  const register = () => {
+    navigator.serviceWorker.register(SW_URL, { updateViaCache: "none" }).catch(() => {
       // A failed registration must never degrade the app; it simply stays
       // network-only for this session.
     });
-  });
+  };
+  // A late-loaded entry must not wait for a load event that already happened.
+  if (document.readyState === "complete") register();
+  else window.addEventListener("load", register, { once: true });
 }

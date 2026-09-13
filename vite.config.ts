@@ -10,13 +10,10 @@ import { VitePWA } from "vite-plugin-pwa";
 // same value is injected into the client (`__APP_VERSION__`) and emitted to
 // `/version.json`, so a client can always compare "what I loaded" with "what the
 // origin serves" and report a stale document instead of guessing.
-const BUILD_ID = new Date().toISOString().replace(/[-:]/g, "").slice(0, 13) + "Z";
+const BUILD_ID = new Date().toISOString().replace(/[-:.]/g, "");
 
-// WO-145E — Option 2: there is exactly ONE release architecture, the final
-// prompt-mode one (Release N). No migration bridge, no automatic activation and
-// no unregister path: a client controlled by the previously published worker
-// keeps that worker until every client of the registration is closed, and the
-// browser then activates Release N normally.
+// The plugin stays in prompt mode so activation is owned by the app's automatic
+// coordinator: wait for protected work to finish, activate, then reload once.
 const PWA_RELEASE = "prompt";
 
 /** Emits an uncached, non-secret build marker consumed by the update coordinator. */
@@ -95,6 +92,9 @@ export default defineConfig(({ mode }) => ({
         // (QR scanner, owner-only tooling) are fetched on demand and handled by
         // the runtime asset cache instead.
         globIgnores: [
+          // precacheAndRoute handles '/' as '/index.html' BEFORE runtime rules.
+          // Exclude HTML entry points so ordinary reloads really use the network.
+          "**/index.html",
           "**/placeholder.svg",
           "**/assets/QRScanner-*.js",
           "**/assets/Owner*-*.js",
@@ -140,6 +140,7 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkFirst",
             options: {
               cacheName: "veggiemeet-html-v1",
+              fetchOptions: { cache: "no-store" },
               networkTimeoutSeconds: 3,
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [200] },

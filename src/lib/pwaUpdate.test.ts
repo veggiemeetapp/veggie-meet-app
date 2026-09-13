@@ -128,11 +128,24 @@ describe("WO-145 update coordinator", () => {
 
   it("never prompts for the very first install (no controller yet)", () => {
     const h = makeHarness({ controlled: false });
+    h.registration.active = null;
     h.coordinator.attach(h.registration);
     h.registration.waiting = makeWorker("installed");
     h.registration.fireUpdateFound();
     expect(h.coordinator.shouldPrompt()).toBe(false);
     expect(h.coordinator.getState().status).toBe("idle");
+  });
+
+  it("detects an update after a hard reload leaves the page without a controller", () => {
+    const h = makeHarness({ controlled: false });
+    h.coordinator.attach(h.registration);
+    h.registration.waiting = makeWorker("installed");
+    h.registration.fireUpdateFound();
+
+    // An active registration still exists after Shift+Reload / first install.
+    // controller === null does not mean this is the registration's first worker.
+    expect(h.coordinator.getState().status).toBe("available");
+    expect(h.coordinator.getState().waitingToken).not.toBeNull();
   });
 
   it("promotes an installing worker only once it reaches installed", () => {
@@ -388,7 +401,7 @@ describe("WO-145 update coordinator", () => {
     stop();
     expect(winListeners.size).toBe(0);
     expect(docListeners.size).toBe(0);
-    expect(DEFAULT_POLL_INTERVAL_MS).toBeGreaterThanOrEqual(15 * 60_000);
+    expect(DEFAULT_POLL_INTERVAL_MS).toBe(60_000);
   });
 });
 
