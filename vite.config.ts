@@ -98,6 +98,9 @@ export default defineConfig(({ mode }) => ({
           "**/placeholder.svg",
           "**/assets/QRScanner-*.js",
           "**/assets/Owner*-*.js",
+          // WO-152: the map engine belongs to an owner-only prototype. It must
+          // never enter a member's install payload.
+          "**/assets/maplibre-gl-*.js",
         ],
 
         // WO-145F — fleet preparation support inside the worker. It adds only a
