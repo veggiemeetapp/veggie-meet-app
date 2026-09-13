@@ -8,7 +8,7 @@ const SEED = "447dad9b-88fa-4fe4-91c3-97ae29b04d6c";
 describe("WO-143 UserAvatar", () => {
   it("never renders an initial-letter fallback", () => {
     const { container } = render(<UserAvatar name="Veggie Boy" src={null} seed={SEED} />);
-    const img = container.querySelector("img")!;
+    const img = container.querySelector(`img[alt="Veggie Boy"]`) as HTMLImageElement;
     expect(img).toBeTruthy();
     expect(img.getAttribute("src")).toBe(resolveAvatar(null, SEED).src);
     // no stray text node with initials
