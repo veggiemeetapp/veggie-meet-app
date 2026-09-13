@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 
 const community = readFileSync(resolve(process.cwd(), "src/screens/Community.tsx"), "utf8");
 const today = readFileSync(resolve(process.cwd(), "src/screens/Today.tsx"), "utf8");
+const placeResultCard = readFileSync(
+  resolve(process.cwd(), "src/components/search/PlaceResultCard.tsx"),
+  "utf8",
+);
 
 describe("WO-150 Community Places capitalization", () => {
   it("uses the canonical category name in the Community section heading", () => {
@@ -14,5 +18,10 @@ describe("WO-150 Community Places capitalization", () => {
   it("uses the canonical category name in the Today accessibility label", () => {
     expect(today).toContain('aria-label="Community Places"');
     expect(today).not.toContain('aria-label="Community places"');
+  });
+
+  it("uses the canonical singular category name on search results", () => {
+    expect(placeResultCard).toContain(': "Community Place"');
+    expect(placeResultCard).not.toContain(': "Community place"');
   });
 });
