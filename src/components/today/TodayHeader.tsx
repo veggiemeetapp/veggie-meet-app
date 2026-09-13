@@ -1,4 +1,5 @@
 import { Sprout } from "lucide-react";
+import { Link } from "react-router-dom";
 import { NotificationsBell, UserAvatar } from "@/components/app";
 
 import { CitySelector } from "@/components/location/CitySelector";
@@ -27,9 +28,9 @@ export function TodayHeader() {
 
         <div className="flex items-center gap-1 shrink-0">
           <NotificationsBell />
-          <button
-            type="button"
-            aria-label="Open profile"
+          <Link
+            to="/you"
+            aria-label="Open my profile"
             className="inline-flex items-center justify-center min-w-11 min-h-11 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <UserAvatar
@@ -37,7 +38,7 @@ export function TodayHeader() {
               src={profile?.avatar_url ?? undefined}
               size="md"
             />
-          </button>
+          </Link>
         </div>
       </div>
 
