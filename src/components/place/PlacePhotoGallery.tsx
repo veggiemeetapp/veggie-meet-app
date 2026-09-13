@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePlacePhotos } from "@/hooks/usePlacePhotos";
+import { ProgressiveImage } from "@/components/app/ProgressiveImage";
 
 interface Props {
   placeId: string;
@@ -25,12 +26,12 @@ export function PlacePhotoGallery({ placeId, placeName }: Props) {
   return (
     <section aria-label={`Photos of ${placeName}`} className="px-5 mt-5 min-w-0">
       <h2 className="text-sm font-semibold text-charcoal">Photos</h2>
-      <div className="mt-2 rounded-card overflow-hidden bg-muted">
-        <img
-          src={current.url as string}
+      <div className="mt-2 rounded-card overflow-hidden bg-muted aspect-[4/3]">
+        <ProgressiveImage
+          src={current.url ?? ""}
           alt={`${placeName} photo ${Math.min(active, photos.length - 1) + 1} of ${photos.length}`}
           loading="lazy"
-          className="w-full aspect-[4/3] object-cover"
+          containerClassName="w-full h-full"
         />
       </div>
       <div className="mt-2 flex items-center justify-between gap-2 min-w-0">

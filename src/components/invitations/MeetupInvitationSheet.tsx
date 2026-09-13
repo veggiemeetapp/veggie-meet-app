@@ -157,10 +157,11 @@ export function MeetupInvitationSheet({
                           : "opacity-60 cursor-not-allowed",
                       )}
                     >
-                      <img
+                      <ProgressiveImage
                         src={m.coverImageUrl}
+                        fallbackSrc={FALLBACK_COVER}
                         alt=""
-                        className="w-16 h-16 rounded-control object-cover bg-muted shrink-0"
+                        containerClassName="w-16 h-16 rounded-control shrink-0"
                         loading="lazy"
                       />
                       <div className="min-w-0 flex-1">
@@ -209,10 +210,11 @@ export function MeetupInvitationSheet({
         {step === "review" && selected && (
           <div className="px-5 py-4 space-y-4">
             <div className="rounded-card border border-border/70 bg-card p-3 flex gap-3">
-              <img
+              <ProgressiveImage
                 src={selected.coverImageUrl}
+                fallbackSrc={FALLBACK_COVER}
                 alt=""
-                className="w-16 h-16 rounded-control object-cover bg-muted"
+                containerClassName="w-16 h-16 rounded-control shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold text-charcoal text-sm">

@@ -2,7 +2,7 @@ import { safeBack } from "@/lib/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Leaf, MapPin, Utensils } from "lucide-react";
+import { Leaf, MapPin } from "lucide-react";
 import { AppHeader, Card, BackButton } from "@/components/app";
 import { useLocationContext } from "@/hooks/useLocation";
 import { fetchPublishedCommunityPlaces } from "@/lib/backend";
@@ -10,6 +10,7 @@ import { formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import type { CommunityPlace, CommunityPlaceCategory } from "@/types";
+import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
 
 const categoryLabel: Record<CommunityPlaceCategory, string> = {
   restaurant: "Restaurant",
@@ -285,18 +286,7 @@ function PlaceListCard({
       <Card padding="none" interactive className="h-full overflow-hidden flex flex-col">
         <div className="h-32 shrink-0">
           {/* WO-101: owner-managed cover photo; neutral placeholder otherwise. */}
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt=""
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full bg-soft-green flex items-center justify-center">
-              <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
-            </div>
-          )}
+          <PlaceCoverImage coverUrl={coverUrl} />
         </div>
         <div className="p-3 flex-1 flex flex-col">
           <h2 className="font-semibold text-charcoal text-sm leading-snug line-clamp-2 break-words min-h-[2.25rem]">

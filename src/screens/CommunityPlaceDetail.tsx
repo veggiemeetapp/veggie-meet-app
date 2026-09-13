@@ -21,6 +21,7 @@ import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { PlacePhotoGallery } from "@/components/place/PlacePhotoGallery";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { placeStatusBanner } from "@/lib/placeMaintenance";
+import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
 import type { CommunityPlaceMaintenanceStatus } from "@/types";
 import {
   fetchCommunityPlaceDetail,
@@ -155,9 +156,7 @@ export default function CommunityPlaceDetail() {
     >
       {/* Hero */}
       <div className="relative h-56 sm:h-64">
-        {coverUrl ? (
-          <img src={coverUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
+        {coverUrl ? <PlaceCoverImage coverUrl={coverUrl} /> : (
           <div className="w-full h-full bg-soft-green flex items-center justify-center">
             <Leaf className="w-12 h-12 text-primary/60" aria-hidden />
           </div>
