@@ -18,7 +18,7 @@ describe("WO-143 UserAvatar", () => {
   it("falls back to the stable platform avatar once and does not retry-loop", () => {
     const broken = "https://example.test/missing.jpg";
     const { container } = render(<UserAvatar name="Veggie Boy" src={broken} seed={SEED} />);
-    const img = container.querySelector("img")!;
+    const img = container.querySelector(`img[alt="Veggie Boy"]`) as HTMLImageElement;
     expect(img.getAttribute("src")).toBe(broken);
 
     const fallback = resolveAvatar(null, SEED).src;
