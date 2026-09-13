@@ -5,6 +5,7 @@ import { ReasonPill } from "./ReasonPill";
 import { RecCardMenu } from "./RecCardMenu";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import type { PlaceRecommendation } from "@/lib/today";
+import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
 
 interface Props {
   place: PlaceRecommendation;
@@ -29,14 +30,7 @@ export function PlaceRecCard({ place }: Props) {
     <Card padding="none" interactive className="w-60 shrink-0 overflow-hidden">
       <div className="relative h-32">
         <button onClick={go} className="block w-full h-full" aria-label={`View ${place.name}`}>
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt=""
-              className="w-full h-full object-cover bg-muted"
-              loading="lazy"
-            />
-          ) : (
+          {coverUrl ? <PlaceCoverImage coverUrl={coverUrl} /> : (
             <span className="w-full h-full bg-soft-green flex items-center justify-center">
               <Leaf className="w-7 h-7 text-primary/70" aria-hidden />
             </span>

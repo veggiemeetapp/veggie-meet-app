@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from "react";
 import { Camera, ImageOff, Loader2 } from "lucide-react";
-import { SecondaryButton, TertiaryButton } from "@/components/app";
+import { ProgressiveImage, SecondaryButton, TertiaryButton } from "@/components/app";
 import {
   MEETUP_COVER_ALLOWED_MIME,
   processMeetupCoverFile,
@@ -73,10 +73,11 @@ export function MeetupCoverEditor({
 
       {preview ? (
         <div className="rounded-card overflow-hidden border border-border bg-muted">
-          <img
+          <ProgressiveImage
             src={preview}
             alt="Current Meetup cover"
-            className="w-full h-44 object-cover"
+            immediate={draft.kind === "replaced"}
+            containerClassName="w-full h-44"
           />
         </div>
       ) : (

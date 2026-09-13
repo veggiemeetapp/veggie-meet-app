@@ -8,6 +8,8 @@ import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import type { MeetupRole } from "@/lib/backend";
 import { Card } from "./Card";
 import { AvatarGroup } from "./UserAvatar";
+import { ProgressiveImage } from "./ProgressiveImage";
+import { FALLBACK_COVER } from "@/lib/backend";
 
 interface Props {
   meetup: Meetup;
@@ -36,18 +38,12 @@ export function MeetupCard({ meetup, role: roleOverride }: Props) {
     <Link to={`/meetup/${meetup.id}`} className="block">
       <Card interactive padding="none" className="overflow-hidden">
         <div className="flex gap-3 p-3">
-          <img
+          <ProgressiveImage
             src={meetup.coverImageUrl}
+            fallbackSrc={FALLBACK_COVER}
             alt=""
-            className="w-24 h-24 rounded-control object-cover shrink-0 bg-muted"
+            containerClassName="w-24 h-24 rounded-control shrink-0"
             loading="lazy"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (!img.src.includes("photo-1543353071")) {
-                img.src =
-                  "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=1200&q=80";
-              }
-            }}
           />
 
           <div className="min-w-0 flex-1">

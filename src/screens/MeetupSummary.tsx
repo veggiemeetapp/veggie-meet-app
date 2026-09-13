@@ -22,6 +22,7 @@ import {
   Card,
   EmptyState,
   PrimaryButton,
+  ProgressiveImage,
   SecondaryButton,
   UserAvatar,
 } from "@/components/app";
@@ -36,7 +37,7 @@ import {
   type MyMeetupSummary,
 } from "@/lib/postMeetup";
 import { ReportMeetupDialog } from "@/components/safety/ReportMeetupDialog";
-import { sanitizeCover } from "@/lib/backend";
+import { FALLBACK_COVER, sanitizeCover } from "@/lib/backend";
 import { formatMeetupDate, formatMeetupTimeRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -220,12 +221,7 @@ function OverviewCard({ summary }: { summary: MyMeetupSummary }) {
 
   return (
     <Card padding="none" className="overflow-hidden">
-      <div
-        className="h-36 w-full bg-cover bg-center"
-        style={{ backgroundImage: `url(${cover})` }}
-        role="img"
-        aria-label={m.title}
-      />
+      <ProgressiveImage src={cover} fallbackSrc={FALLBACK_COVER} alt={m.title} containerClassName="h-36 w-full" />
       <div className="p-4">
         <div className="text-[11px] uppercase tracking-wider text-charcoal-muted">
           {summary.is_host ? "Your Meetup" : "Your Meetup Summary"}

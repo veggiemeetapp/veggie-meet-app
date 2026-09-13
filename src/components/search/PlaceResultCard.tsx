@@ -4,6 +4,7 @@ import { Card } from "@/components/app";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
 import { ResultReasonPill } from "./ResultReasonPill";
 import type { PlaceResult } from "@/lib/search";
+import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
 
 interface Props {
   result: PlaceResult;
@@ -20,14 +21,7 @@ export function PlaceResultCard({ result }: Props) {
     >
       <Card interactive padding="none" className="overflow-hidden">
         <div className="flex gap-3">
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt=""
-              loading="lazy"
-              className="w-24 h-24 object-cover shrink-0"
-            />
-          ) : (
+          {coverUrl ? <PlaceCoverImage coverUrl={coverUrl} className="w-24 h-24 shrink-0" /> : (
             <span className="w-24 h-24 shrink-0 bg-soft-green flex items-center justify-center">
               <MapPin className="w-6 h-6 text-primary/70" aria-hidden />
             </span>

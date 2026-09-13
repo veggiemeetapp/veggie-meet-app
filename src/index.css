@@ -138,6 +138,24 @@
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { scrollbar-width: none; }
+
+  /* WO-151: one quiet, CSS-only loading treatment for content imagery. */
+  .image-shimmer {
+    background-color: hsl(var(--muted));
+    background-image: linear-gradient(
+      100deg,
+      transparent 30%,
+      hsl(var(--card) / 0.55) 50%,
+      transparent 70%
+    );
+    background-size: 220% 100%;
+    animation: image-shimmer 1.8s linear infinite;
+  }
+}
+
+@keyframes image-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
 }
 
 
@@ -157,6 +175,10 @@
   }
   .animate-fade-in, .animate-enter, [data-state="open"], [data-state="closed"] {
     animation: none !important;
+  }
+  .image-shimmer {
+    animation: none !important;
+    background-image: none;
   }
 }
 

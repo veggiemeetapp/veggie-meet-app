@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Leaf, Loader2, MapPin, Search } from "lucide-react";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
+import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
 import { cn } from "@/lib/utils";
 import type { CommunityPlace } from "@/types";
 
@@ -227,12 +228,5 @@ function PickerCover({ placeId }: { placeId: string }) {
       </span>
     );
   }
-  return (
-    <img
-      src={coverUrl}
-      alt=""
-      loading="lazy"
-      className="w-14 h-14 rounded-control object-cover shrink-0 bg-muted"
-    />
-  );
+  return <PlaceCoverImage coverUrl={coverUrl} className="w-14 h-14 rounded-control shrink-0" />;
 }

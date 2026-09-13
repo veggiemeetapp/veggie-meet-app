@@ -12,7 +12,7 @@ import {
   MoreHorizontal,
   Users,
 } from "lucide-react";
-import { Card, PrimaryButton, SecondaryButton, UserAvatar } from "@/components/app";
+import { Card, PrimaryButton, ProgressiveImage, SecondaryButton, UserAvatar } from "@/components/app";
 import {
   acknowledgeMeetupUpdate,
   declineMeetupInvitation,
@@ -23,6 +23,7 @@ import {
   planLocationLabel,
   type PlanItem,
 } from "@/lib/plans";
+import { FALLBACK_COVER } from "@/lib/backend";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { joinFromInvitation } from "@/lib/invitations";
@@ -180,10 +181,11 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
       <Card padding="none" className={cn("overflow-hidden", variant === "attention" && "ring-1 ring-primary/30")}> 
         <div className="flex gap-3 p-3">
           {plan.image ? (
-            <img
+            <ProgressiveImage
               src={fallbackCover(plan.image)}
+              fallbackSrc={FALLBACK_COVER}
               alt=""
-              className="w-16 h-16 rounded-control object-cover flex-none"
+              containerClassName="w-16 h-16 rounded-control flex-none"
               loading="lazy"
             />
           ) : (

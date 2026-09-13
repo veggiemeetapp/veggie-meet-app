@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Utensils } from "lucide-react";
+import { ProgressiveImage } from "@/components/app/ProgressiveImage";
 
 interface Props {
   /** Signed cover URL: `undefined` while loading, `null` when the place has none. */
@@ -15,12 +15,24 @@ interface Props {
  * for that render only; a new signed URL clears the failure.
  */
 export function PlaceCoverImage({ coverUrl, className }: Props) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    setFailed(false);
-  }, [coverUrl]);
+  const fallback = (
+    <span className="w-full h-full bg-soft-green flex items-center justify-center">
+      <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
+    </span>
+  );
 
-  if (!coverUrl || failed) {
+  if (coverUrl === undefined) {
+    return (
+      <div
+        className={`relative w-full h-full overflow-hidden bg-muted ${className ?? ""}`}
+        data-image-state="loading"
+      >
+        <span className="image-shimmer absolute inset-0" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  if (coverUrl === null) {
     return (
       <div className={`w-full h-full bg-soft-green flex items-center justify-center ${className ?? ""}`}>
         <Utensils className="w-7 h-7 text-primary/70" aria-hidden />
@@ -28,13 +40,5 @@ export function PlaceCoverImage({ coverUrl, className }: Props) {
     );
   }
 
-  return (
-    <img
-      src={coverUrl}
-      alt=""
-      loading="lazy"
-      onError={() => setFailed(true)}
-      className={`w-full h-full object-cover bg-muted ${className ?? ""}`}
-    />
-  );
+  return <ProgressiveImage src={coverUrl} alt="" loading="lazy" fallback={fallback} containerClassName={`w-full h-full ${className ?? ""}`} />;
 }

@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, Users } from "lucide-react";
-import { Card } from "@/components/app";
+import { Card, ProgressiveImage } from "@/components/app";
 import { ResultReasonPill } from "./ResultReasonPill";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
-import { sanitizeCover } from "@/lib/backend";
+import { FALLBACK_COVER, sanitizeCover } from "@/lib/backend";
 import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import type { MeetupResult } from "@/lib/search";
 
@@ -26,11 +26,12 @@ export function MeetupResultCard({ result }: Props) {
     >
       <Card interactive padding="none" className="overflow-hidden">
         <div className="flex gap-3">
-          <img
+          <ProgressiveImage
             src={sanitizeCover(result.cover_image_url)}
+            fallbackSrc={FALLBACK_COVER}
             alt=""
             loading="lazy"
-            className="w-24 h-24 object-cover shrink-0"
+            containerClassName="w-24 h-24 shrink-0"
           />
           <div className="flex-1 min-w-0 py-3 pr-3">
             <div className="flex items-baseline justify-between gap-2">

@@ -14,7 +14,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-import { AppHeader, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
+import { AppHeader, PrimaryButton, ProgressiveImage, SecondaryButton, BackButton } from "@/components/app";
 import { CitySelector } from "@/components/location/CitySelector";
 import { CommunityPlacePicker } from "@/components/host/CommunityPlacePicker";
 import {
@@ -600,7 +600,7 @@ export default function Host() {
           <FieldLabel>Meetup cover</FieldLabel>
           {cover ? (
             <div className="relative rounded-card overflow-hidden">
-              <img src={cover} alt="Meetup cover" className="w-full h-44 object-cover" />
+              <ProgressiveImage src={cover} alt="Meetup cover" immediate containerClassName="w-full h-44" />
               <button
                 type="button"
                 onClick={() => {

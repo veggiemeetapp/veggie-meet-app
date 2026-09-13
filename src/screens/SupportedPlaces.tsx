@@ -13,6 +13,7 @@ import {
   SUPPORT_SOURCE_LABEL,
   type SupportedPlace,
 } from "@/lib/supportedPlaces";
+import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
 
 const categoryLabel: Record<string, string> = {
   restaurant: "Restaurant",
@@ -212,14 +213,7 @@ function SupportedPlaceCard({
     >
       <Card interactive padding="none" className="overflow-hidden h-full">
         <div className="h-28 bg-soft-green flex items-center justify-center overflow-hidden">
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt={place.name}
-              loading="lazy"
-              className="w-full h-full object-cover"
-            />
-          ) : (
+          {coverUrl ? <PlaceCoverImage coverUrl={coverUrl} /> : (
             <Store className="w-8 h-8 text-primary" aria-hidden />
           )}
         </div>

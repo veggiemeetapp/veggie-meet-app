@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { Calendar, Check, Clock, Loader2, MapPin, Ticket, Users } from "lucide-react";
-import { PrimaryButton, SecondaryButton } from "@/components/app";
+import { PrimaryButton, ProgressiveImage, SecondaryButton } from "@/components/app";
 import type { HydratedInvitation } from "@/lib/invitations";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import { cn } from "@/lib/utils";
+import { FALLBACK_COVER } from "@/lib/backend";
 
 interface Props {
   bundle: HydratedInvitation;
@@ -64,10 +65,11 @@ export function InvitationCard({
         </div>
       )}
       <div className="px-3 pt-3">
-        <img
+        <ProgressiveImage
           src={meetup.coverImageUrl}
+          fallbackSrc={FALLBACK_COVER}
           alt=""
-          className="w-full h-32 rounded-control object-cover bg-muted"
+          containerClassName="w-full h-32 rounded-control"
           loading="lazy"
         />
       </div>

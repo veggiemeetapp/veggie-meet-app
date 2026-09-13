@@ -17,7 +17,7 @@ import {
   X,
   UserPlus,
 } from "lucide-react";
-import { AppHeader, PrimaryButton, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
+import { AppHeader, PrimaryButton, ProgressiveImage, SecondaryButton, UserAvatar, BackButton } from "@/components/app";
 import { InviteVeggiesSheet } from "@/components/invitations/InviteVeggiesSheet";
 import {
   Dialog,
@@ -719,10 +719,12 @@ export default function MeetupManagement() {
       <div className="px-5 py-6 pb-32 space-y-8">
         {/* Summary */}
         <section className="rounded-card border border-border bg-card p-4 flex gap-4">
-          <img
+          <ProgressiveImage
             src={coverPreview ?? FALLBACK_COVER}
+            fallbackSrc={FALLBACK_COVER}
             alt=""
-            className="w-20 h-20 rounded-control object-cover shrink-0"
+            immediate={coverDraft.kind === "replaced"}
+            containerClassName="w-20 h-20 rounded-control shrink-0"
           />
           <div className="min-w-0 flex-1">
             <div className="font-semibold text-charcoal truncate">{meetup.title}</div>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { CommunityPlace } from "@/types";
 import { Card } from "./Card";
 import { usePlaceCoverUrl } from "@/hooks/usePlacePhotos";
+import { PlaceCoverImage } from "@/components/place/PlaceCoverImage";
 
 interface Props {
   place: CommunityPlace;
@@ -24,14 +25,7 @@ export function CommunityPlaceCard({ place }: Props) {
   return (
     <Card padding="none" interactive onClick={() => navigate(`/place/${place.id}`)} className="overflow-hidden w-60 shrink-0">
       <div className="relative h-36">
-        {coverUrl ? (
-          <img
-            src={coverUrl}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
+        {coverUrl ? <PlaceCoverImage coverUrl={coverUrl} /> : (
           <div className="w-full h-full bg-soft-green flex items-center justify-center">
             <MapPin className="w-6 h-6 text-primary/70" aria-hidden />
           </div>
