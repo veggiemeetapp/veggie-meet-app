@@ -30,4 +30,15 @@ describe("WO-143 UserAvatar", () => {
     fireEvent.error(img);
     expect(img.getAttribute("src")).toBe(fallback);
   });
+
+  it("keeps a static platform avatar beneath an uploaded photo without shimmer", () => {
+    const uploaded = "https://example.test/avatar.jpg";
+    const { container } = render(<UserAvatar name="Veggie Boy" src={uploaded} seed={SEED} />);
+    const images = container.querySelectorAll("img");
+    expect(images).toHaveLength(2);
+    expect(images[0].getAttribute("src")).toBe(resolveAvatar(null, SEED).src);
+    expect(container.querySelector(".image-shimmer")).toBeNull();
+    fireEvent.load(images[1]);
+    expect(images[1].className).toContain("opacity-100");
+  });
 });

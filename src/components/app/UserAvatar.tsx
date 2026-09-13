@@ -34,9 +34,11 @@ export function UserAvatar({ name, src, seed, size = "md", className, ring }: Us
   // platform avatar once (no retry storm).
   const resolved = resolveAvatar(src, seed || name);
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(resolved.isPlatform);
   useEffect(() => {
     setFailed(false);
-  }, [src]);
+    setLoaded(resolved.isPlatform);
+  }, [src, resolved.isPlatform]);
   const showSrc = failed ? resolved.fallbackSrc : resolved.src;
   return (
     <div
@@ -48,13 +50,28 @@ export function UserAvatar({ name, src, seed, size = "md", className, ring }: Us
       )}
       aria-label={name}
     >
+      {!resolved.isPlatform && !failed ? (
+        <img
+          src={resolved.fallbackSrc}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : null}
       <img
         src={showSrc}
         alt={name}
         loading="lazy"
         decoding="async"
-        onError={() => setFailed(true)}
-        className="w-full h-full object-cover"
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          setFailed(true);
+          setLoaded(true);
+        }}
+        className={cn(
+          "relative w-full h-full object-cover transition-opacity duration-200 ease-out motion-reduce:transition-none",
+          loaded ? "opacity-100" : "opacity-0",
+        )}
       />
     </div>
   );
