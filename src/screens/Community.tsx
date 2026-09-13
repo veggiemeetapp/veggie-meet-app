@@ -3,7 +3,7 @@ import { logAnalyticsEvent } from "@/lib/analytics";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Calendar, MapPin, Search as SearchIcon, Sprout, Users, Utensils } from "lucide-react";
-import { AppHeader, Card, NotificationsBell, UserAvatar } from "@/components/app";
+import { AppHeader, Card, NotificationsBell, ProgressiveImage, UserAvatar } from "@/components/app";
 import { CitySelector, NoCityState } from "@/components/location/CitySelector";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext } from "@/hooks/useLocation";
@@ -12,6 +12,7 @@ import {
   fetchNearbyVeggiesByCity,
   fetchUpcomingMeetupsByCity,
   type NearbyVeggie,
+  FALLBACK_COVER,
 } from "@/lib/backend";
 import { todayISO } from "@/lib/todayDate";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
@@ -362,10 +363,11 @@ function MeetupNearbyCard({
     <Link to={`/meetup/${meetup.id}`} className="block">
       <Card padding="none" interactive className="w-64 shrink-0 overflow-hidden">
         <div className="relative h-32">
-          <img
+          <ProgressiveImage
             src={meetup.coverImageUrl}
+            fallbackSrc={FALLBACK_COVER}
             alt=""
-            className="w-full h-full object-cover"
+            containerClassName="w-full h-full"
             loading="lazy"
           />
           {categoryLabel && (

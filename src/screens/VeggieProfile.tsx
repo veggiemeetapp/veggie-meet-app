@@ -28,6 +28,7 @@ import {
   EmptyState,
   MeetupCard,
   PrimaryButton,
+  ProgressiveImage,
   SecondaryButton,
   UserAvatar,
 } from "@/components/app";
@@ -234,10 +235,10 @@ export default function VeggieProfile() {
                         : "col-span-2 aspect-[16/10]",
                     )}
                   >
-                    <img
+                    <ProgressiveImage
                       src={photos[0]}
                       alt={`${bundle.profile.firstName} photo`}
-                      className="w-full h-full object-cover"
+                      containerClassName="w-full h-full"
                       loading="lazy"
                     />
                   </button>
@@ -248,10 +249,10 @@ export default function VeggieProfile() {
                       onClick={() => setPhotoOpen(src)}
                       className="relative rounded-card overflow-hidden aspect-square bg-muted"
                     >
-                      <img
+                      <ProgressiveImage
                         src={src}
                         alt=""
-                        className="w-full h-full object-cover"
+                        containerClassName="w-full h-full"
                         loading="lazy"
                       />
                     </button>
@@ -424,10 +425,11 @@ export default function VeggieProfile() {
       <Dialog open={!!photoOpen} onOpenChange={(o) => !o && setPhotoOpen(null)}>
         <DialogContent className="p-0 border-0 bg-transparent max-w-lg shadow-none">
           {photoOpen && (
-            <img
+            <ProgressiveImage
               src={photoOpen}
               alt=""
-              className="w-full h-auto rounded-card object-contain"
+              containerClassName="w-full aspect-[4/3] rounded-card"
+              imageClassName="object-contain"
             />
           )}
         </DialogContent>

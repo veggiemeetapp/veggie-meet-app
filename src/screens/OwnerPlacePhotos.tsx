@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Star, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/app";
+import { BackButton, ProgressiveImage } from "@/components/app";
 import { usePlacePhotos } from "@/hooks/usePlacePhotos";
 import {
   ALLOWED_PLACE_PHOTO_MIME,
@@ -176,11 +176,11 @@ export default function OwnerPlacePhotos() {
             >
               <div className="relative">
                 {p.url ? (
-                  <img
+                  <ProgressiveImage
                     src={p.url}
                     alt={`Photo ${i + 1}`}
                     loading="lazy"
-                    className="w-full aspect-[4/3] object-cover"
+                    containerClassName="w-full aspect-[4/3]"
                   />
                 ) : (
                   <div className="w-full aspect-[4/3] bg-muted" />

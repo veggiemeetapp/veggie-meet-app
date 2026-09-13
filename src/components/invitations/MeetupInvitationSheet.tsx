@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { PrimaryButton, SecondaryButton } from "@/components/app";
+import { PrimaryButton, ProgressiveImage, SecondaryButton } from "@/components/app";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import {
   createInvitation,
@@ -32,6 +32,7 @@ import {
 import { useMeetupCategoryLabels } from "@/lib/meetupCategory";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { FALLBACK_COVER } from "@/lib/backend";
 
 interface Props {
   open: boolean;
