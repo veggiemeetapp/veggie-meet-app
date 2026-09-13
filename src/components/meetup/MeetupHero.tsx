@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { createShareGuard, shareOrCopy } from "@/lib/share";
+import { ProgressiveImage } from "@/components/app/ProgressiveImage";
+import { FALLBACK_COVER } from "@/lib/backend";
 
 interface Props {
   imageUrl?: string;
@@ -44,17 +46,11 @@ export function MeetupHero({ imageUrl, title, extraAction, shareUrl, shareMeta }
 
       {hasImage && (
         <>
-          <img
+          <ProgressiveImage
             src={imageUrl}
+            fallbackSrc={FALLBACK_COVER}
             alt={title}
-            className="absolute inset-0 w-full h-full object-cover bg-muted"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (!img.src.includes("photo-1543353071")) {
-                img.src =
-                  "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=1200&q=80";
-              }
-            }}
+            containerClassName="absolute inset-0"
           />
           <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/20 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />

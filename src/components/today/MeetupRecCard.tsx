@@ -4,6 +4,8 @@ import { Card } from "@/components/app/Card";
 import { ReasonPill } from "./ReasonPill";
 import { RecCardMenu } from "./RecCardMenu";
 import type { MeetupRecommendation } from "@/lib/today";
+import { ProgressiveImage } from "@/components/app/ProgressiveImage";
+import { FALLBACK_COVER, sanitizeCover } from "@/lib/backend";
 
 interface Props {
   meetup: MeetupRecommendation;
@@ -27,10 +29,11 @@ export function MeetupRecCard({ meetup }: Props) {
           className="shrink-0"
           aria-label={`View ${meetup.title}`}
         >
-          <img
-            src={meetup.cover_image_url ?? "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=800&q=80"}
+          <ProgressiveImage
+            src={sanitizeCover(meetup.cover_image_url)}
+            fallbackSrc={FALLBACK_COVER}
             alt=""
-            className="w-24 h-24 rounded-control object-cover bg-muted"
+            containerClassName="w-24 h-24 rounded-control"
             loading="lazy"
           />
         </button>
