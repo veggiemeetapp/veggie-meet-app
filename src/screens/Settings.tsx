@@ -902,7 +902,7 @@ function AccountSection({
           }}
           className="mt-3 w-full flex items-center justify-center gap-2 h-12 rounded-control border border-destructive/40 bg-destructive/5 text-destructive font-semibold hover:bg-destructive/10"
         >
-          <Trash2 className="w-4 h-4" /> Delete my account
+          <Trash2 className="w-4 h-4" /> Delete Account
         </button>
 
         {blockedInfo && (
