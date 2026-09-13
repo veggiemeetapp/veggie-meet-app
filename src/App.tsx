@@ -63,6 +63,9 @@ const OwnerPlaceVeganReview = lazy(() => import("./screens/OwnerPlaceVeganReview
 const OwnerPlaceIdentityReview = lazy(() => import("./screens/OwnerPlaceIdentityReview"));
 const OwnerMemberReports = lazy(() => import("./screens/OwnerMemberReports"));
 const OwnerBetaOperations = lazy(() => import("./screens/OwnerBetaOperations"));
+// WO-152: private owner-only Ecosystem Map proof of concept. Deliberately not
+// linked from any navigation surface and excluded from crawlers via robots.txt.
+const OwnerMapLab = lazy(() => import("./screens/OwnerMapLab"));
 const BetaFeedback = lazy(() => import("./screens/BetaFeedback"));
 // WO-098: public password recovery destination — must never sit behind the
 // onboarding guard, the member has no completed profile session yet.
@@ -260,6 +263,9 @@ const App = () => (
 
                 <Route path="/owner/beta" element={ownerGated(<OwnerBetaOperations />)} />
                 <Route path="/owner/member-reports" element={ownerGated(<OwnerMemberReports />)} />
+                {/* WO-152: private map prototype. Owner-gated in the client AND
+                    server-side inside `get_owner_map_lab_data`. */}
+                <Route path="/owner/map-lab" element={ownerGated(<OwnerMapLab />)} />
 
                 <Route
 

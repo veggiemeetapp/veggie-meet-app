@@ -3738,6 +3738,7 @@ export type Database = {
       get_my_you_summary: { Args: { _history_limit?: number }; Returns: Json }
       get_onboarding_starting_options: { Args: never; Returns: Json }
       get_or_create_dm: { Args: { _other_profile_id: string }; Returns: string }
+      get_owner_map_lab_data: { Args: { _city_id?: string }; Returns: Json }
       get_place_report_queue: { Args: never; Returns: Json }
       get_place_reverification_queue: { Args: never; Returns: Json }
       get_place_reverification_workspace: {
