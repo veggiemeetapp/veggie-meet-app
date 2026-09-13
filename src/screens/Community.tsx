@@ -184,7 +184,7 @@ export default function Community() {
           {/* Community Places */}
           <SectionHeader
             icon={Utensils}
-            title="Community places nearby"
+            title="Community Places nearby"
             ctaLabel="Explore"
             ctaTo="/community/places"
           />
