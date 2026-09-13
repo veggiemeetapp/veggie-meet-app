@@ -15,6 +15,7 @@ export { HostBadge, ActiveHostBadge, StatusBadge } from "./Badges";
 export { SectionHeader } from "./SectionHeader";
 export { EmptyState } from "./EmptyState";
 export { LoadingSkeleton, MeetupCardSkeleton } from "./LoadingSkeleton";
+export { ProgressiveImage } from "./ProgressiveImage";
 export { RouteLoading } from "./RouteLoading";
 export { NotificationsBell } from "./NotificationsBell";
 export { AppErrorBoundary } from "./ErrorBoundary";
