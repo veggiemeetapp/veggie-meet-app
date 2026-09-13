@@ -140,7 +140,9 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkFirst",
             options: {
               cacheName: "veggiemeet-html-v1",
-              fetchOptions: { cache: "no-store" },
+              // Workbox accepts the browser RequestInit cache directive at runtime;
+              // Node's narrower ambient RequestInit type omits it during config checks.
+              fetchOptions: { cache: "no-store" } as unknown as RequestInit,
               networkTimeoutSeconds: 3,
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [200] },
