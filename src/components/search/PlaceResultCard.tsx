@@ -49,7 +49,7 @@ export function PlaceResultCard({ result }: Props) {
               <span className="text-[11px] text-charcoal-muted">
                 {result.upcoming_meetups_count > 0
                   ? `${result.upcoming_meetups_count} upcoming Meetup${result.upcoming_meetups_count === 1 ? "" : "s"}`
-                  : "Community place"}
+                  : "Community Place"}
               </span>
               <ResultReasonPill label={result.reason_label} />
             </div>

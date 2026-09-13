@@ -138,7 +138,7 @@ export default function Today() {
       </section>
 
       {place_recommendations.length > 0 && (
-        <section className="mt-6" aria-label="Community places">
+        <section className="mt-6" aria-label="Community Places">
           <SectionHeader title="Community Places" subtitle="Verified vegan spots to support" />
           <div className="rail flex gap-3 overflow-x-auto px-5 pb-2 no-scrollbar">
             {place_recommendations.map((p) => (
