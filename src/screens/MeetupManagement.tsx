@@ -985,10 +985,6 @@ export default function MeetupManagement() {
           </p>
 
 
-          <PrimaryButton fullWidth disabled={!canSave} onClick={handleSave}>
-            <Save className="w-4 h-4" />
-            {saving ? "Saving…" : "Save changes"}
-          </PrimaryButton>
         </section>
 
         {!isCompleted && placeContextQuery.data?.linked && placeContextQuery.data.host && (
@@ -1205,6 +1201,20 @@ export default function MeetupManagement() {
           </section>
         )}
       </div>
+
+      {!locked && !isEnded && (
+        <div
+          data-meetup-save-bar
+          className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-phone border-t border-border bg-background/95 shadow-float backdrop-blur-xl safe-bottom"
+        >
+          <div className="px-5 py-3">
+            <PrimaryButton fullWidth disabled={!canSave} onClick={handleSave}>
+              <Save className="w-4 h-4" />
+              {saving ? "Saving…" : "Save changes"}
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
 
       {/* Remove attendee dialog */}
       <Dialog

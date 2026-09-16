@@ -145,7 +145,12 @@ export function CommunityPlacePicker({
       {/* WO-085A DEF-085A-03: role="radiogroup" strips list semantics, so
           <li> children were orphaned listitems. Plain divs keep the radio
           group intact without an invalid list. */}
-      <div className="space-y-2" role="radiogroup" aria-label="Community Place">
+      <div
+        className="max-h-72 space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-gutter:stable]"
+        role="radiogroup"
+        aria-label="Community Place"
+        data-community-place-scroll
+      >
         {filtered.map((p) => {
           const active = selectedPlaceId === p.id;
           const dietary = CLASSIFICATION_LABEL[p.veggieClassification ?? ""] ?? null;
@@ -211,6 +216,12 @@ export function CommunityPlacePicker({
           </p>
         )}
       </div>
+      {filtered.length > 3 && (
+        <p className="text-[11px] text-charcoal-muted" role="status">
+          Scroll within the list to see {filtered.length - 3} more Community
+          {filtered.length - 3 === 1 ? " Place" : " Places"}.
+        </p>
+      )}
     </div>
   );
 }
