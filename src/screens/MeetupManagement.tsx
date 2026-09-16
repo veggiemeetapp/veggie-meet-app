@@ -1094,6 +1094,20 @@ export default function MeetupManagement() {
                     ? homeCity?.country_code
                     : null
               }
+              biasLatitude={
+                selectedCity?.id === locCityId
+                  ? selectedCity.latitude
+                  : homeCity?.id === locCityId
+                    ? homeCity.latitude
+                    : null
+              }
+              biasLongitude={
+                selectedCity?.id === locCityId
+                  ? selectedCity.longitude
+                  : homeCity?.id === locCityId
+                    ? homeCity.longitude
+                    : null
+              }
               onEvent={(event, detail) =>
                 logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
               }

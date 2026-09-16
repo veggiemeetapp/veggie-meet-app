@@ -818,6 +818,20 @@ export default function Host() {
                             ? homeCity?.country_code
                             : null
                       }
+                      biasLatitude={
+                        selectedCity?.id === cityId
+                          ? selectedCity.latitude
+                          : homeCity?.id === cityId
+                            ? homeCity.latitude
+                            : null
+                      }
+                      biasLongitude={
+                        selectedCity?.id === cityId
+                          ? selectedCity.longitude
+                          : homeCity?.id === cityId
+                            ? homeCity.longitude
+                            : null
+                      }
                       onEvent={(event, detail) =>
                         logAnalyticsEvent(`meetup_custom_location_${event}`, detail ?? {})
                       }

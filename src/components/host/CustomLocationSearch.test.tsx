@@ -86,7 +86,6 @@ describe("WO-123B — View on Google Maps affordance", () => {
     fireEvent.change(screen.getByLabelText("Search for a place"), {
       target: { value: "coffee" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
 
     await waitFor(() => expect(screen.getByText("With Maps")).toBeInTheDocument());
     expect(

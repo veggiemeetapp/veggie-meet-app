@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExternalLink, Loader2, MapPin, Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { searchMeetupPlaces, type MeetupPlaceResult } from "@/lib/meetupPlaceSearch";
 
 /**
@@ -114,9 +113,16 @@ export interface CustomLocationSearchProps {
   onChange: (next: CustomLocationValue) => void;
   /** ISO-3166 alpha-2 region used to bias results (city country). */
   region?: string | null;
+  /** Selected-city centre used to rank nearby matches ahead of distant ones. */
+  biasLatitude?: number | null;
+  biasLongitude?: number | null;
   /** Fired once per executed search / selection / manual switch. */
   onEvent?: (event: "searched" | "selected" | "manual", detail?: Record<string, unknown>) => void;
 }
+
+const AUTO_SEARCH_DEBOUNCE_MS = 350;
+const MIN_SEARCH_LENGTH = 2;
+const SEARCH_CACHE_LIMIT = 20;
 
 const EMPTY: CustomLocationValue = {
   name: "",
@@ -139,6 +145,8 @@ export function CustomLocationSearch({
   value,
   onChange,
   region,
+  biasLatitude,
+  biasLongitude,
   onEvent,
 }: CustomLocationSearchProps) {
   const hasSaved = value.name.trim().length > 0;
@@ -158,6 +166,15 @@ export function CustomLocationSearch({
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
+  const requestIdRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<number | null>(null);
+  const cacheRef = useRef(new Map<string, MeetupPlaceResult[]>());
+  const onEventRef = useRef(onEvent);
+
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
   /**
    * DEF-148-02 — when a saved location arrives after mount (async Meetup load)
@@ -173,22 +190,97 @@ export function CustomLocationSearch({
 
   const googleConfirmed = value.googlePlaceId !== null;
 
-  async function runSearch() {
-    const q = query.trim();
-    if (q.length < 2 || searching) return;
+  const runSearch = useCallback(async (rawQuery: string) => {
+    const q = rawQuery.trim();
+    if (q.length < MIN_SEARCH_LENGTH) return;
+
+    abortRef.current?.abort();
+    const requestId = ++requestIdRef.current;
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const cacheKey = [
+      (region ?? "VN").toUpperCase(),
+      biasLatitude ?? "",
+      biasLongitude ?? "",
+      q.toLowerCase(),
+    ].join(":");
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached) {
+      abortRef.current = null;
+      setError(null);
+      setSearching(false);
+      setResults(cached);
+      onEventRef.current?.("searched", { result_count: cached.length, cached: true });
+      return;
+    }
+
     setSearching(true);
     setError(null);
     try {
-      const found = await searchMeetupPlaces(q, region);
+      const found = await searchMeetupPlaces(q, region, {
+        signal: controller.signal,
+        latitude: biasLatitude,
+        longitude: biasLongitude,
+      });
+      // A slower response for an older query must never replace the latest list.
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      if (cacheRef.current.size >= SEARCH_CACHE_LIMIT) {
+        const oldest = cacheRef.current.keys().next().value;
+        if (oldest !== undefined) cacheRef.current.delete(oldest);
+      }
+      cacheRef.current.set(cacheKey, found);
       setResults(found);
-      onEvent?.("searched", { result_count: found.length });
+      onEventRef.current?.("searched", { result_count: found.length });
     } catch {
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
       setError("We couldn’t search places right now. Try again, or enter the location manually.");
       setResults(null);
     } finally {
-      setSearching(false);
+      if (requestId === requestIdRef.current) {
+        setSearching(false);
+        if (abortRef.current === controller) abortRef.current = null;
+      }
     }
-  }
+  }, [biasLatitude, biasLongitude, region]);
+
+  /**
+   * Search automatically after a short typing pause. Abort immediately when the
+   * query changes, both to save network work and to prevent stale-result flashes.
+   */
+  useEffect(() => {
+    if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
+    abortRef.current?.abort();
+    abortRef.current = null;
+    requestIdRef.current += 1;
+    setSearching(false);
+
+    if (mode !== "search" || manual) return;
+    const q = query.trim();
+    setError(null);
+    setResults(null);
+    if (q.length < MIN_SEARCH_LENGTH) return;
+
+    debounceRef.current = window.setTimeout(() => {
+      debounceRef.current = null;
+      void runSearch(q);
+    }, AUTO_SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      if (debounceRef.current !== null) {
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, [manual, mode, query, runSearch]);
+
+  useEffect(
+    () => () => {
+      if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
+      abortRef.current?.abort();
+    },
+    [],
+  );
 
   /** Explicit selection of a genuinely different place — replaces structured data. */
   function select(r: MeetupPlaceResult) {
@@ -363,8 +455,8 @@ export function CustomLocationSearch({
         >
           Search for a place
         </label>
-        <div className="flex gap-2">
-          <div className="relative flex-1 min-w-0">
+        <div>
+          <div className="relative min-w-0">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-muted"
               aria-hidden
@@ -377,30 +469,41 @@ export function CustomLocationSearch({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  void runSearch();
+                  const q = query.trim();
+                  if (q.length < MIN_SEARCH_LENGTH) return;
+                  if (debounceRef.current !== null) {
+                    window.clearTimeout(debounceRef.current);
+                    debounceRef.current = null;
+                  }
+                  void runSearch(q);
                 }
               }}
-              placeholder="Café, park or restaurant name"
-              className="w-full h-11 rounded-control border border-border bg-card pl-9 pr-3 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Place name or street address"
+              autoComplete="off"
+              aria-controls="custom-location-results"
+              aria-describedby="custom-location-search-status"
+              aria-busy={searching}
+              className="w-full h-11 rounded-control border border-border bg-card pl-9 pr-10 text-base text-charcoal placeholder:text-charcoal-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
+            {searching && (
+              <Loader2
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary"
+                aria-hidden
+              />
+            )}
           </div>
-          <button
-            type="button"
-            onClick={() => void runSearch()}
-            disabled={query.trim().length < 2 || searching}
-            className={cn(
-              "h-11 px-4 rounded-control text-sm font-semibold shrink-0",
-              query.trim().length < 2 || searching
-                ? "bg-muted text-charcoal-muted"
-                : "bg-primary text-primary-foreground",
-            )}
+          <p
+            id="custom-location-search-status"
+            role="status"
+            aria-live="polite"
+            className="mt-1.5 text-[11px] text-charcoal-muted"
           >
-            {searching ? (
-              <Loader2 className="w-4 h-4 animate-spin" aria-label="Searching" />
-            ) : (
-              "Search"
-            )}
-          </button>
+            {searching
+              ? "Searching nearby places…"
+              : query.trim().length > 0 && query.trim().length < MIN_SEARCH_LENGTH
+                ? `Type at least ${MIN_SEARCH_LENGTH} characters.`
+                : "Results update automatically as you type."}
+          </p>
         </div>
       </div>
 
@@ -417,7 +520,7 @@ export function CustomLocationSearch({
       )}
 
       {results !== null && results.length > 0 && (
-        <ul className="space-y-2" aria-label="Place search results">
+        <ul id="custom-location-results" className="space-y-2" aria-label="Place search results">
           {results.map((r) => {
             const mapsUrl = safeMapsUrl(r.googleMapsUrl);
             return (

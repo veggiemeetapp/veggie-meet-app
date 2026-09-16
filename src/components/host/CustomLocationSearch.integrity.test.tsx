@@ -166,7 +166,6 @@ describe("WO-148 DEF-148-03 — name-only edit preserves structured place data",
     fireEvent.change(screen.getByLabelText("Search for a place"), {
       target: { value: "vegan" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(screen.getByText("Vegan Corner")).toBeInTheDocument());
     // Nothing committed by searching alone.
     expect(onCommit).not.toHaveBeenCalled();

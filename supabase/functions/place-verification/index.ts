@@ -44,6 +44,17 @@ const SEARCH_MASK = [
   'places.websiteUri',
 ].join(',');
 
+// Meetup typeahead does not render verification-only website/type metadata.
+// Keeping its payload narrow reduces Google processing and transfer time.
+const MEETUP_SEARCH_MASK = [
+  'places.id',
+  'places.displayName',
+  'places.formattedAddress',
+  'places.location',
+  'places.googleMapsUri',
+  'places.businessStatus',
+].join(',');
+
 const DETAILS_MASK = [
   'id',
   'displayName',
@@ -148,14 +159,34 @@ Deno.serve(async (req) => {
         .toUpperCase()
         .slice(0, 2);
 
+      const latitude = typeof body?.latitude === 'number' ? body.latitude : null;
+      const longitude = typeof body?.longitude === 'number' ? body.longitude : null;
+      const hasLocationBias =
+        latitude !== null && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
+        longitude !== null && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+      const requestBody: Record<string, unknown> = {
+        textQuery: query,
+        regionCode: region,
+        // `maxResultCount` is deprecated by Places Text Search (New).
+        pageSize: memberScope ? 6 : 8,
+      };
+      if (hasLocationBias) {
+        requestBody.locationBias = {
+          circle: {
+            center: { latitude, longitude },
+            radius: 50_000,
+          },
+        };
+      }
+
       const res = await fetch(`${PLACES_BASE}/places:searchText`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': SEARCH_MASK,
+          'X-Goog-FieldMask': memberScope ? MEETUP_SEARCH_MASK : SEARCH_MASK,
         },
-        body: JSON.stringify({ textQuery: query, regionCode: region, maxResultCount: 8 }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {

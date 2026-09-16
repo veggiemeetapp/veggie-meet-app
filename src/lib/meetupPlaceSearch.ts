@@ -18,6 +18,13 @@ export interface MeetupPlaceResult {
   businessStatus: string | null;
 }
 
+export interface MeetupPlaceSearchOptions {
+  signal?: AbortSignal;
+  /** Selected-city centre used as a ranking bias, never a hard restriction. */
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
 interface RawResult {
   place_id: string | null;
   display_name: string | null;
@@ -45,12 +52,32 @@ function toResult(r: RawResult): MeetupPlaceResult | null {
 export async function searchMeetupPlaces(
   query: string,
   region?: string | null,
+  options: MeetupPlaceSearchOptions = {},
 ): Promise<MeetupPlaceResult[]> {
   const q = query.trim();
   if (q.length < 2) return [];
+  const hasLocationBias =
+    typeof options.latitude === "number" &&
+    Number.isFinite(options.latitude) &&
+    options.latitude >= -90 &&
+    options.latitude <= 90 &&
+    typeof options.longitude === "number" &&
+    Number.isFinite(options.longitude) &&
+    options.longitude >= -180 &&
+    options.longitude <= 180;
   const { data, error } = await supabase.functions.invoke("place-verification", {
-    body: { action: "search", query: q, region: region ?? "VN", scope: "meetup_location" },
+    body: {
+      action: "search",
+      query: q,
+      region: region ?? "VN",
+      scope: "meetup_location",
+      ...(hasLocationBias
+        ? { latitude: options.latitude, longitude: options.longitude }
+        : {}),
+    },
+    signal: options.signal,
   });
+  if (options.signal?.aborted) throw new DOMException("Search cancelled", "AbortError");
   if (error) throw new Error(await readFunctionError(error));
   if (data?.error) throw new Error(String(data.error));
   return ((data?.results ?? []) as RawResult[])
