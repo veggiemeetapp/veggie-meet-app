@@ -12,7 +12,11 @@ import {
   OAUTH_CALLBACK_GRACE_MS,
   type AuthGate,
 } from "@/lib/authHydration";
-import { clearOAuthPending, hasPendingOAuth } from "@/lib/authRedirect";
+import {
+  clearOAuthPending,
+  hasPendingOAuth,
+  OAUTH_PENDING_CHANGE_EVENT,
+} from "@/lib/authRedirect";
 import { classifyRestoration } from "@/lib/authRestorationOutcome";
 import { noteAuthGate } from "@/lib/updateTelemetry";
 
@@ -86,6 +90,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // persisted token. Remember that this absence is inconclusive so `/` cannot
   // bounce through the signed-out onboarding route while tokens are exchanged.
   const [oauthPending, setOAuthPending] = useState(() => hasPendingOAuth());
+
+  // The OAuth flow starts after this provider has mounted. Keep its in-memory
+  // gate synchronized with the per-tab marker on both start and failure, so a
+  // cancelled provider flow cannot leave onboarding behind a 60-second loader.
+  useEffect(() => {
+    const syncOAuthPending = () => setOAuthPending(hasPendingOAuth());
+    window.addEventListener(OAUTH_PENDING_CHANGE_EVENT, syncOAuthPending);
+    return () =>
+      window.removeEventListener(OAUTH_PENDING_CHANGE_EVENT, syncOAuthPending);
+  }, []);
 
   const qc = useQueryClient();
   // Track the previously observed auth user id so we can wipe React Query

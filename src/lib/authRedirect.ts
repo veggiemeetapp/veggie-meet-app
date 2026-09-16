@@ -17,6 +17,16 @@
 const MAX_PATH_LENGTH = 512;
 const STASH_KEY = "veggiemeet_post_auth_next";
 const OAUTH_PENDING_KEY = "veggiemeet_oauth_pending";
+export const OAUTH_PENDING_CHANGE_EVENT = "veggiemeet:oauth-pending-change";
+export const AUTH_CALLBACK_PATH = "/auth/callback";
+
+function notifyOAuthPendingChanged(): void {
+  try {
+    window.dispatchEvent(new Event(OAUTH_PENDING_CHANGE_EVENT));
+  } catch {
+    /* SSR / non-DOM test environment */
+  }
+}
 
 /**
  * Long enough for account selection / MFA at Google, but bounded so abandoning
@@ -39,6 +49,7 @@ export function sanitizeInternalPath(raw: string | null | undefined): string | n
   value = value.trim();
   if (!value || value.length > MAX_PATH_LENGTH) return null;
   // Control characters (incl. newlines / tabs used for header or URL smuggling).
+  // eslint-disable-next-line no-control-regex
   if (/[\u0000-\u001f\u007f]/.test(value)) return null;
   // No backslashes anywhere — browsers normalize `\` to `/` in URLs.
   if (value.includes("\\")) return null;
@@ -81,6 +92,43 @@ export function consumePostAuthPath(): string | null {
 }
 
 /**
+ * Auth surfaces are never valid destinations after a successful sign-in. A
+ * stale `next=/onboarding` was able to send a valid member straight back to
+ * the sign-in page, which looked like a failed OAuth round trip.
+ */
+export function resolvePostAuthDestination(
+  raw: string | null | undefined,
+): string {
+  const safe = sanitizeInternalPath(raw);
+  if (!safe) return "/";
+  const pathname = new URL(safe, "https://veggiemeet.invalid").pathname;
+  if (
+    pathname === "/onboarding" ||
+    pathname === AUTH_CALLBACK_PATH ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/.lovable/oauth/")
+  ) {
+    return "/";
+  }
+  return safe;
+}
+
+/** Provider callbacks may report failures in either the query or hash. */
+export function hasOAuthCallbackError(search: string, hash: string): boolean {
+  for (const raw of [search, hash]) {
+    const params = new URLSearchParams(raw.replace(/^[?#]/, ""));
+    if (
+      params.has("error") ||
+      params.has("error_code") ||
+      params.has("error_description")
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Mark a full-page OAuth round trip before leaving the app. Unlike a persisted
  * Supabase token, this marker means a brand-new session may still be arriving,
  * so route guards must not classify the callback as a signed-out visit yet.
@@ -91,6 +139,7 @@ export function markOAuthPending(now = Date.now()): void {
   } catch {
     /* storage unavailable — normal auth hydration remains the fallback */
   }
+  notifyOAuthPendingChanged();
 }
 
 /** True only for a recent OAuth round trip in this browser tab. */
@@ -116,4 +165,5 @@ export function clearOAuthPending(): void {
   } catch {
     /* ignore unavailable storage */
   }
+  notifyOAuthPendingChanged();
 }

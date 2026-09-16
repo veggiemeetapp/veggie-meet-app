@@ -19,6 +19,7 @@ import { isRetryableRead } from "@/lib/errors";
 // auth/onboarding does not pay a code-split cost.
 import Today from "./screens/Today";
 import Onboarding from "./screens/Onboarding";
+import AuthCallback from "./screens/AuthCallback";
 
 import NotFound from "./pages/NotFound";
 
@@ -208,6 +209,7 @@ const App = () => (
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
 
 
 
