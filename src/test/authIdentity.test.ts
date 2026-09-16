@@ -13,6 +13,7 @@ import { sanitizeInternalPath } from "@/lib/authRedirect";
 
 const LEGACY_HOST = "veggie-meet-app.lovable.app";
 const onboarding = readFileSync("src/screens/Onboarding.tsx", "utf8");
+const authProvider = readFileSync("src/hooks/useAuth.tsx", "utf8");
 
 function sourceFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -32,7 +33,14 @@ describe("Google OAuth production identity", () => {
     expect(onboarding).toMatch(/redirect_uri:\s*window\.location\.origin/);
   });
 
-  it("never points the OAuth redirect at a protected route", () => {
+  it("marks the origin callback as pending before starting the provider redirect", () => {
+    expect(onboarding).toMatch(
+      /markOAuthPending\(\);[\s\S]*lovable\.auth\.signInWithOAuth\("google"/,
+    );
+    expect(authProvider).toMatch(/oauthPending[\s\S]*classifyAuthGate/);
+  });
+
+  it("never points the OAuth redirect at an unrelated private screen", () => {
     expect(onboarding).not.toMatch(/redirect_uri:\s*`?\$?\{?window\.location\.origin\}?\/(today|you|network)/);
   });
 

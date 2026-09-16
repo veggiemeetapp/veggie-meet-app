@@ -49,6 +49,12 @@ export interface StorageLike {
  */
 export const AUTH_HYDRATION_GRACE_MS = 20_000;
 
+/**
+ * A fresh OAuth callback has no persisted Supabase token until the provider
+ * response is exchanged. Give that exchange a bounded window of its own.
+ */
+export const OAUTH_CALLBACK_GRACE_MS = 60_000;
+
 /** Supabase persists its session under `sb-<ref>-auth-token`. */
 const AUTH_TOKEN_KEY = /^sb-.*-auth-token(\.\d+)?$/;
 
@@ -98,6 +104,8 @@ export function classifyAuthGate(input: {
   profileResolved: boolean;
   /** A persisted session token exists on this device. */
   persistedToken: boolean;
+  /** A same-tab OAuth provider round trip is returning with a new session. */
+  oauthPending?: boolean;
   /** The bounded restore window has elapsed. */
   graceElapsed: boolean;
   /** The member signed out in this document — immediately conclusive. */
@@ -121,6 +129,7 @@ export function classifyAuthGate(input: {
     hasSession,
     profileResolved,
     persistedToken,
+    oauthPending,
     graceElapsed,
     explicitSignOut,
     profileUnavailable,
@@ -141,6 +150,11 @@ export function classifyAuthGate(input: {
     return "authenticated";
   }
 
+  // A new OAuth login does not have a persisted token yet. Treating this brief
+  // exchange window as signed-out makes `/` bounce through `/onboarding` before
+  // Supabase emits SIGNED_IN. Hold the protected route until it settles.
+  if (oauthPending === true) return "restoring";
+
   // 2. WO-145R — a conclusively rejected/removed session is settled: the normal
   // signed-out experience must be reachable, whatever storage still contains.
   // An expired or revoked session is routine and must never trap the member on
@@ -155,4 +169,3 @@ export function classifyAuthGate(input: {
   if (loading) return "restoring";
   return "signed-out";
 }
-

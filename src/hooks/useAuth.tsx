@@ -9,8 +9,10 @@ import {
   AUTH_HYDRATION_GRACE_MS,
   classifyAuthGate,
   hasPersistedAuthToken,
+  OAUTH_CALLBACK_GRACE_MS,
   type AuthGate,
 } from "@/lib/authHydration";
+import { clearOAuthPending, hasPendingOAuth } from "@/lib/authRedirect";
 import { classifyRestoration } from "@/lib/authRestorationOutcome";
 import { noteAuthGate } from "@/lib/updateTelemetry";
 
@@ -80,6 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // WO-145Q CORRECTION — an explicit sign-out is the ONLY thing that makes the
   // signed-out experience correct for a device that held a session.
   const [explicitSignOut, setExplicitSignOut] = useState(false);
+  // A fresh OAuth callback can briefly have neither an in-memory session nor a
+  // persisted token. Remember that this absence is inconclusive so `/` cannot
+  // bounce through the signed-out onboarding route while tokens are exchanged.
+  const [oauthPending, setOAuthPending] = useState(() => hasPendingOAuth());
 
   const qc = useQueryClient();
   // Track the previously observed auth user id so we can wipe React Query
@@ -160,6 +166,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t);
   }, []);
 
+  // Bound the callback wait. A cancelled/abandoned provider flow must never
+  // trap this tab on the restoration screen forever.
+  useEffect(() => {
+    if (!oauthPending) return;
+    const t = window.setTimeout(() => {
+      clearOAuthPending();
+      setOAuthPending(false);
+    }, OAUTH_CALLBACK_GRACE_MS);
+    return () => window.clearTimeout(t);
+  }, [oauthPending]);
+
 
   useEffect(() => {
     // Register listener first, then hydrate
@@ -204,6 +221,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileResolved(false);
         setProfileUnavailable(false);
       } else if (s) {
+        clearOAuthPending();
+        setOAuthPending(false);
         setSessionRejected(false);
       }
       // Defer profile fetch to avoid deadlock. Token refreshes for the same
@@ -236,6 +255,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSessionRejected(true);
           setGraceElapsed(true);
         } else if (outcome === "restored") {
+          clearOAuthPending();
+          setOAuthPending(false);
           setSessionRejected(false);
         }
         // "inconclusive" deliberately changes nothing: the delayed-restoration
@@ -255,6 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasSession: !!session,
     profileResolved,
     persistedToken,
+    oauthPending,
     graceElapsed,
     explicitSignOut,
     profileUnavailable,
@@ -323,6 +345,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // WO-145Q: an explicit sign-out is conclusive — no restore window applies,
       // so the signed-out experience renders immediately.
       setPersistedToken(false);
+      clearOAuthPending();
+      setOAuthPending(false);
       setExplicitSignOut(true);
       setGraceElapsed(true);
       setProfileResolved(false);

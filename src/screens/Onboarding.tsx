@@ -50,7 +50,9 @@ import {
 } from "@/lib/onboarding";
 import { acceptCommunityGuidelines, updateMyProfile, type ProfileEditInput } from "@/lib/profile";
 import {
+  clearOAuthPending,
   consumePostAuthPath,
+  markOAuthPending,
   sanitizeInternalPath,
   stashPostAuthPath,
 } from "@/lib/authRedirect";
@@ -646,16 +648,23 @@ function Auth({
     // The provider round trip drops our query string, so remember the intended
     // internal destination per-tab. It is re-sanitized when consumed.
     stashPostAuthPath(nextPath);
+    // The callback reaches `/` before Supabase necessarily publishes its new
+    // session. Keep the route gate in a restoration state during that exchange
+    // so a successful sign-in never flashes or visits `/onboarding` again.
+    markOAuthPending();
     const result = await lovable.auth.signInWithOAuth("google", {
-      // Must stay a public same-origin URL — never a protected route.
+      // Keep the existing production callback; the OAuth-pending gate below
+      // makes this protected entry point safe while the new session settles.
       redirect_uri: window.location.origin,
     });
     if (result.error) {
+      clearOAuthPending();
       setBusy(false);
       toast.error(result.error.message ?? "Could not sign in with Google.");
       return;
     }
     if (result.redirected) return;
+    clearOAuthPending();
     logOnboardingEvent("auth_signin_success");
     toast.success("Welcome to VeggieMeet 🌱");
     onContinue();

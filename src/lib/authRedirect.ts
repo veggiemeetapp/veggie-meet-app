@@ -16,6 +16,13 @@
 
 const MAX_PATH_LENGTH = 512;
 const STASH_KEY = "veggiemeet_post_auth_next";
+const OAUTH_PENDING_KEY = "veggiemeet_oauth_pending";
+
+/**
+ * Long enough for account selection / MFA at Google, but bounded so abandoning
+ * the provider flow cannot leave this tab in a permanent restoration state.
+ */
+export const OAUTH_PENDING_TTL_MS = 15 * 60_000;
 
 export function sanitizeInternalPath(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -70,5 +77,43 @@ export function consumePostAuthPath(): string | null {
     return sanitizeInternalPath(raw);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Mark a full-page OAuth round trip before leaving the app. Unlike a persisted
+ * Supabase token, this marker means a brand-new session may still be arriving,
+ * so route guards must not classify the callback as a signed-out visit yet.
+ */
+export function markOAuthPending(now = Date.now()): void {
+  try {
+    sessionStorage.setItem(OAUTH_PENDING_KEY, String(now));
+  } catch {
+    /* storage unavailable — normal auth hydration remains the fallback */
+  }
+}
+
+/** True only for a recent OAuth round trip in this browser tab. */
+export function hasPendingOAuth(now = Date.now()): boolean {
+  try {
+    const raw = sessionStorage.getItem(OAUTH_PENDING_KEY);
+    if (!raw) return false;
+    const startedAt = Number(raw);
+    const age = now - startedAt;
+    if (!Number.isFinite(startedAt) || age < 0 || age > OAUTH_PENDING_TTL_MS) {
+      sessionStorage.removeItem(OAUTH_PENDING_KEY);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function clearOAuthPending(): void {
+  try {
+    sessionStorage.removeItem(OAUTH_PENDING_KEY);
+  } catch {
+    /* ignore unavailable storage */
   }
 }

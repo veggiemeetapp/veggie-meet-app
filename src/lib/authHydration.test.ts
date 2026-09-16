@@ -106,6 +106,22 @@ describe("WO-145Q auth hydration gate", () => {
     ).toBe("signed-out");
   });
 
+  it("does not route a fresh OAuth callback through onboarding before its session arrives", () => {
+    expect(
+      classifyAuthGate({
+        loading: false,
+        hasSession: false,
+        profileResolved: false,
+        persistedToken: false,
+        oauthPending: true,
+        graceElapsed: true,
+        // getSession can report this intermediate result before the provider
+        // response has been exchanged; the explicit OAuth marker wins.
+        sessionRejected: true,
+      }),
+    ).toBe("restoring");
+  });
+
   it("detects a persisted session by key presence only", () => {
     expect(hasPersistedAuthToken(memoryStorage({ "sb-abc-auth-token": "{...}" }))).toBe(true);
     expect(hasPersistedAuthToken(memoryStorage({ "sb-abc-auth-token.0": "{...}" }))).toBe(true);
