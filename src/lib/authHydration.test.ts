@@ -82,7 +82,8 @@ describe("WO-145Q auth hydration gate", () => {
         graceElapsed: true,
       }),
     ).toBe("delayed");
-    // And a profile read that never settles still lets the member in.
+    // A session alone is not enough to decide onboarding state. If the profile
+    // is still unresolved, keep the member on the neutral delayed surface.
     expect(
       classifyAuthGate({
         loading: false,
@@ -91,7 +92,7 @@ describe("WO-145Q auth hydration gate", () => {
         persistedToken: true,
         graceElapsed: true,
       }),
-    ).toBe("authenticated");
+    ).toBe("delayed");
   });
 
   it("reports signed-out immediately when no token is persisted", () => {

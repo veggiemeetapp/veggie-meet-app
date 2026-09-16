@@ -143,10 +143,12 @@ export function classifyAuthGate(input: {
     // The profile could not be read at all: the member stays on an honest,
     // retryable restoration state rather than being offered onboarding.
     if (profileUnavailable) return graceElapsed ? "delayed" : "restoring";
-    // A session without a settled profile must not be routed on: the onboarding
-    // redirect would fire for a fully onboarded member. After the window the
-    // member is still signed in, so they enter the app rather than onboarding.
-    if (!profileResolved && !graceElapsed) return "restoring";
+    // A session without a settled profile must never be routed on. The route
+    // guard cannot distinguish "profile still loading" from "new member" and
+    // would otherwise send a fully onboarded member through `/onboarding`.
+    // After the grace window we show the retryable delayed state; we do not
+    // manufacture an onboarding decision from missing data.
+    if (!profileResolved) return graceElapsed ? "delayed" : "restoring";
     return "authenticated";
   }
 

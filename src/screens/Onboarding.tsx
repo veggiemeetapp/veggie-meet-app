@@ -50,9 +50,10 @@ import {
 } from "@/lib/onboarding";
 import { acceptCommunityGuidelines, updateMyProfile, type ProfileEditInput } from "@/lib/profile";
 import {
+  AUTH_CALLBACK_PATH,
   clearOAuthPending,
-  consumePostAuthPath,
   markOAuthPending,
+  resolvePostAuthDestination,
   sanitizeInternalPath,
   stashPostAuthPath,
 } from "@/lib/authRedirect";
@@ -109,10 +110,10 @@ export default function Onboarding() {
   // strict sanitizer that only accepts rooted same-origin relative paths.
   // A destination surviving sanitation is still authorization-gated by
   // `RequireOnboarded` (and, for owner routes, the server-side owner check).
-  // A full-page OAuth round trip loses the query string, so a stashed
-  // per-tab copy is used as fallback.
+  // Full-page auth callbacks consume their stashed destination in the dedicated
+  // callback route; this screen only trusts its current, explicit query value.
   const nextPath = useMemo(
-    () => sanitizeInternalPath(searchParams.get("next")) ?? consumePostAuthPath(),
+    () => sanitizeInternalPath(searchParams.get("next")),
     [searchParams],
   );
   const resumeStep = useMemo(() => {
@@ -149,11 +150,22 @@ export default function Onboarding() {
   const [guidelinesAccepted, setGuidelinesAccepted] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Explicit provider failures return to the same auth option. This path is
+  // never used for a merely slow or unresolved login.
+  useEffect(() => {
+    if (searchParams.get("auth_error") !== "oauth") return;
+    toast.error("Google sign-in wasn't completed. Please try again.");
+    const clean = new URLSearchParams(searchParams);
+    clean.delete("auth_error");
+    const query = clean.toString();
+    navigate(`/onboarding${query ? `?${query}` : ""}`, { replace: true });
+  }, [navigate, searchParams]);
+
   // Hydrate from profile + onboarding state
   useEffect(() => {
     if (!profile) return;
     if (nextPath) {
-      navigate(nextPath, { replace: true });
+      navigate(resolvePostAuthDestination(nextPath), { replace: true });
       return;
     }
     if (profile.onboarding_completed && !resumeStep) {
@@ -616,6 +628,7 @@ function Auth({
   nextPath: string | null;
 }) {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<"choose" | "email">("choose");
   const [isSignUp, setIsSignUp] = useState(intent === "signup");
   const [email, setEmail] = useState("");
@@ -632,10 +645,15 @@ function Auth({
   const [forgotSent, setForgotSent] = useState(false);
 
 
+  const enterApp = useCallback(() => {
+    navigate(resolvePostAuthDestination(nextPath), { replace: true });
+  }, [navigate, nextPath]);
+
   useEffect(() => {
-    if (session) onContinue();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+    if (!session) return;
+    if (isSignUp) onContinue();
+    else enterApp();
+  }, [enterApp, isSignUp, onContinue, session]);
 
   function providerPlaceholder(name: string) {
     toast(`${name} sign-in is coming soon`, {
@@ -648,26 +666,34 @@ function Auth({
     // The provider round trip drops our query string, so remember the intended
     // internal destination per-tab. It is re-sanitized when consumed.
     stashPostAuthPath(nextPath);
-    // The callback reaches `/` before Supabase necessarily publishes its new
-    // session. Keep the route gate in a restoration state during that exchange
-    // so a successful sign-in never flashes or visits `/onboarding` again.
     markOAuthPending();
-    const result = await lovable.auth.signInWithOAuth("google", {
-      // Keep the existing production callback; the OAuth-pending gate below
-      // makes this protected entry point safe while the new session settles.
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        // The callback is public and neutral. It waits for a real session before
+        // entering the app, so private route guards never see an intermediate
+        // signed-out state.
+        redirect_uri: `${window.location.origin}${AUTH_CALLBACK_PATH}`,
+      });
+      if (result.error) {
+        stashPostAuthPath(null);
+        clearOAuthPending();
+        setBusy(false);
+        toast.error(result.error.message ?? "Could not sign in with Google.");
+        return;
+      }
+      if (result.redirected) return;
+      clearOAuthPending();
+      logOnboardingEvent("auth_signin_success");
+      toast.success("Welcome to VeggieMeet 🌱");
+      // The session effect owns navigation. Moving routes from this promise
+      // would race React's AuthProvider state update and briefly expose the
+      // signed-out route guard.
+    } catch (error) {
+      stashPostAuthPath(null);
       clearOAuthPending();
       setBusy(false);
-      toast.error(result.error.message ?? "Could not sign in with Google.");
-      return;
+      toast.error(mapAuthError(error).message);
     }
-    if (result.redirected) return;
-    clearOAuthPending();
-    logOnboardingEvent("auth_signin_success");
-    toast.success("Welcome to VeggieMeet 🌱");
-    onContinue();
   }
 
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -689,7 +715,9 @@ function Auth({
       const { data, error } = await supabase.auth.signUp({
         email: address,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/` },
+        options: {
+          emailRedirectTo: `${window.location.origin}${AUTH_CALLBACK_PATH}`,
+        },
       });
       setBusy(false);
       if (error) {
@@ -707,7 +735,6 @@ function Auth({
       }
       logOnboardingEvent("auth_signup_success");
       toast.success("Welcome to VeggieMeet 🌱");
-      onContinue();
     } else {
       const { error } = await supabase.auth.signInWithPassword({
         email: address,
@@ -723,7 +750,6 @@ function Auth({
       }
       logOnboardingEvent("auth_signin_success");
       toast.success("Welcome back 🌱");
-      onContinue();
     }
   }
 
@@ -733,7 +759,9 @@ function Auth({
     const { error } = await supabase.auth.resend({
       type: "signup",
       email: pendingEmail,
-      options: { emailRedirectTo: `${window.location.origin}/` },
+      options: {
+        emailRedirectTo: `${window.location.origin}${AUTH_CALLBACK_PATH}`,
+      },
     });
     setBusy(false);
     if (error) {

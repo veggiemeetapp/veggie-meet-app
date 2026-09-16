@@ -12,7 +12,11 @@ import {
   OAUTH_CALLBACK_GRACE_MS,
   type AuthGate,
 } from "@/lib/authHydration";
-import { clearOAuthPending, hasPendingOAuth } from "@/lib/authRedirect";
+import {
+  clearOAuthPending,
+  hasPendingOAuth,
+  OAUTH_PENDING_CHANGE_EVENT,
+} from "@/lib/authRedirect";
 import { classifyRestoration } from "@/lib/authRestorationOutcome";
 import { noteAuthGate } from "@/lib/updateTelemetry";
 
@@ -86,6 +90,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // persisted token. Remember that this absence is inconclusive so `/` cannot
   // bounce through the signed-out onboarding route while tokens are exchanged.
   const [oauthPending, setOAuthPending] = useState(() => hasPendingOAuth());
+
+  // OAuth can start after this provider has mounted (notably in Lovable's
+  // popup/preview flow). Keep the in-memory gate aligned with the per-tab marker
+  // so no render can classify an in-progress login as signed out.
+  useEffect(() => {
+    const syncOAuthPending = () => setOAuthPending(hasPendingOAuth());
+    window.addEventListener(OAUTH_PENDING_CHANGE_EVENT, syncOAuthPending);
+    return () =>
+      window.removeEventListener(OAUTH_PENDING_CHANGE_EVENT, syncOAuthPending);
+  }, []);
 
   const qc = useQueryClient();
   // Track the previously observed auth user id so we can wipe React Query
@@ -224,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearOAuthPending();
         setOAuthPending(false);
         setSessionRejected(false);
+        setExplicitSignOut(false);
       }
       // Defer profile fetch to avoid deadlock. Token refreshes for the same
       // identity keep the already-loaded profile instead of refetching it.
@@ -258,6 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           clearOAuthPending();
           setOAuthPending(false);
           setSessionRejected(false);
+          setExplicitSignOut(false);
         }
         // "inconclusive" deliberately changes nothing: the delayed-restoration
         // state stays, member data is untouched, and retry remains available.
@@ -329,7 +345,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setGraceElapsed(true);
           return;
         }
-        if (outcome === "restored") setSessionRejected(false);
+        if (outcome === "restored") {
+          setSessionRejected(false);
+          setExplicitSignOut(false);
+        }
         if (data.session?.user?.id) await loadProfile(data.session.user.id, true);
       } catch {
         /* offline: the gate stays in its honest delayed state */

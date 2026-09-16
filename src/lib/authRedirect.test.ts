@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  AUTH_CALLBACK_PATH,
   clearOAuthPending,
+  hasOAuthCallbackError,
   hasPendingOAuth,
   markOAuthPending,
   OAUTH_PENDING_TTL_MS,
+  resolvePostAuthDestination,
 } from "@/lib/authRedirect";
 
 describe("OAuth round-trip marker", () => {
@@ -24,5 +27,23 @@ describe("OAuth round-trip marker", () => {
     clearOAuthPending();
     expect(hasPendingOAuth(1_001)).toBe(false);
   });
+});
 
+describe("post-auth destination", () => {
+  it("defaults to Today and rejects auth-only routes", () => {
+    expect(resolvePostAuthDestination(null)).toBe("/");
+    expect(resolvePostAuthDestination("/onboarding")).toBe("/");
+    expect(resolvePostAuthDestination(AUTH_CALLBACK_PATH)).toBe("/");
+    expect(resolvePostAuthDestination("/reset-password")).toBe("/");
+  });
+
+  it("preserves a safe private destination", () => {
+    expect(resolvePostAuthDestination("/host?draft=1")).toBe("/host?draft=1");
+  });
+
+  it("recognizes explicit provider errors in query or hash", () => {
+    expect(hasOAuthCallbackError("?error=access_denied", "")).toBe(true);
+    expect(hasOAuthCallbackError("", "#error_description=cancelled")).toBe(true);
+    expect(hasOAuthCallbackError("?code=ok", "")).toBe(false);
+  });
 });
