@@ -62,13 +62,23 @@ export interface ChatThreadPage {
   has_more: boolean;
 }
 
+export interface MeetupChatSnapshot {
+  context: MeetupChatContext;
+  messages: ChatMessage[];
+  hasMore: boolean;
+}
+
 export const CHAT_PAGE_SIZE = 40;
 export const CHAT_MESSAGE_MAX = 2000;
+export const MEETUP_CHAT_LOAD_TIMEOUT_MS = 12_000;
+export const MEETUP_CHAT_TIMEOUT_MESSAGE = "Meetup chat load timed out";
 
 
 export async function fetchMeetupChatContext(
   chatId: string,
 ): Promise<MeetupChatContext> {
+  // RPC is newer than the checked-in generated Supabase types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.rpc as any)("get_meetup_chat_context", {
     _chat_id: chatId,
   });
@@ -80,6 +90,8 @@ export async function fetchMeetupChatThread(
   chatId: string,
   before?: { createdAt: string; id: string } | null,
 ): Promise<ChatThreadPage> {
+  // RPC is newer than the checked-in generated Supabase types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.rpc as any)("get_meetup_chat_thread", {
     _chat_id: chatId,
     _before_created_at: before?.createdAt ?? null,
@@ -98,6 +110,41 @@ export async function fetchMeetupChatThread(
 
 }
 
+/**
+ * Fetch the complete first-paint payload with one bounded client operation.
+ * React Query caches this snapshot per chat and member. The timeout keeps a
+ * stalled network/RPC request from leaving the route on an endless spinner.
+ */
+export async function fetchMeetupChatSnapshot(
+  chatId: string,
+  timeoutMs = MEETUP_CHAT_LOAD_TIMEOUT_MS,
+): Promise<MeetupChatSnapshot> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const load = (async () => {
+    const context = await fetchMeetupChatContext(chatId);
+    if (!context.can_read) return { context, messages: [], hasMore: false };
+
+    const page = await fetchMeetupChatThread(chatId);
+    return {
+      context,
+      messages: page.messages,
+      hasMore: page.has_more,
+    };
+  })();
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error(MEETUP_CHAT_TIMEOUT_MESSAGE)),
+      timeoutMs,
+    );
+  });
+
+  try {
+    return await Promise.race([load, timeout]);
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
+  }
+}
+
 export async function sendMeetupChatMessage(
   chatId: string,
   body: string,
@@ -106,6 +153,7 @@ export async function sendMeetupChatMessage(
   // WO-083: `clientToken` makes a send idempotent. If the server committed the
   // message but the response was lost, retrying with the same token returns the
   // original row instead of posting a duplicate.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.rpc as any)("send_meetup_chat_message", {
     _chat_id: chatId,
     _body: body,
@@ -143,6 +191,7 @@ export async function editMeetupChatMessage(
   if (!trimmed) throw new Error("Message can't be empty");
   if (trimmed.length > CHAT_MESSAGE_MAX)
     throw new Error(`Messages must be under ${CHAT_MESSAGE_MAX} characters`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.rpc as any)("edit_meetup_chat_message", {
     _message_id: messageId,
     _body: trimmed,
@@ -155,6 +204,7 @@ export async function editMeetupChatMessage(
 export async function deleteMeetupChatMessage(
   messageId: string,
 ): Promise<ChatMessage> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.rpc as any)("delete_meetup_chat_message", {
     _message_id: messageId,
   });

@@ -3,6 +3,7 @@ import { useUnsavedWork } from "@/lib/unsavedWork";
 import { safeBack } from "@/lib/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Send,
   Calendar,
@@ -59,6 +60,7 @@ import {
 } from "@/lib/chatMessageActions";
 import {
   fetchMeetupChatContext,
+  fetchMeetupChatSnapshot,
   fetchMeetupChatThread,
   sendMeetupChatMessage,
   editMeetupChatMessage,
@@ -66,8 +68,10 @@ import {
   isDeletedChatMessage,
   postBlockedCopy,
   CHAT_MESSAGE_MAX,
+  MEETUP_CHAT_TIMEOUT_MESSAGE,
   type ChatMessage,
   type MeetupChatContext,
+  type MeetupChatSnapshot,
 } from "@/lib/meetupChat";
 import {
   ReactionPills,
@@ -100,9 +104,31 @@ export default function MeetupChat() {
   const { profile, loading: authLoading } = useAuth();
   const isDb = !!id && isUuid(id);
 
-  const [context, setContext] = useState<MeetupChatContext | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [hasMore, setHasMore] = useState(false);
+  // The snapshot is scoped to both the chat and signed-in profile so cached
+  // member-only content can never cross accounts. A cached snapshot renders
+  // immediately on repeat visits while an always-on-mount background refresh
+  // catches messages that arrived while this screen was closed.
+  const chatQuery = useQuery<MeetupChatSnapshot>({
+    queryKey: ["meetup-chat", id ?? null, profile?.id ?? null],
+    enabled: isDb && !!profile?.id && !authLoading,
+    queryFn: () => fetchMeetupChatSnapshot(id!),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: false,
+  });
+
+  const [context, setContext] = useState<MeetupChatContext | null>(
+    () => chatQuery.data?.context ?? null,
+  );
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    () => chatQuery.data?.messages ?? [],
+  );
+  const [hasMore, setHasMore] = useState(
+    () => chatQuery.data?.hasMore ?? false,
+  );
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -115,9 +141,6 @@ export default function MeetupChat() {
   const [forwardError, setForwardError] = useState<string | null>(null);
   const forwardRequestIdRef = useRef(0);
   const forwardTriggerIdRef = useRef<string | null>(null);
-  const [loadingChat, setLoadingChat] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   // WO-083: idempotency token so an ambiguous retry cannot duplicate a post.
   const sendToken = useSendToken();
@@ -151,41 +174,16 @@ export default function MeetupChat() {
     });
   }, []);
 
-  // Load context + first page. Wait for auth so RLS-gated reads see the user.
+  // Hydrate local, mutation-friendly state whenever the cached/background
+  // snapshot changes. On a cache hit the state initializers above avoid even a
+  // one-frame empty state.
   useEffect(() => {
-    if (!isDb || !id || authLoading) return;
-    let cancelled = false;
-    setLoadingChat(true);
-    setLoadError(null);
-    (async () => {
-      try {
-        const ctx = await fetchMeetupChatContext(id);
-        if (cancelled) return;
-        setContext(ctx);
-        if (!ctx.can_read) {
-          setLoadError(
-            "This chat is only open to Veggies going to this Meetup.",
-          );
-          return;
-        }
-        const page = await fetchMeetupChatThread(id);
-        if (cancelled) return;
-        setMessages(page.messages);
-        setHasMore(page.has_more);
-      } catch (e) {
-        if (!cancelled) {
-          setLoadError(
-            memberSafeMessage(e),
-          );
-        }
-      } finally {
-        if (!cancelled) setLoadingChat(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [id, isDb, authLoading, reloadKey]);
+    const snapshot = chatQuery.data;
+    if (!snapshot) return;
+    setContext(snapshot.context);
+    setMessages(snapshot.messages);
+    setHasMore(snapshot.hasMore);
+  }, [chatQuery.data]);
 
   // Realtime: RLS-scoped inserts for this chat. Re-read the row via the RPC
   // page so blocking suppression and sender identity stay server-derived.
@@ -460,7 +458,22 @@ export default function MeetupChat() {
     }
   };
 
-  if (isDb && (authLoading || loadingChat)) {
+  const hasCachedChat = !!chatQuery.data || !!context;
+  const loadingChat =
+    authLoading ||
+    (!hasCachedChat && (chatQuery.isPending || chatQuery.isFetching));
+  const loadError = !context?.can_read
+    ? context
+      ? "This chat is only open to Veggies going to this Meetup."
+      : chatQuery.error instanceof Error &&
+          chatQuery.error.message === MEETUP_CHAT_TIMEOUT_MESSAGE
+        ? "Chat is taking longer than expected. Check your connection and try again."
+        : chatQuery.error
+          ? memberSafeMessage(chatQuery.error)
+          : null
+    : null;
+
+  if (isDb && loadingChat) {
     return (
       <div className="flex flex-col min-h-dvh" aria-busy="true">
         <AppHeader
@@ -497,7 +510,7 @@ export default function MeetupChat() {
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => setReloadKey((k) => k + 1)}
+              onClick={() => void chatQuery.refetch()}
               className="text-sm font-semibold text-primary px-4 py-2 rounded-full bg-soft-green/50"
             >
               Try again
