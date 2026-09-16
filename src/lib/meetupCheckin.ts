@@ -18,10 +18,44 @@ export interface IssuedToken {
   expiresAt: string;
 }
 
+export type QrIssueCode =
+  | "too_early"
+  | "closed"
+  | "cancelled"
+  | "not_attending"
+  | "unauthenticated"
+  | "unknown";
+
+export class MeetupQrIssueError extends Error {
+  code: QrIssueCode;
+
+  constructor(message: string, code: QrIssueCode) {
+    super(message);
+    this.name = "MeetupQrIssueError";
+    this.code = code;
+  }
+}
+
+/** Turn the RPC's member-facing rejection into a stable presentation state. */
+export function classifyQrIssue(message: string): QrIssueCode {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("closer to the meetup")) return "too_early";
+  if (normalized.includes("has ended")) return "closed";
+  if (normalized.includes("cancelled")) return "cancelled";
+  if (normalized.includes("must be attending")) return "not_attending";
+  if (normalized.includes("not authenticated")) return "unauthenticated";
+  return "unknown";
+}
+
 export async function issueMeetupQrToken(meetupId: string): Promise<IssuedToken> {
   const { data, error } = await supabase.rpc("issue_meetup_qr_token", { _meetup_id: meetupId });
-  if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : (data as any);
+  if (error) {
+    const message = error.message || "Couldn't generate code";
+    throw new MeetupQrIssueError(message, classifyQrIssue(message));
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { token?: string; expires_at?: string }
+    | null;
   if (!row?.token) throw new Error("Failed to issue code");
   return { token: row.token as string, expiresAt: row.expires_at as string };
 }
@@ -78,7 +112,12 @@ export async function verifyMeetupConnection(rawScan: string): Promise<VerifyRes
   if (error) {
     return { kind: "error", code: classify(error.message ?? ""), message: error.message ?? "Verification failed" };
   }
-  const d = data as any;
+  const d = data as {
+    kind?: string;
+    peer?: { id?: string };
+    peer_id?: string;
+    meetup_id?: string;
+  } | null;
   if (d?.kind === "verified" || d?.kind === "already_verified") {
     // The RPC nests peer identity under `peer` — read it from there so the
     // success screen can name the Veggie and link to their profile.
@@ -91,4 +130,3 @@ export async function verifyMeetupConnection(rawScan: string): Promise<VerifyRes
   const code = KIND_TO_CODE[d?.kind as string] ?? "unknown";
   return { kind: "error", code, message: "Verification failed" };
 }
-

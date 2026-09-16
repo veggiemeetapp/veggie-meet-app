@@ -114,17 +114,18 @@ export function MeetupCoverEditor({
             Undo removal
           </TertiaryButton>
         ) : preview ? (
-          <TertiaryButton
+          <SecondaryButton
             size="sm"
             disabled={disabled || busy}
             aria-label="Remove Meetup cover photo"
+            className="border-destructive/40 text-destructive hover:bg-destructive/10"
             onClick={() => {
               setError(null);
               onDraftChange({ kind: "removed" });
             }}
           >
             Remove photo
-          </TertiaryButton>
+          </SecondaryButton>
         ) : null}
       </div>
 

@@ -85,15 +85,26 @@ export function InterestPicker({
                     disabled={blocked}
                     onClick={() => onToggle(o.label)}
                     className={cn(
-                      "min-h-11 px-3.5 py-2 rounded-full text-sm font-medium border transition active:scale-[0.97]",
+                      // The check is a floating badge, outside normal layout
+                      // flow, so selection never widens the chip or pushes a
+                      // neighbouring option onto another line.
+                      "relative min-h-11 px-3.5 py-2 rounded-full text-sm font-medium border whitespace-nowrap overflow-visible transition active:scale-[0.97]",
                       active
                         ? "bg-primary text-primary-foreground border-primary shadow-sm"
                         : "bg-card text-charcoal border-border hover:bg-accent/60",
                       blocked && "opacity-40 cursor-not-allowed",
                     )}
                   >
-                    {active && <span className="mr-1.5" aria-hidden="true">✓</span>}
-                    {o.label}
+                    <span>{o.label}</span>
+                    <span
+                      className={cn(
+                        "pointer-events-none absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary text-[11px] leading-none text-primary-foreground shadow-sm transition-opacity",
+                        active ? "opacity-100" : "opacity-0",
+                      )}
+                      aria-hidden="true"
+                    >
+                      ✓
+                    </span>
                   </button>
                 );
               })}

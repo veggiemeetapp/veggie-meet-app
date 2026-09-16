@@ -419,7 +419,16 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-background">
+    <div
+      className={cn(
+        "flex flex-col bg-background",
+        // The promise step is intentionally a single-screen acknowledgement.
+        // Constrain only this compact step to the dynamic viewport so the page
+        // itself cannot acquire the small, confusing vertical scroll shown on
+        // mobile browsers.
+        step === "guidelines" ? "h-dvh overflow-hidden" : "min-h-dvh",
+      )}
+    >
       {showBack && (
         <header className="safe-top sticky top-0 z-30 bg-background/85 backdrop-blur-md">
           <div className="flex items-center justify-between px-5 pt-3 pb-2 min-h-[3.5rem]">
@@ -444,7 +453,7 @@ export default function Onboarding() {
         </header>
       )}
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col">
         {step === "welcome" && (
           <Welcome
             onGetStarted={() => {
@@ -1559,20 +1568,20 @@ function Guidelines({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col page-x pt-4 pb-8 animate-fade-in">
-      <div className="mb-6">
-        <div className="w-14 h-14 rounded-card bg-primary/10 flex items-center justify-center mb-4">
+    <div className="flex-1 min-h-0 flex flex-col page-x pt-2 pb-3 animate-fade-in">
+      <div className="mb-3">
+        <div className="w-12 h-12 rounded-card bg-primary/10 flex items-center justify-center mb-3">
           <Heart className="w-6 h-6 text-primary" aria-hidden />
         </div>
         <h1 className="text-2xl font-semibold text-charcoal tracking-tight">
           Our community promise
         </h1>
-        <p className="mt-2 text-base text-charcoal-muted">
+        <p className="mt-1 text-sm leading-5 text-charcoal-muted">
           VeggieMeet works because everyone shows up with care.
         </p>
       </div>
 
-      <ul className="space-y-3 flex-1">
+      <ul className="space-y-2 flex-1 min-h-0">
         <GuidelineItem title="Be kind" body="Treat every Veggie the way you'd like to be met — with warmth and respect." />
         <GuidelineItem title="Show up" body="If plans change, cancel early so hosts and other guests know." />
         <GuidelineItem title="Support the community" body="Check in at meetups and places that welcome us. Small actions add up." />
@@ -1582,12 +1591,12 @@ function Guidelines({
       {/* WO-099: the full Community Guidelines are one tap away, same tab. */}
       <Link
         to="/community-guidelines"
-        className="mt-3 inline-flex min-h-[44px] items-center text-sm font-medium text-charcoal underline underline-offset-4 hover:text-primary"
+        className="mt-1 inline-flex min-h-10 items-center text-sm font-medium text-charcoal underline underline-offset-4 hover:text-primary"
       >
         Read the full Community Guidelines
       </Link>
 
-      <label className="mt-4 flex items-start gap-3 rounded-card border border-border bg-card p-3.5 cursor-pointer select-none">
+      <label className="mt-2 flex items-start gap-3 rounded-card border border-border bg-card p-3 cursor-pointer select-none">
         <input
           type="checkbox"
           checked={accepted}
@@ -1603,7 +1612,7 @@ function Guidelines({
         fullWidth
         onClick={onContinue}
         disabled={!accepted}
-        className={cn("mt-4", !accepted && "opacity-50 cursor-not-allowed")}
+        className={cn("mt-2", !accepted && "opacity-50 cursor-not-allowed")}
       >
         I agree
       </PrimaryButton>
@@ -1613,13 +1622,13 @@ function Guidelines({
 
 function GuidelineItem({ title, body }: { title: string; body: string }) {
   return (
-    <li className="flex gap-3">
-      <span className="mt-0.5 w-6 h-6 rounded-full bg-soft-green text-primary flex items-center justify-center shrink-0">
-        <Check className="w-4 h-4" aria-hidden />
+    <li className="flex gap-2.5">
+      <span className="mt-0.5 w-5 h-5 rounded-full bg-soft-green text-primary flex items-center justify-center shrink-0">
+        <Check className="w-3.5 h-3.5" aria-hidden />
       </span>
       <div>
-        <div className="font-semibold text-charcoal">{title}</div>
-        <div className="text-sm text-charcoal-muted">{body}</div>
+        <div className="text-sm font-semibold leading-5 text-charcoal">{title}</div>
+        <div className="text-[13px] leading-[1.2rem] text-charcoal-muted">{body}</div>
       </div>
     </li>
   );

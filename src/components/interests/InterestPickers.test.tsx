@@ -79,6 +79,21 @@ describe("InterestPicker", () => {
     expect(screen.getByRole("button", { name: /Coffee/ }).getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("floats the check outside layout so selection cannot resize a chip", () => {
+    render(<ProfileHarness min={0} max={20} />);
+    const coffee = screen.getByRole("button", { name: /Coffee/ });
+    const check = coffee.querySelector('[aria-hidden="true"]');
+
+    expect(coffee.className).toContain("relative");
+    expect(coffee.className).toContain("px-3.5");
+    expect(check?.className).toContain("absolute");
+    expect(check?.className).toContain("opacity-0");
+
+    fireEvent.click(coffee);
+    expect(check?.className).toContain("opacity-100");
+    expect(coffee.className).toContain("px-3.5");
+  });
+
   it("supports search across the catalogue", () => {
     render(<ProfileHarness min={0} max={20} />);
     fireEvent.change(screen.getByLabelText("Search interests"), { target: { value: "yog" } });

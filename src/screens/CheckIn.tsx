@@ -22,8 +22,10 @@ import { fetchMeetupById, fetchProfileAsVeggie, isUuid } from "@/lib/backend";
 import {
   encodeVerifyPayload,
   issueMeetupQrToken,
+  MeetupQrIssueError,
   verifyMeetupConnection,
   type IssuedToken,
+  type QrIssueCode,
   type VerifyResult,
 } from "@/lib/meetupCheckin";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Meetup, Veggie } from "@/types";
 import { toast } from "sonner";
 import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
+import { formatMeetupDate, formatTime12h } from "@/lib/format";
 
 type Mode = "hub" | "qr" | "scan";
 
@@ -141,7 +144,11 @@ export default function CheckIn() {
       )}
 
       {mode === "qr" && profile && (
-        <QRView meetupId={meetup.id} displayName={profile.display_name} avatarUrl={profile.avatar_url ?? undefined} meetupTitle={meetup.title} />
+        <QRView
+          meetup={meetup}
+          displayName={profile.display_name}
+          avatarUrl={profile.avatar_url ?? undefined}
+        />
       )}
 
       {mode === "scan" && (
@@ -250,36 +257,51 @@ function HubView({ meetup, onShowQR, onScan }: { meetup: Meetup; onShowQR: () =>
 }
 
 function QRView({
-  meetupId,
+  meetup,
   displayName,
   avatarUrl,
-  meetupTitle,
 }: {
-  meetupId: string;
+  meetup: Meetup;
   displayName: string;
   avatarUrl?: string;
-  meetupTitle: string;
 }) {
-  const [state, setState] = useState<{ status: "loading" | "ready" | "expired" | "error"; token?: IssuedToken; error?: string }>(
+  const [state, setState] = useState<{
+    status: "loading" | "ready" | "expired" | "error";
+    token?: IssuedToken;
+    error?: string;
+    code?: QrIssueCode;
+  }>(
     { status: "loading" },
   );
   const timerRef = useRef<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
-  async function issue() {
-    setState({ status: "loading" });
+  async function issue(showLoading = true) {
+    if (showLoading) setState({ status: "loading" });
     try {
-      const token = await issueMeetupQrToken(meetupId);
+      const token = await issueMeetupQrToken(meetup.id);
       setState({ status: "ready", token });
-    } catch (e: any) {
-      setState({ status: "error", error: e?.message ?? "Couldn't generate code" });
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e.message : "Couldn't generate code";
+      const code = e instanceof MeetupQrIssueError ? e.code : "unknown";
+      setState({ status: "error", error, code });
     }
   }
 
   useEffect(() => {
     issue();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meetupId]);
+  }, [meetup.id]);
+
+  // If the member opens this screen just before the one-hour window, make the
+  // real QR appear without requiring them to keep pressing Refresh.
+  useEffect(() => {
+    if (state.status !== "error" || state.code !== "too_early") return;
+    const retry = window.setInterval(() => void issue(false), 60_000);
+    return () => window.clearInterval(retry);
+    // `issue` intentionally uses only the current Meetup id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status, state.code, meetup.id]);
 
   useEffect(() => {
     if (state.status !== "ready" || !state.token) return;
@@ -312,12 +334,25 @@ function QRView({
           <QRCodeSVG value={encodeVerifyPayload(state.token.token)} size={240} level="M" includeMargin={false} />
         ) : (
           <div
-            className="w-[240px] h-[240px] flex items-center justify-center text-sm text-charcoal-muted"
+            className="w-[240px] h-[240px] flex flex-col items-center justify-center px-5 text-center text-sm text-charcoal-muted"
+            role="status"
             aria-live="polite"
           >
             {state.status === "loading" && "Generating code…"}
             {state.status === "expired" && "This QR has expired"}
-            {state.status === "error" && (state.error ?? "Couldn't generate code")}
+            {state.status === "error" && (
+              <>
+                <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <QrCode className="h-7 w-7" aria-hidden="true" />
+                </span>
+                <span className="font-semibold text-charcoal">
+                  {qrIssueTitle(state.code)}
+                </span>
+                <span className="mt-2 text-xs leading-relaxed">
+                  {qrIssueDetail(state.code, meetup, state.error)}
+                </span>
+              </>
+            )}
           </div>
         )}
         {state.status === "expired" && (
@@ -331,7 +366,7 @@ function QRView({
           <UserAvatar name={displayName} src={avatarUrl} size="md" />
           <p className="text-base font-semibold text-charcoal">{displayName}</p>
         </div>
-        <p className="text-xs text-charcoal-muted">{meetupTitle}</p>
+        <p className="text-xs text-charcoal-muted">{meetup.title}</p>
       </div>
       {state.status === "ready" && (
         <p className="text-xs text-charcoal-muted" aria-live="polite">
@@ -339,12 +374,40 @@ function QRView({
         </p>
       )}
       {(state.status === "expired" || state.status === "error") && (
-        <PrimaryButton onClick={issue}>
+        <PrimaryButton onClick={() => issue()}>
           <RefreshCw className="w-4 h-4" /> Refresh QR
         </PrimaryButton>
       )}
     </div>
   );
+}
+
+function qrIssueTitle(code?: QrIssueCode) {
+  switch (code) {
+    case "too_early":
+      return "QR isn't open yet";
+    case "closed":
+      return "Check-in has ended";
+    case "cancelled":
+      return "This Meetup was cancelled";
+    case "not_attending":
+      return "QR is for confirmed attendees";
+    case "unauthenticated":
+      return "Sign in to show your QR";
+    default:
+      return "Couldn't generate the QR";
+  }
+}
+
+function qrIssueDetail(code: QrIssueCode | undefined, meetup: Meetup, fallback?: string) {
+  if (code === "too_early") {
+    return `It opens automatically 1 hour before ${formatMeetupDate(meetup.date)} at ${formatTime12h(meetup.startTime)}.`;
+  }
+  if (code === "not_attending") return "Join this Meetup first, then try again.";
+  if (code === "closed") return "The QR is only available during the Meetup check-in window.";
+  if (code === "cancelled") return "QR check-in isn't available for cancelled Meetups.";
+  if (code === "unauthenticated") return "Your session may have expired. Sign in and try again.";
+  return fallback ?? "Please try again.";
 }
 
 function errorCopy(code: string, fallback: string) {
