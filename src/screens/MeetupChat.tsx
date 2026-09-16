@@ -567,7 +567,7 @@ export default function MeetupChat() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 page-x py-4 space-y-3 overflow-y-auto">
+      <div className="flex-1 min-h-0 min-w-0 page-x py-4 space-y-3 overflow-y-auto overflow-x-hidden">
         {hasMore && (
           <div className="flex justify-center">
             <button
@@ -687,7 +687,7 @@ export default function MeetupChat() {
               key={m.id}
               data-message-row={m.id}
               data-message-owner={isMe ? "self" : "other"}
-              className={`flex items-end gap-2 ${messageRowAlignment(isMe)}`}
+              className={`flex min-w-0 max-w-full items-end gap-2 ${messageRowAlignment(isMe)}`}
             >
               {!isMe && m.sender_name && (
                 <UserAvatar
@@ -697,12 +697,12 @@ export default function MeetupChat() {
                 />
               )}
               <div
-                className={`max-w-[75%] flex flex-col ${
+                className={`min-w-0 max-w-[75%] flex flex-col ${
                   isMe ? "items-end" : "items-start"
                 }`}
               >
                 <div
-                  className={`w-fit max-w-full rounded-card px-3.5 py-2 text-sm leading-snug whitespace-pre-wrap break-words ${
+                  className={`w-fit min-w-0 max-w-full rounded-card px-3.5 py-2 text-sm leading-snug whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${
                     isMe
                       ? "bg-primary text-primary-foreground"
                       : "bg-card text-charcoal border border-border/60"

@@ -21,11 +21,12 @@ export function MeetupHero({ imageUrl, title, extraAction, shareUrl, shareMeta }
   const navigate = useNavigate();
   const hasImage = Boolean(imageUrl);
   const guard = useMemo(() => createShareGuard(), []);
+  const heroControlSurface = hasImage
+    ? "bg-background/90 backdrop-blur text-charcoal hover:bg-background"
+    : "bg-secondary text-charcoal hover:bg-accent";
   const roundBtn = cn(
     "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-    hasImage
-      ? "bg-background/90 backdrop-blur text-charcoal hover:bg-background"
-      : "bg-secondary text-charcoal hover:bg-accent",
+    heroControlSurface,
   );
 
   const onShare = () =>
@@ -57,7 +58,7 @@ export function MeetupHero({ imageUrl, title, extraAction, shareUrl, shareMeta }
         </>
       )}
       <div className="safe-top absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-3">
-        <BackButton fallback="/community" />
+        <BackButton fallback="/community" className={heroControlSurface} />
         <div className="flex items-center gap-2">
           {shareUrl ? (
             <button
@@ -78,4 +79,3 @@ export function MeetupHero({ imageUrl, title, extraAction, shareUrl, shareMeta }
     </div>
   );
 }
-

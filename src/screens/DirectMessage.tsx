@@ -788,11 +788,11 @@ function DMScreen({
 
       <div className="flex-1 flex flex-col min-h-0">
         <div
-          className="flex-1 overflow-y-auto page-x pt-3 pb-4"
+          className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden page-x pt-3 pb-4"
           role="log"
           aria-live="polite"
         >
-          <div className="min-h-full flex flex-col justify-end space-y-4">
+          <div className="min-h-full min-w-0 flex flex-col justify-end space-y-4">
             {!loadingMsgs && !loadError && hasMore && (
               <div className="flex justify-center">
                 <Button
@@ -1215,8 +1215,8 @@ function MessageGroup({
   const last = group.messages[group.messages.length - 1];
   const showRead = isMe && isLastInConv;
   return (
-    <div className={cn("flex", isMe ? "justify-end" : "justify-start")}>
-      <div className="max-w-[86%] flex flex-col gap-1.5 items-stretch">
+    <div className={cn("flex min-w-0 max-w-full", isMe ? "justify-end" : "justify-start")}>
+      <div className="min-w-0 max-w-[86%] flex flex-col gap-1.5 items-stretch">
         {group.messages.map((m) => {
           const bundle = m.invitation_id ? invitations.get(m.invitation_id) : null;
           if (bundle) {
@@ -1318,14 +1318,14 @@ function MessageGroup({
               data-message-row={m.id}
               data-message-owner={isMe ? "self" : "other"}
               className={cn(
-                "group/msg relative flex items-start gap-1.5",
+                "group/msg relative flex min-w-0 max-w-full items-start gap-1.5",
                 messageRowAlignment(isMe),
               )}
             >
               <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
                 <div
                   className={cn(
-                    "px-3.5 py-2 rounded-card text-sm break-words whitespace-pre-wrap",
+                    "min-w-0 max-w-full px-3.5 py-2 rounded-card text-sm break-words [overflow-wrap:anywhere] whitespace-pre-wrap",
                     isMe
                       ? "bg-soft-green text-charcoal rounded-br-md"
                       : "bg-muted text-charcoal rounded-bl-md",
@@ -1472,7 +1472,7 @@ function ReportDialog({
               Reporting this message
               {messageTimestamp ? ` · ${formatTime(messageTimestamp)}` : ""}
             </p>
-            <p className="line-clamp-4 whitespace-pre-wrap break-words">
+            <p className="line-clamp-4 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
               {messagePreview}
             </p>
           </div>
