@@ -115,6 +115,7 @@ export default function MeetupChat() {
   const [forwardError, setForwardError] = useState<string | null>(null);
   const forwardRequestIdRef = useRef(0);
   const forwardTriggerIdRef = useRef<string | null>(null);
+  const [loadingChat, setLoadingChat] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -154,6 +155,7 @@ export default function MeetupChat() {
   useEffect(() => {
     if (!isDb || !id || authLoading) return;
     let cancelled = false;
+    setLoadingChat(true);
     setLoadError(null);
     (async () => {
       try {
@@ -176,6 +178,8 @@ export default function MeetupChat() {
             memberSafeMessage(e),
           );
         }
+      } finally {
+        if (!cancelled) setLoadingChat(false);
       }
     })();
     return () => {
@@ -456,7 +460,28 @@ export default function MeetupChat() {
     }
   };
 
-  if (!isDb || loadError || (!context && !authLoading)) {
+  if (isDb && (authLoading || loadingChat)) {
+    return (
+      <div className="flex flex-col min-h-dvh" aria-busy="true">
+        <AppHeader
+          title="Meetup chat"
+          left={<BackButton fallback="/chats" />}
+        />
+        <div
+          className="flex-1 flex items-center justify-center"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-2 text-sm font-medium text-charcoal-muted">
+            <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+            <span>Loading chat…</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isDb || loadError || !context) {
     return (
       <div className="flex flex-col min-h-dvh">
         <AppHeader
@@ -484,17 +509,6 @@ export default function MeetupChat() {
               Back to Today
             </button>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!context) {
-    return (
-      <div className="flex flex-col min-h-dvh">
-        <AppHeader title="Meetup chat" />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-charcoal font-medium">Loading chat…</p>
         </div>
       </div>
     );
