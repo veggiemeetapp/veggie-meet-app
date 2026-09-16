@@ -1,9 +1,9 @@
 import { memberSafeMessage } from "@/lib/errors";
 import { useUnsavedWork } from "@/lib/unsavedWork";
 import { safeBack } from "@/lib/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Ban,
   CalendarPlus,
@@ -42,14 +42,17 @@ import {
   deleteDirectMessage,
   editDirectMessage,
   fetchThread,
+  fetchThreadSnapshot,
   getOrCreateConversation,
   isDeletedMessage,
   markConversationRead,
+  DM_THREAD_TIMEOUT_MESSAGE,
   MESSAGE_DELETED_LABEL,
   MESSAGE_MAX,
   sendDirectMessage,
   type DMMessage,
   type DMOther,
+  type DMThread,
 } from "@/lib/directMessages";
 import {
   blockProfile,
@@ -248,9 +251,25 @@ function DMScreen({
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<DMMessage[]>([]);
-  const [loadingMsgs, setLoadingMsgs] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const threadKey = useMemo(
+    () => ["dm-thread", conversationId, meProfileId] as const,
+    [conversationId, meProfileId],
+  );
+  const threadQuery = useQuery<DMThread>({
+    queryKey: threadKey,
+    queryFn: () => fetchThreadSnapshot(conversationId),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    // Paint cached content immediately and refresh in the background so
+    // messages received while this screen was closed still converge.
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: false,
+  });
+  const [messages, setMessages] = useState<DMMessage[]>(
+    () => threadQuery.data?.messages ?? [],
+  );
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   // WO-083: stable idempotency token per intended message (see useSendToken).
@@ -265,8 +284,12 @@ function DMScreen({
     new Map(),
   );
   const [joiningId, setJoiningId] = useState<string | null>(null);
-  const [other, setOther] = useState<DMOther | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [other, setOther] = useState<DMOther | null>(
+    () => threadQuery.data?.other ?? null,
+  );
+  const [hasMore, setHasMore] = useState(
+    () => threadQuery.data?.hasMore ?? false,
+  );
   const [loadingOlder, setLoadingOlder] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   // WO-136: edit/delete of own messages. The server is authoritative; these
@@ -289,35 +312,52 @@ function DMScreen({
   const [mutationStatus, setMutationStatus] = useState("");
 
 
-  // Bounded initial page via get_dm_thread(): peer identity, eligibility and the
-  // most recent page of messages in a single RPC (no per-row queries).
-  const reloadThread = useMemo(
-    () => async () => {
-      const t = await fetchThread(conversationId);
-      setOther(t.other);
-      setMessages(t.messages);
-      setHasMore(t.hasMore);
-    },
-    [conversationId],
-  );
+  // Hydrate local, mutation-friendly state from the initial or refreshed
+  // snapshot. Cache hits are already available to the state initializers, so
+  // repeat visits never flash the loading screen.
+  useLayoutEffect(() => {
+    const snapshot = threadQuery.data;
+    if (!snapshot) return;
+    setOther(snapshot.other);
+    setMessages(snapshot.messages);
+    setHasMore(snapshot.hasMore);
+  }, [threadQuery.data]);
 
+  // Keep cached content aligned with local sends, edits, deletes, pagination,
+  // reactions and realtime updates. A later visit restores the latest thread,
+  // rather than only the original first page.
+  const hasThreadCache = !!threadQuery.data;
   useEffect(() => {
-    let cancelled = false;
-    setLoadingMsgs(true);
-    setLoadError(null);
-    fetchThread(conversationId)
-      .then((t) => {
-        if (cancelled) return;
-        setOther(t.other);
-        setMessages(t.messages);
-        setHasMore(t.hasMore);
-      })
-      .catch(() => !cancelled && setLoadError("Couldn't load this conversation."))
-      .finally(() => !cancelled && setLoadingMsgs(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [conversationId]);
+    if (!hasThreadCache || !other) return;
+    qc.setQueryData<DMThread>(threadKey, (cached) => {
+      if (!cached) return cached;
+      if (
+        cached.other === other &&
+        cached.messages === messages &&
+        cached.hasMore === hasMore
+      ) {
+        return cached;
+      }
+      return { ...cached, other, messages, hasMore };
+    });
+  }, [hasMore, hasThreadCache, messages, other, qc, threadKey]);
+
+  const loadingMsgs =
+    !hasThreadCache &&
+    !other &&
+    (threadQuery.isPending || threadQuery.isFetching);
+  const loadError =
+    !other && threadQuery.error
+      ? threadQuery.error instanceof Error &&
+        threadQuery.error.message === DM_THREAD_TIMEOUT_MESSAGE
+        ? "This conversation is taking longer than expected. Check your connection and try again."
+        : "Couldn't load this conversation."
+      : null;
+
+  const reloadThread = async () => {
+    const result = await threadQuery.refetch();
+    if (result.error) throw result.error;
+  };
 
   async function loadOlder() {
     const oldest = messages[0];
@@ -816,9 +856,17 @@ function DMScreen({
                 <Loader2 className="w-5 h-5 animate-spin text-charcoal-muted" />
               </div>
             ) : loadError ? (
-              <p className="text-center text-sm text-destructive py-10">
-                {loadError}
-              </p>
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <p className="text-sm text-destructive">{loadError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void threadQuery.refetch()}
+                >
+                  Try again
+                </Button>
+              </div>
             ) : messages.length === 0 ? (
               other && (
                 <EmptyConversation
@@ -827,46 +875,51 @@ function DMScreen({
                 />
               )
             ) : (
-              grouped.map((g) => (
-                <div key={g.date} className="space-y-2">
-                  <div className="text-center text-[11px] text-charcoal-muted my-2">
-                    {g.date}
-                  </div>
-                  {g.groups.map((group, gi) => (
-                    <MessageGroup
-                      key={gi}
-                      group={group}
-                      isMe={group.senderId === meProfileId}
-                      isLastInConv={
-                        g === grouped[grouped.length - 1] &&
-                        gi === g.groups.length - 1
-                      }
-                      invitations={invitations}
-                      meProfileId={meProfileId}
-                      onJoinInvitation={handleJoinInvitation}
-                      joiningId={joiningId}
-                      onReportMessage={setReportMessage}
-                      onToggleReaction={toggleReaction}
-                      canReact={canReact}
-                      otherName={other?.firstName ?? "this Veggie"}
+              <div
+                data-chat-content="dm"
+                className="space-y-4 motion-safe:animate-chat-content-in"
+              >
+                {grouped.map((g) => (
+                  <div key={g.date} className="space-y-2">
+                    <div className="text-center text-[11px] text-charcoal-muted my-2">
+                      {g.date}
+                    </div>
+                    {g.groups.map((group, gi) => (
+                      <MessageGroup
+                        key={gi}
+                        group={group}
+                        isMe={group.senderId === meProfileId}
+                        isLastInConv={
+                          g === grouped[grouped.length - 1] &&
+                          gi === g.groups.length - 1
+                        }
+                        invitations={invitations}
+                        meProfileId={meProfileId}
+                        onJoinInvitation={handleJoinInvitation}
+                        joiningId={joiningId}
+                        onReportMessage={setReportMessage}
+                        onToggleReaction={toggleReaction}
+                        canReact={canReact}
+                        otherName={other?.firstName ?? "this Veggie"}
 
-                      actions={{
-                        editingId,
-                        editDraft,
-                        setEditDraft,
-                        savingEdit,
-                        onStartEdit: startEdit,
-                        onCancelEdit: cancelEdit,
-                        onSaveEdit: saveEdit,
-                        onRequestDelete: (m: DMMessage) => {
-                          deleteTriggerIdRef.current = m.id;
-                          setDeleteTarget(m);
-                        },
-                      }}
-                    />
-                  ))}
-                </div>
-              ))
+                        actions={{
+                          editingId,
+                          editDraft,
+                          setEditDraft,
+                          savingEdit,
+                          onStartEdit: startEdit,
+                          onCancelEdit: cancelEdit,
+                          onSaveEdit: saveEdit,
+                          onRequestDelete: (m: DMMessage) => {
+                            deleteTriggerIdRef.current = m.id;
+                            setDeleteTarget(m);
+                          },
+                        }}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
             )}
             {/* WO-136: screen-reader announcement for edit/delete results. */}
             {/* WO-141: anchor the absolute sr-only status to the viewport.
@@ -957,6 +1010,7 @@ function DMScreen({
               ),
             );
             qc.invalidateQueries({ queryKey: ["dm-inbox", meProfileId] });
+            qc.removeQueries({ queryKey: threadKey, exact: true });
             toast.success("Chat deleted");
             navigate("/chats", {
               replace: true,

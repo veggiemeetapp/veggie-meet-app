@@ -6,8 +6,9 @@ const source = readFileSync("src/screens/MeetupChat.tsx", "utf8");
 describe("Meetup chat loading state", () => {
   it("caches the initial snapshot per chat and signed-in member", () => {
     expect(source).toContain(
-      'queryKey: ["meetup-chat", id ?? null, profile?.id ?? null]',
+      '() => ["meetup-chat", id ?? null, profile?.id ?? null] as const',
     );
+    expect(source).toContain("queryKey: chatKey");
     expect(source).toContain("() => chatQuery.data?.context ?? null");
     expect(source).toContain("() => chatQuery.data?.messages ?? []");
     expect(source).toContain('refetchOnMount: "always"');

@@ -1,9 +1,9 @@
 import { memberSafeMessage } from "@/lib/errors";
 import { useUnsavedWork } from "@/lib/unsavedWork";
 import { safeBack } from "@/lib/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Send,
   Calendar,
@@ -103,13 +103,18 @@ export default function MeetupChat() {
   const navigate = useNavigate();
   const { profile, loading: authLoading } = useAuth();
   const isDb = !!id && isUuid(id);
+  const qc = useQueryClient();
+  const chatKey = useMemo(
+    () => ["meetup-chat", id ?? null, profile?.id ?? null] as const,
+    [id, profile?.id],
+  );
 
   // The snapshot is scoped to both the chat and signed-in profile so cached
   // member-only content can never cross accounts. A cached snapshot renders
   // immediately on repeat visits while an always-on-mount background refresh
   // catches messages that arrived while this screen was closed.
   const chatQuery = useQuery<MeetupChatSnapshot>({
-    queryKey: ["meetup-chat", id ?? null, profile?.id ?? null],
+    queryKey: chatKey,
     enabled: isDb && !!profile?.id && !authLoading,
     queryFn: () => fetchMeetupChatSnapshot(id!),
     staleTime: 5 * 60_000,
@@ -177,13 +182,31 @@ export default function MeetupChat() {
   // Hydrate local, mutation-friendly state whenever the cached/background
   // snapshot changes. On a cache hit the state initializers above avoid even a
   // one-frame empty state.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const snapshot = chatQuery.data;
     if (!snapshot) return;
     setContext(snapshot.context);
     setMessages(snapshot.messages);
     setHasMore(snapshot.hasMore);
   }, [chatQuery.data]);
+
+  // Keep the cached snapshot aligned with sends, edits, deletes, reactions,
+  // pagination and realtime merges performed against local screen state.
+  const hasChatCache = !!chatQuery.data;
+  useEffect(() => {
+    if (!hasChatCache || !context) return;
+    qc.setQueryData<MeetupChatSnapshot>(chatKey, (cached) => {
+      if (!cached) return cached;
+      if (
+        cached.context === context &&
+        cached.messages === messages &&
+        cached.hasMore === hasMore
+      ) {
+        return cached;
+      }
+      return { context, messages, hasMore };
+    });
+  }, [chatKey, context, hasChatCache, hasMore, messages, qc]);
 
   // Realtime: RLS-scoped inserts for this chat. Re-read the row via the RPC
   // page so blocking suppression and sender identity stay server-derived.
@@ -606,14 +629,18 @@ export default function MeetupChat() {
             </button>
           </div>
         )}
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center text-center page-x py-12">
-            <p className="text-sm font-medium text-charcoal">
-              Be the first to say hello 👋
-            </p>
-          </div>
-        )}
-        {messages.map((m) => {
+        <div
+          data-chat-content="group"
+          className="space-y-3 motion-safe:animate-chat-content-in"
+        >
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center text-center page-x py-12">
+              <p className="text-sm font-medium text-charcoal">
+                Be the first to say hello 👋
+              </p>
+            </div>
+          )}
+          {messages.map((m) => {
           if (m.type === "system") {
             return (
               <div
@@ -819,7 +846,8 @@ export default function MeetupChat() {
               </DropdownMenu>
             </div>
           );
-        })}
+          })}
+        </div>
         {/* WO-141: keep the status announcement accessible without allowing
             its static position after the message list to enlarge the page. */}
         <p

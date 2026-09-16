@@ -64,6 +64,8 @@ export interface DMInboxItem {
 export const MESSAGE_MAX = 2000;
 /** Bounded initial page — server clamps to 50. */
 export const MESSAGE_PAGE_SIZE = 40;
+export const DM_THREAD_LOAD_TIMEOUT_MS = 12_000;
+export const DM_THREAD_TIMEOUT_MESSAGE = "Direct message thread load timed out";
 
 function firstName(displayName: string): string {
   return displayName.split(/\s+/)[0] ?? displayName;
@@ -222,6 +224,29 @@ export async function fetchThread(
     isBlocked: !!d.is_blocked,
     isConnected: !!d.is_connected,
   };
+}
+
+/**
+ * Bounded first-page request used by the React Query cache. A stalled RPC must
+ * never leave the conversation on an infinite loading indicator.
+ */
+export async function fetchThreadSnapshot(
+  conversationId: string,
+  timeoutMs = DM_THREAD_LOAD_TIMEOUT_MS,
+): Promise<DMThread> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error(DM_THREAD_TIMEOUT_MESSAGE)),
+      timeoutMs,
+    );
+  });
+
+  try {
+    return await Promise.race([fetchThread(conversationId), timeout]);
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
+  }
 }
 
 /**
