@@ -29,10 +29,8 @@ describe("Google OAuth production identity", () => {
     expect(onboarding).toContain('lovable.auth.signInWithOAuth("google"');
   });
 
-  it("uses a dedicated callback on the current browser origin", () => {
-    expect(onboarding).toMatch(
-      /redirect_uri:\s*`\$\{window\.location\.origin\}\$\{AUTH_CALLBACK_PATH\}`/,
-    );
+  it("uses the current browser origin as the application redirect destination", () => {
+    expect(onboarding).toMatch(/redirect_uri:\s*window\.location\.origin/);
   });
 
   it("marks the origin callback as pending before starting the provider redirect", () => {
@@ -47,9 +45,7 @@ describe("Google OAuth production identity", () => {
   });
 
   it("keeps email confirmation and password reset on the current origin", () => {
-    expect(onboarding).toMatch(
-      /emailRedirectTo:\s*`\$\{window\.location\.origin\}\$\{AUTH_CALLBACK_PATH\}`/,
-    );
+    expect(onboarding).toMatch(/emailRedirectTo:\s*`\$\{window\.location\.origin\}\//);
     expect(onboarding).toMatch(/redirectTo:\s*`\$\{window\.location\.origin\}\/reset-password`/);
   });
 
