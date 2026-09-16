@@ -31,4 +31,10 @@ describe("WO-138 per-message chat alignment", () => {
     expect(dmSource).toContain('max-w-[86%] flex flex-col');
     expect(meetupSource).toContain('max-w-[75%] flex flex-col');
   });
+
+  it("does not stretch a short Meetup bubble to the width of its reactions", () => {
+    expect(meetupSource).toContain('isMe ? "items-end" : "items-start"');
+    expect(meetupSource).toContain("w-fit max-w-full rounded-card");
+    expect(meetupSource).not.toContain("rounded-br-md");
+  });
 });

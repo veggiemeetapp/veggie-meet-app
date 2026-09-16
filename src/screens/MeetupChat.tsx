@@ -14,6 +14,9 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Reply,
+  Forward,
+  X,
 } from "lucide-react";
 import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
 import {
@@ -42,7 +45,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUuid } from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
 import { useSendToken } from "@/hooks/useSendToken";
-import { MESSAGE_DELETED_LABEL } from "@/lib/directMessages";
+import {
+  fetchInbox,
+  MESSAGE_DELETED_LABEL,
+  MESSAGE_MAX,
+  sendDirectMessage,
+  type DMInboxItem,
+} from "@/lib/directMessages";
+import {
+  buildForwardedMeetupMessage,
+  buildMeetupReplyBody,
+  meetupReplyPrefix,
+} from "@/lib/chatMessageActions";
 import {
   fetchMeetupChatContext,
   fetchMeetupChatThread,
@@ -92,6 +106,15 @@ export default function MeetupChat() {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const composerRef = useRef<HTMLInputElement | null>(null);
+  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
+  const [forwardTarget, setForwardTarget] = useState<ChatMessage | null>(null);
+  const [forwardOptions, setForwardOptions] = useState<DMInboxItem[]>([]);
+  const [loadingForwardOptions, setLoadingForwardOptions] = useState(false);
+  const [forwardingConversationId, setForwardingConversationId] = useState<string | null>(null);
+  const [forwardError, setForwardError] = useState<string | null>(null);
+  const forwardRequestIdRef = useRef(0);
+  const forwardTriggerIdRef = useRef<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -201,6 +224,29 @@ export default function MeetupChat() {
     () => postBlockedCopy(context?.post_block_reason ?? null),
     [context?.post_block_reason],
   );
+  const replyIsOwn = !!(
+    replyTarget &&
+    (replyTarget.is_mine ||
+      (!!profile?.id && replyTarget.sender_id === profile.id))
+  );
+  const replyDisplayAuthor = replyTarget
+    ? replyIsOwn
+      ? "yourself"
+      : replyTarget.sender_name ?? "a Veggie"
+    : "";
+  const replySourceAuthor = replyTarget
+    ? replyTarget.sender_name ??
+      (replyIsOwn ? profile?.display_name ?? "the host" : "a Veggie")
+    : "";
+  const replyPrefix = useMemo(
+    () =>
+      replyTarget
+        ? meetupReplyPrefix(replySourceAuthor, replyTarget.body ?? "")
+        : "",
+    [replySourceAuthor, replyTarget],
+  );
+  const replyDraftMax = Math.max(0, CHAT_MESSAGE_MAX - replyPrefix.length);
+  const replyDraftTooLong = draft.trim().length > replyDraftMax;
 
   const loadOlder = async () => {
     if (!id || messages.length === 0 || loadingOlder) return;
@@ -222,7 +268,13 @@ export default function MeetupChat() {
 
   /* -------- WO-136: edit / delete own group messages -------- */
 
+  const startReply = (m: ChatMessage) => {
+    setReplyTarget(m);
+    requestAnimationFrame(() => composerRef.current?.focus());
+  };
+
   const startEdit = (m: ChatMessage) => {
+    setReplyTarget(null);
     setEditingId(m.id);
     setEditDraft(m.body ?? "");
   };
@@ -306,17 +358,90 @@ export default function MeetupChat() {
     }
   };
 
+  const closeForward = () => {
+    forwardRequestIdRef.current += 1;
+    setForwardTarget(null);
+    setForwardOptions([]);
+    setForwardError(null);
+    setLoadingForwardOptions(false);
+  };
+
+  const loadForwardOptions = (m: ChatMessage) => {
+    const requestId = ++forwardRequestIdRef.current;
+    setForwardTarget(m);
+    setForwardOptions([]);
+    setForwardError(null);
+    setLoadingForwardOptions(true);
+    void fetchInbox()
+      .then((items) => {
+        if (requestId !== forwardRequestIdRef.current) return;
+        setForwardOptions(items);
+      })
+      .catch((err) => {
+        if (requestId !== forwardRequestIdRef.current) return;
+        setForwardError(memberSafeMessage(err));
+      })
+      .finally(() => {
+        if (requestId === forwardRequestIdRef.current) {
+          setLoadingForwardOptions(false);
+        }
+      });
+  };
+
+  const forwardToConversation = async (destination: DMInboxItem) => {
+    const target = forwardTarget;
+    if (!target || forwardingConversationId) return;
+    const isMine =
+      target.is_mine || (!!profile?.id && target.sender_id === profile.id);
+    const author =
+      target.sender_name ??
+      (isMine ? profile?.display_name ?? "the host" : "a Veggie");
+    const body = buildForwardedMeetupMessage(
+      author,
+      target.body ?? "",
+      MESSAGE_MAX,
+    );
+    setForwardingConversationId(destination.conversationId);
+    try {
+      const token = globalThis.crypto?.randomUUID?.() ?? null;
+      await sendDirectMessage(destination.conversationId, body, token);
+      setMutationStatus(`Message forwarded to ${destination.other.firstName}.`);
+      toast({
+        title: "Message forwarded",
+        description: `Sent to ${destination.other.firstName}.`,
+      });
+      closeForward();
+    } catch (err) {
+      toast({
+        title: "Message not forwarded",
+        description: memberSafeMessage(err),
+        variant: "destructive",
+      });
+    } finally {
+      setForwardingConversationId(null);
+    }
+  };
+
 
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = draft.trim();
-    if (!body || !id || !canPost || sending) return;
+    const plainBody = draft.trim();
+    if (!plainBody || !id || !canPost || sending || replyDraftTooLong) return;
+    const body = replyTarget
+      ? buildMeetupReplyBody(
+          replySourceAuthor,
+          replyTarget.body ?? "",
+          plainBody,
+          CHAT_MESSAGE_MAX,
+        )
+      : plainBody;
     setSending(true);
     try {
       const saved = await sendMeetupChatMessage(id, body, sendToken.tokenFor(body));
       sendToken.clear();
       setDraft("");
+      setReplyTarget(null);
       mergeMessages([saved]);
     } catch (err) {
       toast({
@@ -571,12 +696,16 @@ export default function MeetupChat() {
                   size="sm"
                 />
               )}
-              <div className="max-w-[75%] flex flex-col">
+              <div
+                className={`max-w-[75%] flex flex-col ${
+                  isMe ? "items-end" : "items-start"
+                }`}
+              >
                 <div
-                  className={`rounded-card px-3.5 py-2 text-sm leading-snug ${
+                  className={`w-fit max-w-full rounded-card px-3.5 py-2 text-sm leading-snug whitespace-pre-wrap break-words ${
                     isMe
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-card text-charcoal border border-border/60 rounded-bl-md"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-charcoal border border-border/60"
                   }`}
                 >
                   {!isMe && m.sender_name && (
@@ -614,23 +743,40 @@ export default function MeetupChat() {
                 />
               )}
 
-              {isMe && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      data-msg-menu={m.id}
-                      aria-label={`Message options for your message sent ${new Date(m.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
-
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    data-msg-menu={m.id}
+                    aria-label={`Message options for ${reactionMessageLabel(m, isMe)}`}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-muted"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isMe ? "end" : "start"}>
+                  <DropdownMenuItem
+                    disabled={!canPost}
+                    onClick={() => startReply(m)}
+                  >
+                    <Reply className="w-4 h-4" />
+                    Reply
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      forwardTriggerIdRef.current = m.id;
+                      loadForwardOptions(m);
+                    }}
+                  >
+                    <Forward className="w-4 h-4" />
+                    Forward
+                  </DropdownMenuItem>
+                  {isMe && (
                     <DropdownMenuItem onClick={() => startEdit(m)}>
                       <Pencil className="w-4 h-4" />
                       Edit
                     </DropdownMenuItem>
+                  )}
+                  {isMe && (
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={() => {
@@ -641,9 +787,9 @@ export default function MeetupChat() {
                       <Trash2 className="w-4 h-4" />
                       Delete message
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           );
         })}
@@ -664,26 +810,56 @@ export default function MeetupChat() {
       {canPost ? (
         <form
           onSubmit={handleSend}
-          className="safe-bottom border-t border-border/60 p-3 flex items-center gap-2 bg-background"
+          className="safe-bottom border-t border-border/60 p-3 bg-background"
         >
-          <input
-            aria-label="Message"
-            data-chat-composer="group"
-
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            maxLength={2000}
-            placeholder="Introduce yourself or ask a meetup question..."
-            className="flex-1 h-11 rounded-full bg-muted px-4 text-sm outline-none placeholder:text-charcoal-muted focus:ring-2 focus:ring-primary/30"
-          />
-          <button
-            type="submit"
-            disabled={!draft.trim() || sending}
-            aria-label="Send"
-            className="w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity"
-          >
-            <Send className="w-5 h-5" />
-          </button>
+          {replyTarget && (
+            <div className="mb-2 flex items-center gap-2 rounded-xl border-l-4 border-primary bg-muted/70 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-primary">
+                  Replying to {replyDisplayAuthor}
+                </p>
+                <p className="truncate text-xs text-charcoal-muted">
+                  {replyTarget.body}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyTarget(null);
+                  requestAnimationFrame(() => composerRef.current?.focus());
+                }}
+                aria-label="Cancel reply"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-charcoal-muted hover:bg-background"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <input
+              ref={composerRef}
+              aria-label="Message"
+              data-chat-composer="group"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              maxLength={replyDraftMax}
+              placeholder="Introduce yourself or ask a meetup question..."
+              className="flex-1 h-11 rounded-full bg-muted px-4 text-sm outline-none placeholder:text-charcoal-muted focus:ring-2 focus:ring-primary/30"
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim() || sending || replyDraftTooLong}
+              aria-label="Send"
+              className="w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+          {replyDraftTooLong && (
+            <p className="mt-1 text-xs text-destructive">
+              Shorten your message to leave room for the reply quote.
+            </p>
+          )}
         </form>
       ) : (
         <div className="safe-bottom border-t border-border/60 p-4 bg-background">
@@ -750,6 +926,100 @@ export default function MeetupChat() {
               ) : (
                 "Delete message"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!forwardTarget}
+        onOpenChange={(open) => {
+          if (!open && !forwardingConversationId) closeForward();
+        }}
+      >
+        <DialogContent
+          className="max-w-sm"
+          onCloseAutoFocus={(e) => {
+            const id = forwardTriggerIdRef.current;
+            const trigger = id
+              ? document.querySelector<HTMLElement>(`[data-msg-menu="${id}"]`)
+              : null;
+            if (trigger) {
+              e.preventDefault();
+              trigger.focus();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Forward message</DialogTitle>
+            <DialogDescription>
+              Choose an existing direct chat. The message will be sent as soon
+              as you select a person.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingForwardOptions ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-charcoal-muted">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading conversations…
+            </div>
+          ) : forwardError ? (
+            <div className="rounded-card bg-muted p-4 text-center">
+              <p className="text-sm text-charcoal-muted">{forwardError}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                onClick={() => forwardTarget && loadForwardOptions(forwardTarget)}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : forwardOptions.length === 0 ? (
+            <p className="rounded-card bg-muted p-4 text-center text-sm text-charcoal-muted">
+              You don't have an existing direct conversation to forward this
+              message to yet.
+            </p>
+          ) : (
+            <div className="max-h-72 space-y-1 overflow-y-auto">
+              {forwardOptions.map((destination) => {
+                const isForwarding =
+                  forwardingConversationId === destination.conversationId;
+                return (
+                  <button
+                    key={destination.conversationId}
+                    type="button"
+                    disabled={!!forwardingConversationId}
+                    onClick={() => forwardToConversation(destination)}
+                    className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-muted disabled:opacity-50"
+                  >
+                    <UserAvatar
+                      name={destination.other.displayName}
+                      src={destination.other.avatarUrl}
+                      seed={destination.other.profileId}
+                      size="md"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-charcoal">
+                      {destination.other.displayName}
+                    </span>
+                    {isForwarding && (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeForward}
+              disabled={!!forwardingConversationId}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
