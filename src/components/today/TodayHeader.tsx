@@ -1,6 +1,6 @@
 import { Sprout } from "lucide-react";
 import { Link } from "react-router-dom";
-import { NotificationsBell, UserAvatar } from "@/components/app";
+import { NotificationsBell, ThemeToggle, UserAvatar } from "@/components/app";
 
 import { CitySelector } from "@/components/location/CitySelector";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +27,7 @@ export function TodayHeader() {
 
 
         <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle />
           <NotificationsBell />
           <Link
             to="/you"

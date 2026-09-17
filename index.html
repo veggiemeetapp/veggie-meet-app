@@ -7,6 +7,19 @@
     <meta name="description" content="Discover and join local meetups for vegans, vegetarians, and plant-curious people. Meet real veggies, make real friendships.">
     <meta name="author" content="VeggieMeet" />
     <meta name="theme-color" content="#f8f7f2" />
+    <script>
+      // Apply the persisted theme before CSS paints to prevent a white flash
+      // when a member reopens the app in Dark Mode.
+      try {
+        var savedTheme = localStorage.getItem("veggiemeet-theme");
+        var useDarkTheme = savedTheme === "dark";
+        document.documentElement.classList.toggle("dark", useDarkTheme);
+        document.documentElement.style.colorScheme = useDarkTheme ? "dark" : "light";
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute("content", useDarkTheme ? "#15191b" : "#faf9f5");
+      } catch (_) {}
+    </script>
 
     <!-- WO-093: manifest-only installability. No service worker: VeggieMeet has
          no offline requirement, and an app-shell worker would risk stale

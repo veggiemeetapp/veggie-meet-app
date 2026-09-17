@@ -9,6 +9,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     /* Warm white background */
     --background: 40 33% 98%;
     --foreground: 220 15% 15%;
@@ -93,6 +94,72 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    color-scheme: dark;
+
+    --background: 210 13% 9%;
+    --foreground: 40 18% 94%;
+
+    --card: 210 12% 13%;
+    --card-foreground: 40 18% 94%;
+
+    --popover: 210 12% 13%;
+    --popover-foreground: 40 18% 94%;
+
+    /* A brighter leaf green stays readable on dark surfaces. Its foreground
+       is intentionally dark so filled buttons retain strong AA contrast. */
+    --primary: 145 45% 58%;
+    --primary-foreground: 210 18% 9%;
+    --primary-soft: 145 20% 18%;
+    --primary-glow: 145 48% 62%;
+
+    --secondary: 210 11% 18%;
+    --secondary-foreground: 40 16% 92%;
+
+    --muted: 210 10% 16%;
+    --muted-foreground: 210 8% 68%;
+
+    --accent: 145 16% 18%;
+    --accent-foreground: 145 40% 78%;
+
+    --destructive: 0 68% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 10% 22%;
+    --border-strong: 210 9% 31%;
+    --input: 210 9% 27%;
+    --ring: 145 45% 58%;
+
+    --charcoal: 40 18% 94%;
+    --charcoal-muted: 210 8% 68%;
+    --warm-white: 210 13% 9%;
+    --soft-green: 145 18% 17%;
+    --green-primary: 145 45% 58%;
+    --card-bg: 210 12% 13%;
+    --soft-border: 210 10% 22%;
+    --host-badge: 35 88% 62%;
+
+    --warning: 40 88% 65%;
+    --warning-foreground: 40 55% 12%;
+    --warning-soft: 38 25% 17%;
+    --warning-border: 38 32% 31%;
+
+    --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.22);
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.24);
+    --shadow-md: 0 8px 22px -8px hsl(0 0% 0% / 0.46);
+    --shadow-lg: 0 20px 44px -12px hsl(0 0% 0% / 0.58);
+    --shadow-green: 0 8px 24px -6px hsl(145 45% 35% / 0.35);
+
+    --sidebar-background: 210 13% 10%;
+    --sidebar-foreground: 40 16% 92%;
+    --sidebar-primary: 145 45% 58%;
+    --sidebar-primary-foreground: 210 18% 9%;
+    --sidebar-accent: 210 10% 17%;
+    --sidebar-accent-foreground: 40 16% 92%;
+    --sidebar-border: 210 10% 22%;
+    --sidebar-ring: 145 45% 58%;
   }
 }
 

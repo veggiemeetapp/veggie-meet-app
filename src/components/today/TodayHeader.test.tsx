@@ -19,6 +19,7 @@ vi.mock("@/components/location/CitySelector", () => ({
 
 vi.mock("@/components/app", () => ({
   NotificationsBell: () => <div>Notifications</div>,
+  ThemeToggle: () => <div>Theme</div>,
   UserAvatar: ({ name }: { name: string }) => <div>{name} avatar</div>,
 }));
 

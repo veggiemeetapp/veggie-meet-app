@@ -27,6 +27,7 @@ import {
   NotificationsBell,
   PrimaryButton,
   SecondaryButton,
+  ThemeToggle,
   UserAvatar,
 } from "@/components/app";
 
@@ -148,6 +149,7 @@ export default function You() {
         title="My Profile"
         right={
           <>
+            <ThemeToggle />
             <NotificationsBell />
             <button
               onClick={() => navigate("/settings")}
@@ -671,4 +673,3 @@ function PastMeetupsSection({
     </section>
   );
 }
-

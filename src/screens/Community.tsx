@@ -3,7 +3,7 @@ import { logAnalyticsEvent } from "@/lib/analytics";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Calendar, MapPin, Search as SearchIcon, Sprout, Users, Utensils } from "lucide-react";
-import { AppHeader, Card, NotificationsBell, ProgressiveImage, UserAvatar } from "@/components/app";
+import { AppHeader, Card, NotificationsBell, ProgressiveImage, ThemeToggle, UserAvatar } from "@/components/app";
 import { CitySelector, NoCityState } from "@/components/location/CitySelector";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext } from "@/hooks/useLocation";
@@ -116,6 +116,7 @@ export default function Community() {
             >
               <SearchIcon className="w-5 h-5" aria-hidden />
             </Link>
+            <ThemeToggle />
             <NotificationsBell />
           </div>
         }

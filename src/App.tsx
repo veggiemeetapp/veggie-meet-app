@@ -14,6 +14,7 @@ import { NavigationBehavior } from "@/lib/navigation";
 import { RequireValidIds } from "@/components/app/ResourceUnavailable";
 import { RequireOwner } from "@/components/app/RequireOwner";
 import { isRetryableRead } from "@/lib/errors";
+import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 
 // Eagerly load the two most common landing routes so first paint after
 // auth/onboarding does not pay a code-split cost.
@@ -195,19 +196,20 @@ const RouteFallback = () => <RouteLoading />;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    {/* WO-145: the update coordinator lives inside the query client (it needs
-        in-flight mutation state) and outside auth, because discovering a new
-        build must never depend on session state. */}
-    <PwaUpdateProvider>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <NavigationBehavior />
-          <AppShell>
-            <Suspense fallback={<RouteFallback />}>
-              <Routes>
+    <AppThemeProvider>
+      {/* WO-145: the update coordinator lives inside the query client (it needs
+          in-flight mutation state) and outside auth, because discovering a new
+          build must never depend on session state. */}
+      <PwaUpdateProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <NavigationBehavior />
+            <AppShell>
+              <Suspense fallback={<RouteFallback />}>
+                <Routes>
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
 
@@ -296,13 +298,14 @@ const App = () => (
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
                 <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </AppShell>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-    </PwaUpdateProvider>
+                </Routes>
+              </Suspense>
+            </AppShell>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+      </PwaUpdateProvider>
+    </AppThemeProvider>
   </QueryClientProvider>
 );
 

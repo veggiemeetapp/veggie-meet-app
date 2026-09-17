@@ -18,6 +18,7 @@ export { LoadingSkeleton, MeetupCardSkeleton } from "./LoadingSkeleton";
 export { ProgressiveImage } from "./ProgressiveImage";
 export { RouteLoading } from "./RouteLoading";
 export { NotificationsBell } from "./NotificationsBell";
+export { ThemeToggle } from "./ThemeToggle";
 export { AppErrorBoundary } from "./ErrorBoundary";
 export { OfflineBanner } from "./OfflineBanner";
 export { UpdatePrompt } from "./UpdatePrompt";

@@ -8,6 +8,7 @@ import {
   EmptyState,
   NotificationsBell,
   PrimaryButton,
+  ThemeToggle,
   UserAvatar,
 } from "@/components/app";
 import {
@@ -188,7 +189,12 @@ export default function Chats() {
       <AppHeader
         title="Chats"
         subtitle="Conversations with your Veggie Network."
-        right={<NotificationsBell />}
+        right={
+          <>
+            <ThemeToggle />
+            <NotificationsBell />
+          </>
+        }
       />
 
       <p className="sr-only" role="status" aria-live="polite">
