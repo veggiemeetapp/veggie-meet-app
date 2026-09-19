@@ -1691,6 +1691,30 @@ export type Database = {
         }
         Relationships: []
       }
+      map_access_grants: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          granted_by: string | null
+          id: string
+          note: string | null
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       meetup_completions: {
         Row: {
           completed_at: string
@@ -3621,6 +3645,7 @@ export type Database = {
         Returns: Json
       }
       get_meetup_place_context: { Args: { _meetup_id: string }; Returns: Json }
+      get_member_map_data: { Args: { _city_id: string }; Returns: Json }
       get_member_report_queue: { Args: { _status?: string }; Returns: Json }
       get_my_blocked_profiles: {
         Args: never
@@ -3763,6 +3788,7 @@ export type Database = {
         Args: { _target_profile_id: string }
         Returns: Json
       }
+      has_map_access: { Args: never; Returns: boolean }
       hide_today_recommendation: {
         Args: {
           _entity_id: string

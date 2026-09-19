@@ -1,64 +1,61 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
-import { List, SlidersHorizontal, Users, WifiOff } from "lucide-react";
+import { Link } from "react-router-dom";
+import { List, Users, WifiOff } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { fetchFeaturedPlaceIds, fetchMapLabData, type MapLabMeetup, type MapLabPlace } from "@/lib/mapLab";
+import {
+  fetchMemberMapData,
+  type MemberMapMeetup,
+  type MemberMapPlace,
+} from "@/lib/memberMap";
+import { fetchFeaturedPlaceIds } from "@/lib/mapLab";
 import { fetchNearbyVeggiesByCity, type NearbyVeggie } from "@/lib/backend";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationContext } from "@/hooks/useLocation";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
+import { logAnalyticsEvent } from "@/lib/analytics";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { MeetupMapSheetContent } from "@/components/map/MeetupMapSheetContent";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { clusterMarkerElement, pointMarkerElement } from "@/lib/mapMarkerElements";
-import brunchMeetupCover from "@/assets/wo155-vegan-brunch.jpg";
-import hikingMeetupCover from "@/assets/wo155-hiking-meetup.jpg";
 import {
   meetupMarkerEmoji,
   placeStickerGroup,
   PLACE_STICKER_PLACEHOLDERS,
 } from "@/lib/mapMarkers";
+import { clusterMarkerElement, pointMarkerElement } from "@/lib/mapMarkerElements";
 import {
   CITY_OVERVIEW_ZOOM,
   CLUSTER_CONFIG,
-  FIXTURE_DENSITY_LABELS,
   MAPBOX_PUBLIC_TOKEN,
   MAPBOX_STYLE,
   UNAUTHORIZED_FALLBACK_STYLE,
   directionsHref,
-  fixtureMeetups,
-  fixturePlaces,
   nearbyVeggieCountLabel,
   prefersReducedMotion,
   veggieCountLabel,
   veggieEmptyCopy,
   webglSupported,
-  type FixtureDensity,
 } from "@/lib/mapPrototype";
 
-
 /**
- * WO-153 — PRIVATE, NON-NAVIGABLE VeggieMeet Ecosystem Map prototype.
+ * WO-154 — the real member-facing VeggieMeet Map, built from the founder-approved
+ * WO-153C visual direction and shipped PRIVATELY behind `has_map_access()`.
  *
- * Owner-only (`RequireOwner` + server-side `is_owner()` inside the RPC), not
- * linked from navigation, excluded from crawlers via `robots.txt` (`/owner/`),
- * and strictly read-only. Today and the bottom navigation are untouched, and
- * Community remains the independent list experience.
- *
- * Privacy invariants (WO-152 Option A):
- *  - Veggies appear ONLY in the city-level pill and sheet — never as markers.
- *  - No member coordinates, distance, GPS permission or presence data is read.
- *  - Counts below 3 are never revealed numerically.
+ * Scope guarantees:
+ *  - PRODUCTION DATA ONLY. No fixtures, no density tools, no prototype chrome.
+ *  - Today is not replaced and bottom navigation is unchanged; the Map is entered
+ *    from Today/Community links that appear only for granted members.
+ *  - Privacy (WO-152 Option A) is unchanged: Veggies appear only in the
+ *    city-level pill and sheet, never as markers. No coordinates, distance,
+ *    presence or GPS permission are read for members.
  */
 
 type Filter = "all" | "meetups" | "places";
 
 type Selection =
-  | { kind: "meetup"; item: MapLabMeetup }
-  | { kind: "place"; item: MapLabPlace }
+  | { kind: "meetup"; item: MemberMapMeetup }
+  | { kind: "place"; item: MemberMapPlace }
   | null;
 
 type MapState = "loading" | "ready" | "error" | "unsupported";
@@ -76,39 +73,27 @@ function featureCollection(features: PointFeature[]) {
   return { type: "FeatureCollection" as const, features };
 }
 
-export default function OwnerMapLab() {
-  const [searchParams] = useSearchParams();
+export default function MapScreen() {
   const { profile } = useAuth();
   const location = useLocationContext();
   const cityId = location.data?.selected_city?.id ?? null;
   const cityName = location.data?.selected_city?.name ?? "your city";
+  const cityLat = location.data?.selected_city?.latitude ?? null;
+  const cityLng = location.data?.selected_city?.longitude ?? null;
 
   const [filter, setFilter] = useState<Filter>("all");
-  const [density, setDensity] = useState<FixtureDensity>("off");
   const [selection, setSelection] = useState<Selection>(null);
   const [veggiesOpen, setVeggiesOpen] = useState(false);
   const [mapState, setMapState] = useState<MapState>("loading");
   const [reloadKey, setReloadKey] = useState(0);
-  /**
-   * "mapbox" is the shipping basemap. "fallback" is entered only when the public
-   * token is not authorised for the current URL, so the prototype stays
-   * reviewable in preview without weakening the production URL restriction.
-   */
   const [styleMode, setStyleMode] = useState<"mapbox" | "fallback">("mapbox");
-  const showPrototypeTools = import.meta.env.DEV && searchParams.get("prototypeTools") === "1";
-
   const [offline, setOffline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine === false : false,
   );
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const mapRef = useRef<any>(null);
-  const mapboxRef = useRef<any>(null);
-  const markersRef = useRef<Record<string, any>>({});
-  const onScreenRef = useRef<Record<string, any>>({});
-  /* eslint-enable @typescript-eslint/no-explicit-any */
-  const selectionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    logAnalyticsEvent("map_opened", {});
+  }, []);
 
   useEffect(() => {
     const on = () => setOffline(false);
@@ -121,55 +106,43 @@ export default function OwnerMapLab() {
     };
   }, []);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const mapRef = useRef<any>(null);
+  const mapboxRef = useRef<any>(null);
+  const markersRef = useRef<Record<string, any>>({});
+  const onScreenRef = useRef<Record<string, any>>({});
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const selectionIdRef = useRef<string | null>(null);
+
   const dataQ = useQuery({
-    queryKey: ["owner-map-lab", cityId],
-    queryFn: () => fetchMapLabData(cityId),
-    enabled: !location.isPending,
+    queryKey: ["member-map", cityId],
+    queryFn: () => fetchMemberMapData(cityId as string),
+    enabled: !!cityId,
     staleTime: 60_000,
   });
 
   const featuredQ = useQuery({
-    queryKey: ["owner-map-lab-featured", cityId],
+    queryKey: ["member-map-featured", cityId],
     queryFn: () => fetchFeaturedPlaceIds(cityId),
     enabled: !!cityId,
     staleTime: 60_000,
   });
 
   const veggiesQ = useQuery({
-    queryKey: ["owner-map-lab-veggies", cityId, profile?.id ?? null],
+    queryKey: ["member-map-veggies", cityId, profile?.id ?? null],
     queryFn: () => fetchNearbyVeggiesByCity(cityId as string, profile?.id as string, 24),
     enabled: !!cityId && !!profile?.id,
     staleTime: 60_000,
   });
 
-  const center = useMemo<[number, number]>(() => {
-    const c = dataQ.data?.city;
-    if (c?.longitude != null && c?.latitude != null) return [c.longitude, c.latitude];
-    return HCMC_CENTER;
-  }, [dataQ.data?.city]);
+  const center = useMemo<[number, number]>(
+    () => (cityLng != null && cityLat != null ? [cityLng, cityLat] : HCMC_CENTER),
+    [cityLat, cityLng],
+  );
 
-  // Real, already-eligible data plus (optional) clearly-labelled prototype fixtures.
-  const meetups = useMemo<MapLabMeetup[]>(
-    () => [
-      ...(dataQ.data?.meetups ?? []),
-      ...fixtureMeetups(center, density).map((meetup, index) => ({
-        ...meetup,
-        // WO-155 review fixtures deliberately exercise image, emoji, and 🌱 states.
-        primary_interest_id: index === 2 ? null : meetup.primary_interest_id,
-        cover_image_url:
-          index !== 2 && index % 2 === 0
-            ? index % 4 === 0
-              ? brunchMeetupCover
-              : hikingMeetupCover
-            : null,
-      })),
-    ],
-    [dataQ.data?.meetups, center, density],
-  );
-  const places = useMemo<MapLabPlace[]>(
-    () => [...(dataQ.data?.places ?? []), ...fixturePlaces(center, density)],
-    [dataQ.data?.places, center, density],
-  );
+  const meetups = dataQ.data?.meetups ?? [];
+  const places = dataQ.data?.places ?? [];
 
   const lookupRef = useRef<Record<string, Selection>>({});
   useEffect(() => {
@@ -190,9 +163,11 @@ export default function OwnerMapLab() {
             key: `meetup:${m.id}`,
             glyph: meetupMarkerEmoji(m.primary_interest_id),
             label: m.title,
-            fixture: !!m.is_fixture,
           },
-          geometry: { type: "Point" as const, coordinates: [m.longitude, m.latitude] as [number, number] },
+          geometry: {
+            type: "Point" as const,
+            coordinates: [m.longitude, m.latitude] as [number, number],
+          },
         })),
       ),
     [meetups],
@@ -212,21 +187,21 @@ export default function OwnerMapLab() {
             group: placeStickerGroup(p.category),
             label: p.name,
             featured: featuredIds.includes(p.id),
-            fixture: !!p.is_fixture,
           },
-          geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] as [number, number] },
+          geometry: {
+            type: "Point" as const,
+            coordinates: [p.longitude, p.latitude] as [number, number],
+          },
         })),
       ),
     [places, featuredIds],
   );
 
   const select = useCallback((key: string) => {
-    const next = lookupRef.current[key] ?? null;
-    setSelection(next);
+    setSelection(lookupRef.current[key] ?? null);
     selectionIdRef.current = key;
   }, []);
 
-  // ---- marker rendering (HTML markers over a clustered GeoJSON source) ----
   const updateMarkers = useCallback(() => {
     const map = mapRef.current;
     const mapboxgl = mapboxRef.current;
@@ -266,9 +241,9 @@ export default function OwnerMapLab() {
                 String(props.label),
                 String(props.group ?? "other"),
                 props.featured === true || props.featured === "true",
-                props.fixture === true || props.fixture === "true",
+                false,
                 kind === "meetup" && lookupRef.current[id]?.kind === "meetup"
-                  ? lookupRef.current[id].item.cover_image_url ?? null
+                  ? lookupRef.current[id].item.cover_image_url
                   : null,
                 () => select(id),
               );
@@ -287,7 +262,6 @@ export default function OwnerMapLab() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onScreenRef.current = onScreen as any;
 
-    // Selected marker emphasis.
     Object.entries(markersRef.current).forEach(([id, m]) => {
       const el = m.getElement() as HTMLElement;
       el.dataset.selected = String(id === selectionIdRef.current);
@@ -322,7 +296,7 @@ export default function OwnerMapLab() {
           center,
           zoom: CITY_OVERVIEW_ZOOM,
           attributionControl: true,
-          // No user-location control: the prototype never requests GPS.
+          // No GeolocateControl: the Map never requests GPS permission.
         });
         mapRef.current = map;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -332,7 +306,6 @@ export default function OwnerMapLab() {
           const status = e?.error?.status;
           const msg = String(e?.error?.message ?? "");
           if ((status === 403 || /403|Forbidden/i.test(msg)) && styleMode === "mapbox") {
-            // Token is not authorised for this URL (dev/preview domain).
             setStyleMode("fallback");
             return;
           }
@@ -347,8 +320,6 @@ export default function OwnerMapLab() {
               data: featureCollection([]),
               ...CLUSTER_CONFIG,
             });
-            // Transparent layers keep source tiles loaded so HTML markers can be
-            // derived from the native clustering index.
             map.addLayer({
               id: `${src}-hidden`,
               type: "circle",
@@ -376,19 +347,15 @@ export default function OwnerMapLab() {
       mapRef.current?.remove?.();
       mapRef.current = null;
     };
-    // Recreated on explicit retry or when a restricted preview origin switches
-    // from Mapbox tiles to the token-free fallback basemap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadKey, styleMode]);
 
-  // Camera follows Selected City. No fly-to; instant when reduced motion.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || mapState !== "ready") return;
     map.easeTo({ center, zoom: CITY_OVERVIEW_ZOOM, duration: prefersReducedMotion() ? 0 : 300 });
   }, [center, mapState]);
 
-  // Layer data + filters. Filtering only swaps source data — never refetches.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || mapState !== "ready") return;
@@ -405,23 +372,27 @@ export default function OwnerMapLab() {
   const veggies = veggiesQ.data ?? [];
   const visibleMeetups = filter === "places" ? 0 : meetups.length;
   const visiblePlaces = filter === "meetups" ? 0 : places.length;
-  const cityEmpty = mapState === "ready" && visibleMeetups === 0 && visiblePlaces === 0;
+  const cityEmpty = mapState === "ready" && !dataQ.isPending && visibleMeetups === 0 && visiblePlaces === 0;
 
   return (
-    <main className="relative h-dvh min-h-[32rem] w-full overflow-hidden bg-muted" aria-label="Ecosystem Map private prototype">
-      <h1 className="sr-only">Ecosystem Map</h1>
+    // `flex-1` fills the app shell above the unchanged bottom navigation.
+    <main className="relative flex-1 min-h-[32rem] w-full overflow-hidden bg-muted" aria-label="VeggieMeet Map">
+      <h1 className="sr-only">Map</h1>
       <div className="absolute inset-0">
-        <div ref={containerRef} data-testid="map-lab-canvas" className="h-full w-full" />
+        <div ref={containerRef} data-testid="member-map-canvas" className="h-full w-full" />
 
         {mapState === "loading" && (
-          <div aria-hidden data-testid="map-lab-shimmer" className="image-shimmer absolute inset-0" />
+          <div aria-hidden data-testid="member-map-shimmer" className="image-shimmer absolute inset-0" />
         )}
 
         {mapState === "unsupported" && (
           <div className="absolute inset-0 grid place-items-center bg-card/95 p-6 text-center">
             <div>
               <p className="text-sm font-medium text-charcoal">This device can't display the map.</p>
-              <Link to="/community" className="mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
+              <Link
+                to="/community"
+                className="mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+              >
                 View as list
               </Link>
             </div>
@@ -433,7 +404,14 @@ export default function OwnerMapLab() {
             <div>
               <p className="text-sm font-medium text-charcoal">We couldn't load the map.</p>
               <div className="mt-3 flex justify-center gap-2">
-                <Button type="button" onClick={() => { setReloadKey((k) => k + 1); dataQ.refetch(); }} className="min-h-11 rounded-full px-5">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setReloadKey((k) => k + 1);
+                    dataQ.refetch();
+                  }}
+                  className="min-h-11 rounded-full px-5"
+                >
                   Try again
                 </Button>
                 <Button asChild variant="outline" className="min-h-11 rounded-full px-5">
@@ -447,43 +425,40 @@ export default function OwnerMapLab() {
         {cityEmpty && (
           <div className="pointer-events-none absolute inset-x-4 bottom-20 rounded-card border border-border bg-card/95 p-4 text-center shadow-md sm:inset-x-auto sm:left-1/2 sm:w-96 sm:-translate-x-1/2">
             <p className="text-sm text-charcoal">
-              Nothing on the map in {cityName} yet. Community Places and Meetups appear here as they are published.
+              Nothing on the map in {cityName} yet. Community Places and Meetups appear here as they
+              are published.
             </p>
           </div>
         )}
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
-        {showPrototypeTools && (
-          <div className="pointer-events-auto absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] sm:right-5">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="icon" className="shrink-0 rounded-full border-border bg-card/95 shadow-md" aria-label="Prototype tools"><SlidersHorizontal aria-hidden /></Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-[min(20rem,calc(100vw-1.5rem))] rounded-card p-4">
-                <p className="text-sm font-semibold text-charcoal">Prototype tools</p>
-                <p className="mt-1 text-xs text-charcoal-muted">Fixture data is temporary and never saved.</p>
-                <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Prototype data density">
-                  {(Object.keys(FIXTURE_DENSITY_LABELS) as FixtureDensity[]).map((d) => (
-                    <Button key={d} type="button" size="sm" variant={density === d ? "default" : "outline"} onClick={() => setDensity(d)} aria-pressed={density === d} className="rounded-full">
-                      {FIXTURE_DENSITY_LABELS[d]}
-                    </Button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
-
-        <Button type="button" variant="outline" onClick={() => setVeggiesOpen(true)} className="pointer-events-auto min-h-11 max-w-[calc(100vw-1.5rem)] rounded-full border-primary/30 bg-card/95 px-4 text-charcoal shadow-md">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setVeggiesOpen(true)}
+          className="pointer-events-auto min-h-11 max-w-[calc(100vw-1.5rem)] rounded-full border-primary/30 bg-card/95 px-4 text-charcoal shadow-md"
+        >
           <Users className="text-primary" aria-hidden />
           <span className="truncate">{nearbyVeggieCountLabel(veggies.length)}</span>
           <span aria-hidden>›</span>
         </Button>
 
-        <div className="pointer-events-auto mt-2 flex max-w-full gap-1.5 overflow-x-auto no-scrollbar" role="group" aria-label="Map layers">
+        <div
+          className="pointer-events-auto mt-2 flex max-w-full gap-1.5 overflow-x-auto no-scrollbar"
+          role="group"
+          aria-label="Map layers"
+        >
           {(["all", "meetups", "places"] as Filter[]).map((f) => (
-            <Button key={f} type="button" size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)} aria-pressed={filter === f} className={`min-h-10 shrink-0 rounded-full px-3.5 shadow-sm ${filter === f ? "" : "bg-card/95"}`}>
+            <Button
+              key={f}
+              type="button"
+              size="sm"
+              variant={filter === f ? "default" : "outline"}
+              onClick={() => setFilter(f)}
+              aria-pressed={filter === f}
+              className={`min-h-10 shrink-0 rounded-full px-3.5 shadow-sm ${filter === f ? "" : "bg-card/95"}`}
+            >
               {f === "all" ? "All" : f === "meetups" ? "Meetups" : "Community Places"}
             </Button>
           ))}
@@ -491,24 +466,38 @@ export default function OwnerMapLab() {
       </div>
 
       <div className="pointer-events-none absolute inset-x-3 bottom-[max(1.75rem,env(safe-area-inset-bottom))] z-10 flex items-end justify-between gap-2 sm:inset-x-5">
-        <Button asChild variant="outline" size="sm" className="pointer-events-auto rounded-full border-border bg-card/95 shadow-md">
-          <Link to="/community"><List aria-hidden /> View as list</Link>
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="pointer-events-auto rounded-full border-border bg-card/95 shadow-md"
+        >
+          <Link to="/community">
+            <List aria-hidden /> View as list
+          </Link>
         </Button>
         {offline && (
           <p className="pointer-events-auto max-w-64 rounded-card border border-warning-border bg-warning-soft p-3 text-xs text-warning-foreground shadow-md">
-            <WifiOff className="mr-1 inline h-4 w-4" aria-hidden /> You're offline. The Community list may still contain recently loaded content.
+            <WifiOff className="mr-1 inline h-4 w-4" aria-hidden /> You're offline. The Community list
+            may still contain recently loaded content.
           </p>
         )}
       </div>
 
       <p className="sr-only" aria-live="polite">
-        {dataQ.data ? `${visibleMeetups} Meetups and ${visiblePlaces} Community Places on the map${density === "off" ? "" : " including prototype data"}.` : "Loading map data…"}
+        {dataQ.data
+          ? `${visibleMeetups} Meetups and ${visiblePlaces} Community Places on the map.`
+          : "Loading map data…"}
       </p>
       {styleMode === "fallback" && <p className="sr-only">The fallback basemap is active.</p>}
 
       {/* ---- Meetup / Place bottom sheet ---- */}
       <Sheet open={!!selection} onOpenChange={(o) => !o && setSelection(null)}>
-        <SheetContent side="bottom" overlayClassName="bg-foreground/20" className="left-1/2 max-h-[58vh] w-full max-w-xl -translate-x-1/2 overflow-y-auto rounded-t-dialog pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg">
+        <SheetContent
+          side="bottom"
+          overlayClassName="bg-foreground/20"
+          className="left-1/2 max-h-[58vh] w-full max-w-xl -translate-x-1/2 overflow-y-auto rounded-t-dialog pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg"
+        >
           {selection?.kind === "meetup" && (
             <MeetupMapSheetContent
               title={selection.item.title}
@@ -516,33 +505,23 @@ export default function OwnerMapLab() {
               timeLabel={formatTime12h(selection.item.start_time)}
               locationLabel={selection.item.location_name ?? "Location to be confirmed"}
               glyph={meetupMarkerEmoji(selection.item.primary_interest_id)}
-              coverImageUrl={selection.item.cover_image_url ?? null}
-              prototype={selection.item.is_fixture}
+              coverImageUrl={selection.item.cover_image_url}
               action={
-                !selection.item.is_fixture ? (
-                  <Link
-                    to={`/meetup/${selection.item.id}?from=map-lab`}
-                    className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-                  >
-                    View Meetup
-                  </Link>
-                ) : null
+                <Link
+                  to={`/meetup/${selection.item.id}?from=map`}
+                  className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                >
+                  View Meetup
+                </Link>
               }
             />
           )}
           {selection?.kind === "place" && (
             <>
               <SheetHeader>
-                <SheetTitle className="text-left">
-                  {selection.item.name}
-                  {selection.item.is_fixture && (
-                    <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-secondary-foreground">
-                      Prototype data
-                    </span>
-                  )}
-                </SheetTitle>
+                <SheetTitle className="text-left">{selection.item.name}</SheetTitle>
               </SheetHeader>
-              <p className="mt-1 text-sm text-charcoal-muted capitalize">
+              <p className="mt-1 text-sm capitalize text-charcoal-muted">
                 {placeStickerGroup(selection.item.category)} ·{" "}
                 {selection.item.veggie_classification === "fully_vegan"
                   ? "100% vegan"
@@ -550,14 +529,12 @@ export default function OwnerMapLab() {
               </p>
               <p className="mt-1 text-sm text-charcoal-muted">{selection.item.address ?? "—"}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {!selection.item.is_fixture && (
-                  <Link
-                    to={`/place/${selection.item.id}?from=map-lab`}
-                    className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-                  >
-                    View Place
-                  </Link>
-                )}
+                <Link
+                  to={`/place/${selection.item.id}?from=map`}
+                  className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                >
+                  View Place
+                </Link>
                 <a
                   href={directionsHref(
                     selection.item.name,
@@ -578,7 +555,11 @@ export default function OwnerMapLab() {
 
       {/* ---- Veggies sheet: city-level only, no location of any kind ---- */}
       <Sheet open={veggiesOpen} onOpenChange={setVeggiesOpen}>
-        <SheetContent side="bottom" overlayClassName="bg-foreground/20" className="left-1/2 max-h-[68vh] w-full max-w-xl -translate-x-1/2 overflow-y-auto rounded-t-dialog pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg">
+        <SheetContent
+          side="bottom"
+          overlayClassName="bg-foreground/20"
+          className="left-1/2 max-h-[68vh] w-full max-w-xl -translate-x-1/2 overflow-y-auto rounded-t-dialog pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg"
+        >
           <SheetHeader>
             <SheetTitle className="text-left">{veggieCountLabel(veggies.length, cityName)}</SheetTitle>
           </SheetHeader>
@@ -597,7 +578,7 @@ export default function OwnerMapLab() {
                     </p>
                   </div>
                   <Link
-                    to={`/veggie/${v.id}?from=map-lab`}
+                    to={`/veggie/${v.id}?from=map`}
                     className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-medium text-charcoal"
                   >
                     View profile

@@ -1,10 +1,12 @@
 User-agent: Googlebot
 Allow: /
 Disallow: /owner/
+Disallow: /map
 
 User-agent: Bingbot
 Allow: /
 Disallow: /owner/
+Disallow: /map
 
 User-agent: Twitterbot
 Allow: /
@@ -15,3 +17,4 @@ Allow: /
 User-agent: *
 Allow: /
 Disallow: /owner/
+Disallow: /map

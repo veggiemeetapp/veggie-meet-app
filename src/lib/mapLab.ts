@@ -26,6 +26,8 @@ export interface MapLabPlace {
   veggie_classification: string | null;
   latitude: number;
   longitude: number;
+  /** WO-153 — true only for DEV/TEST-ONLY prototype fixtures. */
+  is_fixture?: boolean;
 }
 
 export interface MapLabMeetup {
@@ -34,11 +36,15 @@ export interface MapLabMeetup {
   date: string;
   start_time: string;
   primary_interest_id: string | null;
+  /** WO-155 — owner-only visual fixtures may provide a local review image. */
+  cover_image_url?: string | null;
   location_name: string | null;
   location_source: string | null;
   latitude: number;
   longitude: number;
   coordinate_origin: "meetup" | "inherited_place" | "missing";
+  /** WO-153 — true only for DEV/TEST-ONLY prototype fixtures. */
+  is_fixture?: boolean;
 }
 
 export interface MapLabData {
@@ -58,3 +64,21 @@ export async function fetchMapLabData(cityId: string | null): Promise<MapLabData
   const d = (data ?? {}) as Partial<MapLabData>;
   return { city: d.city ?? null, places: d.places ?? [], meetups: d.meetups ?? [] };
 }
+
+/**
+ * WO-153 §55 — read-only, best-effort read of the existing Today curation so the
+ * prototype can experiment with slightly stronger treatment for featured Places.
+ * Never writes and never mutates curation data.
+ */
+export async function fetchFeaturedPlaceIds(cityId: string | null): Promise<string[]> {
+  if (!cityId) return [];
+  const { data, error } = await supabase
+    .from("today_place_curation")
+    .select("community_place_id, state, featured_rank")
+    .eq("city_id", cityId);
+  if (error || !data) return [];
+  return (data as Array<{ community_place_id: string; state: string | null }>)
+    .filter((r) => r.state === "featured")
+    .map((r) => r.community_place_id);
+}
+
