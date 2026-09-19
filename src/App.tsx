@@ -13,6 +13,7 @@ import { sanitizeInternalPath } from "@/lib/authRedirect";
 import { NavigationBehavior } from "@/lib/navigation";
 import { RequireValidIds } from "@/components/app/ResourceUnavailable";
 import { RequireOwner } from "@/components/app/RequireOwner";
+import { RequireMapAccess } from "@/components/app/RequireMapAccess";
 import { isRetryableRead } from "@/lib/errors";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 
@@ -68,6 +69,9 @@ const OwnerBetaOperations = lazy(() => import("./screens/OwnerBetaOperations"));
 // WO-152: private owner-only Ecosystem Map proof of concept. Deliberately not
 // linked from any navigation surface and excluded from crawlers via robots.txt.
 const OwnerMapLab = lazy(() => import("./screens/OwnerMapLab"));
+// WO-154: the real member-facing Map. Private: served only to members allowed by
+// `has_map_access()`, entered from Today/Community links, not a navigation tab.
+const MapScreen = lazy(() => import("./screens/MapScreen"));
 const BetaFeedback = lazy(() => import("./screens/BetaFeedback"));
 // WO-098: public password recovery destination — must never sit behind the
 // onboarding guard, the member has no completed profile session yet.
@@ -188,6 +192,10 @@ const gated = (el: JSX.Element) => (
 // Owner-only routes: auth + onboarding + id validation + owner gate.
 const ownerGated = (el: JSX.Element) => gated(<RequireOwner>{el}</RequireOwner>);
 
+// WO-154: Map access gate. Server-side authorisation still lives in
+// `has_map_access()`; this only keeps Map chrome away from ungranted members.
+const mapGated = (el: JSX.Element) => gated(<RequireMapAccess>{el}</RequireMapAccess>);
+
 // WO-121: branded suspense fallback while a lazy route chunk loads. It renders
 // inside AppShell's <main>, so the app shell and bottom navigation stay visible
 // and the selected tab updates instantly. A short delayed reveal keeps cached
@@ -218,6 +226,7 @@ const App = () => (
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/" element={gated(<Today />)} />
                 <Route path="/community" element={gated(<Community />)} />
+                <Route path="/map" element={mapGated(<MapScreen />)} />
                 <Route path="/community/places" element={gated(<CommunityPlaces />)} />
                 <Route path="/community/places/suggest" element={gated(<SuggestPlace />)} />
                 <Route path="/search" element={gated(<Search />)} />

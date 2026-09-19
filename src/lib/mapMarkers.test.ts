@@ -66,6 +66,21 @@ describe("WO-152 map marker taxonomy", () => {
     expect(meetupMarkerEmoji("street_food")).toBe(GENERIC_MEETUP_MARKER);
   });
 
+  it("maps the founder-review fallback matrix to valid Unicode emoji", () => {
+    expect(meetupMarkerEmoji("coffee")).toBe("☕");
+    expect(meetupMarkerEmoji("karaoke")).toBe("🎤");
+    expect(meetupMarkerEmoji("hiking")).toBe("🥾");
+    expect(meetupMarkerEmoji("cycling")).toBe("🚲");
+    expect(meetupMarkerEmoji("board_games")).toBe("🎲");
+    expect(meetupMarkerEmoji("yoga")).toBe("🧘");
+    expect(meetupMarkerEmoji("unknown")).toBe("🌱");
+
+    for (const glyph of [...Object.values(MEETUP_INTEREST_MARKERS), GENERIC_MEETUP_MARKER]) {
+      expect(glyph).not.toMatch(/[□�]/u);
+      expect(glyph).toMatch(/[\p{Extended_Pictographic}\u2615]/u);
+    }
+  });
+
   it("groups every place_category enum value into a sticker group", () => {
     for (const c of ["restaurant", "cafe", "park", "market", "studio", "venue"]) {
       expect(PLACE_STICKER_GROUPS[c], c).toBeTruthy();

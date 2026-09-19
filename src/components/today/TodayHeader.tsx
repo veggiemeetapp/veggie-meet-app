@@ -1,6 +1,7 @@
 import { Sprout } from "lucide-react";
 import { Link } from "react-router-dom";
 import { NotificationsBell, ThemeToggle, UserAvatar } from "@/components/app";
+import { MapEntryLink } from "@/components/app/MapEntryLink";
 
 import { CitySelector } from "@/components/location/CitySelector";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +28,9 @@ export function TodayHeader() {
 
 
         <div className="flex items-center gap-1 shrink-0">
+          {/* WO-154: private Map entry. Renders nothing unless the signed-in
+              member is granted access; bottom navigation is unchanged. */}
+          <MapEntryLink />
           <ThemeToggle />
           <NotificationsBell />
           <Link
