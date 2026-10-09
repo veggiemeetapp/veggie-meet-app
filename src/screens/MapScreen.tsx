@@ -312,10 +312,20 @@ export default function MapScreen() {
             setStyleMode("fallback");
             return;
           }
+          // A basemap can report individual tile/sprite/glyph failures while
+          // the style and our own markers remain usable. Do not replace the
+          // whole Explore surface with a fatal error for a recoverable resource
+          // request (the previous handler caused the blank screen seen in
+          // production when one fallback tile failed).
+          const resourceId = e?.sourceId ?? e?.source?.id ?? e?.tile?.tileID;
+          if (resourceId || /tile|sprite|glyph|image/i.test(msg)) return;
           setMapState((s) => (s === "ready" ? s : "error"));
         });
 
-        map.on("load", () => {
+        // `load` waits for every visible tile. `style.load` means the map can
+        // already render and lets Explore become ready even if one remote tile
+        // is slow or temporarily unavailable.
+        map.on("style.load", () => {
           if (cancelled) return;
           for (const src of ["vm-meetups", "vm-places"]) {
             map.addSource(src, {

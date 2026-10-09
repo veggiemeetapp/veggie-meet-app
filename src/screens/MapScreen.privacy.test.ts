@@ -41,6 +41,8 @@ describe("member Map privacy and scope", () => {
     expect(screen).toContain('aria-label="Map layers"');
     expect(screen).toContain("Community Places");
     expect(screen).toContain("cover_image_url");
+    expect(screen).toContain('map.on("style.load"');
+    expect(screen).not.toContain('map.on("load"');
   });
 
   it("reads member-visible data through the server-side map RPC", () => {
