@@ -34,6 +34,7 @@ import {
   UNAUTHORIZED_FALLBACK_STYLE,
   directionsHref,
   nearbyVeggieCountLabel,
+  normalizeFallbackGlyphUrl,
   prefersReducedMotion,
   veggieCountLabel,
   veggieEmptyCopy,
@@ -284,6 +285,8 @@ export default function MapScreen() {
       return;
     }
     let cancelled = false;
+    let resizeObserver: ResizeObserver | null = null;
+    let resizeFrame: number | null = null;
     setMapState("loading");
     (async () => {
       try {
@@ -305,9 +308,23 @@ export default function MapScreen() {
           center,
           zoom: CITY_OVERVIEW_ZOOM,
           attributionControl: true,
+          transformRequest:
+            styleMode === "fallback"
+              ? (url: string) => ({ url: normalizeFallbackGlyphUrl(url) })
+              : undefined,
           // No GeolocateControl: the Map never requests GPS permission.
         });
         mapRef.current = map;
+        if (typeof ResizeObserver !== "undefined") {
+          resizeObserver = new ResizeObserver(() => {
+            if (resizeFrame != null) cancelAnimationFrame(resizeFrame);
+            resizeFrame = requestAnimationFrame(() => {
+              resizeFrame = null;
+              if (!cancelled) map.resize();
+            });
+          });
+          resizeObserver.observe(containerRef.current);
+        }
         map.addControl(new mapEngine.NavigationControl({ showCompass: false }), "top-right");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         map.on("error", (e: any) => {
@@ -337,6 +354,7 @@ export default function MapScreen() {
         // is slow or temporarily unavailable.
         map.on("style.load", () => {
           if (cancelled) return;
+          map.resize();
           for (const src of ["vm-meetups", "vm-places"]) {
             map.addSource(src, {
               type: "geojson",
@@ -364,6 +382,8 @@ export default function MapScreen() {
     })();
     return () => {
       cancelled = true;
+      resizeObserver?.disconnect();
+      if (resizeFrame != null) cancelAnimationFrame(resizeFrame);
       Object.values(markersRef.current).forEach((m) => m.remove?.());
       markersRef.current = {};
       onScreenRef.current = {};

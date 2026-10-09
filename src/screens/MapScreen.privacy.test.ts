@@ -45,6 +45,8 @@ describe("member Map privacy and scope", () => {
     expect(screen).not.toContain('map.on("load"');
     expect(screen).toContain('import("maplibre-gl")');
     expect(screen).toContain("mapEngine.setWorkerUrl(maplibreWorkerUrl)");
+    expect(screen).toContain("normalizeFallbackGlyphUrl");
+    expect(screen).toContain("new ResizeObserver");
   });
 
   it("reads member-visible data through the server-side map RPC", () => {

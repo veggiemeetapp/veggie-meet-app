@@ -21,14 +21,28 @@ export const MAPBOX_STYLE = "mapbox://styles/mapbox/light-v11";
 
 /**
  * Token-free light basemap used when Lovable has not injected a Mapbox token
- * or when the token is not authorised for the current URL. OpenFreeMap's
- * Positron style is rendered by MapLibre in the member Explore screen. Keeping
- * the renderer and style from the same ecosystem prevents the partial CARTO
- * render seen in production (markers loaded, while roads stayed blank because
- * several glyph requests failed).
+ * or when the token is not authorised for the current URL. CARTO serves these
+ * vector tiles from a multi-region CDN and is substantially faster than the
+ * emergency public tile host for members in Vietnam.
  */
 export const UNAUTHORIZED_FALLBACK_STYLE =
-  "https://tiles.openfreemap.org/styles/positron";
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+const CARTO_GLYPH_ORIGIN = "https://tiles.basemaps.cartocdn.com/fonts/";
+const CARTO_FALLBACK_FONT = "Noto%20Sans%20Regular";
+
+/**
+ * CARTO's Positron style references several legacy fonts that no longer exist
+ * on its glyph endpoint. Rewriting only glyph requests to the complete Noto
+ * Sans set prevents 404/CORS failures without touching style, sprite or tile
+ * requests. Noto Sans also contains the Vietnamese glyph ranges used on the
+ * Explore map.
+ */
+export function normalizeFallbackGlyphUrl(url: string): string {
+  if (!url.startsWith(CARTO_GLYPH_ORIGIN)) return url;
+  const range = url.match(/\/(\d+-\d+\.pbf(?:\?.*)?)$/)?.[1];
+  return range ? `${CARTO_GLYPH_ORIGIN}${CARTO_FALLBACK_FONT}/${range}` : url;
+}
 
 /** Native GeoJSON clustering configuration (WO-153 §25). */
 export const CLUSTER_CONFIG = {

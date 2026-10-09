@@ -8,6 +8,7 @@ import {
   veggieCountLabel,
   veggieEmptyCopy,
   directionsHref,
+  normalizeFallbackGlyphUrl,
 } from "./mapPrototype";
 
 describe("WO-153 map prototype helpers", () => {
@@ -35,8 +36,23 @@ describe("WO-153 map prototype helpers", () => {
     expect(CLUSTER_CONFIG.clusterMaxZoom).toBe(14);
   });
 
-  it("uses the token-free OpenFreeMap style for the fallback renderer", () => {
-    expect(UNAUTHORIZED_FALLBACK_STYLE).toBe("https://tiles.openfreemap.org/styles/positron");
+  it("uses the token-free CARTO style for the fallback renderer", () => {
+    expect(UNAUTHORIZED_FALLBACK_STYLE).toBe(
+      "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+    );
+  });
+
+  it("rewrites unavailable CARTO glyph stacks without touching vector tiles", () => {
+    expect(
+      normalizeFallbackGlyphUrl(
+        "https://tiles.basemaps.cartocdn.com/fonts/Montserrat%20Regular%20Italic/256-511.pbf",
+      ),
+    ).toBe("https://tiles.basemaps.cartocdn.com/fonts/Noto%20Sans%20Regular/256-511.pbf");
+    expect(
+      normalizeFallbackGlyphUrl(
+        "https://tiles-a.basemaps.cartocdn.com/vectortiles/carto.streets/v1/11/1630/961.mvt",
+      ),
+    ).toBe("https://tiles-a.basemaps.cartocdn.com/vectortiles/carto.streets/v1/11/1630/961.mvt");
   });
 
   it("generates deterministic, clearly-marked fixtures only when asked", () => {

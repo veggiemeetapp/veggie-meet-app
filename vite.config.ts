@@ -98,8 +98,8 @@ export default defineConfig(({ mode }) => ({
           "**/placeholder.svg",
           "**/assets/QRScanner-*.js",
           "**/assets/Owner*-*.js",
-          // WO-152: the map engine belongs to an owner-only prototype. It must
-          // never enter a member's install payload.
+          // MapLibre is a large lazy Explore chunk. Fetch it only when a member
+          // opens Explore instead of putting it in every PWA install payload.
           "**/assets/maplibre-gl-*.js",
         ],
 
