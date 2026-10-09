@@ -59,6 +59,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
     "mapbox-gl": "^3.30.0",
+    "maplibre-gl": "^6.13.0",
     "next-themes": "^0.3.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",

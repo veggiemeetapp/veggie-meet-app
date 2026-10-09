@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { List, Users, WifiOff } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
+import "maplibre-gl/dist/maplibre-gl.css";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import {
   fetchMemberMapData,
   type MemberMapMeetup,
@@ -111,7 +113,7 @@ export default function MapScreen() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const mapRef = useRef<any>(null);
-  const mapboxRef = useRef<any>(null);
+  const mapEngineRef = useRef<any>(null);
   const markersRef = useRef<Record<string, any>>({});
   const onScreenRef = useRef<Record<string, any>>({});
   /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -143,8 +145,8 @@ export default function MapScreen() {
     [cityLat, cityLng],
   );
 
-  const meetups = dataQ.data?.meetups ?? [];
-  const places = dataQ.data?.places ?? [];
+  const meetups = useMemo(() => dataQ.data?.meetups ?? [], [dataQ.data?.meetups]);
+  const places = useMemo(() => dataQ.data?.places ?? [], [dataQ.data?.places]);
 
   const lookupRef = useRef<Record<string, Selection>>({});
   useEffect(() => {
@@ -175,7 +177,7 @@ export default function MapScreen() {
     [meetups],
   );
 
-  const featuredIds = featuredQ.data ?? [];
+  const featuredIds = useMemo(() => featuredQ.data ?? [], [featuredQ.data]);
   const placeData = useMemo(
     () =>
       featureCollection(
@@ -206,8 +208,8 @@ export default function MapScreen() {
 
   const updateMarkers = useCallback(() => {
     const map = mapRef.current;
-    const mapboxgl = mapboxRef.current;
-    if (!map || !mapboxgl) return;
+    const mapEngine = mapEngineRef.current;
+    if (!map || !mapEngine) return;
     const next: Record<string, unknown> = {};
 
     for (const src of ["vm-meetups", "vm-places"] as const) {
@@ -226,16 +228,21 @@ export default function MapScreen() {
         if (!marker) {
           const el = isCluster
             ? clusterMarkerElement(kind, Number(props.point_count), () => {
-                map
-                  .getSource(src)
-                  .getClusterExpansionZoom(props.cluster_id, (err: unknown, zoom: number) => {
-                    if (err) return;
-                    map.easeTo({
-                      center: coords,
-                      zoom,
-                      duration: prefersReducedMotion() ? 0 : 400,
-                    });
+                const source = map.getSource(src);
+                const easeToCluster = (zoom: number) => {
+                  map.easeTo({
+                    center: coords,
+                    zoom,
+                    duration: prefersReducedMotion() ? 0 : 400,
                   });
+                };
+                const expansion = source.getClusterExpansionZoom(
+                  props.cluster_id,
+                  (err: unknown, zoom: number) => !err && easeToCluster(zoom),
+                );
+                if (typeof expansion?.then === "function") {
+                  expansion.then(easeToCluster).catch(() => {});
+                }
               })
             : pointMarkerElement(
                 kind,
@@ -249,7 +256,7 @@ export default function MapScreen() {
                   : null,
                 () => select(id),
               );
-          marker = new mapboxgl.Marker({ element: el }).setLngLat(coords);
+          marker = new mapEngine.Marker({ element: el }).setLngLat(coords);
           markersRef.current[id] = marker;
         }
         if (!onScreenRef.current[id]) marker.addTo(map);
@@ -280,15 +287,19 @@ export default function MapScreen() {
     setMapState("loading");
     (async () => {
       try {
-        const mod = (await import("mapbox-gl")) as unknown as { default?: unknown };
+        const mod = (styleMode === "mapbox"
+          ? await import("mapbox-gl")
+          : await import("maplibre-gl")) as unknown as { default?: unknown };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapboxgl = (mod.default ?? mod) as any;
+        const mapEngine = (mod.default ?? mod) as any;
         if (cancelled || !containerRef.current) return;
-        mapboxRef.current = mapboxgl;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (mapboxgl as any).accessToken = MAPBOX_PUBLIC_TOKEN;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const map = new (mapboxgl as any).Map({
+        mapEngineRef.current = mapEngine;
+        if (styleMode === "mapbox") {
+          mapEngine.accessToken = MAPBOX_PUBLIC_TOKEN;
+        } else {
+          mapEngine.setWorkerUrl(maplibreWorkerUrl);
+        }
+        const map = new mapEngine.Map({
           container: containerRef.current,
           style: styleMode === "mapbox" ? MAPBOX_STYLE : UNAUTHORIZED_FALLBACK_STYLE,
           center,
@@ -297,8 +308,7 @@ export default function MapScreen() {
           // No GeolocateControl: the Map never requests GPS permission.
         });
         mapRef.current = map;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        map.addControl(new (mapboxgl as any).NavigationControl({ showCompass: false }), "top-right");
+        map.addControl(new mapEngine.NavigationControl({ showCompass: false }), "top-right");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         map.on("error", (e: any) => {
           const status = e?.error?.status;
@@ -359,6 +369,7 @@ export default function MapScreen() {
       onScreenRef.current = {};
       mapRef.current?.remove?.();
       mapRef.current = null;
+      mapEngineRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadKey, styleMode]);

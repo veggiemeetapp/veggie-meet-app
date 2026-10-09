@@ -21,14 +21,14 @@ export const MAPBOX_STYLE = "mapbox://styles/mapbox/light-v11";
 
 /**
  * Token-free light basemap used when Lovable has not injected a Mapbox token
- * or when the token is not authorised for the current URL. CARTO's hosted
- * Positron style is Mapbox Style Specification compatible, includes the
- * required attribution, and avoids sending production traffic directly to the
- * community OpenStreetMap raster tile servers.
+ * or when the token is not authorised for the current URL. OpenFreeMap's
+ * Positron style is rendered by MapLibre in the member Explore screen. Keeping
+ * the renderer and style from the same ecosystem prevents the partial CARTO
+ * render seen in production (markers loaded, while roads stayed blank because
+ * several glyph requests failed).
  */
 export const UNAUTHORIZED_FALLBACK_STYLE =
-  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
-
+  "https://tiles.openfreemap.org/styles/positron";
 
 /** Native GeoJSON clustering configuration (WO-153 §25). */
 export const CLUSTER_CONFIG = {

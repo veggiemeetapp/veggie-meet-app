@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CLUSTER_CONFIG,
+  UNAUTHORIZED_FALLBACK_STYLE,
   fixtureMeetups,
   fixturePlaces,
   nearbyVeggieCountLabel,
@@ -32,6 +33,10 @@ describe("WO-153 map prototype helpers", () => {
     expect(CLUSTER_CONFIG.cluster).toBe(true);
     expect(CLUSTER_CONFIG.clusterRadius).toBe(50);
     expect(CLUSTER_CONFIG.clusterMaxZoom).toBe(14);
+  });
+
+  it("uses the token-free OpenFreeMap style for the fallback renderer", () => {
+    expect(UNAUTHORIZED_FALLBACK_STYLE).toBe("https://tiles.openfreemap.org/styles/positron");
   });
 
   it("generates deterministic, clearly-marked fixtures only when asked", () => {
