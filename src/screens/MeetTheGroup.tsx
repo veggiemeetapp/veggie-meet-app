@@ -111,7 +111,7 @@ export default function MeetTheGroup() {
             onClick={() => navigate("/")}
             className="mt-4 text-sm font-semibold text-primary"
           >
-            Back to Today
+            Back to Explore
           </button>
         </div>
       </div>

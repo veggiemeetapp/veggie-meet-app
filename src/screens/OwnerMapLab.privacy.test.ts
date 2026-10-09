@@ -14,15 +14,14 @@ describe("WO-153 private map prototype", () => {
   it("is mounted only behind the owner gate", () => {
     expect(app).toContain('path="/owner/map-lab"');
     expect(app).toMatch(/path="\/owner\/map-lab" element=\{ownerGated\(<OwnerMapLab \/>\)\}/);
-    // WO-154 added a separate member-facing `/map`, itself access-gated. The
-    // prototype remains owner-only and distinct from it.
-    expect(app).toMatch(/path="\/map" element=\{mapGated\(<MapScreen \/>\)\}/);
+    // The member-facing Explore home remains distinct from the owner-only prototype.
+    expect(app).toMatch(/path="\/" element=\{gated\(<MapScreen \/>\)\}/);
   });
 
-  it("is not linked from bottom navigation or any member surface", () => {
+  it("keeps only the owner prototype out of member navigation", () => {
     const nav = readFileSync("src/components/app/BottomNav.tsx", "utf8");
     expect(nav).not.toContain("map-lab");
-    expect(nav).not.toContain("/map");
+    expect(nav).toContain('{ label: "Explore", to: "/"');
   });
 
   it("stays excluded from crawlers", () => {

@@ -1,7 +1,14 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
-import { Home, Users, PlusCircle, MessageCircle, User, type LucideIcon } from "lucide-react";
+import {
+  Compass,
+  Users,
+  PlusCircle,
+  MessageCircle,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +22,7 @@ export interface BottomNavItem {
 }
 
 export const defaultNavItems: BottomNavItem[] = [
-  { label: "Today", to: "/", icon: Home },
+  { label: "Explore", to: "/", icon: Compass },
   { label: "Community", to: "/community", icon: Users },
   { label: "Host", to: "/host", icon: PlusCircle },
   { label: "Chats", to: "/chats", icon: MessageCircle },
@@ -130,4 +137,3 @@ export function BottomNav({ items = defaultNavItems }: BottomNavProps) {
     </nav>
   );
 }
-

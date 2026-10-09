@@ -230,7 +230,7 @@ export default function OwnerPlaceVerification() {
         <div className="space-y-2">
           <h1 className="text-lg font-semibold">Permission denied</h1>
           <p className="text-sm text-muted-foreground">This area is limited to the VeggieMeet owner.</p>
-          <Button variant="outline" onClick={() => navigate("/")}>Back to Today</Button>
+          <Button variant="outline" onClick={() => navigate("/")}>Back to Explore</Button>
         </div>
       </div>
     );

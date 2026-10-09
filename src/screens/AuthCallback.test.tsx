@@ -33,7 +33,7 @@ function renderFlow() {
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/onboarding" element={<div>Sign-in options</div>} />
-        <Route path="/" element={<div>Today home</div>} />
+        <Route path="/" element={<div>Explore home</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -68,7 +68,7 @@ describe("AuthCallback", () => {
 
     act(() => mocks.listener?.("SIGNED_IN", session));
 
-    expect(screen.getByText("Today home")).toBeTruthy();
+    expect(screen.getByText("Explore home")).toBeTruthy();
     expect(screen.queryByText("Sign-in options")).toBeNull();
   });
 

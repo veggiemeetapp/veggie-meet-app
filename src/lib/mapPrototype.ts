@@ -10,15 +10,19 @@ import type { MapLabMeetup, MapLabPlace } from "./mapLab";
  */
 
 /** Public, URL-restrictable browser token (pk.*). Never an sk.* token. */
-export const MAPBOX_PUBLIC_TOKEN = (import.meta.env
-  .VITE_LOVABLE_CONNECTOR_MAPBOX_PUBLIC_TOKEN ?? "") as string;
+export const MAPBOX_PUBLIC_TOKEN = String(
+  import.meta.env.VITE_LOVABLE_CONNECTOR_MAPBOX_PUBLIC_TOKEN ||
+    import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN ||
+    "",
+).trim();
 
 /** Low-noise light basemap so VeggieMeet markers stay the visual focus. */
 export const MAPBOX_STYLE = "mapbox://styles/mapbox/light-v11";
 
 /**
- * Token-free raster basemap used ONLY when the Mapbox token is not authorised
- * for the current URL (403). The Mapbox GL engine, markers, clustering and
+ * Token-free raster basemap used when Lovable has not injected a Mapbox token
+ * or when the token is not authorised for the current URL. The Mapbox GL
+ * engine, markers, clustering and
  * sheets stay identical; once the token allows the domain the map falls back to
  * `MAPBOX_STYLE` with no other change.
  */

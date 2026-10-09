@@ -125,7 +125,7 @@ export default function CheckIn() {
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
           <p className="text-charcoal font-medium">This Meetup isn't available.</p>
           <button onClick={() => navigate("/")} className="mt-4 text-sm font-semibold text-primary">
-            Back to Today
+            Back to Explore
           </button>
         </div>
       </div>

@@ -27,7 +27,7 @@ import {
 // check-in/QR, messaging, owner operations, or the canonical follow-up surface
 // itself (which owns the task).
 const SUPPRESS = [
-  /^\/$/, // Today owns the follow-up as its Primary Action
+  /^\/today$/, // Today owns the follow-up as its Primary Action
   /^\/plans(\/|$|\?)/, // My Plans surfaces follow-ups as Needs Attention items
   /^\/onboarding/,
   /^\/auth/,

@@ -102,7 +102,7 @@ export default function MeetupCreated() {
           </SecondaryButton>
         )}
         <Link to="/" className="block">
-          <SecondaryButton fullWidth>Back to Today</SecondaryButton>
+          <SecondaryButton fullWidth>Back to Explore</SecondaryButton>
         </Link>
       </div>
 

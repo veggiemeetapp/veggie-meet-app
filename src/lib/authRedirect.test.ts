@@ -30,7 +30,7 @@ describe("OAuth round-trip marker", () => {
 });
 
 describe("post-auth destination", () => {
-  it("defaults to Today and rejects auth-only routes", () => {
+  it("defaults to Explore and rejects auth-only routes", () => {
     expect(resolvePostAuthDestination(null)).toBe("/");
     expect(resolvePostAuthDestination("/onboarding")).toBe("/");
     expect(resolvePostAuthDestination(AUTH_CALLBACK_PATH)).toBe("/");

@@ -28,8 +28,7 @@ export function TodayHeader() {
 
 
         <div className="flex items-center gap-1 shrink-0">
-          {/* WO-154: private Map entry. Renders nothing unless the signed-in
-              member is granted access; bottom navigation is unchanged. */}
+          {/* Secondary shortcut to the primary Explore tab. */}
           <MapEntryLink />
           <ThemeToggle />
           <NotificationsBell />

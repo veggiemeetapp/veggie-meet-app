@@ -363,7 +363,7 @@ export default function OwnerPlaceVeganReview() {
             This area is limited to the VeggieMeet owner.
           </p>
           <Button variant="outline" onClick={() => navigate("/")}>
-            Back to Today
+            Back to Explore
           </Button>
         </div>
       </div>

@@ -88,7 +88,7 @@ export default function JoinConfirmation() {
             onClick={() => navigate("/")}
             className="mt-2 text-sm font-semibold text-primary"
           >
-            Back to Today
+            Back to Explore
           </button>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default function JoinConfirmation() {
 
 
         <Link to="/">
-          <SecondaryButton fullWidth>Back to Today</SecondaryButton>
+          <SecondaryButton fullWidth>Back to Explore</SecondaryButton>
         </Link>
       </div>
     </div>

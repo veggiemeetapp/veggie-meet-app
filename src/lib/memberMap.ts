@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * WO-154 — data access for the PRIVATE, GATED member-facing Map (`/map`).
+ * Data access for the authenticated member-facing Explore home (`/`).
  *
  * Deliberate differences from the WO-153 owner prototype:
  *  - PRODUCTION DATA ONLY. There is no fixture path in this module at all.
@@ -12,8 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
  *    distance, GPS or presence. Veggies remain city-level only and are fetched
  *    by the existing city-scoped people query.
  *
- * Access itself is authorised server-side by `has_map_access()` (owner or an
- * explicit `map_access_grants` row). The client gate is presentation only.
+ * The RPC is available to authenticated members and applies the same published
+ * content rules used by Community discovery.
  */
 
 export interface MemberMapPlace {
@@ -44,24 +44,12 @@ export interface MemberMapData {
   meetups: MemberMapMeetup[];
 }
 
-/** Server-authorised gate check. Returns false for every ungranted member. */
-export async function fetchMapAccess(): Promise<boolean> {
-  const { data, error } = await (
-    supabase.rpc as unknown as (
-      n: string,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>
-  ).call(supabase, "has_map_access");
-  if (error) return false;
-  return data === true;
-}
-
 /**
  * Published, operational Community Places with coordinates, plus upcoming
  * non-cancelled Meetups, for the selected city.
  *
  * Served by `get_member_map_data`, which applies the SAME eligibility rule the
- * Community discovery list already uses and is itself gated by
- * `has_map_access()`. The Data API deliberately does not expose
+ * Community discovery list already uses. The Data API deliberately does not expose
  * `public.community_places` to signed-in members, so the Map reads through this
  * RPC rather than widening any table grant or RLS policy.
  */

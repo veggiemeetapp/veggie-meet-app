@@ -117,7 +117,7 @@ export default function Community() {
             >
               <SearchIcon className="w-5 h-5" aria-hidden />
             </Link>
-            {/* WO-154: renders only for members granted private Map access. */}
+            {/* Secondary shortcut; Explore is also a primary bottom-nav tab. */}
             <MapEntryLink />
             <ThemeToggle />
             <NotificationsBell />

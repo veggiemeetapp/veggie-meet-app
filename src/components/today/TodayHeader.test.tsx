@@ -17,7 +17,7 @@ vi.mock("@/components/location/CitySelector", () => ({
   CitySelector: () => <div>City selector</div>,
 }));
 
-// WO-154: the private Map entry needs a query client; it has its own tests.
+// The Explore shortcut has its own navigation test.
 vi.mock("@/components/app/MapEntryLink", () => ({
   MapEntryLink: () => null,
 }));

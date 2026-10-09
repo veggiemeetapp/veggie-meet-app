@@ -11,9 +11,11 @@
 const SUFFIX = "VeggieMeet";
 
 const EXACT: Record<string, string> = {
-  "/": "Today",
+  "/": "Explore",
+  "/today": "Today",
   "/onboarding": "Welcome",
   "/community": "Community",
+  "/map": "Explore",
   "/community/places": "Community Places",
   "/community/places/suggest": "Suggest a Community Place",
   "/search": "Search",

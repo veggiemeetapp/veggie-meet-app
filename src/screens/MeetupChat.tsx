@@ -542,7 +542,7 @@ export default function MeetupChat() {
               onClick={() => navigate("/")}
               className="text-sm font-semibold text-charcoal-muted px-4 py-2"
             >
-              Back to Today
+              Back to Explore
             </button>
           </div>
         </div>

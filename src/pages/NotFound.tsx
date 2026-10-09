@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 /**
  * WO-082: the 404 CTA must be auth-aware. Sending a signed-out or
- * mid-onboarding visitor to "Today" produced an immediate redirect to
+ * mid-onboarding visitor to the member home produced an immediate redirect to
  * /onboarding, which read as a broken loop. The destination is therefore
  * derived from the resolved auth/onboarding state, and nothing is rendered
  * about the requested path itself.
@@ -20,7 +20,7 @@ const NotFound = () => {
 
   const onboarded = !!session && !!profile?.onboarding_completed;
   const cta = onboarded
-    ? { to: "/", label: "Return to Today" }
+    ? { to: "/", label: "Return to Explore" }
     : { to: "/onboarding", label: "Go to sign in" };
 
   return (

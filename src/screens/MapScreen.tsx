@@ -39,13 +39,13 @@ import {
 } from "@/lib/mapPrototype";
 
 /**
- * WO-154 — the real member-facing VeggieMeet Map, built from the founder-approved
- * WO-153C visual direction and shipped PRIVATELY behind `has_map_access()`.
+ * The member-facing VeggieMeet Explore map, built from the founder-approved
+ * WO-153C visual direction and available to every onboarded member.
  *
  * Scope guarantees:
  *  - PRODUCTION DATA ONLY. No fixtures, no density tools, no prototype chrome.
- *  - Today is not replaced and bottom navigation is unchanged; the Map is entered
- *    from Today/Community links that appear only for granted members.
+ *  - Explore is the primary home and bottom-navigation tab, with secondary
+ *    shortcuts from Today and Community.
  *  - Privacy (WO-152 Option A) is unchanged: Veggies appear only in the
  *    city-level pill and sheet, never as markers. No coordinates, distance,
  *    presence or GPS permission are read for members.
@@ -86,7 +86,9 @@ export default function MapScreen() {
   const [veggiesOpen, setVeggiesOpen] = useState(false);
   const [mapState, setMapState] = useState<MapState>("loading");
   const [reloadKey, setReloadKey] = useState(0);
-  const [styleMode, setStyleMode] = useState<"mapbox" | "fallback">("mapbox");
+  const [styleMode, setStyleMode] = useState<"mapbox" | "fallback">(() =>
+    MAPBOX_PUBLIC_TOKEN ? "mapbox" : "fallback",
+  );
   const [offline, setOffline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine === false : false,
   );
@@ -274,10 +276,6 @@ export default function MapScreen() {
       setMapState("unsupported");
       return;
     }
-    if (!MAPBOX_PUBLIC_TOKEN) {
-      setMapState("error");
-      return;
-    }
     let cancelled = false;
     setMapState("loading");
     (async () => {
@@ -305,7 +303,12 @@ export default function MapScreen() {
         map.on("error", (e: any) => {
           const status = e?.error?.status;
           const msg = String(e?.error?.message ?? "");
-          if ((status === 403 || /403|Forbidden/i.test(msg)) && styleMode === "mapbox") {
+          if (
+            (status === 401 ||
+              status === 403 ||
+              /401|403|Unauthorized|Forbidden|access token/i.test(msg)) &&
+            styleMode === "mapbox"
+          ) {
             setStyleMode("fallback");
             return;
           }
@@ -375,9 +378,8 @@ export default function MapScreen() {
   const cityEmpty = mapState === "ready" && !dataQ.isPending && visibleMeetups === 0 && visiblePlaces === 0;
 
   return (
-    // `flex-1` fills the app shell above the unchanged bottom navigation.
-    <main className="relative flex-1 min-h-[32rem] w-full overflow-hidden bg-muted" aria-label="VeggieMeet Map">
-      <h1 className="sr-only">Map</h1>
+    // `flex-1` fills the app shell above the bottom navigation.
+    <main className="relative flex-1 min-h-[32rem] w-full overflow-hidden bg-muted" aria-label="VeggieMeet Explore map">
       <div className="absolute inset-0">
         <div ref={containerRef} data-testid="member-map-canvas" className="h-full w-full" />
 
@@ -433,16 +435,21 @@ export default function MapScreen() {
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setVeggiesOpen(true)}
-          className="pointer-events-auto min-h-11 max-w-[calc(100vw-1.5rem)] rounded-full border-primary/30 bg-card/95 px-4 text-charcoal shadow-md"
-        >
-          <Users className="text-primary" aria-hidden />
-          <span className="truncate">{nearbyVeggieCountLabel(veggies.length)}</span>
-          <span aria-hidden>›</span>
-        </Button>
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="pointer-events-auto inline-flex min-h-11 shrink-0 items-center rounded-full border border-border bg-card/95 px-4 text-base font-semibold text-charcoal shadow-md">
+            Explore
+          </h1>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setVeggiesOpen(true)}
+            className="pointer-events-auto min-h-11 min-w-0 rounded-full border-primary/30 bg-card/95 px-4 text-charcoal shadow-md"
+          >
+            <Users className="shrink-0 text-primary" aria-hidden />
+            <span className="truncate">{nearbyVeggieCountLabel(veggies.length)}</span>
+            <span className="shrink-0" aria-hidden>›</span>
+          </Button>
+        </div>
 
         <div
           className="pointer-events-auto mt-2 flex max-w-full gap-1.5 overflow-x-auto no-scrollbar"

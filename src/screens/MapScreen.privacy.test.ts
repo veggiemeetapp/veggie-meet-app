@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 /**
- * WO-154 — source-level guards for the private member-facing Map.
- * These assert the privacy and scope invariants the work order requires.
+ * Source-level guards for the authenticated member-facing Explore map.
+ * These assert its privacy and production-data invariants.
  */
 const screen = readFileSync("src/screens/MapScreen.tsx", "utf8");
 const data = readFileSync("src/lib/memberMap.ts", "utf8");
@@ -43,17 +43,19 @@ describe("member Map privacy and scope", () => {
     expect(screen).toContain("cover_image_url");
   });
 
-  it("reads member-visible data through RLS-enforced table queries", () => {
-    // Reads go through the access-gated map RPC, which reuses the Community
-    // discovery eligibility rule; no table grant or RLS policy is widened.
+  it("reads member-visible data through the server-side map RPC", () => {
+    // The RPC reuses the Community discovery eligibility rule; no direct table
+    // grant or owner-only prototype data path is introduced.
     expect(data).toContain('"get_member_map_data"');
     expect(data).not.toContain("get_owner_map_lab_data");
-    expect(data).toContain("has_map_access");
+    expect(data).not.toContain("fetchMapAccess");
   });
 
-  it("is gated and does not change bottom navigation or Today", () => {
-    expect(app).toContain('path="/map"');
-    expect(app).toContain("RequireMapAccess");
-    expect(nav).not.toContain('"/map"');
+  it("is an authenticated primary Explore tab", () => {
+    expect(app).toContain('path="/" element={gated(<MapScreen />)}');
+    expect(app).toContain('path="/map" element={<Navigate to="/" replace />}');
+    expect(app).not.toContain("RequireMapAccess");
+    expect(nav).toContain('{ label: "Explore", to: "/"');
+    expect(nav).not.toContain('{ label: "Today"');
   });
 });

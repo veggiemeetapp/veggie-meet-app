@@ -95,12 +95,12 @@ export class AppErrorBoundary extends Component<Props, State> {
             Something went wrong.
           </h1>
           <p className="mt-3 text-sm text-charcoal-muted leading-relaxed">
-            Your information is safe. Try again, or return to Today.
+            Your information is safe. Try again, or return to Explore.
           </p>
           <div className="mt-6 flex flex-col gap-2">
             <PrimaryButton onClick={this.handleRetry}>Try again</PrimaryButton>
             <SecondaryButton onClick={this.handleHome}>
-              Return to Today
+              Return to Explore
             </SecondaryButton>
           </div>
         </div>

@@ -76,7 +76,7 @@ export function stashPostAuthPath(raw: string | null | undefined): void {
     if (safe) sessionStorage.setItem(STASH_KEY, safe);
     else sessionStorage.removeItem(STASH_KEY);
   } catch {
-    /* storage unavailable — deep link simply falls back to Today */
+    /* storage unavailable — deep link simply falls back to Explore */
   }
 }
 

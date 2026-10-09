@@ -32,7 +32,7 @@ export function RequireOwner({ children }: { children: JSX.Element }) {
             to="/"
             className="mt-6 inline-flex items-center justify-center h-11 px-5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
           >
-            Back to Today
+            Back to Explore
           </Link>
         </div>
       </main>

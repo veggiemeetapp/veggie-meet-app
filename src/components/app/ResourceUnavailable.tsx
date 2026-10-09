@@ -12,7 +12,7 @@ import { isUuid } from "@/lib/backend";
  */
 export function ResourceUnavailable({
   backTo = "/",
-  backLabel = "Return to Today",
+  backLabel = "Return to Explore",
 }: {
   backTo?: string;
   backLabel?: string;
