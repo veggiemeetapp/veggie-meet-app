@@ -15,6 +15,7 @@ import { RequireValidIds } from "@/components/app/ResourceUnavailable";
 import { RequireOwner } from "@/components/app/RequireOwner";
 import { isRetryableRead } from "@/lib/errors";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
+import { NativeAuthBridge } from "@/components/auth/NativeAuthBridge";
 
 // Eagerly load the two most common landing routes so first paint after
 // auth/onboarding does not pay a code-split cost.
@@ -209,6 +210,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <NativeAuthBridge />
             <NavigationBehavior />
             <AppShell>
               <Suspense fallback={<RouteFallback />}>

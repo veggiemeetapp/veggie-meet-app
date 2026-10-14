@@ -63,6 +63,8 @@ import {
 import { MAX_INTERESTS, MIN_INTERESTS } from "@/lib/onboarding";
 import { InterestPicker } from "@/components/interests/InterestPicker";
 import { lovable } from "@/integrations/lovable/index";
+import { Capacitor } from "@capacitor/core";
+import { startNativeGoogleSignIn } from "@/lib/nativeOAuth";
 import { mapAuthError } from "@/lib/authErrors";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
@@ -677,6 +679,17 @@ function Auth({
     stashPostAuthPath(nextPath);
     markOAuthPending();
     try {
+      if (Capacitor.isNativePlatform()) {
+        const result = await startNativeGoogleSignIn();
+        setBusy(false);
+        if (result.error) {
+          stashPostAuthPath(null);
+          clearOAuthPending();
+          toast.error(result.error.message ?? "Could not sign in with Google.");
+        }
+        return;
+      }
+
       const result = await lovable.auth.signInWithOAuth("google", {
         // The callback is public and neutral. It waits for a real session before
         // entering the app, so private route guards never see an intermediate
