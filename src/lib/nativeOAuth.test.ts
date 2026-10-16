@@ -82,6 +82,7 @@ describe("native Google OAuth", () => {
       options: {
         redirectTo: NATIVE_AUTH_CALLBACK_URL,
         skipBrowserRedirect: true,
+        queryParams: { prompt: "select_account" },
       },
     });
     expect(mocks.browserOpen).toHaveBeenCalledWith({

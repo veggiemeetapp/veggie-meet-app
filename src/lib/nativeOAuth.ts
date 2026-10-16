@@ -90,6 +90,9 @@ export async function startNativeGoogleSignIn(): Promise<NativeOAuthResult> {
       options: {
         redirectTo: NATIVE_AUTH_CALLBACK_URL,
         skipBrowserRedirect: true,
+        // SFSafariViewController shares Safari's Google cookies, so without this
+        // Google silently reuses the last account and skips the chooser.
+        queryParams: { prompt: "select_account" },
       },
     });
 
