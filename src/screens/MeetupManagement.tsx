@@ -75,6 +75,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import type { CommunityPlace } from "@/types";
 import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
+import { openPlacePage } from "@/lib/openPlacePage";
 
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -1056,9 +1057,7 @@ export default function MeetupManagement() {
                 onSelect={(p) => setLocPlaceId(p.id)}
                 onUseCustom={() => setLocPlaceId(CUSTOM_PLACE_ID)}
                 onSuggestPlace={() => navigate("/community/places/suggest")}
-                onViewPlace={(pid) =>
-                  window.open(`/place/${pid}`, "_blank", "noopener,noreferrer")
-                }
+                onViewPlace={(pid) => openPlacePage(pid)}
               />
             )}
             {locCityId && (

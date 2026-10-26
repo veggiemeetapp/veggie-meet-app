@@ -233,6 +233,7 @@ function Hub({ data, go }: { data: AccountSettings; go: (s: Section) => void }) 
             { to: "/privacy", label: "Privacy" },
             { to: "/terms", label: "Terms" },
             { to: "/safety", label: "Safety & Trust" },
+            { to: "/support", label: "Support" },
           ].map((l) => (
             <Link
               key={l.to}

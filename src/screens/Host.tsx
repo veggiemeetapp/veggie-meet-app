@@ -51,6 +51,7 @@ import {
   type MeetupPublishError,
 } from "@/lib/meetupPublishErrors";
 import { processMeetupCoverFile } from "@/lib/meetupCover";
+import { openPlacePage } from "@/lib/openPlacePage";
 
 import {
   Dialog,
@@ -1161,7 +1162,7 @@ export default function Host() {
                     )}
                     <button
                       type="button"
-                      onClick={() => window.open(`/place/${selectedPlace.id}`, "_blank", "noopener,noreferrer")}
+                      onClick={() => openPlacePage(selectedPlace.id)}
                       className="text-xs font-semibold text-primary"
                     >
                       View Place

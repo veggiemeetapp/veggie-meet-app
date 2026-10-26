@@ -65,6 +65,7 @@ import { InterestPicker } from "@/components/interests/InterestPicker";
 import { lovable } from "@/integrations/lovable/index";
 import { Capacitor } from "@capacitor/core";
 import { startNativeGoogleSignIn } from "@/lib/nativeOAuth";
+import { startNativeAppleSignIn } from "@/lib/nativeAppleAuth";
 import { mapAuthError } from "@/lib/authErrors";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
@@ -666,10 +667,51 @@ function Auth({
     else enterApp();
   }, [enterApp, isSignUp, onContinue, session]);
 
-  function providerPlaceholder(name: string) {
-    toast(`${name} sign-in is coming soon`, {
-      description: "Please continue with email for now.",
-    });
+  async function handleApple() {
+    setBusy(true);
+    stashPostAuthPath(nextPath);
+    markOAuthPending();
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // The system sheet resolves in-process: no browser round trip, so the
+        // pending marker is cleared here rather than by the deep-link bridge.
+        const result = await startNativeAppleSignIn();
+        clearOAuthPending();
+        setBusy(false);
+        if (result.canceled) {
+          stashPostAuthPath(null);
+          return;
+        }
+        if (result.error) {
+          stashPostAuthPath(null);
+          toast.error(result.error.message ?? "Could not sign in with Apple.");
+          return;
+        }
+        logOnboardingEvent("auth_signin_success");
+        toast.success("Welcome to VeggieMeet 🌱");
+        return;
+      }
+
+      const result = await lovable.auth.signInWithOAuth("apple", {
+        redirect_uri: `${window.location.origin}${AUTH_CALLBACK_PATH}`,
+      });
+      if (result.error) {
+        stashPostAuthPath(null);
+        clearOAuthPending();
+        setBusy(false);
+        toast.error(result.error.message ?? "Could not sign in with Apple.");
+        return;
+      }
+      if (result.redirected) return;
+      clearOAuthPending();
+      logOnboardingEvent("auth_signin_success");
+      toast.success("Welcome to VeggieMeet 🌱");
+    } catch (error) {
+      stashPostAuthPath(null);
+      clearOAuthPending();
+      setBusy(false);
+      toast.error(mapAuthError(error).message);
+    }
   }
 
   async function handleGoogle() {
@@ -1048,17 +1090,12 @@ function Auth({
 
         <button
           type="button"
-          onClick={() => providerPlaceholder("Apple")}
-          aria-disabled
-          className="w-full h-14 rounded-full border border-border bg-muted/40 flex items-center justify-between px-5 text-charcoal-muted font-semibold cursor-not-allowed"
+          onClick={handleApple}
+          disabled={busy}
+          className="w-full h-14 rounded-full bg-black text-white flex items-center justify-center gap-3 font-semibold hover:bg-black/90 active:scale-[0.99] transition disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-white/90"
         >
-          <span className="flex items-center gap-3">
-            <AppleIcon />
-            Continue with Apple
-          </span>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
-            Coming soon
-          </span>
+          <AppleIcon />
+          Continue with Apple
         </button>
         <button
           onClick={() => setMode("email")}

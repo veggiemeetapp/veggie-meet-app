@@ -82,6 +82,7 @@ const ResetPassword = lazy(() => import("./screens/ResetPassword"));
 // mounted outside the auth/onboarding gate.
 const Privacy = lazy(() => import("./screens/legal/Privacy"));
 const Terms = lazy(() => import("./screens/legal/Terms"));
+const Support = lazy(() => import("./screens/legal/Support"));
 const CommunityGuidelines = lazy(() => import("./screens/legal/CommunityGuidelines"));
 
 
@@ -231,6 +232,7 @@ const App = () => (
                 <Route path="/discover" element={<Navigate to="/community" replace />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/support" element={<Support />} />
                 <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                 <Route path="/host" element={gated(<Host />)} />
 

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { DraftNotice, PolicyLayout, PolicySection } from "./PolicyLayout";
+import { SUPPORT_EMAIL } from "@/lib/supportContact";
 
 /**
  * WO-099 §6 — public Privacy surface.
@@ -20,8 +21,7 @@ export default function Privacy() {
       <DraftNotice>
         <strong>This is not our final Privacy Policy.</strong> VeggieMeet is in
         private beta and the formal, reviewed Privacy Policy — including the
-        operating entity, jurisdiction and a privacy contact address — is still
-        being prepared. What follows is a factual description of how the product
+        operating entity and jurisdiction — is still being prepared. What follows is a factual description of how the product
         behaves today so you can make an informed choice. It is not a legal
         agreement.
       </DraftNotice>
@@ -126,8 +126,11 @@ export default function Privacy() {
 
       <PolicySection heading="Questions">
         <p>
-          A dedicated privacy contact address is not published yet. Until it is,
-          beta members can use{" "}
+          For privacy questions or requests about your data, email{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="underline font-medium text-primary">
+            {SUPPORT_EMAIL}
+          </a>
+          . Inside the app you can also use{" "}
           <Link to="/settings/feedback" className="underline font-medium text-primary">
             Send beta feedback
           </Link>{" "}
