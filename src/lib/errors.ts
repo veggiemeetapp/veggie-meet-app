@@ -224,6 +224,20 @@ export function normalizeError(error: unknown): NormalizedError {
   const msg = rawMessage(error);
   const lower = msg.toLowerCase();
 
+  // `ImageUploadError` (src/lib/imageUpload.ts) carries member-safe copy by
+  // construction — raw storage detail lives in `cause`. Previously every photo
+  // problem (too large, wrong type, upload refused) collapsed into the generic
+  // "Something went wrong" below, which hid the actionable reason.
+  if (error instanceof Error && error.name === "ImageUploadError") {
+    const code = codeOf(error);
+    return {
+      category: "domain",
+      title: msg || "We couldn't upload that photo.",
+      description: "",
+      retryable: code === "upload" || code === "sign",
+    };
+  }
+
   // Checked before the generic paths: this is an actionable domain/validation
   // error whose only real fix is reloading an out-of-date app shell.
   if (isStaleClientError(error)) {

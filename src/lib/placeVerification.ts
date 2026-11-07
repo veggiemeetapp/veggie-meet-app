@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { mapLifecycleError } from "@/lib/candidatePublish";
+import type { DiscoveryBatchResult } from "@/lib/placeDiscovery";
 
 /** A Google Places result, limited to the WO-043B allowed verification fields. */
 export interface GoogleCandidate {
@@ -81,6 +82,23 @@ export async function searchGooglePlaces(query: string): Promise<GoogleCandidate
   if (error) throw new Error(await readFunctionError(error));
   if (data?.error) throw new Error(String(data.error));
   return (data?.results ?? []) as GoogleCandidate[];
+}
+
+/**
+ * Owner-only bulk discovery: the server runs ONE Google text query for the
+ * city, paginates, filters and writes new `needs_review` candidates. Call it
+ * once per query from `discoveryQueriesFor(countryCode)`.
+ */
+export async function discoverGooglePlaces(
+  cityId: string,
+  query: string,
+): Promise<DiscoveryBatchResult> {
+  const { data, error } = await supabase.functions.invoke("place-verification", {
+    body: { action: "discover", city_id: cityId, query },
+  });
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.error) throw new Error(String(data.error));
+  return data as DiscoveryBatchResult;
 }
 
 export async function fetchGooglePlaceDetails(placeId: string): Promise<GoogleCandidate> {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ChevronRight, ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
+import { CheckCircle2, ChevronRight, ExternalLink, Loader2, Search as SearchIcon, Sparkles } from "lucide-react";
 
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   validateCandidatePatch,
 } from "@/lib/candidateVocabulary";
 import {
+  discoverGooglePlaces,
   fetchPlaceCandidates,
   isOwner,
   rejectCandidate,
@@ -52,6 +53,12 @@ import {
   type CandidateGroupKey,
 } from "@/lib/candidateGrouping";
 import { useActiveCities } from "@/hooks/useLocation";
+import {
+  discoveryQueriesFor,
+  discoverySummaryMessage,
+  summarizeDiscovery,
+  type DiscoveryBatchResult,
+} from "@/lib/placeDiscovery";
 
 
 
@@ -72,6 +79,8 @@ export default function OwnerPlaceVerification() {
   const [googleResults, setGoogleResults] = useState<GoogleCandidate[] | null>(null);
   const [form, setForm] = useState<Partial<PlaceCandidate>>({});
   const [candidateSearch, setCandidateSearch] = useState("");
+  const [discoverCityId, setDiscoverCityId] = useState<string>("");
+  const [discoverProgress, setDiscoverProgress] = useState<string>("");
   // WO-128 §16 — accordion state is local component state for this session only.
   const [openGroups, setOpenGroups] = useState<Record<CandidateGroupKey, boolean>>({
     ...CANDIDATE_GROUP_DEFAULT_OPEN,
@@ -111,6 +120,38 @@ export default function OwnerPlaceVerification() {
   );
   const merged: PlaceCandidate | null = selected ? { ...selected, ...form } : null;
 
+
+  /**
+   * Bulk discovery: one server call per query term so the owner sees progress
+   * and a Google failure mid-way keeps what was already written. The server
+   * dedupes against candidates and live places, drops closed/out-of-city
+   * results and never pre-fills the vegan classification.
+   */
+  const discoverM = useMutation({
+    mutationFn: async () => {
+      const city = (citiesQ.data ?? []).find((c) => c.id === discoverCityId);
+      if (!city) throw new Error("Choose a city first.");
+      const queries = discoveryQueriesFor(city.country_code);
+      const results: DiscoveryBatchResult[] = [];
+      for (let i = 0; i < queries.length; i++) {
+        setDiscoverProgress(`Searching ${i + 1}/${queries.length}: “${queries[i]}”…`);
+        results.push(await discoverGooglePlaces(city.id, queries[i]));
+        // Let partial progress show up in the queue right away.
+        qc.invalidateQueries({ queryKey: ["place-candidates"] });
+      }
+      return summarizeDiscovery(results);
+    },
+    onSuccess: (summary) => {
+      setDiscoverProgress("");
+      setOpenGroups((s) => ({ ...s, draft: true }));
+      toast.success(discoverySummaryMessage(summary));
+    },
+    onError: (e: Error) => {
+      setDiscoverProgress("");
+      qc.invalidateQueries({ queryKey: ["place-candidates"] });
+      toast.error(e.message);
+    },
+  });
 
   const searchM = useMutation({
     mutationFn: () => searchGooglePlaces(query),
@@ -242,6 +283,47 @@ export default function OwnerPlaceVerification() {
         {/* Candidate curation only. Suggestions, reports, maintenance and
             reverification live in their own tabs of the operations dashboard,
             so they are intentionally not repeated here. */}
+
+        {/* Bulk discovery — fills the Needs review queue from Google Places.
+            Nothing here is public: every result still needs owner review. */}
+        <section className="space-y-2 rounded-control border p-3 min-w-0">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold">
+            <Sparkles className="h-4 w-4 shrink-0" aria-hidden /> Discover places from Google
+          </h2>
+          <p className="text-[11px] text-muted-foreground">
+            Runs the vegan / vegetarian searches for one city and adds every new, open place
+            as a “Needs review” candidate. Places already known are skipped. Classification is
+            never set automatically — confirm it with official evidence before publishing.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label htmlFor="pv-discover-city" className="sr-only">City to discover</Label>
+            <Select value={discoverCityId} onValueChange={setDiscoverCityId}>
+              <SelectTrigger id="pv-discover-city" className="w-[220px]" aria-label="City to discover">
+                <SelectValue placeholder="Choose a city" />
+              </SelectTrigger>
+              <SelectContent>
+                {(citiesQ.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => discoverM.mutate()}
+              disabled={discoverM.isPending || !discoverCityId}
+            >
+              {discoverM.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Discovering…
+                </>
+              ) : (
+                "Discover"
+              )}
+            </Button>
+          </div>
+          <p role="status" className="text-[11px] text-muted-foreground min-h-4 [overflow-wrap:anywhere]">
+            {discoverProgress}
+          </p>
+        </section>
 
         {/* WO-128 — status-grouped collapsible sections + candidate search so
             the queue stays compact as candidate records accumulate. */}

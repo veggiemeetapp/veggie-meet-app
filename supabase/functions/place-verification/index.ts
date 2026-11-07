@@ -6,6 +6,10 @@
 // Only the ALLOWED verification fields are requested via field mask. Reviews,
 // review text, ratings, editorial summaries, photos, author attribution and
 // opening hours are never requested and never stored.
+//
+// Actions: "search" / "details" are read-only lookups. "discover" (owner-only)
+// bulk-imports one text query's results as `needs_review` candidates; see the
+// discover() section below.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
@@ -92,6 +96,195 @@ function toCandidate(p: GooglePlace) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Bulk discovery (owner-only). One text query per call; results are written as
+// `needs_review` candidates through the CALLER's RLS-scoped client, so the
+// owner allowlist policy on place_candidates is enforced by the database.
+// ---------------------------------------------------------------------------
+
+const DISCOVER_MASK = `${SEARCH_MASK},nextPageToken`;
+const DISCOVER_MAX_PAGES = 3; // 3 × 20 = up to 60 results per query
+const DISCOVER_CITY_RADIUS_M = 40_000;
+const DISCOVER_INSERT_CAP = 150;
+
+type ActiveCity = {
+  id: string;
+  name: string;
+  country_code: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+function haversineMeters(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/** Map Google's primary type onto the place_category enum (nullable). */
+function categoryFromType(t: string | null | undefined): string | null {
+  if (!t) return null;
+  if (/^(cafe|coffee_shop|tea_house|bakery|dessert_shop|dessert_restaurant|juice_shop|ice_cream_shop)$/.test(t)) return 'cafe';
+  if (/restaurant$|^(meal_takeaway|meal_delivery|food_court|diner|food)$/.test(t)) return 'restaurant';
+  if (/^(grocery_store|supermarket|market|asian_grocery_store|food_store|convenience_store)$/.test(t)) return 'market';
+  return null;
+}
+
+/** Vegan classification is NEVER pre-filled: Google's type is only a hint. */
+function discoveryNotes(query: string, primaryType: string | null): string {
+  const hint =
+    primaryType === 'vegan_restaurant'
+      ? 'Google lists this as a vegan restaurant.'
+      : primaryType === 'vegetarian_restaurant'
+        ? 'Google lists this as a vegetarian restaurant.'
+        : primaryType
+          ? `Google type: ${primaryType}.`
+          : 'Google type unknown.';
+  return `Discovered via Google Places search "${query}". ${hint} Confirm the classification with the official website, menu or social account before publishing.`;
+}
+
+async function discover(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  body: Record<string, unknown> | null,
+  apiKey: string,
+): Promise<Response> {
+  const cityId = typeof body?.city_id === 'string' ? body.city_id.trim() : '';
+  if (!/^[0-9a-f-]{36}$/i.test(cityId)) return json({ error: 'city_id must be a uuid' }, 400);
+
+  const query = (typeof body?.query === 'string' ? body.query : '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (query.length < 2 || query.length > 100) return json({ error: 'query must be 2-100 characters' }, 400);
+
+  // City comes from the same RPC the app uses; inactive cities are not offered.
+  const { data: cities, error: cityErr } = await supabase.rpc('get_active_cities');
+  if (cityErr) return json({ error: cityErr.message }, 500);
+  const city = ((cities ?? []) as ActiveCity[]).find((c) => c.id === cityId);
+  if (!city) return json({ error: 'Unknown or inactive city' }, 404);
+  const hasCenter =
+    typeof city.latitude === 'number' && Number.isFinite(city.latitude) &&
+    typeof city.longitude === 'number' && Number.isFinite(city.longitude);
+
+  // Known Place IDs: candidates (owner RLS) + live places.
+  const known = new Set<string>();
+  const { data: cand, error: candErr } = await supabase
+    .from('place_candidates')
+    .select('google_place_id')
+    .not('google_place_id', 'is', null);
+  if (candErr) return json({ error: candErr.message }, 500);
+  for (const r of cand ?? []) if (r.google_place_id) known.add(r.google_place_id);
+  const { data: live, error: liveErr } = await supabase
+    .from('community_places')
+    .select('google_place_id')
+    .not('google_place_id', 'is', null);
+  if (liveErr) return json({ error: liveErr.message }, 500);
+  for (const r of live ?? []) if (r.google_place_id) known.add(r.google_place_id);
+
+  // Google Text Search (New), paginated.
+  const baseBody: Record<string, unknown> = {
+    textQuery: `${query} ${city.name}`,
+    regionCode: city.country_code,
+    pageSize: 20,
+  };
+  if (hasCenter) {
+    baseBody.locationBias = {
+      circle: { center: { latitude: city.latitude, longitude: city.longitude }, radius: 30_000 },
+    };
+  }
+
+  const places: GooglePlace[] = [];
+  let pageToken: string | undefined;
+  for (let page = 0; page < DISCOVER_MAX_PAGES; page++) {
+    const res = await fetch(`${PLACES_BASE}/places:searchText`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': DISCOVER_MASK,
+      },
+      body: JSON.stringify(pageToken ? { ...baseBody, pageToken } : baseBody),
+    });
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error(`Places discover failed [${res.status}]: ${detail}`);
+      return json({ error: 'Google Places request failed', status: res.status, details: detail }, res.status);
+    }
+    const data = await res.json();
+    places.push(...((data.places ?? []) as GooglePlace[]));
+    pageToken = typeof data.nextPageToken === 'string' && data.nextPageToken ? data.nextPageToken : undefined;
+    if (!pageToken) break;
+  }
+
+  let skippedExisting = 0;
+  let skippedClosed = 0;
+  let skippedFar = 0;
+  const seenThisRun = new Set<string>();
+  const rows: Record<string, unknown>[] = [];
+  for (const p of places) {
+    const c = toCandidate(p);
+    if (!c.place_id || !c.display_name || !c.formatted_address) { skippedFar++; continue; }
+    if (seenThisRun.has(c.place_id)) continue;
+    seenThisRun.add(c.place_id);
+    if (known.has(c.place_id)) { skippedExisting++; continue; }
+    if (c.business_status !== 'OPERATIONAL') { skippedClosed++; continue; }
+    if (
+      typeof c.latitude !== 'number' || typeof c.longitude !== 'number' ||
+      !Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)
+    ) { skippedFar++; continue; }
+    if (hasCenter &&
+        haversineMeters(city.latitude!, city.longitude!, c.latitude, c.longitude) > DISCOVER_CITY_RADIUS_M) {
+      skippedFar++; continue;
+    }
+    if (rows.length >= DISCOVER_INSERT_CAP) break;
+    rows.push({
+      google_place_id: c.place_id,
+      google_display_name: c.display_name,
+      google_formatted_address: c.formatted_address,
+      google_primary_type: c.primary_type,
+      google_maps_url: c.google_maps_url,
+      google_website_url: c.website_url,
+      business_status: c.business_status,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      display_name: c.display_name,
+      category: categoryFromType(c.primary_type),
+      city_id: city.id,
+      source: 'google_discovered',
+      verification_status: 'needs_review',
+      verification_notes: discoveryNotes(query, c.primary_type),
+    });
+  }
+
+  let inserted = 0;
+  if (rows.length > 0) {
+    const { data: ins, error: insErr } = await supabase
+      .from('place_candidates')
+      .insert(rows)
+      .select('id');
+    if (insErr) {
+      console.error('discover insert failed', insErr);
+      return json({ error: insErr.message }, 500);
+    }
+    inserted = (ins ?? []).length;
+  }
+
+  return json({
+    query,
+    fetched: places.length,
+    inserted,
+    skipped_existing: skippedExisting,
+    skipped_closed: skippedClosed,
+    skipped_far: skippedFar,
+  });
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -120,8 +313,8 @@ Deno.serve(async (req) => {
     // ---- 2. Input validation ----
     const body = await req.json().catch(() => null);
     const action = typeof body?.action === 'string' ? body.action : '';
-    if (action !== 'search' && action !== 'details') {
-      return json({ error: 'action must be "search" or "details"' }, 400);
+    if (action !== 'search' && action !== 'details' && action !== 'discover') {
+      return json({ error: 'action must be "search", "details" or "discover"' }, 400);
     }
 
     // ---- 3. Authorization ----
@@ -129,7 +322,7 @@ Deno.serve(async (req) => {
     // location (`scope: "meetup_location"`). Everything else — the Community
     // Place verification workspace — stays owner-only. Both paths return the
     // same narrow, field-masked projection; nothing is written here.
-    const memberScope = body?.scope === 'meetup_location';
+    const memberScope = body?.scope === 'meetup_location' && action !== 'discover';
     if (!memberScope) {
       const { data: isOwner, error: ownerError } = await supabase.rpc('is_owner');
       if (ownerError || isOwner !== true) return json({ error: 'permission denied' }, 403);
@@ -196,6 +389,10 @@ Deno.serve(async (req) => {
       }
       const data = await res.json();
       return json({ results: ((data.places ?? []) as GooglePlace[]).map(toCandidate) });
+    }
+
+    if (action === 'discover') {
+      return await discover(supabase, body, apiKey);
     }
 
     const placeId = typeof body?.place_id === 'string' ? body.place_id.trim() : '';
