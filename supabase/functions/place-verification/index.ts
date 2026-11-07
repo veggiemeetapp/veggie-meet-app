@@ -180,12 +180,26 @@ async function discover(
     .not('google_place_id', 'is', null);
   if (candErr) return json({ error: candErr.message }, 500);
   for (const r of cand ?? []) if (r.google_place_id) known.add(r.google_place_id);
-  const { data: live, error: liveErr } = await supabase
-    .from('community_places')
-    .select('google_place_id')
-    .not('google_place_id', 'is', null);
-  if (liveErr) return json({ error: liveErr.message }, 500);
-  for (const r of live ?? []) if (r.google_place_id) known.add(r.google_place_id);
+  // Direct SELECT on community_places was revoked from authenticated roles
+  // (2026-08-04); the app reads it only through RPCs. For this read-only
+  // dedupe we use the service role, scoped to the single google_place_id
+  // column, and only after the owner check above has passed. If the key is
+  // unavailable the dedupe is skipped: publish_place_candidate() still refuses
+  // a Place ID that is already represented in Community Places.
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (serviceKey) {
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: live, error: liveErr } = await admin
+      .from('community_places')
+      .select('google_place_id')
+      .not('google_place_id', 'is', null);
+    if (liveErr) console.error('discover: live place dedupe failed', liveErr);
+    for (const r of live ?? []) if (r.google_place_id) known.add(r.google_place_id);
+  } else {
+    console.warn('discover: SUPABASE_SERVICE_ROLE_KEY not set; skipping live place dedupe');
+  }
 
   // Google Text Search (New), paginated.
   const baseBody: Record<string, unknown> = {
