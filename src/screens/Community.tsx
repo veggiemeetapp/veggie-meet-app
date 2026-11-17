@@ -16,6 +16,7 @@ import {
   FALLBACK_COVER,
 } from "@/lib/backend";
 import { todayISO } from "@/lib/todayDate";
+import { QUICK_MEETUP_PRESETS } from "@/lib/quickMeetup";
 import { formatMeetupDate, formatTime12h } from "@/lib/format";
 import { useMeetupCategoryLabel } from "@/lib/meetupCategory";
 import { formatDistanceBetween, formatDistanceMeters, locationFallbackLabel } from "@/lib/distance";
@@ -134,6 +135,26 @@ export default function Community() {
       ) : (
         <div className="pb-12 animate-fade-in">
 
+          {/* Spontaneous meetups: one tap pre-fills the Host form (title, time
+              window, group size). Nothing is published until the host confirms. */}
+          <section aria-labelledby="community-quick-heading" className="page-x pt-4">
+            <h2 id="community-quick-heading" className="text-xs font-semibold uppercase tracking-wide text-charcoal-muted mb-2">
+              Something spontaneous?
+            </h2>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 pb-1">
+              {QUICK_MEETUP_PRESETS.map((p) => (
+                <Link
+                  key={p.key}
+                  to={`/host?quick=${p.key}`}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-card border border-border text-sm font-medium text-charcoal hover:bg-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span aria-hidden>{p.emoji}</span>
+                  {p.label}
+                </Link>
+              ))}
+            </div>
+          </section>
+
           {/* WO-147: headings are intentionally city-agnostic ("nearby") because
               the selected city is already shown at the top of the page. The lists
               are still ranked by the member's chosen city, not device location. */}
@@ -167,8 +188,8 @@ export default function Community() {
           <SectionHeader
             icon={Users}
             title="Veggies nearby"
-            ctaLabel="Discover"
-            ctaTo="/network?tab=meet-next"
+            ctaLabel="See all"
+            ctaTo="/veggies"
           />
 
           {veggiesQuery.isPending ? (

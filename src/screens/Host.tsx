@@ -25,6 +25,7 @@ import { setMeetupGoogleLocationMeta } from "@/lib/meetupPlaceSearch";
 
 import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/todayDate";
+import { quickMeetupPrefill, quickMeetupPreset } from "@/lib/quickMeetup";
 import { formatMeetupTimeRange } from "@/lib/format";
 
 import type { CommunityPlace } from "@/types";
@@ -154,7 +155,9 @@ export default function Host() {
   // WO-051: location mode (Community Place vs Custom location).
   const [searchParams] = useSearchParams();
   const preselectedPlaceId = searchParams.get("community_place");
-  const preselectSource = preselectedPlaceId ? "place_detail" : "host_flow";
+  // Spontaneous meetup chips on Community arrive as `?quick=coffee|lunch|dinner|walk`.
+  const quickPreset = quickMeetupPreset(searchParams.get("quick"));
+  const preselectSource = preselectedPlaceId ? "place_detail" : quickPreset ? "quick_chip" : "host_flow";
   const [locationMode, setLocationMode] = useState<"community_place" | "custom">(
     "community_place",
   );
@@ -167,6 +170,21 @@ export default function Host() {
     logAnalyticsEvent("host_opened", { source: preselectSource });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Quick meetup: pre-fill title, time window and group size once. The host
+  // still chooses the place and can edit every field before publishing.
+  const [quickApplied, setQuickApplied] = useState(false);
+  useEffect(() => {
+    if (quickApplied || !quickPreset) return;
+    setQuickApplied(true);
+    const pre = quickMeetupPrefill(quickPreset);
+    setTitle((t) => (t.trim() ? t : pre.title));
+    setDate(pre.date);
+    setStartTime(pre.startTime);
+    setEndTime(pre.endTime);
+    setCapacity(pre.capacity);
+    setIsCustomCapacity(false);
+  }, [quickApplied, quickPreset]);
 
   // Seed city from Selected/Home once context resolves.
   useEffect(() => {
@@ -190,6 +208,16 @@ export default function Host() {
     queryFn: fetchInterestCatalogue,
     staleTime: 60 * 60 * 1000,
   });
+
+  // The interest can only be applied once the approved catalogue has loaded.
+  const quickInterestId = quickPreset?.interestId ?? null;
+  useEffect(() => {
+    if (!quickInterestId || primaryInterestId) return;
+    const options = interestCatalogue.data ?? [];
+    if (options.some((o) => o.id === quickInterestId)) setPrimaryInterestId(quickInterestId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickInterestId, interestCatalogue.data]);
+
 
   // WO-053: places under status maintenance can't host new Meetups. The server
   // re-validates this on insert; this only keeps them out of the picker.

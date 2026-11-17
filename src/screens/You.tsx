@@ -17,6 +17,7 @@ import {
   Share2,
   Sparkles,
   Users,
+  Plane,
 } from "lucide-react";
 import {
   AppHeader,
@@ -237,6 +238,25 @@ export default function You() {
             </div>
             <div className="text-xs text-charcoal-muted">
               Connections you've made across VeggieMeet
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
+        </Card>
+
+        {/* My Trips entry */}
+        <Card
+          interactive
+          padding="md"
+          onClick={() => navigate("/you/trips")}
+          className="flex items-center gap-3"
+        >
+          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
+            <Plane className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-charcoal">My Trips</div>
+            <div className="text-xs text-charcoal-muted">
+              Tell veggies when you'll be in their city
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
