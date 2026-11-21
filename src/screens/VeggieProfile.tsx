@@ -9,6 +9,8 @@ import {
   CalendarPlus,
   Calendar,
   Check,
+  ChevronRight,
+  Sticker,
   Handshake,
   Home,
   Leaf,
@@ -44,6 +46,9 @@ import {
   type Dietary,
 } from "@/lib/veggieProfile";
 import { fetchPublicCommunityImpact } from "@/lib/communityImpact";
+import { usePublicCollection } from "@/hooks/useCollection";
+import { profileLevel } from "@/lib/collection";
+import { PlaceSticker } from "@/components/collection/PlaceSticker";
 import { MeetupInvitationSheet } from "@/components/invitations/MeetupInvitationSheet";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -337,6 +342,15 @@ export default function VeggieProfile() {
             </div>
           </Section>
 
+          {/* Collection (stickers, memory cards, level) */}
+          <Section title="Collection">
+            <CollectionRow
+              profileId={bundle.profile.id}
+              isSelf={isSelf}
+              onOpen={() => navigate(isSelf ? "/you/collection" : `/veggie/${bundle.profile.id}/collection`)}
+            />
+          </Section>
+
           {/* Verification */}
           <Section title="Verification">
             <Card padding="md" className="space-y-2.5">
@@ -510,6 +524,54 @@ function SharedInterests({
   );
 }
 
+
+function CollectionRow({
+  profileId,
+  isSelf,
+  onOpen,
+}: {
+  profileId: string;
+  isSelf: boolean;
+  onOpen: () => void;
+}) {
+  const q = usePublicCollection(profileId);
+  const data = q.data;
+  const level = data?.available ? profileLevel(data.stickers, data.stats) : null;
+  const preview = (data?.stickers ?? []).slice(0, 4);
+  if (q.isPending) return <Card padding="md" className="h-16 animate-pulse" />;
+  if (!data || !data.available) return null;
+  return (
+    <Card
+      interactive
+      padding="md"
+      onClick={onOpen}
+      className="flex items-center gap-3"
+      aria-label={isSelf ? "Open My Collection" : "Open collection"}
+    >
+      {preview.length > 0 ? (
+        <div className="flex -space-x-3 shrink-0">
+          {preview.map((s) => (
+            <PlaceSticker key={s.place_id} placeId={s.place_id} name={s.name} category={s.category} level={s.level} size={36} />
+          ))}
+        </div>
+      ) : (
+        <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0">
+          <Sticker className="w-5 h-5" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-charcoal">
+          {level ? `Level ${level.level} · ${level.name}` : "Collection"}
+        </div>
+        <div className="text-xs text-charcoal-muted">
+          {data.stickers.length} {data.stickers.length === 1 ? "sticker" : "stickers"} · {data.cards.length}{" "}
+          {data.cards.length === 1 ? "memory card" : "memory cards"}
+        </div>
+      </div>
+      <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
+    </Card>
+  );
+}
 
 function ActivityStat({
   icon,

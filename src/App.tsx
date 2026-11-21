@@ -60,6 +60,7 @@ const Plans = lazy(() => import("./screens/Plans"));
 const VeggiesHere = lazy(() => import("./screens/VeggiesHere"));
 const MyTrips = lazy(() => import("./screens/MyTrips"));
 const TripOverlaps = lazy(() => import("./screens/TripOverlaps"));
+const Collection = lazy(() => import("./screens/Collection"));
 const Settings = lazy(() => import("./screens/Settings"));
 const OwnerPlaceOperations = lazy(() => import("./screens/OwnerPlaceOperations"));
 const OwnerPlaceReverify = lazy(() => import("./screens/OwnerPlaceReverify"));
@@ -262,6 +263,8 @@ const App = () => (
                 <Route path="/veggies" element={gated(<VeggiesHere />)} />
                 <Route path="/you/trips" element={gated(<MyTrips />)} />
                 <Route path="/trips/:id" element={gated(<TripOverlaps />)} />
+                <Route path="/you/collection" element={gated(<Collection />)} />
+                <Route path="/veggie/:id/collection" element={gated(<Collection />)} />
                 <Route path="/network/:id" element={gated(<RelationshipDetail />)} />
                 <Route path="/veggie/:id" element={gated(<VeggieProfile />)} />
                 <Route path="/dm/user/:otherProfileId" element={gated(<DirectMessage />)} />

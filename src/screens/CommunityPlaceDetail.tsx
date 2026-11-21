@@ -16,6 +16,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { useMyPlaceSticker } from "@/hooks/useCollection";
+import { PlaceSticker } from "@/components/collection/PlaceSticker";
+import { STICKER_LEVEL_LABEL } from "@/lib/collection";
 import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { PlacePhotoGallery } from "@/components/place/PlacePhotoGallery";
@@ -272,6 +275,9 @@ export default function CommunityPlaceDetail() {
             <p className="text-xs text-charcoal-muted">
               Last verified visit {formatVisitDate(mySupport.last_verified_visit_at)}
             </p>
+          )}
+          {mySupport.verified_visit_count > 0 && (
+            <PlaceStickerRow placeId={place.id} placeName={place.name} />
           )}
           <p className="text-xs text-charcoal-muted">
             {mySupport.counts_toward_supported_places
@@ -562,6 +568,33 @@ function PlaceMeetupCard({
       </div>
       <span className="inline-block text-sm font-semibold text-primary">View Meetup</span>
     </Card>
+  );
+}
+
+/** Collection: the member's sticker for this place and the next level target. */
+function PlaceStickerRow({ placeId, placeName }: { placeId: string; placeName: string }) {
+  const q = useMyPlaceSticker(placeId);
+  const navigate = useNavigate();
+  const s = q.data;
+  if (!s || !s.found || s.visits === 0) return null;
+  const remaining = s.next_level_visits ? s.next_level_visits - s.visits : null;
+  return (
+    <button
+      type="button"
+      onClick={() => navigate("/you/collection")}
+      className="w-full flex items-center gap-3 rounded-card bg-soft-green/60 p-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      aria-label="Open my collection"
+    >
+      <PlaceSticker placeId={placeId} name={placeName} category={s.category} level={s.level} size={48} />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-semibold text-charcoal">
+          Sticker level {s.level} · {STICKER_LEVEL_LABEL[s.level]}
+        </div>
+        <div className="text-xs text-charcoal-muted">
+          {remaining !== null ? `${remaining} more ${remaining === 1 ? "visit" : "visits"} to level ${s.level + 1}` : "Max level"}
+        </div>
+      </div>
+    </button>
   );
 }
 

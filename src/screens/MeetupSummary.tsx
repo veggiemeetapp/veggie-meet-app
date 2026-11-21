@@ -50,6 +50,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
+import { MemoryCardEditor } from "@/components/collection/MemoryCardEditor";
 
 const RATING_OPTIONS: { value: FeedbackRating; label: string; hint: string }[] = [
   { value: "great", label: "Great experience", hint: "I'd do this again." },
@@ -168,6 +169,14 @@ export default function MeetupSummary() {
           <NotYetCard />
         ) : (
           <>
+            {/* Collection: one memory card per attended/hosted meetup. The
+                editor renders nothing when the member isn't eligible. */}
+            <MemoryCardEditor
+              meetupId={id}
+              title={s.meetup.title}
+              date={s.meetup.date}
+              placeLabel={s.place?.name ?? s.meetup.custom_location_name ?? null}
+            />
             {!s.is_host && (
               <>
                 {(s.attendance_status === "checked_in" ||

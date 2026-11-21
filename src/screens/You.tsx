@@ -18,7 +18,11 @@ import {
   Sparkles,
   Users,
   Plane,
+  Sticker,
 } from "lucide-react";
+import { useMyCollection } from "@/hooks/useCollection";
+import { profileLevel } from "@/lib/collection";
+import { LevelRing } from "@/components/collection/LevelRing";
 import {
   AppHeader,
   Card,
@@ -262,6 +266,9 @@ export default function You() {
           <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
         </Card>
 
+        {/* My Collection entry (stickers, memory cards, level) */}
+        <MyCollectionEntry onOpen={() => navigate("/you/collection")} />
+
         {/* My Plans entry */}
         <Card
           interactive
@@ -426,6 +433,41 @@ export default function You() {
 }
 
 /* ---------- Small building blocks ---------- */
+
+function MyCollectionEntry({ onOpen }: { onOpen: () => void }) {
+  const q = useMyCollection();
+  const level = q.data ? profileLevel(q.data.stickers, q.data.stats) : null;
+  const stickers = q.data?.stickers.length ?? 0;
+  const cards = q.data?.cards.length ?? 0;
+  return (
+    <Card
+      interactive
+      padding="md"
+      onClick={onOpen}
+      className="flex items-center gap-3"
+      aria-label="Open My Collection"
+    >
+      {level ? (
+        <LevelRing level={level} size={40} />
+      ) : (
+        <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
+          <Sticker className="w-5 h-5" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-charcoal">My Collection</div>
+        <div className="text-xs text-charcoal-muted">
+          {q.isPending
+            ? "Stickers, memory cards and badges"
+            : q.isError
+              ? "Stickers, memory cards and badges"
+              : `Level ${level?.level} ${level?.name} · ${stickers} ${stickers === 1 ? "sticker" : "stickers"} · ${cards} ${cards === 1 ? "card" : "cards"}`}
+        </div>
+      </div>
+      <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
+    </Card>
+  );
+}
 
 function CommunityImpactCard({
   loading,

@@ -9,12 +9,45 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PrimaryButton, SecondaryButton } from "@/components/app";
+import { useNavigate } from "react-router-dom";
+import { Sticker } from "lucide-react";
+import { PrimaryButton, SecondaryButton, TertiaryButton } from "@/components/app";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import {
   checkInToCommunityPlace,
   type CheckInReason,
 } from "@/lib/placeVisits";
+import { useMyPlaceSticker } from "@/hooks/useCollection";
+import { PlaceSticker } from "@/components/collection/PlaceSticker";
+import { STICKER_LEVEL_LABEL } from "@/lib/collection";
+
+/**
+ * Collection reward shown after a verified visit: the place's sticker at its
+ * new level and how many visits remain for the next one. Reads its own RPC
+ * so the check-in call itself is untouched.
+ */
+function StickerReward({ placeId, placeName }: { placeId: string; placeName: string }) {
+  const q = useMyPlaceSticker(placeId);
+  const s = q.data;
+  if (!s || !s.found) return null;
+  const remaining = s.next_level_visits ? s.next_level_visits - s.visits : null;
+  return (
+    <div className="mt-3 flex items-center gap-3 rounded-card bg-soft-green/60 p-3" data-testid="sticker-reward">
+      <PlaceSticker placeId={placeId} name={placeName} category={s.category} level={s.level} size={64} />
+      <div className="min-w-0 text-left">
+        <div className="text-sm font-semibold text-charcoal">
+          {s.visits === 1 ? "New sticker collected!" : `Sticker level ${s.level} · ${STICKER_LEVEL_LABEL[s.level]}`}
+        </div>
+        <div className="text-xs text-charcoal-muted">
+          {s.visits} {s.visits === 1 ? "visit" : "visits"}
+          {remaining !== null
+            ? ` · ${remaining} more to level ${s.level + 1}`
+            : " · max level, you're a local legend"}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type Phase = "explain" | "checking" | "success" | "error";
 
@@ -98,6 +131,7 @@ export function PlaceCheckInSheet({
   onViewImpact?: () => void;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("explain");
   const [reason, setReason] = useState<CheckInReason>("location_unavailable");
   const [newlySupported, setNewlySupported] = useState(true);
@@ -140,6 +174,7 @@ export function PlaceCheckInSheet({
       qc.invalidateQueries({ queryKey: ["place-detail", placeId] });
       qc.invalidateQueries({ queryKey: ["me-impact-overview"] });
       qc.invalidateQueries({ queryKey: ["impact-overview"] });
+      qc.invalidateQueries({ queryKey: ["collection"] });
       onCheckedIn();
       setPhase("success");
       return;
@@ -215,6 +250,12 @@ export function PlaceCheckInSheet({
                 Community Places Supported: {supportedTotal}
               </p>
             )}
+            <StickerReward placeId={placeId} placeName={placeName} />
+            <div className="pt-2 flex justify-center">
+              <TertiaryButton size="sm" onClick={() => navigate("/you/collection")}>
+                <Sticker className="w-4 h-4" /> View my collection
+              </TertiaryButton>
+            </div>
             <DialogFooter className="flex-col gap-2 sm:flex-col pt-2">
               <PrimaryButton fullWidth onClick={() => onOpenChange(false)}>
                 Done
