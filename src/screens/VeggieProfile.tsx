@@ -48,7 +48,7 @@ import {
 import { fetchPublicCommunityImpact } from "@/lib/communityImpact";
 import { usePublicCollection } from "@/hooks/useCollection";
 import { profileLevel } from "@/lib/collection";
-import { PlaceSticker } from "@/components/collection/PlaceSticker";
+import { PlaceCoverProvider, PlaceSticker } from "@/components/collection/PlaceSticker";
 import { MeetupInvitationSheet } from "@/components/invitations/MeetupInvitationSheet";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -549,11 +549,13 @@ function CollectionRow({
       aria-label={isSelf ? "Open My Collection" : "Open collection"}
     >
       {preview.length > 0 ? (
-        <div className="flex -space-x-3 shrink-0">
-          {preview.map((s) => (
-            <PlaceSticker key={s.place_id} placeId={s.place_id} name={s.name} category={s.category} level={s.level} size={36} />
-          ))}
-        </div>
+        <PlaceCoverProvider placeIds={preview.map((s) => s.place_id)}>
+          <div className="flex -space-x-3 shrink-0">
+            {preview.map((s) => (
+              <PlaceSticker key={s.place_id} placeId={s.place_id} name={s.name} category={s.category} level={s.level} size={36} />
+            ))}
+          </div>
+        </PlaceCoverProvider>
       ) : (
         <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center shrink-0">
           <Sticker className="w-5 h-5" />

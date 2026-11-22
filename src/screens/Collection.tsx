@@ -7,7 +7,7 @@ import { AppHeader, BackButton, Card, EmptyState, SecondaryButton, UserAvatar } 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useMemoryCard, useMyCollection, usePublicCollection } from "@/hooks/useCollection";
-import { PlaceSticker } from "@/components/collection/PlaceSticker";
+import { PlaceCoverProvider, PlaceSticker } from "@/components/collection/PlaceSticker";
 import { LevelRing } from "@/components/collection/LevelRing";
 import { MemoryCardFrame } from "@/components/collection/MemoryCardTile";
 import { BadgeTile } from "@/components/collection/BadgeTile";
@@ -63,9 +63,17 @@ export default function Collection() {
   const earnedCount = badges.filter((b) => b.earned).length;
 
   const ownerName = isSelf ? me?.display_name ?? "You" : ownerQ.data?.display_name ?? "Veggie";
+  const coverIds = useMemo(
+    () =>
+      data
+        ? [...data.stickers.map((x) => x.place_id), ...data.uncollected.map((x) => x.place_id), ...data.pending.map((x) => x.place_id)]
+        : [],
+    [data],
+  );
   const firstName = ownerName.split(/\s+/)[0] || ownerName;
 
   return (
+    <PlaceCoverProvider placeIds={coverIds}>
     <div className="pb-16 animate-fade-in">
       <AppHeader
         left={<BackButton fallback={isSelf ? "/you" : id ? `/veggie/${id}` : "/you"} />}
@@ -180,6 +188,7 @@ export default function Collection() {
         />
       )}
     </div>
+    </PlaceCoverProvider>
   );
 }
 
