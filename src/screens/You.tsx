@@ -23,6 +23,7 @@ import {
 import { useMyCollection } from "@/hooks/useCollection";
 import { profileLevel } from "@/lib/collection";
 import { LevelRing } from "@/components/collection/LevelRing";
+import { TestModeToggle } from "@/components/app/TestMode";
 import {
   AppHeader,
   Card,
@@ -154,6 +155,7 @@ export default function You() {
         title="My Profile"
         right={
           <>
+            {ownerQuery.data === true && <TestModeToggle />}
             <ThemeToggle />
             <NotificationsBell />
             <button

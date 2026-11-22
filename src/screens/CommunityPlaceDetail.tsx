@@ -19,6 +19,7 @@ import { logAnalyticsEvent } from "@/lib/analytics";
 import { useMyPlaceSticker } from "@/hooks/useCollection";
 import { PlaceSticker } from "@/components/collection/PlaceSticker";
 import { STICKER_LEVEL_LABEL } from "@/lib/collection";
+import { useTestMode } from "@/lib/testMode";
 import { Card, PrimaryButton, SecondaryButton, BackButton } from "@/components/app";
 import { PlaceCheckInSheet } from "@/components/place/PlaceCheckInSheet";
 import { PlacePhotoGallery } from "@/components/place/PlacePhotoGallery";
@@ -47,6 +48,7 @@ export default function CommunityPlaceDetail() {
   const coverUrl = usePlaceCoverUrl(id);
 
   const [checkInOpen, setCheckInOpen] = useState(false);
+  const testMode = useTestMode();
   const [shareMessage, setShareMessage] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -276,7 +278,7 @@ export default function CommunityPlaceDetail() {
               Last verified visit {formatVisitDate(mySupport.last_verified_visit_at)}
             </p>
           )}
-          {mySupport.verified_visit_count > 0 && (
+          {(mySupport.verified_visit_count > 0 || testMode) && (
             <PlaceStickerRow placeId={place.id} placeName={place.name} />
           )}
           <p className="text-xs text-charcoal-muted">

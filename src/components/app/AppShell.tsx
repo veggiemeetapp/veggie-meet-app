@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { AppErrorBoundary } from "./ErrorBoundary";
 import { OfflineBanner } from "./OfflineBanner";
+import { TestModeBanner } from "./TestMode";
 import { FollowUpPrompt } from "@/components/postmeetup/FollowUpPrompt";
 import { useAuth } from "@/hooks/useAuth";
 import { titleForPath } from "@/lib/pageTitle";
@@ -73,6 +74,7 @@ export function AppShell({ children }: AppShellProps) {
           Skip to main content
         </a>
         <OfflineBanner />
+        {authedShell && <TestModeBanner />}
         <main
           id="main-content"
           ref={mainRef}
