@@ -62,6 +62,11 @@ import {
 
 
 
+/** Rows visible before a candidate group scrolls internally. */
+export const CANDIDATE_LIST_VISIBLE_ROWS = 5;
+/** Approximate row height: two text lines + padding + the 6px gap. */
+const CANDIDATE_ROW_PX = 66;
+
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
   needs_review: "Needs review",
@@ -411,7 +416,16 @@ export default function OwnerPlaceVerification() {
                           : CANDIDATE_GROUP_EMPTY[g.key]}
                       </p>
                     ) : (
-                      <ul className="space-y-1.5">
+                      <>
+                      {/* Owner feedback 2026-11-22: after a Google discovery a
+                          group can hold 150+ rows, which pushed the
+                          confirm/verify steps far below the fold. The list
+                          now shows about five rows and scrolls inside. */}
+                      <ul
+                        className="space-y-1.5 overflow-y-auto overscroll-contain pr-1"
+                        style={{ maxHeight: `${CANDIDATE_LIST_VISIBLE_ROWS * CANDIDATE_ROW_PX}px` }}
+                        data-testid={`pv-group-list-${g.key}`}
+                      >
                         {g.items.map((c) => (
                           <li key={c.id}>
                             <button
@@ -441,6 +455,12 @@ export default function OwnerPlaceVerification() {
                           </li>
                         ))}
                       </ul>
+                      {g.items.length > CANDIDATE_LIST_VISIBLE_ROWS && (
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                          Showing {CANDIDATE_LIST_VISIBLE_ROWS} of {g.items.length}. Scroll the list to see the rest.
+                        </p>
+                      )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -665,7 +685,10 @@ export default function OwnerPlaceVerification() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
-              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+              {/* items-end: the left label wraps to two lines on phones, so
+                  bottom-align both cells to keep the input and the dropdown
+                  on one row. */}
+              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 min-[420px]:items-end">
                 <div className="space-y-1.5 min-w-0">
                   <Label htmlFor="pv-img">Cover image URL (licensed only)</Label>
                   <Input
