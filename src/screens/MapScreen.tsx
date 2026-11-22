@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { List, Users, WifiOff } from "lucide-react";
+import { Leaf, List, MapPin, Users, WifiOff } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -27,6 +27,8 @@ import {
 } from "@/lib/mapMarkers";
 import { attachCoverImage, clusterMarkerElement, pointMarkerElement } from "@/lib/mapMarkerElements";
 import { usePlaceCoverUrls } from "@/hooks/usePlacePhotos";
+import { ProgressiveImage } from "@/components/app/ProgressiveImage";
+import { CLASSIFICATION_LABEL, PLACE_CATEGORY_LABEL } from "@/lib/placeDetail";
 import {
   CITY_OVERVIEW_ZOOM,
   CLUSTER_CONFIG,
@@ -588,38 +590,65 @@ export default function MapScreen() {
             />
           )}
           {selection?.kind === "place" && (
-            <>
-              <SheetHeader>
-                <SheetTitle className="text-left">{selection.item.name}</SheetTitle>
-              </SheetHeader>
-              <p className="mt-1 text-sm capitalize text-charcoal-muted">
-                {placeStickerGroup(selection.item.category)} ·{" "}
-                {selection.item.veggie_classification === "fully_vegan"
-                  ? "100% vegan"
-                  : selection.item.veggie_classification ?? "—"}
-              </p>
-              <p className="mt-1 text-sm text-charcoal-muted">{selection.item.address ?? "—"}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  to={`/place/${selection.item.id}?from=map`}
-                  className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+            <div className="space-y-5">
+              {/* 2026-11-22: same cover treatment as the Meetup sheet; the
+                  owner-managed photo when one exists, category emoji otherwise. */}
+              {placeCoversQ.data?.[selection.item.id] ? (
+                <ProgressiveImage
+                  src={placeCoversQ.data[selection.item.id]}
+                  alt={`${selection.item.name} cover`}
+                  containerClassName="aspect-[16/7] max-h-44 w-full rounded-card border-2 border-card shadow-lg ring-1 ring-border"
+                  imageClassName="object-cover object-center"
+                />
+              ) : (
+                <span
+                  className="grid aspect-[16/7] max-h-44 w-full place-items-center overflow-hidden rounded-card border-2 border-card bg-primary-soft text-5xl shadow-lg ring-1 ring-border"
+                  aria-hidden="true"
                 >
-                  View Place
-                </Link>
-                <a
-                  href={directionsHref(
-                    selection.item.name,
-                    selection.item.latitude,
-                    selection.item.longitude,
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-medium text-charcoal"
-                >
-                  Get directions
-                </a>
+                  {PLACE_STICKER_PLACEHOLDERS[placeStickerGroup(selection.item.category)]}
+                </span>
+              )}
+              <div className="space-y-4">
+                <SheetHeader className="space-y-2 pr-8 text-left">
+                  <SheetTitle className="text-xl leading-snug sm:text-2xl">{selection.item.name}</SheetTitle>
+                </SheetHeader>
+                <dl className="grid gap-2.5 text-sm text-charcoal-muted">
+                  <div className="flex items-center gap-3">
+                    <Leaf className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    <dd>
+                      {PLACE_CATEGORY_LABEL[selection.item.category ?? ""] ?? "Place"}
+                      {" · "}
+                      {CLASSIFICATION_LABEL[selection.item.veggie_classification ?? ""] ??
+                        (selection.item.veggie_classification ? "Veggie friendly" : "—")}
+                    </dd>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    <dd>{selection.item.address ?? "—"}</dd>
+                  </div>
+                </dl>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    to={`/place/${selection.item.id}?from=map`}
+                    className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                  >
+                    View Place
+                  </Link>
+                  <a
+                    href={directionsHref(
+                      selection.item.name,
+                      selection.item.latitude,
+                      selection.item.longitude,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-medium text-charcoal"
+                  >
+                    Get directions
+                  </a>
+                </div>
               </div>
-            </>
+            </div>
           )}
         </SheetContent>
       </Sheet>
