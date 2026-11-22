@@ -1,16 +1,11 @@
+import { ChevronRight } from "lucide-react";
 import type { BadgeProgress } from "@/lib/collection";
 import { cn } from "@/lib/utils";
 
-export function BadgeTile({ badge }: { badge: BadgeProgress }) {
+export function BadgeTile({ badge, onClick }: { badge: BadgeProgress; onClick?: () => void }) {
   const pct = Math.round((badge.progress / badge.target) * 100);
-  return (
-    <div
-      className={cn(
-        "rounded-card border p-3 flex items-start gap-3",
-        badge.earned ? "bg-soft-green border-primary/30" : "bg-card border-border",
-      )}
-      aria-label={`${badge.name}${badge.earned ? ", earned" : `, ${badge.progress} of ${badge.target}`}`}
-    >
+  const body = (
+    <>
       <div
         className={cn(
           "w-11 h-11 rounded-full flex items-center justify-center text-2xl shrink-0",
@@ -40,6 +35,29 @@ export function BadgeTile({ badge }: { badge: BadgeProgress }) {
           </div>
         )}
       </div>
+      {onClick && <ChevronRight className="w-4 h-4 text-charcoal-muted shrink-0 self-center" aria-hidden />}
+    </>
+  );
+  const frame = cn(
+    "w-full text-left rounded-card border p-3 flex items-start gap-3",
+    badge.earned ? "bg-soft-green border-primary/30" : "bg-card border-border",
+  );
+  const label = `${badge.name}${badge.earned ? ", earned" : `, ${badge.progress} of ${badge.target}`}`;
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`${label}. Show details`}
+        className={cn(frame, "transition-colors hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40")}
+      >
+        {body}
+      </button>
+    );
+  }
+  return (
+    <div className={frame} aria-label={label}>
+      {body}
     </div>
   );
 }

@@ -4,8 +4,12 @@
  * data URLs generated on the fly so there are no binary assets to ship.
  */
 import type {
+  AttendedEvidence,
   Collection,
+  CollectionEvidence,
   CollectionStats,
+  ConnectionEvidence,
+  HostedEvidence,
   MemoryCardFull,
   MemoryCardSummary,
   MyMemoryCard,
@@ -157,6 +161,39 @@ const strip = (c: MockCard): MemoryCardSummary => {
   return rest;
 };
 
+const PEOPLE = ["Linh Nguyen", "Minh Tran", "Sarah Collins", "Tomas Weber", "Aom Srisuk", "Huy Le", "Priya Nair"];
+
+function evidence(): CollectionEvidence {
+  const connections: ConnectionEvidence[] = PEOPLE.map((name, i) => {
+    const m = MOCK_MEETUPS[i % MOCK_MEETUPS.length];
+    return {
+      profile_id: `00000000-0000-4000-8000-0000000000f${i + 1}`,
+      display_name: i === 5 ? null : name,
+      avatar_url: null,
+      verified_at: daysAgo(i * 9 + 2),
+      meetup_id: m.id,
+      meetup_title: m.title,
+      meetup_date: m.date,
+    };
+  });
+  const hosted: HostedEvidence[] = MOCK_MEETUPS.slice(0, 2).map((m, i) => ({
+    meetup_id: m.id,
+    title: m.title,
+    date: m.date,
+    city_name: m.city,
+    place_name: m.place,
+    checked_in_count: [5, 3][i],
+  }));
+  const attended: AttendedEvidence[] = MOCK_MEETUPS.map((m) => ({
+    meetup_id: m.id,
+    title: m.title,
+    date: m.date,
+    city_name: m.city,
+    place_name: m.place,
+  }));
+  return { connections, hosted, attended };
+}
+
 export function mockMyCollection(): Collection {
   return {
     available: true,
@@ -165,6 +202,7 @@ export function mockMyCollection(): Collection {
     uncollected: UNCOLLECTED,
     cards: state.cards.map(strip),
     stats: stats(),
+    evidence: evidence(),
   };
 }
 
@@ -176,6 +214,7 @@ export function mockPublicCollection(profileId: string): Collection {
     uncollected: [],
     cards: state.cards.filter((c) => c.is_public).map(strip),
     stats: stats(),
+    evidence: null,
   };
 }
 

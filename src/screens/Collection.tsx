@@ -11,8 +11,10 @@ import { PlaceSticker } from "@/components/collection/PlaceSticker";
 import { LevelRing } from "@/components/collection/LevelRing";
 import { MemoryCardFrame } from "@/components/collection/MemoryCardTile";
 import { BadgeTile } from "@/components/collection/BadgeTile";
+import { BadgeDetailSheet } from "@/components/collection/BadgeDetailSheet";
 import {
   evaluateBadges,
+  type BadgeProgress,
   groupStickersByCity,
   nextStickerThreshold,
   profileLevel,
@@ -52,6 +54,7 @@ export default function Collection() {
 
   const [tab, setTab] = useState<Tab>("stickers");
   const [openCard, setOpenCard] = useState<string | null>(null);
+  const [openBadge, setOpenBadge] = useState<BadgeProgress | null>(null);
 
   const data = q.data;
   const level = useMemo(() => (data ? profileLevel(data.stickers, data.stats) : null), [data]);
@@ -142,8 +145,9 @@ export default function Collection() {
             )}
             {tab === "badges" && (
               <div className="space-y-2">
+                <p className="px-1 text-xs text-charcoal-muted">Tap a badge to see what counts toward it.</p>
                 {badges.map((b) => (
-                  <BadgeTile key={b.key} badge={b} />
+                  <BadgeTile key={b.key} badge={b} onClick={() => setOpenBadge(b)} />
                 ))}
               </div>
             )}
@@ -165,6 +169,15 @@ export default function Collection() {
       </div>
 
       <MemoryCardDialog cardId={openCard} onClose={() => setOpenCard(null)} />
+      {data && data.available && (
+        <BadgeDetailSheet
+          badge={openBadge}
+          data={data}
+          isSelf={isSelf}
+          onClose={() => setOpenBadge(null)}
+          onShowCards={() => setTab("cards")}
+        />
+      )}
     </div>
   );
 }

@@ -69,6 +69,42 @@ export interface CollectionStats {
   member_since: string | null;
 }
 
+/** A verified real-life connection: who, and at which meetup it was verified. */
+export interface ConnectionEvidence {
+  profile_id: string;
+  /** null when a block exists between the two members (still counts). */
+  display_name: string | null;
+  avatar_url: string | null;
+  verified_at: string | null;
+  meetup_id: string | null;
+  meetup_title: string | null;
+  meetup_date: string | null;
+}
+
+export interface HostedEvidence {
+  meetup_id: string;
+  title: string;
+  date: string;
+  city_name: string | null;
+  place_name: string | null;
+  checked_in_count: number;
+}
+
+export interface AttendedEvidence {
+  meetup_id: string;
+  title: string;
+  date: string;
+  city_name: string | null;
+  place_name: string | null;
+}
+
+/** Records behind the badges. Only present on the member's own collection. */
+export interface CollectionEvidence {
+  connections: ConnectionEvidence[];
+  hosted: HostedEvidence[];
+  attended: AttendedEvidence[];
+}
+
 export interface Collection {
   available: boolean;
   profile_id: string;
@@ -76,6 +112,7 @@ export interface Collection {
   uncollected: UncollectedPlace[];
   cards: MemoryCardSummary[];
   stats: CollectionStats;
+  evidence: CollectionEvidence | null;
 }
 
 export interface PlaceStickerState {
@@ -132,6 +169,13 @@ function normalizeCollection(raw: Partial<Collection> | null, profileId: string)
     uncollected: raw?.uncollected ?? [],
     cards: raw?.cards ?? [],
     stats: { ...EMPTY_STATS, ...(raw?.stats ?? {}) },
+    evidence: raw?.evidence
+      ? {
+          connections: raw.evidence.connections ?? [],
+          hosted: raw.evidence.hosted ?? [],
+          attended: raw.evidence.attended ?? [],
+        }
+      : null,
   };
 }
 

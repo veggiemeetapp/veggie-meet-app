@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { AppHeader, Card, UserAvatar, BackButton } from "@/components/app";
+import { ProfilePeekSheet } from "@/components/profile/ProfilePeekSheet";
 import {
   Dialog,
   DialogContent,
@@ -165,6 +166,8 @@ export default function MeetupChat() {
   const deleteTriggerIdRef = useRef<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [mutationStatus, setMutationStatus] = useState("");
+  // Tap a sender's avatar or name → quick profile popup (connect / message / block).
+  const [peekProfileId, setPeekProfileId] = useState<string | null>(null);
 
 
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
@@ -744,11 +747,18 @@ export default function MeetupChat() {
               className={`flex min-w-0 max-w-full items-end gap-2 ${messageRowAlignment(isMe)}`}
             >
               {!isMe && m.sender_name && (
-                <UserAvatar
-                  name={m.sender_name}
-                  src={m.sender_avatar_url ?? undefined}
-                  size="sm"
-                />
+                <button
+                  type="button"
+                  onClick={() => m.sender_id && setPeekProfileId(m.sender_id)}
+                  aria-label={`View ${m.sender_name}'s profile`}
+                  className="shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <UserAvatar
+                    name={m.sender_name}
+                    src={m.sender_avatar_url ?? undefined}
+                    size="sm"
+                  />
+                </button>
               )}
               <div
                 className={`min-w-0 max-w-[75%] flex flex-col ${
@@ -763,9 +773,13 @@ export default function MeetupChat() {
                   }`}
                 >
                   {!isMe && m.sender_name && (
-                    <div className="text-[11px] font-semibold mb-0.5 text-primary">
+                    <button
+                      type="button"
+                      onClick={() => m.sender_id && setPeekProfileId(m.sender_id)}
+                      className="block text-[11px] font-semibold mb-0.5 text-primary text-left hover:underline focus:outline-none focus-visible:underline"
+                    >
                       {m.sender_name}
-                    </div>
+                    </button>
                   )}
                   {m.body}
                   {m.edited_at && (
@@ -1079,6 +1093,7 @@ export default function MeetupChat() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ProfilePeekSheet profileId={peekProfileId} onClose={() => setPeekProfileId(null)} />
     </div>
 
   );
