@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   canRenderNativeColorEmoji,
+  attachCoverImage,
   clusterMarkerElement,
   MEETUP_EMOJI_FONT_STACK,
   pointMarkerElement,
@@ -119,5 +120,27 @@ describe("WO-155 Meetup map markers", () => {
     expect(place.dataset.markerKind).toBe("place");
     expect(meetup.className).toContain("rounded-full");
     expect(place.className).not.toContain("h-14");
+  });
+});
+describe("Community Place photo markers (2026-11-22)", () => {
+  it("is round, shows the cover photo over the tinted emoji disc, and keeps the leaf badge", () => {
+    const place = pointMarkerElement("place", "🍽️", "Green Bowl", "eatery", false, false, "https://example.invalid/p.jpg", vi.fn());
+    expect(place.className).toContain("rounded-full");
+    expect(place.dataset.markerKind).toBe("place");
+    expect(place.dataset.markerContent).toBe("cover-or-emoji");
+    const disc = place.querySelector<HTMLElement>("[data-marker-disc]");
+    expect(disc?.className).toContain("bg-warning-soft");
+    expect(disc?.querySelector('[data-place-cover="true"]')).toBeInstanceOf(HTMLImageElement);
+    expect(place.textContent).toContain("v");
+  });
+
+  it("falls back to the emoji disc when the place has no photo, and accepts a late cover", () => {
+    const place = pointMarkerElement("place", "☕", "Chay Cafe", "cafe", false, false, null, vi.fn());
+    expect(place.dataset.markerContent).toBe("emoji");
+    const disc = place.querySelector<HTMLElement>("[data-marker-disc]")!;
+    expect(disc.textContent).toBe("☕");
+    expect(attachCoverImage(disc, "https://example.invalid/late.jpg", "placeCover")).toBeInstanceOf(HTMLImageElement);
+    expect(disc.querySelector('[data-place-cover="true"]')).not.toBeNull();
+    expect(attachCoverImage(disc, "blob:local", "placeCover")).toBeNull();
   });
 });

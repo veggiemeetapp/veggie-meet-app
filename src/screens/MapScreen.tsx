@@ -25,7 +25,8 @@ import {
   placeStickerGroup,
   PLACE_STICKER_PLACEHOLDERS,
 } from "@/lib/mapMarkers";
-import { clusterMarkerElement, pointMarkerElement } from "@/lib/mapMarkerElements";
+import { attachCoverImage, clusterMarkerElement, pointMarkerElement } from "@/lib/mapMarkerElements";
+import { usePlaceCoverUrls } from "@/hooks/usePlacePhotos";
 import {
   CITY_OVERVIEW_ZOOM,
   CLUSTER_CONFIG,
@@ -157,6 +158,26 @@ export default function MapScreen() {
     lookupRef.current = next;
   }, [meetups, places]);
 
+  // Owner-managed cover photos for the places on the map. Markers are cached
+  // DOM nodes, so covers that arrive after a marker was built are patched in.
+  const placeIds = useMemo(() => places.map((p) => p.id), [places]);
+  const placeCoversQ = usePlaceCoverUrls(placeIds);
+  const placeCoversRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    const covers = placeCoversQ.data ?? {};
+    placeCoversRef.current = covers;
+    for (const [id, marker] of Object.entries(markersRef.current)) {
+      if (!id.startsWith("place:")) continue;
+      const url = covers[id.slice("place:".length)];
+      if (!url) continue;
+      const el = marker.getElement() as HTMLElement;
+      if (el.querySelector("[data-place-cover]")) continue;
+      const disc = el.querySelector<HTMLElement>("[data-marker-disc]") ?? el;
+      attachCoverImage(disc, url, "placeCover");
+      el.dataset.markerContent = "cover-or-emoji";
+    }
+  }, [placeCoversQ.data]);
+
   const meetupData = useMemo(
     () =>
       featureCollection(
@@ -252,9 +273,11 @@ export default function MapScreen() {
                 String(props.group ?? "other"),
                 props.featured === true || props.featured === "true",
                 false,
-                kind === "meetup" && lookupRef.current[id]?.kind === "meetup"
-                  ? lookupRef.current[id].item.cover_image_url
-                  : null,
+                kind === "meetup"
+                  ? lookupRef.current[id]?.kind === "meetup"
+                    ? lookupRef.current[id].item.cover_image_url
+                    : null
+                  : placeCoversRef.current[String(props.key).slice("place:".length)] ?? null,
                 () => select(id),
               );
           marker = new mapEngine.Marker({ element: el }).setLngLat(coords);

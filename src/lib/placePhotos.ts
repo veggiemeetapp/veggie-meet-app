@@ -202,3 +202,27 @@ export async function deletePlacePhoto(photoId: string): Promise<void> {
   const path = (data as { storage_path?: string } | null)?.storage_path;
   if (path) await supabase.storage.from("community-place-photos").remove([path]);
 }
+
+/**
+ * Signed cover URLs for many places at once (map markers). Places without a
+ * managed cover photo are simply absent from the result. One table read and
+ * one batched signing call regardless of how many places are on screen.
+ */
+export async function fetchPlaceCoverUrls(placeIds: string[]): Promise<Record<string, string>> {
+  const ids = Array.from(new Set(placeIds.filter(Boolean)));
+  if (ids.length === 0) return {};
+  const { data, error } = await supabase
+    .from("community_place_photos")
+    .select("community_place_id, storage_path")
+    .eq("is_cover", true)
+    .in("community_place_id", ids);
+  if (error || !data?.length) return {};
+  const rows = data as { community_place_id: string; storage_path: string }[];
+  const signed = await signPaths(rows.map((r) => r.storage_path));
+  const out: Record<string, string> = {};
+  for (const r of rows) {
+    const url = signed[r.storage_path];
+    if (url) out[r.community_place_id] = url;
+  }
+  return out;
+}

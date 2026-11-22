@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchPlaceCoverUrl, listPlacePhotos, type PlacePhoto } from "@/lib/placePhotos";
+import { fetchPlaceCoverUrl, fetchPlaceCoverUrls, listPlacePhotos, type PlacePhoto } from "@/lib/placePhotos";
 
 /**
  * WO-101 — signed display URLs are short-lived, so photo reads are cached for
@@ -29,4 +29,19 @@ export function usePlaceCoverUrl(placeId: string | undefined) {
     staleTime: STALE_MS,
   });
   return q.isPending ? undefined : (q.data ?? null);
+}
+
+/**
+ * Cover URLs for a set of places (map markers). Keyed by the sorted id list so
+ * panning that reveals the same places reuses the cached signed URLs.
+ */
+export function usePlaceCoverUrls(placeIds: string[]) {
+  const key = [...new Set(placeIds)].sort().join(",");
+  return useQuery<Record<string, string>>({
+    queryKey: ["place-covers", key],
+    queryFn: () => fetchPlaceCoverUrls(key ? key.split(",") : []),
+    enabled: key.length > 0,
+    staleTime: STALE_MS,
+    placeholderData: (prev) => prev,
+  });
 }

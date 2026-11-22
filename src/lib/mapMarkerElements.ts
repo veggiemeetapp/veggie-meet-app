@@ -103,6 +103,44 @@ export function clusterMarkerElement(
   return el;
 }
 
+/**
+ * Fades a cover photo in over the emoji disc. Shared by Meetup and Community
+ * Place markers; `datasetKey` keeps the two distinguishable in tests and CSS.
+ * A failed load removes the image so the emoji stays the visible fallback.
+ */
+export function attachCoverImage(
+  host: HTMLElement,
+  imageUrl: string,
+  datasetKey: "meetupCover" | "placeCover" = "meetupCover",
+): HTMLImageElement | null {
+  if (!imageUrl || imageUrl.startsWith("blob:")) return null;
+  const image = document.createElement("img");
+  image.src = imageUrl;
+  image.alt = "";
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.className =
+    "absolute inset-0 h-full w-full rounded-full object-cover opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none";
+  image.dataset[datasetKey] = "true";
+  image.addEventListener("load", () => {
+    image.classList.remove("opacity-0");
+    image.classList.add("opacity-100");
+  });
+  image.addEventListener("error", () => image.remove());
+  host.appendChild(image);
+  return image;
+}
+
+/** Tint of the emoji disc behind a Community Place marker, per category group. */
+export const PLACE_DISC_TINT: Record<string, string> = {
+  eatery: "bg-warning-soft",
+  cafe: "bg-secondary",
+  shop: "bg-primary-soft",
+  outdoors: "bg-accent",
+  venue: "bg-card",
+  other: "bg-muted",
+};
+
 export function pointMarkerElement(
   kind: string,
   glyph: string,
@@ -144,33 +182,24 @@ export function pointMarkerElement(
       }
     }
     el.appendChild(glyphEl);
-    if (imageUrl && !imageUrl.startsWith("blob:")) {
-      const image = document.createElement("img");
-      image.src = imageUrl;
-      image.alt = "";
-      image.loading = "lazy";
-      image.decoding = "async";
-      image.className =
-        "absolute inset-0 h-full w-full rounded-full object-cover opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none";
-      image.dataset.meetupCover = "true";
-      image.addEventListener("load", () => {
-        image.classList.remove("opacity-0");
-        image.classList.add("opacity-100");
-      });
-      image.addEventListener("error", () => image.remove());
-      el.appendChild(image);
-    }
+    if (imageUrl) attachCoverImage(el, imageUrl, "meetupCover");
   } else {
-    el.className = `relative grid h-12 w-12 place-items-center border-[3px] shadow-md transition-transform will-change-transform focus-ring data-[selected=true]:scale-110 data-[selected=true]:ring-2 data-[selected=true]:ring-primary data-[selected=true]:ring-offset-2 ${
-      PLACE_STICKER_STYLES[group] ?? PLACE_STICKER_STYLES.other
-    } ${featured ? "ring-2 ring-primary/40" : ""}`;
+    // 2026-11-22: Community Places are round like Meetups and show the
+    // owner-managed cover photo when one exists; the category emoji on a
+    // tinted disc is the fallback. The "v" leaf badge stays as the Place cue.
+    el.className = `relative grid h-12 w-12 place-items-center rounded-full border-[3px] border-card bg-card shadow-md transition-transform will-change-transform focus-ring data-[selected=true]:scale-110 data-[selected=true]:ring-2 data-[selected=true]:ring-primary data-[selected=true]:ring-offset-2 ${
+      featured ? "ring-2 ring-primary/40" : ""
+    }`;
     el.dataset.markerKind = "place";
-    const glyphEl = document.createElement("span");
-    glyphEl.className =
-      "grid h-8 w-8 place-items-center rounded-full bg-card/80 text-xl leading-none shadow-sm";
-    glyphEl.style.fontFamily = SYSTEM_EMOJI_FONT_STACK;
-    glyphEl.textContent = glyph;
-    el.appendChild(glyphEl);
+    const disc = document.createElement("span");
+    disc.className = `relative grid h-full w-full place-items-center overflow-hidden rounded-full text-xl leading-none ${
+      PLACE_DISC_TINT[group] ?? PLACE_DISC_TINT.other
+    }`;
+    disc.style.fontFamily = SYSTEM_EMOJI_FONT_STACK;
+    disc.dataset.markerDisc = "true";
+    disc.textContent = glyph;
+    if (imageUrl) attachCoverImage(disc, imageUrl, "placeCover");
+    el.appendChild(disc);
     const leaf = document.createElement("span");
     leaf.className =
       "absolute -right-1 -top-1 grid h-[18px] w-[18px] rotate-12 place-items-center rounded-[60%_40%_60%_40%] border-2 border-card bg-primary text-[9px] font-black leading-none text-primary-foreground shadow-sm";
@@ -179,8 +208,7 @@ export function pointMarkerElement(
     el.appendChild(leaf);
   }
   el.dataset.selected = "false";
-  el.dataset.markerContent =
-    kind === "meetup" && imageUrl && !imageUrl.startsWith("blob:") ? "cover-or-emoji" : "emoji";
+  el.dataset.markerContent = imageUrl && !imageUrl.startsWith("blob:") ? "cover-or-emoji" : "emoji";
   el.setAttribute(
     "aria-label",
     `${kind === "meetup" ? "Meetup" : "Community Place"}: ${label}${
