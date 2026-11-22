@@ -240,8 +240,13 @@ export default function CommunityPlaceDetail() {
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden />
             <p className="text-sm text-charcoal leading-relaxed">
-              This place has been confirmed as a 100% vegan Community Place through
-              VeggieMeet's verification process.
+              {place.veggie_classification === "fully_vegan"
+                ? "This place has been confirmed as a 100% vegan Community Place through VeggieMeet's verification process."
+                : place.veggie_classification === "fully_vegetarian"
+                  ? "This place has been confirmed as a 100% vegetarian Community Place through VeggieMeet's verification process."
+                  : dietaryLabel
+                    ? `This place has been verified by VeggieMeet. Classification: ${dietaryLabel}.`
+                    : "This place has been verified through VeggieMeet's verification process."}
             </p>
           </div>
           <p className="text-xs text-charcoal-muted">
