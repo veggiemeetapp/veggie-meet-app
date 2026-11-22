@@ -76,7 +76,7 @@ export default function MyPlaceSuggestions() {
               <Leaf className="mx-auto h-7 w-7 text-primary/70" aria-hidden />
               <h2 className="mt-3 text-base font-semibold text-charcoal">No suggestions yet</h2>
               <p className="mt-1 text-sm text-charcoal-muted">
-                Know a 100% vegan place? Tell us about it.
+                Know a veggie place? Tell us about it.
               </p>
               <Button className="mt-5" asChild>
                 <Link to="/community/places/suggest">Suggest a Place</Link>

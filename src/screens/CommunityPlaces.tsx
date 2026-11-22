@@ -109,7 +109,7 @@ export default function CommunityPlaces() {
 
       <div className="px-5 pt-4 pb-24 animate-fade-in">
         <p className="text-sm text-charcoal-muted">
-          Discover 100% vegan places where the community can eat, meet, and connect.
+          Discover vegan and vegetarian places where the community can eat, meet, and connect.
         </p>
 
         {/* Place suggestion entry point — placed at the top so it stays
@@ -122,7 +122,7 @@ export default function CommunityPlaces() {
             Know a vegan place?
           </h2>
           <p className="mt-1 text-sm text-charcoal-muted">
-            Suggest a 100% vegan place for the VeggieMeet community.
+            Suggest a vegan or vegetarian place for the VeggieMeet community.
           </p>
           <Link
             to="/community/places/suggest"
@@ -192,7 +192,7 @@ export default function CommunityPlaces() {
         ) : all.length === 0 ? (
           <EmptyBlock
             title="No Community Places here yet"
-            body="We’re carefully verifying 100% vegan places before adding them to VeggieMeet."
+            body="We’re carefully verifying vegan and vegetarian places before adding them to VeggieMeet."
           />
         ) : visible.length === 0 ? (
           <EmptyBlock

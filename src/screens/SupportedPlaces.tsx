@@ -58,7 +58,7 @@ export default function SupportedPlaces() {
 
       <div className="px-5 pt-4 pb-24 animate-fade-in">
         <p className="text-sm text-charcoal-muted">
-          Your verified visits to 100% vegan Community Places.
+          Your verified visits to Community Places.
         </p>
 
         {query.isPending ? (

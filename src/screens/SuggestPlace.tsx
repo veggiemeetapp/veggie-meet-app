@@ -127,7 +127,7 @@ export default function SuggestPlace() {
     else if (!/^https?:\/\/\S+\.\S+/i.test(officialSourceUrl.trim()))
       next.officialSourceUrl = "Links must start with http:// or https://.";
     if (!veganReason.trim())
-      next.veganReason = "Please tell us why this place is 100% vegan.";
+      next.veganReason = "Please tell us why this place is vegan or vegetarian.";
     return next;
   }
 
@@ -266,7 +266,7 @@ export default function SuggestPlace() {
       <div className="px-5 pt-4 pb-28 animate-fade-in">
         <div className="mx-auto w-full max-w-xl">
           <p className="text-sm text-charcoal-muted">
-            Share a place you believe is 100% vegan. Every suggestion is reviewed before it appears
+            Share a vegan or vegetarian place you love. Every suggestion is reviewed before it appears
             in VeggieMeet.
           </p>
 
@@ -384,7 +384,7 @@ export default function SuggestPlace() {
 
             <Field
               id="vegan-reason"
-              label="Why is this place 100% vegan?"
+              label="Why is this place vegan or vegetarian?"
               required
               error={errors.veganReason}
             >
@@ -462,7 +462,7 @@ export default function SuggestPlace() {
               )}
             </Button>
             <p className="text-xs text-charcoal-muted text-center">
-              Suggesting a place does not publish it. Only 100% vegan places qualify.
+              Suggesting a place does not publish it. Only verified vegan or vegetarian places qualify.
             </p>
           </form>
         </div>

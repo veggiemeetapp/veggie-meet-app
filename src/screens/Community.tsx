@@ -219,7 +219,7 @@ export default function Community() {
             <HScrollSkeleton />
           ) : (placesQuery.data ?? []).length === 0 ? (
             <EmptyRow
-              message={`No verified vegan places in ${cityLabel} yet. Suggest one you love and we’ll verify it.`}
+              message={`No verified veggie places in ${cityLabel} yet. Suggest one you love and we’ll verify it.`}
               actionLabel="Suggest a place"
               actionTo="/community/places/suggest"
             />

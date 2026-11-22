@@ -91,7 +91,7 @@ export function CommunityPlacePicker({
           No Community Places available yet
         </p>
         <p className="mt-1 text-xs text-charcoal-muted">
-          Choose a custom location, or suggest a 100% vegan place for review.
+          Choose a custom location, or suggest a veggie place for review.
         </p>
         <div className="mt-3 flex flex-col sm:flex-row gap-2 justify-center">
           <button
@@ -116,7 +116,7 @@ export function CommunityPlacePicker({
   return (
     <div className="space-y-3 min-w-0">
       <p className="text-xs text-charcoal-muted">
-        Meet at a verified 100% vegan place in the VeggieMeet community.
+        Meet at a verified veggie-friendly place in the VeggieMeet community.
       </p>
 
       <div>
