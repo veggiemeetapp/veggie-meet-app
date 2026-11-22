@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateBadges,
+  formatArrival,
   groupStickersByCity,
   levelForPoints,
   nextStickerThreshold,
@@ -144,5 +145,16 @@ describe("groupStickersByCity", () => {
     ]);
     expect(groups.map((g) => g.city)).toEqual(["Da Nang", "Hoi An", "Other places"]);
     expect(groups[0].stickers).toHaveLength(2);
+  });
+});
+
+describe("formatArrival", () => {
+  const now = new Date("2026-11-22T10:00:00Z");
+  it("formats minutes, hours and days", () => {
+    expect(formatArrival("2026-11-22T10:00:30Z", now)).toBe("any moment now");
+    expect(formatArrival("2026-11-22T10:25:00Z", now)).toBe("in 25 min");
+    expect(formatArrival("2026-11-22T11:20:00Z", now)).toBe("in 1h 20m");
+    expect(formatArrival("2026-11-22T13:00:00Z", now)).toBe("in 3h");
+    expect(formatArrival("2026-11-25T10:00:00Z", now)).toBe("in 3 days");
   });
 });

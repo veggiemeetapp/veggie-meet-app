@@ -19,7 +19,7 @@ screens are not modified; existing screens only gain a new entry point or sectio
 
 ## 1. Place stickers
 
-- One sticker per Community Place. Earned on the first verified visit (check-in or an attended meetup held there).
+- One sticker per Community Place. Earned on the first verified visit. Correction 2026-11-22: since migration 2026-08-07 `_legit_place_supports` counts GPS place check-ins only; meetup check-ins are honour based and do not count. The Meetup "I'm here" button therefore also attempts the place check-in, and Collection lists "Waiting for you" stickers until the member checks in at the place.
 - Levels from total visits: 1 visit = level 1, 3 visits = level 2, 10 visits = level 3. Rim colour changes per level (STIKKA "rim shows how many times you've been").
 - Artwork is generated, not drawn: emoji by place category (restaurant 🍜, cafe ☕, park 🌳, market 🧺, studio 🧘, venue 🎪), background hue hashed from the place id, place name underneath. Rendered as an SVG component, so it works on web and iOS without assets.
 - "Not collected yet": greyed stickers for verified places in the member's home city, so there is always a next place to try.

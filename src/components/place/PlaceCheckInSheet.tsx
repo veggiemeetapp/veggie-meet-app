@@ -59,22 +59,22 @@ const ERROR_COPY: Record<string, { title: string; body: string; action: string }
   },
   outside_radius: {
     title: "You're not close enough yet",
-    body: "Check in when you arrive at the place.",
+    body: "Verify your visit when you arrive at the place.",
     action: "Try Again",
   },
   already_checked_in: {
-    title: "You're already checked in",
+    title: "Visit already verified",
     body: "This visit has already been recorded.",
     action: "Done",
   },
   cooldown_active: {
-    title: "You're already checked in",
+    title: "Visit already verified",
     body: "This visit has already been recorded.",
     action: "Done",
   },
   location_permission_denied: {
     title: "Location access is off",
-    body: "Allow location access in your browser settings to check in.",
+    body: "Allow location access in your browser settings to verify a visit.",
     action: "Got It",
   },
   location_unavailable: {
@@ -94,11 +94,11 @@ const ERROR_COPY: Record<string, { title: string; body: string; action: string }
   },
   place_unavailable: {
     title: "This place isn't available",
-    body: "You can't check in here right now.",
+    body: "You can't verify a visit here right now.",
     action: "Got It",
   },
   not_authenticated: {
-    title: "Sign in to check in",
+    title: "Sign in to verify a visit",
     body: "You need to be signed in to record a visit.",
     action: "Got It",
   },
@@ -203,18 +203,19 @@ export function PlaceCheckInSheet({
                 <MapPin className="w-7 h-7" aria-hidden />
               </div>
               <DialogTitle className="text-center text-xl">
-                Check in to this place?
+                Verify your visit?
               </DialogTitle>
               {/* WO-095A DEF-095A-04: the sheet explained the location use but
                   never what Check In is *for* — supporting the place. */}
               <DialogDescription className="text-center">
-                Checking in records your support for this place. VeggieMeet uses your
-                location once to confirm you're here, and never saves it.
+                Verifying a visit records your support for this place and adds its sticker
+                to your collection. VeggieMeet uses your location once to confirm you're
+                here, and never saves it.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex-col gap-2 sm:flex-col">
               <PrimaryButton fullWidth onClick={run}>
-                Check In
+                Verify visit
               </PrimaryButton>
               <SecondaryButton fullWidth onClick={() => onOpenChange(false)}>
                 Not Now

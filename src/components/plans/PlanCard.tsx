@@ -151,7 +151,7 @@ export function PlanCard({ plan, onChanged, variant = "default" }: Props) {
   const primaryLabel = ((): string => {
     switch (plan.primary_action) {
       case "check_in":
-        return "Check In";
+        return "I'm here";
       case "open_chat":
         return "Open Chat";
       case "manage_meetup":

@@ -83,7 +83,7 @@ export async function checkInToMeetup(meetupId: string): Promise<CheckInResult> 
 export function checkInBlockedCopy(reason: CheckInBlockedReason): string {
   switch (reason) {
     case "too_early":
-      return "Check-in opens an hour before the Meetup starts.";
+      return "“I'm here” opens an hour before the Meetup starts.";
     case "closed":
       return "Check-in for this Meetup has closed.";
     case "cancelled":

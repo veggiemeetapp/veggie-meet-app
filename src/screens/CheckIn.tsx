@@ -425,7 +425,7 @@ function errorCopy(code: string, fallback: string) {
     case "cancelled":
       return "This Meetup was cancelled.";
     case "too_early":
-      return "Check-in opens closer to the Meetup.";
+      return "QR codes open closer to the Meetup.";
     case "closed":
       return "Check-in for this Meetup has ended.";
     case "blocked":

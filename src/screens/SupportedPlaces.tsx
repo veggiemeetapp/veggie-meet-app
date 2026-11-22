@@ -121,8 +121,8 @@ export default function SupportedPlaces() {
                   No supported places yet
                 </h2>
                 <p className="mt-1 text-sm text-charcoal-muted max-w-sm mx-auto">
-                  Check in when you visit a Community Place, or attend a meetup hosted
-                  there.
+                  Verify a visit on a Community Place page while you're there. Location is
+                  used once and never saved.
                 </p>
                 <div className="mt-5 flex justify-center">
                   <Link

@@ -46,9 +46,9 @@ export async function fetchMySupportedPlaces(): Promise<SupportedPlacesResult> {
 }
 
 export const SUPPORT_SOURCE_LABEL: Record<SupportSource, string> = {
-  direct_place_visit: "Checked in here",
+  direct_place_visit: "Visit verified here",
   meetup_attendance: "Attended a meetup here",
-  both: "Checked in and attended a meetup",
+  both: "Visit verified and attended a meetup",
 };
 
 /** Today / Yesterday / Aug 1, 2026 — local timezone, no times. */

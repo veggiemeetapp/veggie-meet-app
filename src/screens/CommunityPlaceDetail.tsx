@@ -1,5 +1,5 @@
 import { safeBack } from "@/lib/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -49,6 +49,10 @@ export default function CommunityPlaceDetail() {
 
   const [checkInOpen, setCheckInOpen] = useState(false);
   const testMode = useTestMode();
+  // `/place/:id?checkin=1` (from Collection "collect your sticker") opens the
+  // check-in sheet as soon as the place is loaded and check-in is available.
+  const wantsCheckIn = search.get("checkin") === "1";
+  const autoOpened = useRef(false);
   const [shareMessage, setShareMessage] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -111,6 +115,11 @@ export default function CommunityPlaceDetail() {
   const isOperational = maintenanceStatus === "operational";
   const canCheckIn = mySupport.check_in_available;
   const canHost = data!.can_host_here;
+  if (wantsCheckIn && canCheckIn && !autoOpened.current) {
+    autoOpened.current = true;
+    // Defer so the sheet mounts after this render commits.
+    setTimeout(() => setCheckInOpen(true), 0);
+  }
 
   const directionsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${place.name} ${place.address ?? ""}`,
@@ -218,7 +227,7 @@ export default function CommunityPlaceDetail() {
               {statusBanner.title}
             </p>
             <p className="mt-1 text-xs text-charcoal-muted">
-              Hosting and check-ins are paused here for now.
+              Hosting and visit verification are paused here for now.
             </p>
           </div>
         </div>
@@ -285,8 +294,8 @@ export default function CommunityPlaceDetail() {
             {mySupport.counts_toward_supported_places
               ? "This place counts toward your Community Places Supported."
               : canCheckIn
-                ? "Check in when you are at this place to add it to your Community Places Supported."
-                : "Check-ins are unavailable here right now."}
+                ? "Verify a visit when you are at this place to add it to your Community Places Supported and collect its sticker."
+                : "Visit verification is unavailable here right now."}
           </p>
           {mySupport.counts_toward_supported_places && (
             <button
@@ -455,10 +464,10 @@ export default function CommunityPlaceDetail() {
               {mySupport.in_cooldown ? (
                 <span className="truncate inline-flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden />
-                  Checked In
+                  Visit verified
                 </span>
               ) : (
-                <span className="truncate">Check In</span>
+                <span className="truncate">Verify visit</span>
               )}
             </SecondaryButton>
           )}
@@ -466,9 +475,9 @@ export default function CommunityPlaceDetail() {
             <SecondaryButton
               className="flex-1 min-w-0 px-4 text-[15px]"
               disabled
-              title="Check-ins are paused while this place isn't operational"
+              title="Visit verification is paused while this place isn't operational"
             >
-              <span className="truncate">Check-in unavailable</span>
+              <span className="truncate">Verification unavailable</span>
             </SecondaryButton>
           )}
           <PrimaryButton

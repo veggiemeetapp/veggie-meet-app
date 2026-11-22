@@ -203,6 +203,19 @@ export function mockMyCollection(): Collection {
     cards: state.cards.map(strip),
     stats: stats(),
     evidence: evidence(),
+    pending: [
+      {
+        place_id: UNCOLLECTED[0].place_id,
+        name: UNCOLLECTED[0].name,
+        category: UNCOLLECTED[0].category,
+        city_name: UNCOLLECTED[0].city_name,
+        meetup_id: "00000000-0000-4000-8000-0000000000e9",
+        meetup_title: "Plant-based brunch (happening now)",
+        ends_at: new Date(Date.now() + 80 * 60_000).toISOString(),
+        claim_until: new Date(Date.now() + 320 * 60_000).toISOString(),
+        visits_so_far: 0,
+      },
+    ],
   };
 }
 
@@ -215,6 +228,7 @@ export function mockPublicCollection(profileId: string): Collection {
     cards: state.cards.filter((c) => c.is_public).map(strip),
     stats: stats(),
     evidence: null,
+    pending: [],
   };
 }
 

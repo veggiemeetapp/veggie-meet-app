@@ -14,6 +14,7 @@ import { BadgeTile } from "@/components/collection/BadgeTile";
 import { BadgeDetailSheet } from "@/components/collection/BadgeDetailSheet";
 import {
   evaluateBadges,
+  formatArrival,
   type BadgeProgress,
   groupStickersByCity,
   nextStickerThreshold,
@@ -159,8 +160,8 @@ export default function Collection() {
                 </div>
                 <p>
                   10 per place you support, 3 per return visit, 15 per meetup you attend, 25 per meetup you host
-                  that people show up to, and 10 per verified connection. Visits count when you check in at the place
-                  or attend a meetup held there.
+                  that people show up to, and 10 per verified connection. A visit counts when you verify it on the place page
+                  (location on, within 150 m), the same rule as Community Impact.
                 </p>
               </Card>
             )}
@@ -195,6 +196,8 @@ function StickersTab({
   firstName: string;
   onPlace: (placeId: string) => void;
 }) {
+  const navigate = useNavigate();
+  const onCollect = (placeId: string) => navigate(`/place/${placeId}?checkin=1&from=collection`);
   const groups = useMemo(() => groupStickersByCity(data.stickers), [data.stickers]);
 
   return (
@@ -205,7 +208,7 @@ function StickersTab({
           title={isSelf ? "No stickers yet" : `${firstName} hasn't collected stickers yet`}
           description={
             isSelf
-              ? "Check in at a veggie place, or attend a meetup held there, to peel your first sticker."
+              ? "Verify a visit at a veggie place (location on, within 150 m) to peel your first sticker."
               : undefined
           }
         />
@@ -222,6 +225,41 @@ function StickersTab({
             </div>
           </section>
         ))
+      )}
+
+      {isSelf && data.pending.length > 0 && (
+        <section aria-label="Stickers waiting for you">
+          <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-1">
+            Waiting for you
+          </h3>
+          <p className="px-1 text-xs text-charcoal-muted mb-2">
+            You said “I'm here” at a meetup at these places. Stickers need a verified visit, so tap Collect while
+            you're there.
+          </p>
+          <ul className="space-y-2">
+            {data.pending.map((p) => (
+              <li key={`${p.place_id}-${p.meetup_id}`}>
+                <button
+                  type="button"
+                  onClick={() => onCollect(p.place_id)}
+                  className="w-full flex items-center gap-3 rounded-card border border-dashed border-border-strong p-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <PlaceSticker placeId={p.place_id} name={p.name} category={p.category} level={0} muted size={48} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-charcoal truncate">{p.name}</div>
+                    <div className="text-xs text-charcoal-muted truncate">
+                      {p.meetup_title} · {new Date(p.ends_at).getTime() > Date.now() ? `ends ${formatArrival(p.ends_at)}` : "ended"}
+                    </div>
+                    <div className="text-[11px] text-primary">
+                      {p.visits_so_far > 0 ? `Would be visit ${p.visits_so_far + 1}` : "Would be your first visit here"}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-xs font-semibold text-primary">Collect</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {isSelf && data.uncollected.length > 0 && (

@@ -88,7 +88,7 @@ function BadgeEvidence({
   switch (badge.key) {
     case "first_bite":
     case "explorer": {
-      if (data.stickers.length === 0) return <Hint text={isSelf ? "Check in at a veggie place, or attend a meetup held there, to collect your first sticker." : "No stickers yet."} />;
+      if (data.stickers.length === 0) return <Hint text={isSelf ? "Verify a visit at a veggie place while you're there to collect your first sticker." : "No stickers yet."} />;
       const list = [...data.stickers].sort((a, b) => (a.first_visit_at ?? "").localeCompare(b.first_visit_at ?? ""));
       return (
         <ul className="space-y-2">
@@ -106,7 +106,7 @@ function BadgeEvidence({
       );
     }
     case "regular": {
-      if (data.stickers.length === 0) return <Hint text="Visit the same place 10 times. Check-ins and meetups there both count." />;
+      if (data.stickers.length === 0) return <Hint text="Verify 10 visits at the same place." />;
       const list = [...data.stickers].sort((a, b) => b.visits - a.visits).slice(0, 10);
       return (
         <ul className="space-y-2">
@@ -146,7 +146,7 @@ function BadgeEvidence({
     }
     case "social_butterfly": {
       if (!isSelf || !ev) return <Private count={data.stats.verified_connections} noun="verified connection" />;
-      if (ev.connections.length === 0) return <Hint text="At a meetup, open “Check in with Veggies” and scan each other's QR with someone you're connected to." />;
+      if (ev.connections.length === 0) return <Hint text="At a meetup, open “Meet & verify” and scan each other's QR with someone you're connected to." />;
       return (
         <ul className="space-y-2">
           {ev.connections.map((c, i) => (

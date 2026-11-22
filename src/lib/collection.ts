@@ -105,6 +105,25 @@ export interface CollectionEvidence {
   attended: AttendedEvidence[];
 }
 
+/**
+ * A sticker the member can still collect: they checked in to a Meetup held
+ * at this place but have not done the GPS place check-in yet. Only place
+ * check-ins count as visits (same rule as Community Impact). Own view only.
+ */
+export interface PendingSticker {
+  place_id: string;
+  name: string;
+  category: PlaceCategory | string;
+  city_name: string | null;
+  meetup_id: string;
+  meetup_title: string;
+  /** ISO timestamp when the Meetup ends. */
+  ends_at: string;
+  /** ISO timestamp until which the hint is shown (meetup end + 4 h). */
+  claim_until: string;
+  visits_so_far: number;
+}
+
 export interface Collection {
   available: boolean;
   profile_id: string;
@@ -113,6 +132,7 @@ export interface Collection {
   cards: MemoryCardSummary[];
   stats: CollectionStats;
   evidence: CollectionEvidence | null;
+  pending: PendingSticker[];
 }
 
 export interface PlaceStickerState {
@@ -176,7 +196,20 @@ function normalizeCollection(raw: Partial<Collection> | null, profileId: string)
           attended: raw.evidence.attended ?? [],
         }
       : null,
+    pending: raw?.pending ?? [],
   };
+}
+
+/** "in 1h 20m" / "in 3 days" / "any moment now" for a pending sticker. */
+export function formatArrival(endsAt: string, now: Date = new Date()): string {
+  const ms = new Date(endsAt).getTime() - now.getTime();
+  if (Number.isNaN(ms) || ms <= 60_000) return "any moment now";
+  const mins = Math.round(ms / 60_000);
+  if (mins < 60) return `in ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `in ${hours}h${mins % 60 ? ` ${mins % 60}m` : ""}`;
+  const days = Math.round(hours / 24);
+  return `in ${days} ${days === 1 ? "day" : "days"}`;
 }
 
 /* ------------------------------------------------------------------ *

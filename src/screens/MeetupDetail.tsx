@@ -356,6 +356,18 @@ export default function MeetupDetail() {
                 <Check className="w-4 h-4" />
                 You're hosting this meetup
               </div>
+              {/* Collection (2026-11-22): hosts check in too, so their own
+                  attendance counts and the place sticker can be collected. */}
+              {isRealMeetup && profile?.id && (
+                <MeetupCheckInButton
+                  meetupId={meetup.id}
+                  profileId={profile.id}
+                  startsAt={`${meetup.date}T${meetup.startTime}`}
+                  endsAt={`${meetup.date}T${meetup.endTime ?? meetup.startTime}`}
+                  communityPlaceId={meetup.communityPlaceId || null}
+                  placeName={meetup.location?.locationName ?? null}
+                />
+              )}
               {meetup.chatId ? (
                 <Link to={`/chat/${meetup.chatId}`}>
                   <PrimaryButton fullWidth>
@@ -372,7 +384,7 @@ export default function MeetupDetail() {
                 to={`/checkin/${meetup.id}`}
                 className="text-center text-sm font-semibold text-primary py-1 inline-flex items-center justify-center gap-1"
               >
-                <QrCode className="w-4 h-4" /> Check in with Veggies
+                <QrCode className="w-4 h-4" /> Meet & verify
               </Link>
               {/* WO-117: hosts export their own Meetup without RSVPing. */}
               <AddToGoogleCalendarButton meetup={meetup} surface="meetup_detail" />
@@ -398,6 +410,8 @@ export default function MeetupDetail() {
                   profileId={profile.id}
                   startsAt={`${meetup.date}T${meetup.startTime}`}
                   endsAt={`${meetup.date}T${meetup.endTime ?? meetup.startTime}`}
+                  communityPlaceId={meetup.communityPlaceId || null}
+                  placeName={meetup.location?.locationName ?? null}
                 />
               )}
 
@@ -418,7 +432,7 @@ export default function MeetupDetail() {
                 to={`/checkin/${meetup.id}`}
                 className="text-center text-sm font-semibold text-primary py-1 inline-flex items-center justify-center gap-1"
               >
-                <QrCode className="w-4 h-4" /> Check in with Veggies
+                <QrCode className="w-4 h-4" /> Meet & verify
               </Link>
               {/* WO-117: persistent calendar export for already-joined members. */}
               <AddToGoogleCalendarButton meetup={meetup} surface="meetup_detail" />

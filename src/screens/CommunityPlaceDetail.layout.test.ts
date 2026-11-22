@@ -28,9 +28,9 @@ describe("Community Place sticky action bar", () => {
   it("keeps all three check-in states inside the same sticky container geometry", () => {
     // normal, already-checked-in (cooldown) and non-operational states share the
     // one flex row, so none of them can introduce its own spacing.
-    expect(src).toContain("Check In");
-    expect(src).toContain("Checked In");
-    expect(src).toContain("Check-in unavailable");
+    expect(src).toContain("Verify visit");
+    expect(src).toContain("Visit verified");
+    expect(src).toContain("Verification unavailable");
     expect(src).toMatch(/flex gap-2/);
   });
 
