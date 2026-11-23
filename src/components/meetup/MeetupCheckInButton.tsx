@@ -7,6 +7,8 @@ import { checkInBlockedCopy, checkInToMeetup, fetchMyAttendance } from "@/lib/me
 import { checkInToCommunityPlace, type CheckInReason } from "@/lib/placeVisits";
 import { memberSafeMessage } from "@/lib/errors";
 import { logAnalyticsEvent } from "@/lib/analytics";
+import { fireConfetti } from "@/lib/celebrations";
+import { useState } from "react";
 
 /**
  * WO-063 — self check-in for a member who has joined the Meetup.
@@ -69,6 +71,7 @@ export function MeetupCheckInButton({
           verification_method: "device_location",
           is_first_visit_to_place: !!res.isFirstVisitToPlace,
         });
+        fireConfetti({ origin: { x: 0.5, y: 0.5 }, count: 60 });
         toast.success(
           res.isFirstVisitToPlace
             ? `Sticker collected: ${placeName ?? "this place"} is now in your collection.`
@@ -91,6 +94,7 @@ export function MeetupCheckInButton({
     },
   });
 
+  const [justArrived, setJustArrived] = useState(false);
   const mutation = useMutation({
     mutationFn: () => checkInToMeetup(meetupId),
     onSuccess: (res) => {
@@ -99,6 +103,7 @@ export function MeetupCheckInButton({
       } else if (res.result === "already_checked_in") {
         toast.success("You're already checked in.");
       } else {
+        setJustArrived(true);
         toast.success("You're marked as here for this Meetup.");
       }
       qc.invalidateQueries({ queryKey: ["my-attendance", meetupId] });
@@ -145,10 +150,13 @@ export function MeetupCheckInButton({
     return (
       <div className="space-y-2">
         <div
-          className="flex items-center justify-center gap-2 text-sm font-semibold text-primary"
+          className={`flex items-center justify-center gap-2 text-sm font-semibold text-primary ${justArrived ? "motion-safe:animate-pop" : ""}`}
           aria-live="polite"
         >
-          <CheckCircle2 className="w-4 h-4" />
+          <span className="relative inline-flex">
+            {justArrived && <span className="absolute inset-0 rounded-full bg-primary/40 motion-safe:animate-ring-ping" aria-hidden />}
+            <CheckCircle2 className="w-4 h-4 relative" />
+          </span>
           You're here
         </div>
         {stickerRow}

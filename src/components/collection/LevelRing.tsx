@@ -1,7 +1,14 @@
+import { useEffect, useState } from "react";
 import type { ProfileLevel } from "@/lib/collection";
+import { reducedMotion } from "@/lib/celebrations";
 import { cn } from "@/lib/utils";
 
-/** Circular progress ring with the level number inside. */
+/**
+ * Circular progress ring with the level number inside. The arc draws from 0
+ * to the current progress on mount and glides between values afterwards
+ * (CSS transition on the dash offset); reduced motion renders the final
+ * state immediately.
+ */
 export function LevelRing({
   level,
   size = 72,
@@ -14,7 +21,13 @@ export function LevelRing({
   const stroke = 6;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const offset = c * (1 - Math.min(1, Math.max(0, level.progress)));
+  const target = Math.min(1, Math.max(0, level.progress));
+  const [drawn, setDrawn] = useState(reducedMotion() ? target : 0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setDrawn(target));
+    return () => cancelAnimationFrame(id);
+  }, [target]);
+  const offset = c * (1 - drawn);
   return (
     <svg
       width={size}
@@ -36,7 +49,7 @@ export function LevelRing({
         strokeDasharray={c}
         strokeDashoffset={offset}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        className="motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700"
+        className="motion-safe:transition-[stroke-dashoffset] motion-safe:duration-[900ms] motion-safe:ease-out"
       />
       <text
         x="50%"

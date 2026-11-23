@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,10 @@ import { useMyCollection } from "@/hooks/useCollection";
 import { profileLevel, type Collection as CollectionData } from "@/lib/collection";
 import { LevelRing } from "@/components/collection/LevelRing";
 import { CollectionPanel } from "@/components/collection/CollectionPanel";
+import { SegmentedTabs } from "@/components/app/SegmentedTabs";
+import { Stagger } from "@/components/app/Stagger";
+import { AnimatedNumber } from "@/components/app/AnimatedNumber";
+import { fireConfetti, takeLevelUp } from "@/lib/celebrations";
 import { TestModeToggle } from "@/components/app/TestMode";
 import {
   AppHeader,
@@ -268,22 +272,22 @@ export default function You() {
           <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
             My meetups
           </h3>
-          <div className="flex p-1 bg-muted rounded-full mb-3">
-            <TabButton active={tab === "hosting"} onClick={() => setTab("hosting")}>
-              Hosting
-            </TabButton>
-            <TabButton active={tab === "going"} onClick={() => setTab("going")}>
-              Going
-            </TabButton>
-            <TabButton active={tab === "past"} onClick={() => setTab("past")}>
-              Past
-            </TabButton>
-          </div>
+          <SegmentedTabs<Tab>
+            className="mb-3"
+            ariaLabel="My meetups"
+            items={[
+              { key: "hosting", label: "Hosting" },
+              { key: "going", label: "Going" },
+              { key: "past", label: "Past" },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
 
           {summaryQuery.isError ? (
             <SummaryError onRetry={() => summaryQuery.refetch()} />
           ) : (
-            <>
+            <div key={tab} className="motion-safe:animate-tab-in">
               {tab === "hosting" && (
                 <MeetupList
                   loading={summaryQuery.isLoading}
@@ -324,7 +328,7 @@ export default function You() {
                   onViewAll={() => navigate("/plans")}
                 />
               )}
-            </>
+            </div>
           )}
         </section>
 
@@ -423,15 +427,38 @@ function LevelImpactCard({
   meetupsHosted: number;
   onViewImpact: () => void;
 }) {
-  const level = collection ? profileLevel(collection.stickers, collection.stats) : null;
+  const level = useMemo(
+    () => (collection ? profileLevel(collection.stickers, collection.stats) : null),
+    [collection],
+  );
   const zero = !impactLoading && veggiesMet === 0 && placesSupported === 0 && meetupsHosted === 0;
+  // Level-up moment: once per device when the level is higher than last seen.
+  const [celebrate, setCelebrate] = useState(false);
+  useEffect(() => {
+    if (!collection || !level) return;
+    if (takeLevelUp(collection.profile_id, level.level)) {
+      setCelebrate(true);
+      fireConfetti({ origin: { x: 0.5, y: 0.3 }, count: 90 });
+      toast.success(`Level ${level.level} · ${level.name}`, {
+        description: "You levelled up. Keep collecting!",
+        duration: 6000,
+      });
+      const t = window.setTimeout(() => setCelebrate(false), 1200);
+      return () => window.clearTimeout(t);
+    }
+  }, [collection, level]);
   return (
     <section aria-labelledby="level-impact-title">
       <Card padding="lg" className="space-y-5">
         {/* Level */}
         <div className="flex items-center gap-4">
           {level ? (
-            <LevelRing level={level} size={64} />
+            <div className={cn("relative", celebrate && "motion-safe:animate-pop")}>
+              {celebrate && (
+                <span className="absolute inset-0 rounded-full bg-primary/30 motion-safe:animate-ring-ping" aria-hidden />
+              )}
+              <LevelRing level={level} size={64} />
+            </div>
           ) : (
             <div className={cn("w-16 h-16 rounded-full bg-muted", collectionLoading && "animate-pulse")} aria-hidden />
           )}
@@ -443,11 +470,14 @@ function LevelImpactCard({
               {level ? level.name : collectionLoading ? "…" : "Sprout"}
             </h3>
             <div className="mt-1 text-xs text-charcoal-muted">
-              {level
-                ? level.nextMin
-                  ? `${level.points} pts · ${level.nextMin - level.points} to level ${level.level + 1}`
-                  : `${level.points} pts · top level`
-                : "Earn points by visiting places, joining meetups and meeting Veggies."}
+              {level ? (
+                <>
+                  <AnimatedNumber value={level.points} /> pts ·{" "}
+                  {level.nextMin ? `${level.nextMin - level.points} to level ${level.level + 1}` : "top level"}
+                </>
+              ) : (
+                "Earn points by visiting places, joining meetups and meeting Veggies."
+              )}
             </div>
             {level && (
               <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
@@ -513,7 +543,7 @@ function ImpactMetric({
   return (
     <div className="rounded-card bg-soft-green/60 p-5">
       <div className="text-3xl font-bold text-charcoal tabular-nums leading-none">
-        {value}
+        <AnimatedNumber value={value} />
       </div>
       {/* DEF-092A-10: in the 3-up grid the flex row squeezed the 16px icons to a
           1-2px sliver, which read as a broken glyph. The icon keeps its size and
@@ -524,30 +554,6 @@ function ImpactMetric({
       </div>
 
     </div>
-  );
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex-1 h-9 rounded-full text-sm font-semibold transition-colors",
-        active
-          ? "bg-card text-charcoal shadow-sm"
-          : "text-charcoal-muted hover:text-charcoal"
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -604,7 +610,7 @@ function MeetupList({
     );
   }
   return (
-    <div className="space-y-3">
+    <Stagger className="space-y-3">
       {cards.map((c) => (
         <div key={c.meetup_id}>
           <div className="mb-1 px-1 flex items-center gap-1 text-[11px] font-medium text-charcoal-muted">
@@ -614,7 +620,7 @@ function MeetupList({
           <MeetupCard meetup={toMeetupCardShape(c, profileId)} role={role} />
         </div>
       ))}
-    </div>
+    </Stagger>
   );
 }
 

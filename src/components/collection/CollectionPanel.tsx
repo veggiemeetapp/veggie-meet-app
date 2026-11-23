@@ -1,7 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Award, Camera, Sparkles, Sticker } from "lucide-react";
 import { Card, EmptyState } from "@/components/app";
+import { SegmentedTabs } from "@/components/app/SegmentedTabs";
+import { Stagger } from "@/components/app/Stagger";
+import { AnimatedNumber } from "@/components/app/AnimatedNumber";
+import { takeNewlyEarnedBadges } from "@/lib/celebrations";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useMemoryCard } from "@/hooks/useCollection";
 import { PlaceCoverProvider, PlaceSticker } from "@/components/collection/PlaceSticker";
@@ -18,7 +22,6 @@ import {
   type Collection as CollectionData,
   type PlaceSticker as PlaceStickerData,
 } from "@/lib/collection";
-import { cn } from "@/lib/utils";
 
 type Tab = "stickers" | "cards" | "badges";
 
@@ -50,6 +53,14 @@ export function CollectionPanel({
 
   const badges = useMemo(() => evaluateBadges(data.stickers, data.stats), [data]);
   const earnedCount = badges.filter((b) => b.earned).length;
+  // Badges earned since the member last looked (own view only, per device).
+  const [newBadges, setNewBadges] = useState<Set<string>>(() => new Set());
+  const earnedKeys = badges.filter((b) => b.earned).map((b) => b.key).join(",");
+  useEffect(() => {
+    if (!isSelf || !data.profile_id) return;
+    const fresh = takeNewlyEarnedBadges(data.profile_id, earnedKeys ? earnedKeys.split(",") : []);
+    if (fresh.length) setNewBadges((prev) => new Set([...prev, ...fresh]));
+  }, [isSelf, data.profile_id, earnedKeys]);
   const coverIds = useMemo(
     () => [...data.stickers.map((x) => x.place_id), ...data.uncollected.map((x) => x.place_id), ...data.pending.map((x) => x.place_id)],
     [data],
@@ -66,24 +77,34 @@ export function CollectionPanel({
           </div>
         )}
 
-        <div className="flex bg-muted rounded-full p-1" role="tablist">
-          <TabButton active={tab === "stickers"} onClick={() => setTab("stickers")}>Stickers</TabButton>
-          <TabButton active={tab === "cards"} onClick={() => setTab("cards")}>Cards</TabButton>
-          <TabButton active={tab === "badges"} onClick={() => setTab("badges")}>Badges</TabButton>
-        </div>
+        <SegmentedTabs<Tab>
+          ariaLabel="Collection sections"
+          items={[
+            { key: "stickers", label: "Stickers" },
+            { key: "cards", label: "Cards" },
+            { key: "badges", label: newBadges.size ? `Badges · ${newBadges.size} new` : "Badges" },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
 
-        {tab === "stickers" && (
-          <StickersTab data={data} isSelf={isSelf} firstName={firstName} onPlace={(pid) => navigate(`/place/${pid}`)} />
-        )}
-        {tab === "cards" && <CardsTab data={data} isSelf={isSelf} firstName={firstName} onOpen={setOpenCard} />}
-        {tab === "badges" && (
-          <div className="space-y-2">
-            <p className="px-1 text-xs text-charcoal-muted">Tap a badge to see what counts toward it.</p>
-            {badges.map((b) => (
-              <BadgeTile key={b.key} badge={b} onClick={() => setOpenBadge(b)} />
-            ))}
-          </div>
-        )}
+        {/* key={tab} remounts the body so the tab-in animation plays on every switch */}
+        <div key={tab} className="motion-safe:animate-tab-in">
+          {tab === "stickers" && (
+            <StickersTab data={data} isSelf={isSelf} firstName={firstName} onPlace={(pid) => navigate(`/place/${pid}`)} />
+          )}
+          {tab === "cards" && <CardsTab data={data} isSelf={isSelf} firstName={firstName} onOpen={setOpenCard} />}
+          {tab === "badges" && (
+            <div className="space-y-2">
+              <p className="px-1 text-xs text-charcoal-muted">Tap a badge to see what counts toward it.</p>
+              <Stagger className="space-y-2">
+                {badges.map((b) => (
+                  <BadgeTile key={b.key} badge={b} isNew={newBadges.has(b.key)} onClick={() => setOpenBadge(b)} />
+                ))}
+              </Stagger>
+            </div>
+          )}
+        </div>
 
         {isSelf && showHowPoints && (
           <Card padding="md" className="text-xs text-charcoal-muted space-y-1">
@@ -144,11 +165,11 @@ function StickersTab({
             <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
               {g.city} · {g.stickers.length}
             </h3>
-            <div className="grid grid-cols-3 gap-3">
+            <Stagger className="grid grid-cols-3 gap-3">
               {g.stickers.map((s) => (
                 <StickerTile key={s.place_id} sticker={s} onClick={() => onPlace(s.place_id)} />
               ))}
-            </div>
+            </Stagger>
           </section>
         ))
       )}
@@ -192,7 +213,7 @@ function StickersTab({
           <p className="px-1 text-xs text-charcoal-muted mb-2">
             Verified places in your city you haven't visited. Tap one to plan your next bite.
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <Stagger className="grid grid-cols-3 gap-3">
             {data.uncollected.map((p) => (
               <button
                 key={p.place_id}
@@ -204,7 +225,7 @@ function StickersTab({
                 <span className="text-[11px] text-charcoal-muted text-center leading-tight line-clamp-2">{p.name}</span>
               </button>
             ))}
-          </div>
+          </Stagger>
         </section>
       )}
     </div>
@@ -253,7 +274,7 @@ function CardsTab({
     );
   }
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <Stagger className="grid grid-cols-2 gap-3">
       {data.cards.map((c) => (
         <MemoryCardFrame
           key={c.id}
@@ -266,7 +287,7 @@ function CardsTab({
           onClick={() => onOpen(c.id)}
         />
       ))}
-    </div>
+    </Stagger>
   );
 }
 
@@ -317,29 +338,12 @@ function MemoryCardDialog({ cardId, onClose }: { cardId: string | null; onClose:
 function Stat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
     <Card variant="metric" padding="sm" className="text-center">
-      <div className="text-xl font-bold text-charcoal tabular-nums leading-none">{value}</div>
+      <div className="text-xl font-bold text-charcoal tabular-nums leading-none"><AnimatedNumber value={value} /></div>
       <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
         {icon}
         {label}
       </div>
     </Card>
-  );
-}
-
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        "flex-1 h-9 rounded-full text-sm font-semibold transition-colors",
-        active ? "bg-card text-charcoal shadow-sm" : "text-charcoal-muted hover:text-charcoal",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

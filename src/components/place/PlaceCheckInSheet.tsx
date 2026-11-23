@@ -19,7 +19,8 @@ import {
 } from "@/lib/placeVisits";
 import { useMyPlaceSticker } from "@/hooks/useCollection";
 import { PlaceSticker } from "@/components/collection/PlaceSticker";
-import { STICKER_LEVEL_LABEL } from "@/lib/collection";
+import { STICKER_LEVEL_LABEL, STICKER_THRESHOLDS, stickerHue } from "@/lib/collection";
+import { fireConfetti, stickerConfettiColors } from "@/lib/celebrations";
 
 /**
  * Collection reward shown after a verified visit: the place's sticker at its
@@ -29,11 +30,18 @@ import { STICKER_LEVEL_LABEL } from "@/lib/collection";
 function StickerReward({ placeId, placeName }: { placeId: string; placeName: string }) {
   const q = useMyPlaceSticker(placeId);
   const s = q.data;
+  const milestone = !!s && s.found && (STICKER_THRESHOLDS as readonly number[]).includes(s.visits);
+  // Confetti once per reveal: first sticker and every level-up.
+  useEffect(() => {
+    if (milestone) fireConfetti({ colors: stickerConfettiColors(stickerHue(placeId)), origin: { x: 0.5, y: 0.4 } });
+  }, [milestone, placeId]);
   if (!s || !s.found) return null;
   const remaining = s.next_level_visits ? s.next_level_visits - s.visits : null;
   return (
-    <div className="mt-3 flex items-center gap-3 rounded-card bg-soft-green/60 p-3" data-testid="sticker-reward">
-      <PlaceSticker placeId={placeId} name={placeName} category={s.category} level={s.level} size={64} />
+    <div className="mt-3 flex items-center gap-3 rounded-card bg-soft-green/60 p-3 motion-safe:animate-rise-in" data-testid="sticker-reward">
+      <div className={milestone ? "motion-safe:animate-sticker-in" : "motion-safe:animate-pop"}>
+        <PlaceSticker placeId={placeId} name={placeName} category={s.category} level={s.level} size={64} />
+      </div>
       <div className="min-w-0 text-left">
         <div className="text-sm font-semibold text-charcoal">
           {s.visits === 1 ? "New sticker collected!" : `Sticker level ${s.level} · ${STICKER_LEVEL_LABEL[s.level]}`}
