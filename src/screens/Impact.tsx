@@ -115,6 +115,27 @@ export default function Impact() {
 
         {tab === "history" && <HistorySection profileId={profile?.id} type={null} title="Your Impact History" />}
         {tab === "veggies" && (
+          <>
+            {/* 2026-11-23: Veggie Network moved here from My Profile. */}
+            <Card
+              interactive
+              padding="md"
+              onClick={() => navigate("/network")}
+              className="flex items-center gap-3"
+              aria-label="Open Veggie Network"
+            >
+              <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-charcoal">Veggie Network</div>
+                <div className="text-xs text-charcoal-muted">Connections and requests across VeggieMeet</div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
+            </Card>
+          </>
+        )}
+        {tab === "veggies" && (
           <HistorySection
             profileId={profile?.id}
             type="verified_connection"

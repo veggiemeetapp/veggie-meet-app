@@ -17,12 +17,11 @@ import {
   Share2,
   Sparkles,
   Users,
-  Plane,
-  Sticker,
 } from "lucide-react";
 import { useMyCollection } from "@/hooks/useCollection";
-import { profileLevel } from "@/lib/collection";
+import { profileLevel, type Collection as CollectionData } from "@/lib/collection";
 import { LevelRing } from "@/components/collection/LevelRing";
+import { CollectionPanel } from "@/components/collection/CollectionPanel";
 import { TestModeToggle } from "@/components/app/TestMode";
 import {
   AppHeader,
@@ -47,7 +46,7 @@ import { isOwner } from "@/lib/placeVerification";
 import { useRealtimeEpoch } from "@/hooks/useRealtimeEpoch";
 
 
-type Tab = "hosting" | "going";
+type Tab = "hosting" | "going" | "past";
 
 export default function You() {
   const navigate = useNavigate();
@@ -77,6 +76,9 @@ export default function You() {
     staleTime: 0,
   });
 
+  // Collection (level, stickers, cards, badges) shown inline on the profile.
+  const collectionQuery = useMyCollection(!!profile?.id);
+
   // WO-101B: owner-only Community Place operations entry point.
   // Resolved from the same server-side owner allowlist used by RequireOwner.
   const ownerQuery = useQuery({
@@ -95,6 +97,7 @@ export default function You() {
     const invalidate = () => {
       qc.invalidateQueries({ queryKey: ["me-impact-overview", profile.id] });
       qc.invalidateQueries({ queryKey: ["my-you-summary", profile.id] });
+      qc.invalidateQueries({ queryKey: ["collection"] });
     };
     const channel = supabase
       .channel(`impact:${profile.id}`)
@@ -228,67 +231,102 @@ export default function You() {
           </div>
         </Card>
 
-        {/* Veggie Network entry */}
-        <Card
-          interactive
-          padding="md"
-          onClick={() => navigate("/network")}
-          className="flex items-center gap-3"
-        >
-          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
-            <Users className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-charcoal">
-              Veggie Network
-            </div>
-            <div className="text-xs text-charcoal-muted">
-              Connections you've made across VeggieMeet
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
-        </Card>
+        {/* Level + Community Impact (combined per Justin, 2026-11-23) */}
+        <LevelImpactCard
+          collection={collectionQuery.data}
+          collectionLoading={collectionQuery.isPending}
+          impactLoading={impactQuery.isLoading}
+          veggiesMet={impactQuery.data?.veggies_met ?? 0}
+          placesSupported={impactQuery.data?.community_places_supported ?? 0}
+          meetupsHosted={impactQuery.data?.meetups_hosted ?? 0}
+          onViewImpact={() => navigate("/impact")}
+        />
 
-        {/* My Trips entry */}
-        <Card
-          interactive
-          padding="md"
-          onClick={() => navigate("/you/trips")}
-          className="flex items-center gap-3"
-        >
-          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
-            <Plane className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-charcoal">My Trips</div>
-            <div className="text-xs text-charcoal-muted">
-              Tell veggies when you'll be in their city
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
-        </Card>
+        {/* Collection, inline on the profile (stickers / cards / badges) */}
+        <section aria-label="My collection">
+          {collectionQuery.isPending ? (
+            <Card className="h-40 animate-pulse" />
+          ) : collectionQuery.isError || !collectionQuery.data ? (
+            <Card padding="lg" className="text-center space-y-3">
+              <p className="text-sm text-charcoal">We couldn't load your collection just now.</p>
+              <SecondaryButton size="sm" onClick={() => collectionQuery.refetch()}>
+                Try again
+              </SecondaryButton>
+            </Card>
+          ) : (
+            <CollectionPanel
+              data={collectionQuery.data}
+              isSelf
+              firstName={profile.display_name.split(/\s+/)[0] || "You"}
+              showHowPoints={false}
+            />
+          )}
+        </section>
 
-        {/* My Collection entry (stickers, memory cards, level) */}
-        <MyCollectionEntry onOpen={() => navigate("/you/collection")} />
+        {/* My meetups: Hosting / Going / Past in one switcher (Justin, 2026-11-23) */}
+        <section>
+          <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
+            My meetups
+          </h3>
+          <div className="flex p-1 bg-muted rounded-full mb-3">
+            <TabButton active={tab === "hosting"} onClick={() => setTab("hosting")}>
+              Hosting
+            </TabButton>
+            <TabButton active={tab === "going"} onClick={() => setTab("going")}>
+              Going
+            </TabButton>
+            <TabButton active={tab === "past"} onClick={() => setTab("past")}>
+              Past
+            </TabButton>
+          </div>
 
-        {/* My Plans entry */}
-        <Card
-          interactive
-          padding="md"
-          onClick={() => navigate("/plans")}
-          className="flex items-center gap-3"
-        >
-          <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
-            <Calendar className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-charcoal">My Plans</div>
-            <div className="text-xs text-charcoal-muted">
-              Everything you've committed to
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
-        </Card>
+          {summaryQuery.isError ? (
+            <SummaryError onRetry={() => summaryQuery.refetch()} />
+          ) : (
+            <>
+              {tab === "hosting" && (
+                <MeetupList
+                  loading={summaryQuery.isLoading}
+                  cards={summaryQuery.data?.hosting ?? []}
+                  profileId={profile.id}
+                  role="host"
+                  emptyTitle="Host your first meetup"
+                  emptyDescription="Bring Veggies together around something you enjoy."
+                  emptyIcon={<Users className="w-6 h-6" />}
+                  emptyAction={
+                    <PrimaryButton onClick={() => navigate("/host")}>
+                      Host a Meetup
+                    </PrimaryButton>
+                  }
+                />
+              )}
+              {tab === "going" && (
+                <MeetupList
+                  loading={summaryQuery.isLoading}
+                  cards={summaryQuery.data?.going ?? []}
+                  profileId={profile.id}
+                  role="attendee"
+                  emptyTitle="Find your next meetup"
+                  emptyDescription="Discover something happening near you."
+                  emptyIcon={<Calendar className="w-6 h-6" />}
+                  emptyAction={
+                    <PrimaryButton onClick={() => navigate("/community")}>
+                      Explore Meetups
+                    </PrimaryButton>
+                  }
+                />
+              )}
+              {tab === "past" && (
+                <PastMeetupsList
+                  loading={summaryQuery.isLoading}
+                  items={summaryQuery.data?.history ?? []}
+                  hasMore={summaryQuery.data?.history_has_more ?? false}
+                  onViewAll={() => navigate("/plans")}
+                />
+              )}
+            </>
+          )}
+        </section>
 
         {/* WO-101B: owner-only Community Place operations entry */}
         {ownerQuery.data === true && (
@@ -329,14 +367,6 @@ export default function You() {
           </Card>
         )}
 
-        {/* Community Impact entry */}
-        <CommunityImpactCard
-          loading={impactQuery.isLoading}
-          veggiesMet={impactQuery.data?.veggies_met ?? 0}
-          placesSupported={impactQuery.data?.community_places_supported ?? 0}
-          meetupsHosted={impactQuery.data?.meetups_hosted ?? 0}
-          onView={() => navigate("/impact")}
-        />
 
         {/* Interests */}
         <section>
@@ -361,66 +391,6 @@ export default function You() {
           )}
         </section>
 
-        {/* My meetups */}
-        <section>
-          <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
-            My meetups
-          </h3>
-          <div className="flex p-1 bg-muted rounded-full mb-3">
-            <TabButton active={tab === "hosting"} onClick={() => setTab("hosting")}>
-              Hosting
-            </TabButton>
-            <TabButton active={tab === "going"} onClick={() => setTab("going")}>
-              Going
-            </TabButton>
-          </div>
-
-          {summaryQuery.isError ? (
-            <SummaryError onRetry={() => summaryQuery.refetch()} />
-          ) : (
-            <>
-              {tab === "hosting" && (
-                <MeetupList
-                  loading={summaryQuery.isLoading}
-                  cards={summaryQuery.data?.hosting ?? []}
-                  profileId={profile.id}
-                  role="host"
-                  emptyTitle="Host your first meetup"
-                  emptyDescription="Bring Veggies together around something you enjoy."
-                  emptyIcon={<Users className="w-6 h-6" />}
-                  emptyAction={
-                    <PrimaryButton onClick={() => navigate("/host")}>
-                      Host a Meetup
-                    </PrimaryButton>
-                  }
-                />
-              )}
-              {tab === "going" && (
-                <MeetupList
-                  loading={summaryQuery.isLoading}
-                  cards={summaryQuery.data?.going ?? []}
-                  profileId={profile.id}
-                  role="attendee"
-                  emptyTitle="Find your next meetup"
-                  emptyDescription="Discover something happening near you."
-                  emptyIcon={<Calendar className="w-6 h-6" />}
-                  emptyAction={
-                    <PrimaryButton onClick={() => navigate("/community")}>
-                      Explore Meetups
-                    </PrimaryButton>
-                  }
-                />
-              )}
-            </>
-          )}
-        </section>
-
-        <PastMeetupsSection
-          loading={summaryQuery.isLoading}
-          error={summaryQuery.isError}
-          items={summaryQuery.data?.history ?? []}
-          onRetry={() => summaryQuery.refetch()}
-        />
       </div>
 
 
@@ -436,70 +406,66 @@ export default function You() {
 
 /* ---------- Small building blocks ---------- */
 
-function MyCollectionEntry({ onOpen }: { onOpen: () => void }) {
-  const q = useMyCollection();
-  const level = q.data ? profileLevel(q.data.stickers, q.data.stats) : null;
-  const stickers = q.data?.stickers.length ?? 0;
-  const cards = q.data?.cards.length ?? 0;
-  return (
-    <Card
-      interactive
-      padding="md"
-      onClick={onOpen}
-      className="flex items-center gap-3"
-      aria-label="Open My Collection"
-    >
-      {level ? (
-        <LevelRing level={level} size={40} />
-      ) : (
-        <div className="w-10 h-10 rounded-card bg-soft-green text-primary flex items-center justify-center">
-          <Sticker className="w-5 h-5" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-charcoal">My Collection</div>
-        <div className="text-xs text-charcoal-muted">
-          {q.isPending
-            ? "Stickers, memory cards and badges"
-            : q.isError
-              ? "Stickers, memory cards and badges"
-              : `Level ${level?.level} ${level?.name} · ${stickers} ${stickers === 1 ? "sticker" : "stickers"} · ${cards} ${cards === 1 ? "card" : "cards"}`}
-        </div>
-      </div>
-      <ChevronRight className="w-5 h-5 text-charcoal-muted shrink-0" />
-    </Card>
-  );
-}
-
-function CommunityImpactCard({
-  loading,
+function LevelImpactCard({
+  collection,
+  collectionLoading,
+  impactLoading,
   veggiesMet,
   placesSupported,
   meetupsHosted,
-  onView,
+  onViewImpact,
 }: {
-  loading: boolean;
+  collection: CollectionData | undefined;
+  collectionLoading: boolean;
+  impactLoading: boolean;
   veggiesMet: number;
   placesSupported: number;
   meetupsHosted: number;
-  onView: () => void;
+  onViewImpact: () => void;
 }) {
+  const level = collection ? profileLevel(collection.stickers, collection.stats) : null;
+  const zero = !impactLoading && veggiesMet === 0 && placesSupported === 0 && meetupsHosted === 0;
   return (
-    <section aria-labelledby="community-impact-title">
+    <section aria-labelledby="level-impact-title">
       <Card padding="lg" className="space-y-5">
+        {/* Level */}
+        <div className="flex items-center gap-4">
+          {level ? (
+            <LevelRing level={level} size={64} />
+          ) : (
+            <div className={cn("w-16 h-16 rounded-full bg-muted", collectionLoading && "animate-pulse")} aria-hidden />
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] uppercase tracking-wider text-charcoal-muted">
+              {level ? `Level ${level.level}` : "Level"}
+            </div>
+            <h3 id="level-impact-title" className="text-lg font-semibold text-charcoal leading-tight">
+              {level ? level.name : collectionLoading ? "…" : "Sprout"}
+            </h3>
+            <div className="mt-1 text-xs text-charcoal-muted">
+              {level
+                ? level.nextMin
+                  ? `${level.points} pts · ${level.nextMin - level.points} to level ${level.level + 1}`
+                  : `${level.points} pts · top level`
+                : "Earn points by visiting places, joining meetups and meeting Veggies."}
+            </div>
+            {level && (
+              <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-primary rounded-full" style={{ width: `${Math.round(level.progress * 100)}%` }} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Community Impact */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Leaf className="w-4 h-4 text-primary" />
-            <h3
-              id="community-impact-title"
-              className="text-sm font-semibold text-charcoal tracking-tight"
-            >
-              Community Impact
-            </h3>
+            <h4 className="text-sm font-semibold text-charcoal tracking-tight">Community Impact</h4>
           </div>
           <button
             type="button"
-            onClick={onView}
+            onClick={onViewImpact}
             className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs font-medium text-primary hover:underline"
             aria-label="Open Community Impact"
           >
@@ -510,27 +476,26 @@ function CommunityImpactCard({
           <ImpactMetric
             icon={<Handshake className="w-4 h-4" />}
             label="Veggies Met"
-            value={loading ? "—" : veggiesMet}
+            value={impactLoading ? "—" : veggiesMet}
           />
           <ImpactMetric
             icon={<Home className="w-4 h-4" />}
             label="Places Supported"
-            value={loading ? "—" : placesSupported}
+            value={impactLoading ? "—" : placesSupported}
           />
           <ImpactMetric
             icon={<Sparkles className="w-4 h-4" />}
             label="Meetups Hosted"
-            value={loading ? "—" : meetupsHosted}
+            value={impactLoading ? "—" : meetupsHosted}
           />
         </div>
         {/* WO-095 §9: at zero, bare zeros read as failure — explain how impact
             is earned instead. */}
         <p className="text-[11px] text-charcoal-muted leading-relaxed">
-          {!loading && veggiesMet === 0 && placesSupported === 0 && meetupsHosted === 0
-            ? "Your impact grows as you meet Veggies in person, check in at verified vegan places, and host Meetups."
-            : "See the people, places, and Meetups you've supported."}
+          {zero
+            ? "Your impact grows as you meet Veggies in person, verify visits at veggie places, and host Meetups."
+            : "See the people, places, and Meetups you've supported, and your Veggie Network."}
         </p>
-
       </Card>
     </section>
   );
@@ -665,75 +630,74 @@ function formatShortDate(iso: string) {
 }
 
 
-function PastMeetupsSection({
+function PastMeetupsList({
   loading,
-  error,
   items,
-  onRetry,
+  hasMore,
+  onViewAll,
 }: {
   loading: boolean;
-  error: boolean;
   items: YouHistoryItem[];
-  onRetry: () => void;
+  hasMore: boolean;
+  onViewAll: () => void;
 }) {
   const navigate = useNavigate();
+  if (loading) return <Card className="h-24 animate-pulse" />;
+  if (items.length === 0) {
+    return (
+      <Card padding="lg" className="text-center text-sm text-charcoal-muted">
+        No past Meetups yet.
+      </Card>
+    );
+  }
   return (
-    <section>
-      <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-charcoal-muted mb-2">
-        Past Meetups
-      </h3>
-      {error ? (
-        <SummaryError onRetry={onRetry} />
-      ) : loading ? (
-        <Card className="h-24 animate-pulse" />
-      ) : items.length === 0 ? (
-        <Card padding="lg" className="text-center text-sm text-charcoal-muted">
-          No past Meetups yet.
-        </Card>
-      ) : (
-        <Card padding="none">
-          <ul className="divide-y divide-border/60">
-            {items.map((m) => (
-              <li key={m.meetup_id}>
-                <button
-                  onClick={() => navigate(`/meetup/${m.meetup_id}/summary`)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-charcoal truncate">
-                        {m.title}
+    <div className="space-y-2">
+      <Card padding="none">
+        <ul className="divide-y divide-border/60">
+          {items.map((m) => (
+            <li key={m.meetup_id}>
+              <button
+                onClick={() => navigate(`/meetup/${m.meetup_id}/summary`)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-charcoal truncate">
+                      {m.title}
+                    </span>
+                    {m.cancelled && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-charcoal-muted">
+                        Cancelled
                       </span>
-                      {m.cancelled && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-charcoal-muted">
-                          Cancelled
-                        </span>
-                      )}
-                      {m.is_host && !m.cancelled && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/25 text-charcoal">
-                          Hosted
-                        </span>
-                      )}
-                      {!m.is_host && (m.attendance_status === "checked_in" || m.attendance_status === "attended") && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-soft-green text-primary">
-                          Checked in
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-charcoal-muted mt-0.5">
-                      {new Date(m.date + "T00:00:00").toLocaleDateString(undefined, {
-                        month: "short", day: "numeric", year: "numeric",
-                      })}
-                    </div>
+                    )}
+                    {m.is_host && !m.cancelled && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-host-badge/25 text-charcoal">
+                        Hosted
+                      </span>
+                    )}
+                    {!m.is_host && (m.attendance_status === "checked_in" || m.attendance_status === "attended") && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-soft-green text-primary">
+                        Checked in
+                      </span>
+                    )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-charcoal-muted" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Card>
+                  <div className="text-xs text-charcoal-muted mt-0.5">
+                    {new Date(m.date + "T00:00:00").toLocaleDateString(undefined, {
+                      month: "short", day: "numeric", year: "numeric",
+                    })}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-charcoal-muted" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Card>
+      {hasMore && (
+        <button type="button" onClick={onViewAll} className="px-1 text-xs font-semibold text-primary">
+          See all past meetups
+        </button>
       )}
-
-    </section>
+    </div>
   );
 }
