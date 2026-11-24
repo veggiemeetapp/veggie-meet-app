@@ -8,7 +8,7 @@ import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { useAuth } from "@/hooks/useAuth";
 import { useProfileCountries, useSaveMyCountries } from "@/hooks/useProfileCountries";
 import { CountriesPill } from "@/components/profile/CountriesPill";
-import { COUNTRIES, countryByCode, flagEmoji, isCountryCode, searchCountries, type Country } from "@/lib/countries";
+import { countryByCode, flagEmoji, isCountryCode, searchCountries, type Country } from "@/lib/countries";
 import { MAPBOX_PUBLIC_TOKEN, normalizeFallbackGlyphUrl, webglSupported } from "@/lib/mapPrototype";
 import { reducedMotion } from "@/lib/celebrations";
 import { safeBack } from "@/lib/navigation";
@@ -33,6 +33,45 @@ const DATA_URL = `${import.meta.env.BASE_URL}data/countries-110m.json`;
 const MAPBOX_DARK_STYLE = "mapbox://styles/mapbox/dark-v11";
 const FALLBACK_DARK_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 const SELECTED_LAYERS = ["vm-country-fill", "vm-country-glow"] as const;
+// Night-side palette for the fallback basemap (CARTO dark-matter ships a
+// grey ocean and black land; NomadTable's globe is navy water, slate land).
+const NIGHT = { water: "#0a1324", land: "#1b2434", border: "#44546e", label: "#aab4c8" };
+
+/** Deterministic starfield (CSS radial gradients) drawn behind the globe. */
+const STARS = (() => {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 48271) % 2147483647) / 2147483647);
+  const layers: string[] = [];
+  for (let i = 0; i < 70; i++) {
+    const x = (rnd() * 100).toFixed(1), y = (rnd() * 100).toFixed(1);
+    const r = rnd() < 0.15 ? 1.4 : 0.8;
+    const a = (0.35 + rnd() * 0.55).toFixed(2);
+    layers.push(`radial-gradient(${r}px ${r}px at ${x}% ${y}%, rgba(255,255,255,${a}) 50%, transparent 100%)`);
+  }
+  return layers.join(",");
+})();
+
+/** Recolour the fallback style so it reads as a night globe. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function nightPalette(map: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const layer of (map.getStyle()?.layers ?? []) as any[]) {
+    try {
+      const id: string = layer.id;
+      if (layer.type === "background") map.setPaintProperty(id, "background-color", NIGHT.land);
+      else if (layer.type === "fill" && /water|ocean|sea/i.test(id)) map.setPaintProperty(id, "fill-color", NIGHT.water);
+      else if (layer.type === "line" && /boundary|admin|border/i.test(id)) {
+        map.setPaintProperty(id, "line-color", NIGHT.border);
+        map.setPaintProperty(id, "line-opacity", 0.8);
+      } else if (layer.type === "symbol" && /country|place|label/i.test(id)) {
+        map.setPaintProperty(id, "text-color", NIGHT.label);
+        map.setPaintProperty(id, "text-halo-color", NIGHT.land);
+      }
+    } catch {
+      /* a layer without that property; keep going */
+    }
+  }
+}
 
 function selectedFilter(codes: string[]) {
   return ["in", ["get", "c"], ["literal", codes]];
@@ -118,7 +157,9 @@ export default function CountriesGlobe() {
           zoom: 1.6,
           minZoom: 0.8,
           maxZoom: 6,
-          attributionControl: true,
+          // Mapbox keeps its own (required) control; the CARTO/OSM credit for
+          // the fallback is a plain text line under the hint instead.
+          attributionControl: engine === "mapbox",
           transformRequest: engine === "fallback" ? (url: string) => ({ url: normalizeFallbackGlyphUrl(url) }) : undefined,
         });
         mapRef.current = map;
@@ -156,6 +197,7 @@ export default function CountriesGlobe() {
             } catch {
               /* flat map is still usable */
             }
+            nightPalette(map);
           }
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const firstSymbol = (map.getStyle()?.layers ?? []).find((l: any) => l.type === "symbol")?.id;
@@ -296,9 +338,28 @@ export default function CountriesGlobe() {
     : `Countries ${ownerName ?? "this Veggie"} has set foot in.`;
 
   return (
-    <div className="fixed inset-0 z-50 text-white" style={{ background: SPACE }} data-testid="countries-globe">
+    <div
+      className={cn(
+        "fixed inset-0 z-50 text-white",
+        // Lift the map's bottom-left controls above the hint + search box.
+        "[&_.mapboxgl-ctrl-bottom-left]:bottom-[150px] [&_.mapboxgl-ctrl-bottom-right]:bottom-[150px]",
+      )}
+      style={{ background: SPACE, backgroundImage: STARS }}
+      data-testid="countries-globe"
+      data-map-state={mapState}
+      data-engine={engine}
+    >
       {/* Globe */}
-      {mapState !== "unsupported" && <div ref={containerRef} className="absolute inset-0" aria-hidden={mapState !== "ready"} />}
+      {/* Inline position/size on purpose: mapbox-gl.css and maplibre-gl.css set
+          `.mapboxgl-map/.maplibregl-map { position: relative }`, which beats the
+          Tailwind `absolute` utility and collapses the container to 0 px high. */}
+      {mapState !== "unsupported" && (
+        <div
+          ref={containerRef}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+          aria-hidden={mapState !== "ready"}
+        />
+      )}
       {mapState === "loading" && (
         <div className="absolute inset-0 flex items-center justify-center text-sm text-white/60">Loading the globe…</div>
       )}
@@ -365,6 +426,12 @@ export default function CountriesGlobe() {
         ) : (
           <p className="text-center text-sm text-white/80 drop-shadow">{hint}</p>
         )}
+        {engine === "fallback" && mapState === "ready" && (
+          <p className="text-center text-[10px] text-white/40">
+            © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">OpenStreetMap</a> contributors ·{" "}
+            © <a href="https://carto.com/attributions" target="_blank" rel="noreferrer" className="underline">CARTO</a>
+          </p>
+        )}
         {editable && (
           <div className="relative">
             {results.length > 0 && (
@@ -416,6 +483,3 @@ export default function CountriesGlobe() {
     </div>
   );
 }
-
-// Referenced so the dataset stays tree-shake-safe when only the list view is used.
-void COUNTRIES;
