@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Award, Camera, Sparkles, Sticker } from "lucide-react";
+import { Camera, Sparkles, Sticker } from "lucide-react";
 import { Card, EmptyState } from "@/components/app";
 import { SegmentedTabs } from "@/components/app/SegmentedTabs";
 import { Stagger } from "@/components/app/Stagger";
-import { AnimatedNumber } from "@/components/app/AnimatedNumber";
 import { takeNewlyEarnedBadges } from "@/lib/celebrations";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useMemoryCard } from "@/hooks/useCollection";
@@ -23,8 +22,7 @@ import {
   type PlaceSticker as PlaceStickerData,
 } from "@/lib/collection";
 
-export type CollectionTab = "stickers" | "cards" | "badges";
-type Tab = CollectionTab;
+type Tab = "stickers" | "cards" | "badges";
 
 /**
  * The Stickers / Cards / Badges body of a collection, shared by the member's
@@ -36,29 +34,17 @@ export function CollectionPanel({
   data,
   isSelf,
   firstName,
-  showStats = true,
   showHowPoints = true,
   initialTab = "stickers",
-  tab: controlledTab,
-  onTabChange,
 }: {
   data: CollectionData;
   isSelf: boolean;
   firstName: string;
-  showStats?: boolean;
   showHowPoints?: boolean;
   initialTab?: Tab;
-  /** Controlled tab (the profile's progress card drives it); omit to let the panel own it. */
-  tab?: Tab;
-  onTabChange?: (tab: Tab) => void;
 }) {
   const navigate = useNavigate();
-  const [ownTab, setOwnTab] = useState<Tab>(initialTab);
-  const tab = controlledTab ?? ownTab;
-  const setTab = (next: Tab) => {
-    setOwnTab(next);
-    onTabChange?.(next);
-  };
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [openCard, setOpenCard] = useState<string | null>(null);
   const [openBadge, setOpenBadge] = useState<BadgeProgress | null>(null);
 
@@ -80,20 +66,13 @@ export function CollectionPanel({
   return (
     <PlaceCoverProvider placeIds={coverIds}>
       <div className="space-y-4" data-testid="collection-panel">
-        {showStats && (
-          <div className="grid grid-cols-3 gap-2">
-            <Stat label="Stickers" value={data.stickers.length} icon={<Sticker className="w-3.5 h-3.5" />} />
-            <Stat label="Cards" value={data.cards.length} icon={<Camera className="w-3.5 h-3.5" />} />
-            <Stat label="Badges" value={earnedCount} icon={<Award className="w-3.5 h-3.5" />} />
-          </div>
-        )}
-
+        {/* Counts live in the tabs themselves (Justin, 2026-11-24): no separate stat row. */}
         <SegmentedTabs<Tab>
           ariaLabel="Collection sections"
           items={[
-            { key: "stickers", label: "Stickers" },
-            { key: "cards", label: "Cards" },
-            { key: "badges", label: newBadges.size ? `Badges · ${newBadges.size} new` : "Badges" },
+            { key: "stickers", label: "Stickers", count: data.stickers.length },
+            { key: "cards", label: "Cards", count: data.cards.length },
+            { key: "badges", label: "Badges", count: earnedCount, dot: newBadges.size > 0 },
           ]}
           value={tab}
           onChange={setTab}
@@ -343,18 +322,6 @@ function MemoryCardDialog({ cardId, onClose }: { cardId: string | null; onClose:
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Stat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  return (
-    <Card variant="metric" padding="sm" className="text-center">
-      <div className="text-xl font-bold text-charcoal tabular-nums leading-none"><AnimatedNumber value={value} /></div>
-      <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-        {icon}
-        {label}
-      </div>
-    </Card>
   );
 }
 

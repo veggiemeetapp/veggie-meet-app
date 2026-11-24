@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils";
 export interface SegmentedTabItem<K extends string> {
   key: K;
   label: string;
+  /** Count shown after the label (e.g. "Stickers 9"). */
+  count?: number;
+  /** Small dot after the label: something new to look at in this tab. */
+  dot?: boolean;
 }
 
 /**
@@ -73,6 +77,14 @@ export function SegmentedTabs<K extends string>({
             )}
           >
             {it.label}
+            {it.count !== undefined && (
+              <span className={cn("ml-1 tabular-nums font-medium", active ? "text-charcoal-muted" : "opacity-70")}>
+                {it.count}
+              </span>
+            )}
+            {it.dot && (
+              <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-primary align-middle" aria-label="new" />
+            )}
           </button>
         );
       })}
