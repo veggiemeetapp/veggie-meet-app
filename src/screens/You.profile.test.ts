@@ -44,8 +44,11 @@ describe("WO-113 profile surfaces", () => {
 describe("WO-113A /you profile card", () => {
   const code = readFileSync(resolve(process.cwd(), "src/screens/You.tsx"), "utf8");
 
-  it("profile actions row wraps instead of forcing a fixed 2-up row", () => {
-    expect(code).toMatch(/flex w-full flex-wrap gap-2/);
+  it("edit lives on the avatar as a pencil badge, not in a fixed 2-up action row (2026-11-24)", () => {
+    expect(code).toMatch(/aria-label="Edit Profile"/);
+    expect(code).toContain('navigate("/you/edit")');
+    expect(code).not.toMatch(/grid-cols-2[^\n]*Edit Profile/);
+    expect(code).toContain('aria-label="Share profile"');
   });
 
   it("past-meetup Hosted badge does not use the low-contrast amber-on-amber pair", () => {

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { setTestMode, useTestMode } from "@/lib/testMode";
 import { resetCollectionMock } from "@/lib/collectionMock";
+import { resetMockCountries } from "@/lib/profileCountriesMock";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,9 +17,13 @@ export function TestModeToggle({ className }: { className?: string }) {
   const qc = useQueryClient();
   const toggle = () => {
     const next = !on;
-    if (next) resetCollectionMock();
+    if (next) {
+      resetCollectionMock();
+      resetMockCountries();
+    }
     setTestMode(next);
     qc.invalidateQueries({ queryKey: ["collection"] });
+    qc.invalidateQueries({ queryKey: ["profile-countries"] });
     toast(next ? "Test mode on" : "Test mode off", {
       description: next
         ? "Collection screens now show sample data. Nothing is saved to the server."

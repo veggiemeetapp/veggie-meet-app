@@ -23,6 +23,7 @@ const HIDDEN_NAV_PATTERNS = [
   /^\/onboarding/,
   /^\/auth\/callback/,
   /^\/you\/edit/,
+  /^\/you\/countries/,
   /^\/checkin\//,
   /^\/veggie\//,
   /^\/notifications/,

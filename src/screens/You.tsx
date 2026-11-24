@@ -27,6 +27,8 @@ import { Stagger } from "@/components/app/Stagger";
 import { AnimatedNumber } from "@/components/app/AnimatedNumber";
 import { fireConfetti, takeLevelUp } from "@/lib/celebrations";
 import { TestModeToggle } from "@/components/app/TestMode";
+import { CountriesPill } from "@/components/profile/CountriesPill";
+import { useProfileCountries } from "@/hooks/useProfileCountries";
 import {
   AppHeader,
   Card,
@@ -82,6 +84,7 @@ export default function You() {
 
   // Collection (level, stickers, cards, badges) shown inline on the profile.
   const collectionQuery = useMyCollection(!!profile?.id);
+  const countriesQuery = useProfileCountries(profile?.id, true);
 
   // WO-101B: owner-only Community Place operations entry point.
   // Resolved from the same server-side owner allowlist used by RequireOwner.
@@ -163,6 +166,18 @@ export default function You() {
         right={
           <>
             {ownerQuery.data === true && <TestModeToggle />}
+            <button
+              type="button"
+              onClick={() =>
+                toast("Sharing profiles is coming soon", {
+                  description: "You'll be able to share your Veggie profile in a future update.",
+                })
+              }
+              aria-label="Share profile"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-charcoal hover:bg-muted"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
             <ThemeToggle />
             <NotificationsBell />
             <button
@@ -179,11 +194,23 @@ export default function You() {
       <div className="px-5 mt-2 pb-8 space-y-8">
         {/* Identity */}
         <Card className="flex flex-col items-center text-center">
-          <UserAvatar
-            name={profile.display_name}
-            src={profile.avatar_url ?? undefined}
-            size="xl"
-          />
+          {/* Edit lives on the avatar (pencil badge) and Share in the header,
+              per Justin's 2026-11-24 note: no two-button row under the bio. */}
+          <div className="relative">
+            <UserAvatar
+              name={profile.display_name}
+              src={profile.avatar_url ?? undefined}
+              size="xl"
+            />
+            <button
+              type="button"
+              onClick={() => navigate("/you/edit")}
+              aria-label="Edit Profile"
+              className="absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full bg-primary text-primary-foreground ring-[3px] ring-card flex items-center justify-center shadow-sm transition-transform active:scale-95 hover:brightness-110 focus:outline-none focus-visible:ring-primary/40"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          </div>
           {/* WO-085A DEF-085A-11 (WCAG 1.4.10): long unbroken display names
               must wrap instead of forcing horizontal scroll at 320 CSS px. */}
           <h2 className="mt-3 text-xl font-semibold text-charcoal [overflow-wrap:anywhere] max-w-full">
@@ -207,32 +234,13 @@ export default function You() {
             </span>
           )}
 
-
-
-          {/* WO-113A: wrap instead of a fixed 2-up row so both actions keep
-              their full label at 200% text zoom without horizontal overflow. */}
-          <div className="mt-5 flex w-full flex-wrap gap-2 [&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-[8rem]">
-            <PrimaryButton
-              size="sm"
-              fullWidth
-              onClick={() => navigate("/you/edit")}
-            >
-              <Pencil className="w-4 h-4" />
-              Edit Profile
-            </PrimaryButton>
-            <SecondaryButton
-              size="sm"
-              fullWidth
-              onClick={() =>
-                toast("Sharing profiles is coming soon", {
-                  description: "You'll be able to share your Veggie profile in a future update.",
-                })
-              }
-            >
-              <Share2 className="w-4 h-4" />
-              Share
-            </SecondaryButton>
-          </div>
+          {/* Countries visited: "3/195 countries · 1.5% of the world" → globe editor */}
+          <CountriesPill
+            className="mt-4"
+            count={countriesQuery.data?.codes.length ?? 0}
+            editable
+            onClick={() => navigate("/you/countries")}
+          />
         </Card>
 
         {/* Level + Community Impact (combined per Justin, 2026-11-23) */}

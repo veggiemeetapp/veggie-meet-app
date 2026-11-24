@@ -47,6 +47,8 @@ import {
 } from "@/lib/veggieProfile";
 import { fetchPublicCommunityImpact } from "@/lib/communityImpact";
 import { usePublicCollection } from "@/hooks/useCollection";
+import { useProfileCountries } from "@/hooks/useProfileCountries";
+import { CountriesPill } from "@/components/profile/CountriesPill";
 import { profileLevel } from "@/lib/collection";
 import { PlaceCoverProvider, PlaceSticker } from "@/components/collection/PlaceSticker";
 import { MeetupInvitationSheet } from "@/components/invitations/MeetupInvitationSheet";
@@ -180,6 +182,7 @@ export default function VeggieProfile() {
                 {bundle.profile.city}
               </p>
             )}
+            <VeggieCountries profileId={bundle.profile.id} firstName={bundle.profile.firstName} />
             <div className="mt-3 flex items-center gap-2 flex-wrap justify-center">
               <DietaryBadge dietary={bundle.profile.dietary} />
               {bundle.profile.isActiveHost && (
@@ -614,5 +617,20 @@ function VerifyRow({
       <div className="flex-1 text-sm text-charcoal">{label}</div>
       <div className="text-xs text-charcoal-muted">{value}</div>
     </div>
+  );
+}
+
+/** "n/195 countries" under the name; hidden until the member has added one. */
+function VeggieCountries({ profileId, firstName }: { profileId: string; firstName: string }) {
+  const navigate = useNavigate();
+  const q = useProfileCountries(profileId);
+  const count = q.data?.available ? q.data.codes.length : 0;
+  if (!count) return null;
+  return (
+    <CountriesPill
+      className="mt-3"
+      count={count}
+      onClick={() => navigate(`/veggie/${profileId}/countries`, { state: { name: firstName } })}
+    />
   );
 }
