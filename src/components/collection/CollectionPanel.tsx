@@ -23,7 +23,8 @@ import {
   type PlaceSticker as PlaceStickerData,
 } from "@/lib/collection";
 
-type Tab = "stickers" | "cards" | "badges";
+export type CollectionTab = "stickers" | "cards" | "badges";
+type Tab = CollectionTab;
 
 /**
  * The Stickers / Cards / Badges body of a collection, shared by the member's
@@ -38,6 +39,8 @@ export function CollectionPanel({
   showStats = true,
   showHowPoints = true,
   initialTab = "stickers",
+  tab: controlledTab,
+  onTabChange,
 }: {
   data: CollectionData;
   isSelf: boolean;
@@ -45,9 +48,17 @@ export function CollectionPanel({
   showStats?: boolean;
   showHowPoints?: boolean;
   initialTab?: Tab;
+  /** Controlled tab (the profile's progress card drives it); omit to let the panel own it. */
+  tab?: Tab;
+  onTabChange?: (tab: Tab) => void;
 }) {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const [ownTab, setOwnTab] = useState<Tab>(initialTab);
+  const tab = controlledTab ?? ownTab;
+  const setTab = (next: Tab) => {
+    setOwnTab(next);
+    onTabChange?.(next);
+  };
   const [openCard, setOpenCard] = useState<string | null>(null);
   const [openBadge, setOpenBadge] = useState<BadgeProgress | null>(null);
 

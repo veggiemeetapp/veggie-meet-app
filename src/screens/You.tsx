@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { logAnalyticsEvent } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  Award,
   Calendar,
+  Camera,
   ChevronRight,
   Clock,
   Handshake,
@@ -16,16 +18,17 @@ import {
   Settings as SettingsIcon,
   Share2,
   Sparkles,
+  Sticker,
   Users,
 } from "lucide-react";
 import { useMyCollection } from "@/hooks/useCollection";
-import { profileLevel, type Collection as CollectionData } from "@/lib/collection";
+import { evaluateBadges, profileLevel, type Collection as CollectionData } from "@/lib/collection";
 import { LevelRing } from "@/components/collection/LevelRing";
-import { CollectionPanel } from "@/components/collection/CollectionPanel";
+import { CollectionPanel, type CollectionTab } from "@/components/collection/CollectionPanel";
 import { SegmentedTabs } from "@/components/app/SegmentedTabs";
 import { Stagger } from "@/components/app/Stagger";
 import { AnimatedNumber } from "@/components/app/AnimatedNumber";
-import { fireConfetti, takeLevelUp } from "@/lib/celebrations";
+import { fireConfetti, reducedMotion, takeLevelUp } from "@/lib/celebrations";
 import { TestModeToggle } from "@/components/app/TestMode";
 import {
   AppHeader,
@@ -61,6 +64,13 @@ export default function You() {
   }, []);
   const { profile, loading, signOut, refreshProfile } = useAuth();
   const [tab, setTab] = useState<Tab>("hosting");
+  // Stickers / Cards / Badges tab, driven by the progress card's stat buttons too.
+  const [collectionTab, setCollectionTab] = useState<CollectionTab>("stickers");
+  const collectionRef = useRef<HTMLElement>(null);
+  const jumpToCollection = (next: CollectionTab) => {
+    setCollectionTab(next);
+    collectionRef.current?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+  };
   
 
   // WO-087: one bounded, self-scoped RPC replaces the previous five direct
@@ -235,8 +245,9 @@ export default function You() {
           </div>
         </Card>
 
-        {/* Level + Community Impact (combined per Justin, 2026-11-23) */}
-        <LevelImpactCard
+        {/* One progress card: Level + Stickers/Cards/Badges + Community Impact
+            (Justin, 2026-11-23: "combine these to 1 card") */}
+        <ProgressCard
           collection={collectionQuery.data}
           collectionLoading={collectionQuery.isPending}
           impactLoading={impactQuery.isLoading}
@@ -244,10 +255,12 @@ export default function You() {
           placesSupported={impactQuery.data?.community_places_supported ?? 0}
           meetupsHosted={impactQuery.data?.meetups_hosted ?? 0}
           onViewImpact={() => navigate("/impact")}
+          activeTab={collectionTab}
+          onJumpTo={jumpToCollection}
         />
 
         {/* Collection, inline on the profile (stickers / cards / badges) */}
-        <section aria-label="My collection">
+        <section aria-label="My collection" ref={collectionRef} className="scroll-mt-20">
           {collectionQuery.isPending ? (
             <Card className="h-40 animate-pulse" />
           ) : collectionQuery.isError || !collectionQuery.data ? (
@@ -262,7 +275,10 @@ export default function You() {
               data={collectionQuery.data}
               isSelf
               firstName={profile.display_name.split(/\s+/)[0] || "You"}
+              showStats={false}
               showHowPoints={false}
+              tab={collectionTab}
+              onTabChange={setCollectionTab}
             />
           )}
         </section>
@@ -410,7 +426,7 @@ export default function You() {
 
 /* ---------- Small building blocks ---------- */
 
-function LevelImpactCard({
+function ProgressCard({
   collection,
   collectionLoading,
   impactLoading,
@@ -418,6 +434,8 @@ function LevelImpactCard({
   placesSupported,
   meetupsHosted,
   onViewImpact,
+  activeTab,
+  onJumpTo,
 }: {
   collection: CollectionData | undefined;
   collectionLoading: boolean;
@@ -426,9 +444,15 @@ function LevelImpactCard({
   placesSupported: number;
   meetupsHosted: number;
   onViewImpact: () => void;
+  activeTab: CollectionTab;
+  onJumpTo: (tab: CollectionTab) => void;
 }) {
   const level = useMemo(
     () => (collection ? profileLevel(collection.stickers, collection.stats) : null),
+    [collection],
+  );
+  const badgesEarned = useMemo(
+    () => (collection ? evaluateBadges(collection.stickers, collection.stats).filter((b) => b.earned).length : 0),
     [collection],
   );
   const zero = !impactLoading && veggiesMet === 0 && placesSupported === 0 && meetupsHosted === 0;
@@ -448,9 +472,9 @@ function LevelImpactCard({
     }
   }, [collection, level]);
   return (
-    <section aria-labelledby="level-impact-title">
-      <Card padding="lg" className="space-y-5">
-        {/* Level */}
+    <section aria-labelledby="progress-title">
+      <Card padding="lg" className="space-y-4">
+        {/* Band 1: Level */}
         <div className="flex items-center gap-4">
           {level ? (
             <div className={cn("relative", celebrate && "motion-safe:animate-pop")}>
@@ -466,7 +490,7 @@ function LevelImpactCard({
             <div className="text-[11px] uppercase tracking-wider text-charcoal-muted">
               {level ? `Level ${level.level}` : "Level"}
             </div>
-            <h3 id="level-impact-title" className="text-lg font-semibold text-charcoal leading-tight">
+            <h3 id="progress-title" className="text-lg font-semibold text-charcoal leading-tight">
               {level ? level.name : collectionLoading ? "…" : "Sprout"}
             </h3>
             <div className="mt-1 text-xs text-charcoal-muted">
@@ -487,47 +511,111 @@ function LevelImpactCard({
           </div>
         </div>
 
-        {/* Community Impact */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Leaf className="w-4 h-4 text-primary" />
-            <h4 className="text-sm font-semibold text-charcoal tracking-tight">Community Impact</h4>
+        {/* Band 2: the collection at a glance. Each stat jumps to its tab below. */}
+        <div className="grid grid-cols-3 gap-2 border-t border-border pt-4" role="group" aria-label="My collection at a glance">
+          <CollectionStat
+            label="Stickers"
+            value={collectionLoading ? "—" : collection?.stickers.length ?? 0}
+            icon={<Sticker className="w-3.5 h-3.5" />}
+            active={activeTab === "stickers"}
+            onClick={() => onJumpTo("stickers")}
+          />
+          <CollectionStat
+            label="Cards"
+            value={collectionLoading ? "—" : collection?.cards.length ?? 0}
+            icon={<Camera className="w-3.5 h-3.5" />}
+            active={activeTab === "cards"}
+            onClick={() => onJumpTo("cards")}
+          />
+          <CollectionStat
+            label="Badges"
+            value={collectionLoading ? "—" : badgesEarned}
+            icon={<Award className="w-3.5 h-3.5" />}
+            active={activeTab === "badges"}
+            onClick={() => onJumpTo("badges")}
+          />
+        </div>
+
+        {/* Band 3: Community Impact, compact. The full breakdown lives on /impact. */}
+        <div className="border-t border-border pt-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Leaf className="w-4 h-4 text-primary" />
+              <h4 className="text-sm font-semibold text-charcoal tracking-tight">Community Impact</h4>
+            </div>
+            <button
+              type="button"
+              onClick={onViewImpact}
+              className="min-h-11 px-2 -mr-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline"
+              aria-label="Open Community Impact"
+            >
+              View
+              <ChevronRight className="w-3.5 h-3.5" aria-hidden />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onViewImpact}
-            className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs font-medium text-primary hover:underline"
-            aria-label="Open Community Impact"
-          >
-            View
-          </button>
+          <div className="grid grid-cols-3 gap-2">
+            <ImpactMetric
+              icon={<Handshake className="w-4 h-4" />}
+              label="Veggies met"
+              value={impactLoading ? "—" : veggiesMet}
+            />
+            <ImpactMetric
+              icon={<Home className="w-4 h-4" />}
+              label="Places supported"
+              value={impactLoading ? "—" : placesSupported}
+            />
+            <ImpactMetric
+              icon={<Sparkles className="w-4 h-4" />}
+              label="Meetups hosted"
+              value={impactLoading ? "—" : meetupsHosted}
+            />
+          </div>
+          {/* WO-095 §9: at zero, bare zeros read as failure — explain how impact
+              is earned instead. */}
+          <p className="text-[11px] text-charcoal-muted leading-relaxed">
+            {zero
+              ? "Your impact grows as you meet Veggies in person, verify visits at veggie places, and host Meetups."
+              : "See the people, places, and Meetups you've supported, and your Veggie Network."}
+          </p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <ImpactMetric
-            icon={<Handshake className="w-4 h-4" />}
-            label="Veggies Met"
-            value={impactLoading ? "—" : veggiesMet}
-          />
-          <ImpactMetric
-            icon={<Home className="w-4 h-4" />}
-            label="Places Supported"
-            value={impactLoading ? "—" : placesSupported}
-          />
-          <ImpactMetric
-            icon={<Sparkles className="w-4 h-4" />}
-            label="Meetups Hosted"
-            value={impactLoading ? "—" : meetupsHosted}
-          />
-        </div>
-        {/* WO-095 §9: at zero, bare zeros read as failure — explain how impact
-            is earned instead. */}
-        <p className="text-[11px] text-charcoal-muted leading-relaxed">
-          {zero
-            ? "Your impact grows as you meet Veggies in person, verify visits at veggie places, and host Meetups."
-            : "See the people, places, and Meetups you've supported, and your Veggie Network."}
-        </p>
       </Card>
     </section>
+  );
+}
+
+function CollectionStat({
+  label,
+  value,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number | string;
+  icon: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`${label}: ${value}. Show ${label.toLowerCase()}`}
+      className={cn(
+        "rounded-card py-3 px-2 text-center transition-[background-color,transform] active:scale-[0.97]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        active ? "bg-soft-green" : "bg-muted/60 hover:bg-muted",
+      )}
+    >
+      <div className="text-2xl font-bold text-charcoal tabular-nums leading-none">
+        <AnimatedNumber value={value} />
+      </div>
+      <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+        {icon}
+        {label}
+      </div>
+    </button>
   );
 }
 
@@ -540,19 +628,17 @@ function ImpactMetric({
   label: string;
   value: number | string;
 }) {
+  // Compact inline metric: icon, number and label on one line each, no tile
+  // background, so the impact band stays a footnote under the collection.
   return (
-    <div className="rounded-card bg-soft-green/60 p-5">
-      <div className="text-3xl font-bold text-charcoal tabular-nums leading-none">
-        <AnimatedNumber value={value} />
+    <div className="min-w-0 flex items-start gap-1.5">
+      <span className="shrink-0 mt-0.5 text-primary [&_svg]:w-4 [&_svg]:h-4">{icon}</span>
+      <div className="min-w-0">
+        <div className="text-base font-bold text-charcoal tabular-nums leading-none">
+          <AnimatedNumber value={value} />
+        </div>
+        <div className="mt-1 text-[11px] font-medium text-charcoal-muted leading-tight">{label}</div>
       </div>
-      {/* DEF-092A-10: in the 3-up grid the flex row squeezed the 16px icons to a
-          1-2px sliver, which read as a broken glyph. The icon keeps its size and
-          the label wraps instead. */}
-      <div className="mt-2.5 flex items-start gap-1.5 text-[11px] font-semibold text-primary leading-tight">
-        <span className="shrink-0 [&_svg]:w-4 [&_svg]:h-4">{icon}</span>
-        <span className="min-w-0">{label}</span>
-      </div>
-
     </div>
   );
 }
